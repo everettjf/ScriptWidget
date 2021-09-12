@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="17701" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17703"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--Code Editor View Controller-->
+        <scene sceneID="Y5D-Ef-y43">
+            <objects>
+                <viewController storyboardIdentifier="CodeEditorViewController" id="33B-Cd-yW3" customClass="CodeEditorViewController" customModule="ScriptWidget" customModuleProvider="target" sceneMemberID="viewController">
+                    <connections>
+                        <outlet property="toolBar" destination="h87-l5-NUh" id="l5K-LY-rfU"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="vny-o5-fTn" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+                <toolbar opaque="NO" clearsContextBeforeDrawing="NO" contentMode="scaleToFill" id="h87-l5-NUh">
+                    <rect key="frame" x="0.0" y="0.0" width="414" height="44"/>
+                    <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMinY="YES"/>
+                    <items>
+                        <barButtonItem title="Close" id="1vS-67-XkX">
+                            <connections>
+                                <action selector="onToolBarDoneTapped:" destination="33B-Cd-yW3" id="a5O-vX-juY"/>
+                            </connections>
+                        </barButtonItem>
+                    </items>
+                </toolbar>
+            </objects>
+            <point key="canvasLocation" x="18" y="132"/>
+        </scene>
+    </scenes>
+</document>
