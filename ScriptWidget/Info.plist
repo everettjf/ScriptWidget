@@ -245,7 +245,7 @@
 	<array>
 		<string>cartoon-component-hand.ttf</string>
 		<string>8bit-component-colon.ttf</string>
-		<string>everettjf-UpDownLine-Regular.ttf</string>
+		<string>UpDownLine-Regular.ttf</string>
 		<string>Apple ][.ttf</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>

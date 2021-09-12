@@ -263,8 +263,8 @@
 		F2BE767325DC0806000AD28E /* KeyboardHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2BE767225DC0806000AD28E /* KeyboardHelper.swift */; };
 		F2BE767525DC1C83000AD28E /* ImageHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2BE767425DC1C83000AD28E /* ImageHelper.swift */; };
 		F2BE767725DC2142000AD28E /* ImagePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2BE767625DC2142000AD28E /* ImagePreviewView.swift */; };
-		F2C2952E262095C900CF2318 /* everettjf-UpDownLine-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F2C2952D262095C900CF2318 /* everettjf-UpDownLine-Regular.ttf */; };
-		F2C2952F262095C900CF2318 /* everettjf-UpDownLine-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F2C2952D262095C900CF2318 /* everettjf-UpDownLine-Regular.ttf */; };
+		F2C2952E262095C900CF2318 /* UpDownLine-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F2C2952D262095C900CF2318 /* UpDownLine-Regular.ttf */; };
+		F2C2952F262095C900CF2318 /* UpDownLine-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F2C2952D262095C900CF2318 /* UpDownLine-Regular.ttf */; };
 		F2C295312620A81700CF2318 /* Apple ][.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F2C295302620A81700CF2318 /* Apple ][.ttf */; };
 		F2C295322620A81700CF2318 /* Apple ][.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F2C295302620A81700CF2318 /* Apple ][.ttf */; };
 		F2C295342621B19F00CF2318 /* ScriptWidgetElementTagGauge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2C295332621B19F00CF2318 /* ScriptWidgetElementTagGauge.swift */; };
@@ -590,7 +590,7 @@
 		F2BE767225DC0806000AD28E /* KeyboardHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardHelper.swift; sourceTree = "<group>"; };
 		F2BE767425DC1C83000AD28E /* ImageHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageHelper.swift; sourceTree = "<group>"; };
 		F2BE767625DC2142000AD28E /* ImagePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePreviewView.swift; sourceTree = "<group>"; };
-		F2C2952D262095C900CF2318 /* everettjf-UpDownLine-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "everettjf-UpDownLine-Regular.ttf"; sourceTree = "<group>"; };
+		F2C2952D262095C900CF2318 /* UpDownLine-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "UpDownLine-Regular.ttf"; sourceTree = "<group>"; };
 		F2C295302620A81700CF2318 /* Apple ][.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Apple ][.ttf"; sourceTree = "<group>"; };
 		F2C295332621B19F00CF2318 /* ScriptWidgetElementTagGauge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagGauge.swift; sourceTree = "<group>"; };
 		F2C295362621B2BD00CF2318 /* MineGaugeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MineGaugeView.swift; sourceTree = "<group>"; };
@@ -1169,7 +1169,7 @@
 				F2C295302620A81700CF2318 /* Apple ][.ttf */,
 				F235CF42261FE529003E2B18 /* 8bit-component-colon.ttf */,
 				F235CF3F261FE50A003E2B18 /* cartoon-component-hand.ttf */,
-				F2C2952D262095C900CF2318 /* everettjf-UpDownLine-Regular.ttf */,
+				F2C2952D262095C900CF2318 /* UpDownLine-Regular.ttf */,
 			);
 			path = Fonts;
 			sourceTree = "<group>";
@@ -1539,7 +1539,7 @@
 				D1EB46972548835E00E5407A /* dracula.min.css in Resources */,
 				D1EB46822548835E00E5407A /* github-gist.min.css in Resources */,
 				D1EB46B82548835E00E5407A /* grayscale.min.css in Resources */,
-				F2C2952E262095C900CF2318 /* everettjf-UpDownLine-Regular.ttf in Resources */,
+				F2C2952E262095C900CF2318 /* UpDownLine-Regular.ttf in Resources */,
 				D1EB469D2548835E00E5407A /* nord.min.css in Resources */,
 				D1EB466B2548835E00E5407A /* atelier-plateau-light.min.css in Resources */,
 				F2F461C325ED4E140004C9F6 /* blue2@2x.png in Resources */,
@@ -1673,7 +1673,7 @@
 				F235CF41261FE50A003E2B18 /* cartoon-component-hand.ttf in Resources */,
 				D1277C4B2549AFD3005F80AD /* support.bundle in Resources */,
 				F2C295322620A81700CF2318 /* Apple ][.ttf in Resources */,
-				F2C2952F262095C900CF2318 /* everettjf-UpDownLine-Regular.ttf in Resources */,
+				F2C2952F262095C900CF2318 /* UpDownLine-Regular.ttf in Resources */,
 				D18AAC78252A14AF0065386A /* Assets.xcassets in Resources */,
 				F235CF44261FE529003E2B18 /* 8bit-component-colon.ttf in Resources */,
 			);
