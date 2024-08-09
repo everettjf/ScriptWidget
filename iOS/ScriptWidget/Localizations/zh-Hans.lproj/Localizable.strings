@@ -1,0 +1,197 @@
+/* No comment provided by engineer. */
+"APIs" = "API";
+
+/* No comment provided by engineer. */
+"App Icons" = "图标";
+
+/* No comment provided by engineer. */
+"Author : %@" = "作者: %@";
+
+/* No comment provided by engineer. */
+"Buy me a coffee" = "给点精神鼓励";
+
+/* No comment provided by engineer. */
+"BuyMeCoffee" = "精神食粮";
+
+/* No comment provided by engineer. */
+"Cancel" = "取消";
+
+/* No comment provided by engineer. */
+"Components" = "组件";
+
+/* No comment provided by engineer. */
+"Confirm Delete : %@ ? " = "确认删除 : %@ ?";
+
+/* No comment provided by engineer. */
+"Create from Template" = "选择一个模板开始创建";
+
+/* No comment provided by engineer. */
+"Create your first widget by tapping the plus button upper-right of screen :)" = "点击右上角的加号开始创建第一个组件吧";
+
+/* No comment provided by engineer. */
+"Custom component function type error" = "";
+
+/* No comment provided by engineer. */
+"Debug Border" = "调试边框";
+
+/* No comment provided by engineer. */
+"Delete" = "删除";
+
+/* No comment provided by engineer. */
+"Delete %@ ?" = "删除 %@ ?";
+
+/* No comment provided by engineer. */
+"Delete Confirm" = "确认删除";
+
+/* No comment provided by engineer. */
+"Description: %@" = "描述: %@";
+
+/* No comment provided by engineer. */
+"Documents" = "文档";
+
+/* No comment provided by engineer. */
+"Download" = "下载";
+
+/* No comment provided by engineer. */
+"Downloading" = "下载中";
+
+/* No comment provided by engineer. */
+"Edit" = "编辑";
+
+/* No comment provided by engineer. */
+"Edit Attributes" = "编辑";
+
+/* No comment provided by engineer. */
+"Files" = "文件";
+
+/* No comment provided by engineer. */
+"Files:" = "文件:";
+
+/* No comment provided by engineer. */
+"Hello" = "你好";
+
+/* No comment provided by engineer. */
+"Hello Marketplace :)" = "你好市场";
+
+/* No comment provided by engineer. */
+"Hello ScriptWidget :)" = "你好 ScriptWidget";
+
+/* No comment provided by engineer. */
+"Hello, World!" = "你好世界";
+
+/* (No Comment) */
+"icloud_enable_tip" = "iCloud启用了，你也可以在系统的文件应用中查看组件文件。";
+
+/* (No Comment) */
+"icloud_enable_transfer_tip" = "iCloud启用了，但也同时发现应用沙盒中存在脚本。通产是因为您刚刚启用iCloud导致。您可以点击按钮把沙盒中的文件全部移动到iCloud中。";
+
+/* Localizable.strings
+  ScriptWidget
+
+  Created by everettjf on 2022/2/1. */
+"icloud_not_enable_tip" = "没有启用iCloud。所有脚本是存储在应用的沙盒中。打开iCloud后可以在系统文件应用中更容易的查看组件脚本文件";
+
+/* No comment provided by engineer. */
+"If you modified scripts directly on iCloud on other devices, you could request iCloud to update all the scripts." = "如果你在其他设备修改了iCloud中的脚本，可以请求更新所有脚本";
+
+/* No comment provided by engineer. */
+"Force all widgets to re-run their JavaScript code. This is useful after you've made changes to the code." = "点击按钮可以让所有小组件的代码重新运行";
+
+/* No comment provided by engineer. */
+"Images" = "图片";
+
+/* No comment provided by engineer. */
+"Large" = "大型";
+
+/* No comment provided by engineer. */
+"Marketplace" = "市场";
+
+/* No comment provided by engineer. */
+"Medium" = "中型";
+
+/* No comment provided by engineer. */
+"More" = "更多";
+
+/* No comment provided by engineer. */
+"Name" = "名称";
+
+/* No comment provided by engineer. */
+"NAME" = "名称";
+
+/* No comment provided by engineer. */
+"OK" = "确认";
+
+/* No comment provided by engineer. */
+"Parameter" = "组件参数";
+
+/* No comment provided by engineer. */
+"Preview" = "预览";
+
+/* No comment provided by engineer. */
+"Preview Size" = "预览大小";
+
+/* No comment provided by engineer. */
+"Rename" = "重命名";
+
+/* No comment provided by engineer. */
+"Rename failed, please make sure input a valid file name" = "重命名出错，请确认组件名称也是一个有效的文件名称";
+
+/* No comment provided by engineer. */
+"Reset" = "重置";
+
+/* No comment provided by engineer. */
+"Resources" = "资源";
+
+/* No comment provided by engineer. */
+"Restore" = "恢复";
+
+/* No comment provided by engineer. */
+"Save" = "保存";
+
+/* No comment provided by engineer. */
+"Script Name" = "脚本名称";
+
+/* No comment provided by engineer. */
+"Settings" = "设置";
+
+/* No comment provided by engineer. */
+"Share" = "分享";
+
+/* No comment provided by engineer. */
+"Small" = "小型";
+
+/* No comment provided by engineer. */
+"Speed" = "速度";
+
+/* No comment provided by engineer. */
+"Templates" = "模板";
+
+/* No comment provided by engineer. */
+"Thank you :)" = "谢谢啦";
+
+/* No comment provided by engineer. */
+"Widget Marketplace" = "小组件市场";
+
+/* No comment provided by engineer. */
+"Widget Name : %@" = "组件名称: %@";
+
+
+"Scripts" = "组件";
+
+
+"Apply" = "应用参数";
+"Small Widgets" = "小型组件";
+"Medium Widgets" = "中型组件";
+"Large Widgets" = "大型组件";
+
+"RESOURCE" = "应用";
+"REFRESH WIDGETS" = "刷新组件";
+"REFRESH" = "刷新";
+"BUY ME A COFFEE" = "买杯咖啡";
+"APPLICATION" = "应用";
+"Mail" = "邮件";
+"Developer" = "开发者";
+"Website" = "官网";
+"Version" = "版本";
+"PLAY" = "运行";
+"Already Purchased" = "已鼓励";

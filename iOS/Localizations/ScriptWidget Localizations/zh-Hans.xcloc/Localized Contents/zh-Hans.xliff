@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xliff xmlns="urn:oasis:names:tc:xliff:document:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.2" xsi:schemaLocation="urn:oasis:names:tc:xliff:document:1.2 http://docs.oasis-open.org/xliff/v1.2/os/xliff-core-1.2-strict.xsd">
+  <file original="ScriptWidget/en.lproj/InfoPlist.strings" datatype="plaintext" source-language="en" target-language="zh-Hans">
+    <header>
+      <tool tool-id="com.apple.dt.xcode" tool-name="Xcode" tool-version="13.2.1" build-num="13C100"/>
+    </header>
+    <body>
+      <trans-unit id="CFBundleDisplayName" xml:space="preserve">
+        <source> </source>
+        <note>Bundle display name</note>
+      </trans-unit>
+      <trans-unit id="CFBundleName" xml:space="preserve">
+        <source>ScriptWidget</source>
+        <note>Bundle name</note>
+      </trans-unit>
+    </body>
+  </file>
+  <file original="ScriptWidget/en.lproj/Localizable.strings" datatype="plaintext" source-language="en" target-language="zh-Hans">
+    <header>
+      <tool tool-id="com.apple.dt.xcode" tool-name="Xcode" tool-version="13.2.1" build-num="13C100"/>
+    </header>
+    <body>
+      <trans-unit id="%@" xml:space="preserve">
+        <source>%@</source>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="%lld" xml:space="preserve">
+        <source>%lld</source>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="APIs" xml:space="preserve">
+        <source>APIs</source>
+        <target>接口</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Cancel" xml:space="preserve">
+        <source>Cancel</source>
+        <target>取消</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Components" xml:space="preserve">
+        <source>Components</source>
+        <target>标签</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Confirm Delete : %@ ? " xml:space="preserve">
+        <source>Confirm Delete : %@ ? </source>
+        <target>确认删除：%@ ?</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Create from Template" xml:space="preserve">
+        <source>Create from Template</source>
+        <target>选择模板创建</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Create your first widget by tapping the plus button upper-right of screen :)" xml:space="preserve">
+        <source>Create your first widget by tapping the plus button upper-right of screen :)</source>
+        <target>点击右上角加号按钮开始创建第一个组件吧 :)</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Debug Line" xml:space="preserve">
+        <source>Debug Line</source>
+        <target>调试边框</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Delete" xml:space="preserve">
+        <source>Delete</source>
+        <target>删除</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Delete %@ ?" xml:space="preserve">
+        <source>Delete %@ ?</source>
+        <target>删除 %@？</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Delete Confirm" xml:space="preserve">
+        <source>Delete Confirm</source>
+        <target>确认删除</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Edit" xml:space="preserve">
+        <source>Edit</source>
+        <target>编辑</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Edit Attributes" xml:space="preserve">
+        <source>Edit Attributes</source>
+        <target>编辑属性</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Hello" xml:space="preserve">
+        <source>Hello</source>
+        <target>你好</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Hello, World!" xml:space="preserve">
+        <source>Hello, World!</source>
+        <target>你好世界！</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="If you modified scripts directly on iCloud on other devices, you could request iCloud to update all the scripts." xml:space="preserve">
+        <source>If you modified scripts directly on iCloud on other devices, you could request iCloud to update all the scripts.</source>
+        <target>如果你直接修改过iCloud上的脚本，点击按钮可以更新这些脚本。</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="If you wish, you can refresh all the widgets manually. After tap the button, all the widgets will re-run the JavaScript code behind them." xml:space="preserve">
+        <source>If you wish, you can refresh all the widgets manually. After tap the button, all the widgets will re-run the JavaScript code behind them.</source>
+        <target>点击按钮可以刷新所有的组件，让所有组件的脚本重新执行一次。</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Images" xml:space="preserve">
+        <source>Images</source>
+        <target>图片</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Large" xml:space="preserve">
+        <source>Large</source>
+        <target>大型</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Large Widget Images (%lld)" xml:space="preserve">
+        <source>Large Widget Images (%lld)</source>
+        <target>用于大型组件的图片（%lld）</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Link Test1" xml:space="preserve">
+        <source>Link Test1</source>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Link Test2" xml:space="preserve">
+        <source>Link Test2</source>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Link Test3" xml:space="preserve">
+        <source>Link Test3</source>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Link Test4" xml:space="preserve">
+        <source>Link Test4</source>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Medium" xml:space="preserve">
+        <source>Medium</source>
+        <target>中型组件</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Medium Widget Images (%lld)" xml:space="preserve">
+        <source>Medium Widget Images (%lld)</source>
+        <target>用于中型组件的图片（%lld）</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="NAME" xml:space="preserve">
+        <source>NAME</source>
+        <target>名称</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Name" xml:space="preserve">
+        <source>Name</source>
+        <target>名称</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Preview" xml:space="preserve">
+        <source>Preview</source>
+        <target>预览</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Preview Size" xml:space="preserve">
+        <source>Preview Size</source>
+        <target>预览大小</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Resource" xml:space="preserve">
+        <source>Resource</source>
+        <target>资源</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Save" xml:space="preserve">
+        <source>Save</source>
+        <target>保存</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Script Name" xml:space="preserve">
+        <source>Script Name</source>
+        <target>脚本名称</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="ScriptWidget" xml:space="preserve">
+        <source>ScriptWidget</source>
+        <target>组件创作家</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Settings" xml:space="preserve">
+        <source>Settings</source>
+        <target>配置</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Share" xml:space="preserve">
+        <source>Share</source>
+        <target>分享</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Small" xml:space="preserve">
+        <source>Small</source>
+        <target>小型</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Small Widget Images (%lld)" xml:space="preserve">
+        <source>Small Widget Images (%lld)</source>
+        <target>用于小型组件的图片（%lld）</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Speed" xml:space="preserve">
+        <source>Speed</source>
+        <target>速度</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Templates" xml:space="preserve">
+        <source>Templates</source>
+        <target>模板</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="UnknownTag" xml:space="preserve">
+        <source>UnknownTag</source>
+        <target>未知标签</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+    </body>
+  </file>
+  <file original="ScriptWidget/en.lproj/TOCropViewControllerLocalizable.strings" datatype="plaintext" source-language="en" target-language="zh-Hans">
+    <header>
+      <tool tool-id="com.apple.dt.xcode" tool-name="Xcode" tool-version="13.2.1" build-num="13C100"/>
+    </header>
+    <body>
+      <trans-unit id="Cancel" xml:space="preserve">
+        <source>Cancel</source>
+        <target>取消</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Delete Changes" xml:space="preserve">
+        <source>Delete Changes</source>
+        <target>重置</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Done" xml:space="preserve">
+        <source>Done</source>
+        <target>完成</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Original" xml:space="preserve">
+        <source>Original</source>
+        <target>原始</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Square" xml:space="preserve">
+        <source>Square</source>
+        <target>方形</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+    </body>
+  </file>
+  <file original="ScriptWidgetIntent/en.lproj/InfoPlist.strings" datatype="plaintext" source-language="en" target-language="zh-Hans">
+    <header>
+      <tool tool-id="com.apple.dt.xcode" tool-name="Xcode" tool-version="13.2.1" build-num="13C100"/>
+    </header>
+    <body>
+      <trans-unit id="CFBundleDisplayName" xml:space="preserve">
+        <source>ScriptWidget</source>
+        <target>组件创作家</target>
+        <note>Bundle display name</note>
+      </trans-unit>
+      <trans-unit id="CFBundleName" xml:space="preserve">
+        <source>ScriptWidgetIntent</source>
+        <note>Bundle name</note>
+      </trans-unit>
+    </body>
+  </file>
+  <file original="ScriptWidgetShare/en.lproj/InfoPlist.strings" datatype="plaintext" source-language="en" target-language="zh-Hans">
+    <header>
+      <tool tool-id="com.apple.dt.xcode" tool-name="Xcode" tool-version="13.2.1" build-num="13C100"/>
+    </header>
+    <body>
+      <trans-unit id="CFBundleDisplayName" xml:space="preserve">
+        <source>ScriptWidget</source>
+        <target>组件创作家</target>
+        <note>Bundle display name</note>
+      </trans-unit>
+      <trans-unit id="CFBundleName" xml:space="preserve">
+        <source>ScriptWidgetShare</source>
+        <note>Bundle name</note>
+      </trans-unit>
+    </body>
+  </file>
+  <file original="ScriptWidgetWidget/en.lproj/InfoPlist.strings" datatype="plaintext" source-language="en" target-language="zh-Hans">
+    <header>
+      <tool tool-id="com.apple.dt.xcode" tool-name="Xcode" tool-version="13.2.1" build-num="13C100"/>
+    </header>
+    <body>
+      <trans-unit id="CFBundleDisplayName" xml:space="preserve">
+        <source>ScriptWidget</source>
+        <target>组件创作家</target>
+        <note>Bundle display name</note>
+      </trans-unit>
+      <trans-unit id="CFBundleName" xml:space="preserve">
+        <source>ScriptWidgetWidget</source>
+        <note>Bundle name</note>
+      </trans-unit>
+    </body>
+  </file>
+  <file original="ScriptWidgetWidget/en.lproj/Localizable.strings" datatype="plaintext" source-language="en" target-language="zh-Hans">
+    <header>
+      <tool tool-id="com.apple.dt.xcode" tool-name="Xcode" tool-version="13.2.1" build-num="13C100"/>
+    </header>
+    <body>
+      <trans-unit id="Build your own widgets" xml:space="preserve">
+        <source>Build your own widgets</source>
+        <target>开始创作你的组件吧</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Hello" xml:space="preserve">
+        <source>Hello</source>
+        <target>你好</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Hello, World!" xml:space="preserve">
+        <source>Hello, World!</source>
+        <target>你好，世界 :)</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Link Test1" xml:space="preserve">
+        <source>Link Test1</source>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Link Test2" xml:space="preserve">
+        <source>Link Test2</source>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Link Test3" xml:space="preserve">
+        <source>Link Test3</source>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Link Test4" xml:space="preserve">
+        <source>Link Test4</source>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="ScriptWidget" xml:space="preserve">
+        <source>ScriptWidget</source>
+        <target>组件创作家</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="Speed" xml:space="preserve">
+        <source>Speed</source>
+        <target>速度</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+      <trans-unit id="UnknownTag" xml:space="preserve">
+        <source>UnknownTag</source>
+        <target>未知标签</target>
+        <note>No comment provided by engineer.</note>
+      </trans-unit>
+    </body>
+  </file>
+</xliff>

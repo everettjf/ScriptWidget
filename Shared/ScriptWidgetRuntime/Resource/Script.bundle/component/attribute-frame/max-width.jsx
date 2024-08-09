@@ -1,0 +1,13 @@
+// 
+// ScriptWidget 
+// https://scriptwidget.app
+// 
+// Usage for component attribute frame
+// 
+
+$render(
+  <vstack frame="max">
+    <rect frame="max,30" color="green"></rect>
+    <rect frame="50,30" color="blue" corner="5"></rect>
+  </vstack>
+);
