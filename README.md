@@ -17,6 +17,3 @@
 
 https://scriptwidget.app/
 
-# 关注订阅号以示鼓励
-
-![fun](wechat.png)
