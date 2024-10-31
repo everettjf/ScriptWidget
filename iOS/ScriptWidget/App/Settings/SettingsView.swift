@@ -67,6 +67,18 @@ struct SettingsView: View {
                         }
                     }
                     
+                    
+                    GroupBox (label: SettingsLabelView(title: "Export & Import", image: "info.circle")) {
+                        
+                        NavigationLink(destination: ExportImportView()) {
+                            SettingsTextRowView(name: "Export", content: "")
+                        }
+                        NavigationLink(destination: ExportImportView()) {
+                            SettingsTextRowView(name: "Import", content: "")
+                        }
+                    }
+                    
+                    
                     GroupBox (label: SettingsLabelView(title: "iCloud", image: "icloud")) {
                         Divider().padding(.vertical, 4)
                         
