@@ -3,8 +3,10 @@ import UniformTypeIdentifiers
 
 struct ExportView: View {
     @State private var isExporting = false
+    @State private var exportSucceeded = false
     @State private var progress: Float = 0
     @State private var statusMessage = ""
+    @State private var logMessages: [String] = []
     @State private var exportedFileURL: URL?
     @State private var showShareSheet = false
     
@@ -21,25 +23,33 @@ struct ExportView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(Color.blue)
+                        .background(isExporting || exportSucceeded ? Color.gray : Color.blue) // Change background color when disabled
                         .cornerRadius(15)
                 }
                 .padding(.horizontal, 20)
-                .disabled(isExporting)
+                .disabled(isExporting || exportSucceeded)
                 
-                if isExporting {
-                    VStack {
-                        ProgressView(value: progress)
-                            .progressViewStyle(LinearProgressViewStyle(tint: .blue))
-                            .scaleEffect(1.5)
-                            .padding(.top, 10)
-                        
-                        Text(statusMessage)
-                            .font(.caption)
-                            .padding(.top, 5)
-                    }
+                // Always show progress view
+                ProgressView(value: progress)
+                    .progressViewStyle(LinearProgressViewStyle(tint: .blue))
+                    .scaleEffect(1.5)
+                    .padding(.top, 10)
+                
+                Text(statusMessage)
+                    .font(.caption)
+                    .padding(.top, 5)
+            }
+            
+            // Move log list outside the VStack and increase its height
+            List {
+                ForEach(logMessages, id: \.self) { message in
+                    Text(message)
+                        .font(.caption)
                 }
             }
+            .frame(maxHeight: .infinity) // Allow the list to expand and fill available space
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(10)
         }
         .padding()
         .sheet(isPresented: $showShareSheet, content: {
@@ -51,8 +61,10 @@ struct ExportView: View {
     
     private func startExport() {
         isExporting = true
+        exportSucceeded = false
         progress = 0
         statusMessage = "Starting export..."
+        logMessages.removeAll() // Clear previous log messages
         
         Task {
             do {
@@ -60,6 +72,7 @@ struct ExportView: View {
                     DispatchQueue.main.async {
                         self.progress = currentProgress
                         self.statusMessage = message
+                        self.logMessages.insert(message, at: 0) // Insert new message at the beginning
                     }
                 }
                 
@@ -67,11 +80,16 @@ struct ExportView: View {
                     self.exportedFileURL = zipFileURL
                     self.showShareSheet = true
                     self.isExporting = false
+                    self.exportSucceeded = true
+                    self.statusMessage = "Export completed successfully"
+                    self.logMessages.insert("Export completed successfully", at: 0) // Insert final message at the beginning
                 }
             } catch {
                 DispatchQueue.main.async {
-                    self.statusMessage = "Error: \(error.localizedDescription)"
                     self.isExporting = false
+                    self.exportSucceeded = false
+                    self.statusMessage = "Error: \(error.localizedDescription)"
+                    self.logMessages.insert("Error: \(error.localizedDescription)", at: 0) // Insert error message at the beginning
                 }
             }
         }
@@ -94,5 +112,3 @@ struct ExportView_Previews: PreviewProvider {
         ExportView()
     }
 }
-
-// End of file. No additional code.
