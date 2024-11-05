@@ -7,7 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		5AC769492CD370C60022A138 /* ExportImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC769482CD370BC0022A138 /* ExportImportView.swift */; };
+		5AC386D22CDA09800027B976 /* ImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC386D12CDA09760027B976 /* ImportView.swift */; };
+		5AC386D42CDA0CB10027B976 /* ImportExportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC386D32CDA0CA90027B976 /* ImportExportManager.swift */; };
+		5AC769492CD370C60022A138 /* ExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC769482CD370BC0022A138 /* ExportView.swift */; };
 		D132336528E08C15002C26A2 /* ScriptLiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D132336428E08C15002C26A2 /* ScriptLiveActivityManager.swift */; };
 		D132336728E09630002C26A2 /* ScriptDynamicIslandCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D132336628E09630002C26A2 /* ScriptDynamicIslandCreator.swift */; };
 		D13832AE25A1EB6B00DC9C20 /* CreateGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13832AD25A1EB6B00DC9C20 /* CreateGuideView.swift */; };
@@ -333,7 +335,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		5AC769482CD370BC0022A138 /* ExportImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportImportView.swift; sourceTree = "<group>"; };
+		5AC386D12CDA09760027B976 /* ImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportView.swift; sourceTree = "<group>"; };
+		5AC386D32CDA0CA90027B976 /* ImportExportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportExportManager.swift; sourceTree = "<group>"; };
+		5AC769482CD370BC0022A138 /* ExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportView.swift; sourceTree = "<group>"; };
 		D132336428E08C15002C26A2 /* ScriptLiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptLiveActivityManager.swift; sourceTree = "<group>"; };
 		D132336628E09630002C26A2 /* ScriptDynamicIslandCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptDynamicIslandCreator.swift; sourceTree = "<group>"; };
 		D13832AD25A1EB6B00DC9C20 /* CreateGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateGuideView.swift; sourceTree = "<group>"; };
@@ -963,7 +967,8 @@
 		F240AC7F27B2D6AB00D249EA /* Settings */ = {
 			isa = PBXGroup;
 			children = (
-				5AC769482CD370BC0022A138 /* ExportImportView.swift */,
+				5AC769482CD370BC0022A138 /* ExportView.swift */,
+				5AC386D12CDA09760027B976 /* ImportView.swift */,
 				F2C5C5E327AF5B5400797C5B /* AppIconsView.swift */,
 				F2C5C5DC27AF5A2F00797C5B /* BuyMeCoffeeView.swift */,
 				F2BC995725CDABE200285C7B /* SettingsView.swift */,
@@ -1202,6 +1207,7 @@
 		F296EA1425E88D1100E87A4A /* Manager */ = {
 			isa = PBXGroup;
 			children = (
+				5AC386D32CDA0CA90027B976 /* ImportExportManager.swift */,
 				F2C5C5E127AF5B2000797C5B /* StoreManager.swift */,
 				F23A40BA262492FF0035CBA7 /* DeepLinkManager.swift */,
 			);
@@ -1674,6 +1680,7 @@
 				F29119642793035E00B860B0 /* ScriptWidgetAttributeTextAlignmentModifier.swift in Sources */,
 				F291194C2793035E00B860B0 /* ScriptWidgetRuntimeElement.swift in Sources */,
 				D1BD329728DF0D9600F217ED /* ScriptCodePreviewDataObject.swift in Sources */,
+				5AC386D42CDA0CB10027B976 /* ImportExportManager.swift in Sources */,
 				D1F9883228CCE7BF00C56B06 /* ScriptCodePreviewConsoleView.swift in Sources */,
 				F291196E2793035E00B860B0 /* ScriptWidgetElementTagImage.swift in Sources */,
 				D1403DED2552FEB40076F87C /* TOCropScrollView.m in Sources */,
@@ -1686,7 +1693,7 @@
 				F240AC7827B2CE1C00D249EA /* TabBarAccessor.swift in Sources */,
 				F29119622793035E00B860B0 /* ScriptWidgetAttributeFontModifier.swift in Sources */,
 				D149EF67255994CA00A24CAD /* TOCropWidgetSizeHelper.m in Sources */,
-				5AC769492CD370C60022A138 /* ExportImportView.swift in Sources */,
+				5AC769492CD370C60022A138 /* ExportView.swift in Sources */,
 				D1CBAED228D5B13400DE4E65 /* ScriptLiveActivityAttributes.swift in Sources */,
 				F29119562793035E00B860B0 /* ScriptWidgetAttributeRotation3DEffectModifier.swift in Sources */,
 				D1403DEE2552FEB40076F87C /* TOCropView.m in Sources */,
@@ -1699,6 +1706,7 @@
 				F291197E2793035E00B860B0 /* ScriptWidgetRuntimePromise.swift in Sources */,
 				D1403E0D2552FF860076F87C /* CropViewController.swift in Sources */,
 				F27B247325D83F6D00F84330 /* ScreenData.swift in Sources */,
+				5AC386D22CDA09800027B976 /* ImportView.swift in Sources */,
 				D1403E2D25530A0B0076F87C /* PhotoPickerView.swift in Sources */,
 				F224FE5927A959E900617AF6 /* ImageListView.swift in Sources */,
 			);

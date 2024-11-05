@@ -70,10 +70,10 @@ struct SettingsView: View {
                     
                     GroupBox (label: SettingsLabelView(title: "Export & Import", image: "info.circle")) {
                         
-                        NavigationLink(destination: ExportImportView()) {
+                        NavigationLink(destination: ExportView()) {
                             SettingsTextRowView(name: "Export", content: "")
                         }
-                        NavigationLink(destination: ExportImportView()) {
+                        NavigationLink(destination: ImportView()) {
                             SettingsTextRowView(name: "Import", content: "")
                         }
                     }
