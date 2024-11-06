@@ -145,8 +145,10 @@ struct ScriptCodeEditorView: View {
                 ScriptCodeEditorNavButtonView(image: "plus.square") {
                     print("create tapped")
                     
-                    if let action = self.actionCreate {
-                        action()
+                    DispatchQueue.main.async {
+                        if let action = self.actionCreate {
+                            action()
+                        }
                     }
                 }
             }

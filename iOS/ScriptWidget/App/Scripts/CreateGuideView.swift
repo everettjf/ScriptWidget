@@ -49,7 +49,9 @@ struct CreateGuideView: View {
                         NotificationCenter.default.post(name: ScriptWidgetHomeViewDataObject.scriptCreateNotification, object: nil)
                         
                         // dismiss
-                        self.presentationMode.wrappedValue.dismiss()
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: {
+                            self.presentationMode.wrappedValue.dismiss()
+                        })
                     })) {
                         WidgetRowView(model: item)
                     }
