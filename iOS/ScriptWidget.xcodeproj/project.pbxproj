@@ -10,6 +10,8 @@
 		5AC386D22CDA09800027B976 /* ImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC386D12CDA09760027B976 /* ImportView.swift */; };
 		5AC386D42CDA0CB10027B976 /* ImportExportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC386D32CDA0CA90027B976 /* ImportExportManager.swift */; };
 		5AC769492CD370C60022A138 /* ExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC769482CD370BC0022A138 /* ExportView.swift */; };
+		5AE2C8922CDB3D1000A9F4FF /* ScriptWidgetControlWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AE2C8912CDB3D1000A9F4FF /* ScriptWidgetControlWidget.swift */; };
+		5AE2C8942CDB3D7F00A9F4FF /* ScriptWidgetControlAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AE2C8932CDB3D7400A9F4FF /* ScriptWidgetControlAppIntent.swift */; };
 		D132336528E08C15002C26A2 /* ScriptLiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D132336428E08C15002C26A2 /* ScriptLiveActivityManager.swift */; };
 		D132336728E09630002C26A2 /* ScriptDynamicIslandCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D132336628E09630002C26A2 /* ScriptDynamicIslandCreator.swift */; };
 		D13832AE25A1EB6B00DC9C20 /* CreateGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13832AD25A1EB6B00DC9C20 /* CreateGuideView.swift */; };
@@ -338,6 +340,8 @@
 		5AC386D12CDA09760027B976 /* ImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportView.swift; sourceTree = "<group>"; };
 		5AC386D32CDA0CA90027B976 /* ImportExportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportExportManager.swift; sourceTree = "<group>"; };
 		5AC769482CD370BC0022A138 /* ExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportView.swift; sourceTree = "<group>"; };
+		5AE2C8912CDB3D1000A9F4FF /* ScriptWidgetControlWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetControlWidget.swift; sourceTree = "<group>"; };
+		5AE2C8932CDB3D7400A9F4FF /* ScriptWidgetControlAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetControlAppIntent.swift; sourceTree = "<group>"; };
 		D132336428E08C15002C26A2 /* ScriptLiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptLiveActivityManager.swift; sourceTree = "<group>"; };
 		D132336628E09630002C26A2 /* ScriptDynamicIslandCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptDynamicIslandCreator.swift; sourceTree = "<group>"; };
 		D13832AD25A1EB6B00DC9C20 /* CreateGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateGuideView.swift; sourceTree = "<group>"; };
@@ -624,6 +628,15 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		5AE2C8902CDB3CE700A9F4FF /* ControlWidget */ = {
+			isa = PBXGroup;
+			children = (
+				5AE2C8932CDB3D7400A9F4FF /* ScriptWidgetControlAppIntent.swift */,
+				5AE2C8912CDB3D1000A9F4FF /* ScriptWidgetControlWidget.swift */,
+			);
+			path = ControlWidget;
+			sourceTree = "<group>";
+		};
 		D1403DA22552FE950076F87C /* PhotoPicker */ = {
 			isa = PBXGroup;
 			children = (
@@ -814,6 +827,7 @@
 		D18AAC73252A14AE0065386A /* ScriptWidgetWidget */ = {
 			isa = PBXGroup;
 			children = (
+				5AE2C8902CDB3CE700A9F4FF /* ControlWidget */,
 				F0C7ECFA2AD075D20039D30D /* AppIntents */,
 				D1CBAED428D5B1B000DE4E65 /* LiveActivity */,
 				D190721F25615A1600F855C7 /* ScriptWidgetWidget.entitlements */,
@@ -1751,6 +1765,7 @@
 				F29119552793035E00B860B0 /* ScriptWidgetAttributeText.swift in Sources */,
 				F291196D2793035E00B860B0 /* ScriptWidgetElementTagDate.swift in Sources */,
 				F29119692793035E00B860B0 /* ScriptWidgetElementTagLink.swift in Sources */,
+				5AE2C8922CDB3D1000A9F4FF /* ScriptWidgetControlWidget.swift in Sources */,
 				F29119512793035E00B860B0 /* ScriptWidgetAttributePaddingModifier.swift in Sources */,
 				D18AAC75252A14AE0065386A /* ScriptWidgetMain.swift in Sources */,
 				F29119672793035E00B860B0 /* ScriptWidgetAttributeDebugModeModifier.swift in Sources */,
@@ -1761,6 +1776,7 @@
 				F29119612793035E00B860B0 /* ScriptWidgetAttributeForegroundModifier.swift in Sources */,
 				F05227B62AD1B0A10014BE09 /* ButtonActionAppIntent.swift in Sources */,
 				D1BD329C28E0713D00F217ED /* ScriptLiveActivityDataObject.swift in Sources */,
+				5AE2C8942CDB3D7F00A9F4FF /* ScriptWidgetControlAppIntent.swift in Sources */,
 				F29119432793035E00B860B0 /* ScriptWidgetAppState.swift in Sources */,
 				F291195B2793035E00B860B0 /* ScriptWidgetAttributeRotationEffectModifier.swift in Sources */,
 				D1CBAED328D5B13400DE4E65 /* ScriptLiveActivityAttributes.swift in Sources */,
@@ -2002,18 +2018,18 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6019;
+				CURRENT_PROJECT_VERSION = 8000;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = ScriptWidget/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 6.9;
+				MARKETING_VERSION = 8.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2034,18 +2050,18 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6019;
+				CURRENT_PROJECT_VERSION = 8000;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = ScriptWidget/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 6.9;
+				MARKETING_VERSION = 8.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2062,16 +2078,16 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6019;
+				CURRENT_PROJECT_VERSION = 8000;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 6.9;
+				MARKETING_VERSION = 8.0;
 				OTHER_SWIFT_FLAGS = "-D IsWidgetTarget";
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2088,16 +2104,16 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6019;
+				CURRENT_PROJECT_VERSION = 8000;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 6.9;
+				MARKETING_VERSION = 8.0;
 				OTHER_SWIFT_FLAGS = "-D IsWidgetTarget";
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2113,16 +2129,16 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6019;
+				CURRENT_PROJECT_VERSION = 8000;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 6.9;
+				MARKETING_VERSION = 8.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.share;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -2137,16 +2153,16 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6019;
+				CURRENT_PROJECT_VERSION = 8000;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 6.9;
+				MARKETING_VERSION = 8.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.share;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
