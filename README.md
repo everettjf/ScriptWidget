@@ -10,6 +10,20 @@ ScriptWidget is an innovative iOS app that allows you to create beautiful and dy
 - **JavaScript Powered**: Leverage the full power of JavaScript to build dynamic and interactive widgets
 - **SwiftUI Integration**: Built on SwiftUI for high performance and native look and feel on iOS and iPadOS
 
+## Platform Support
+
+- **ScriptWidget**: Multi-platform support (macOS, iOS, and iPadOS)
+  - Development discontinued due to the high complexity of maintaining multiple platforms
+  - Significant time investment required for platform-specific adaptations
+  - Challenges in maintaining consistent behavior across different operating systems
+  - Limited resources to address platform-specific issues and feature requests
+
+- **JSWidget**: iOS-focused development
+  - Streamlined development by focusing exclusively on iOS
+  - Faster feature development and bug fixes
+  - Better user experience through iOS-specific optimizations
+  - More efficient resource allocation for ongoing development
+
 ## Download
 
 - App Store: [https://apps.apple.com/app/scriptwidget/id1555600758](https://apps.apple.com/app/scriptwidget/id1555600758)
