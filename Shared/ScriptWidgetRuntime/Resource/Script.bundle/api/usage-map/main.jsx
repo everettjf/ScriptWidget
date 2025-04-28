@@ -1,5 +1,5 @@
 // ScriptWidget 
-// https://scriptwidget.app
+// https://xnu.app/jswidget
 // 
 // Mapping over an array
 // Thanks for Reina for telling me this good idea

@@ -28,7 +28,6 @@
 		D149EF67255994CA00A24CAD /* TOCropWidgetSizeHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = D149EF66255994CA00A24CAD /* TOCropWidgetSizeHelper.m */; };
 		D14AC88A2531419700016FBE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D14AC8892531419700016FBE /* AppDelegate.swift */; };
 		D1630326254C6F97005EEB93 /* ScriptCodePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1630325254C6F97005EEB93 /* ScriptCodePreviewView.swift */; };
-		D16FE62328BB87600062D43A /* MarketplaceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D16FE62228BB87600062D43A /* MarketplaceManager.swift */; };
 		D18253742543423D0089C1B9 /* ScriptCodeEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D18253732543423D0089C1B9 /* ScriptCodeEditorView.swift */; };
 		D183E0A428CE0EFE003F44A0 /* ScriptWidgetElementTagChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = D183E0A328CE0EFE003F44A0 /* ScriptWidgetElementTagChart.swift */; };
 		D183E0A528CE0EFE003F44A0 /* ScriptWidgetElementTagChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = D183E0A328CE0EFE003F44A0 /* ScriptWidgetElementTagChart.swift */; };
@@ -90,10 +89,7 @@
 		F228DDB827A3778A009E8F04 /* ZipArchive in Frameworks */ = {isa = PBXBuildFile; productRef = F228DDB727A3778A009E8F04 /* ZipArchive */; };
 		F228DDBC27A37791009E8F04 /* ZipArchive in Frameworks */ = {isa = PBXBuildFile; productRef = F228DDBB27A37791009E8F04 /* ZipArchive */; };
 		F23A40BB262492FF0035CBA7 /* DeepLinkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F23A40BA262492FF0035CBA7 /* DeepLinkManager.swift */; };
-		F240AC7627B2CC2500D249EA /* MarketplaceHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F240AC7527B2CC2500D249EA /* MarketplaceHomeView.swift */; };
 		F240AC7827B2CE1C00D249EA /* TabBarAccessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F240AC7727B2CE1C00D249EA /* TabBarAccessor.swift */; };
-		F240AC7A27B2CFAD00D249EA /* MarketplaceListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F240AC7927B2CFAD00D249EA /* MarketplaceListView.swift */; };
-		F240AC7C27B2D2BC00D249EA /* MarketplaceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F240AC7B27B2D2BC00D249EA /* MarketplaceDetailView.swift */; };
 		F2433F6025D6F94B00AE4097 /* AppHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2433F5F25D6F94B00AE4097 /* AppHelper.swift */; };
 		F245BBDF25B9E4AE00F25F68 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = F245BBDE25B9E4AE00F25F68 /* SnapKit */; };
 		F245BBED25B9E5DC00F25F68 /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = F245BBEC25B9E5DC00F25F68 /* SDWebImageSwiftUI */; };
@@ -242,7 +238,6 @@
 		F2BC99AF25D0C6F900285C7B /* BundleScriptListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2BC99AE25D0C6F900285C7B /* BundleScriptListView.swift */; };
 		F2BE767325DC0806000AD28E /* KeyboardHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2BE767225DC0806000AD28E /* KeyboardHelper.swift */; };
 		F2BE767525DC1C83000AD28E /* ImageHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2BE767425DC1C83000AD28E /* ImageHelper.swift */; };
-		F2C5C5DD27AF5A2F00797C5B /* BuyMeCoffeeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2C5C5DC27AF5A2F00797C5B /* BuyMeCoffeeView.swift */; };
 		F2C5C5E027AF5AB200797C5B /* SwiftyStoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = F2C5C5DF27AF5AB200797C5B /* SwiftyStoreKit */; };
 		F2C5C5E227AF5B2000797C5B /* StoreManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2C5C5E127AF5B2000797C5B /* StoreManager.swift */; };
 		F2C5C5E427AF5B5400797C5B /* AppIconsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2C5C5E327AF5B5400797C5B /* AppIconsView.swift */; };
@@ -369,7 +364,6 @@
 		D149EF66255994CA00A24CAD /* TOCropWidgetSizeHelper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TOCropWidgetSizeHelper.m; sourceTree = "<group>"; };
 		D14AC8892531419700016FBE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		D1630325254C6F97005EEB93 /* ScriptCodePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptCodePreviewView.swift; sourceTree = "<group>"; };
-		D16FE62228BB87600062D43A /* MarketplaceManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = MarketplaceManager.swift; path = ../Shared/ScriptWidgetRuntime/Marketplace/MarketplaceManager.swift; sourceTree = "<group>"; };
 		D18253732543423D0089C1B9 /* ScriptCodeEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptCodeEditorView.swift; sourceTree = "<group>"; };
 		D183E0A328CE0EFE003F44A0 /* ScriptWidgetElementTagChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagChart.swift; sourceTree = "<group>"; };
 		D18AAC2C252A12D10065386A /* ScriptWidget.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ScriptWidget.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -420,10 +414,7 @@
 		F224FE5827A959E900617AF6 /* ImageListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageListView.swift; sourceTree = "<group>"; };
 		F224FE5A27AA1AF500617AF6 /* ImagePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePreviewView.swift; sourceTree = "<group>"; };
 		F23A40BA262492FF0035CBA7 /* DeepLinkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkManager.swift; sourceTree = "<group>"; };
-		F240AC7527B2CC2500D249EA /* MarketplaceHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketplaceHomeView.swift; sourceTree = "<group>"; };
 		F240AC7727B2CE1C00D249EA /* TabBarAccessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarAccessor.swift; sourceTree = "<group>"; };
-		F240AC7927B2CFAD00D249EA /* MarketplaceListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketplaceListView.swift; sourceTree = "<group>"; };
-		F240AC7B27B2D2BC00D249EA /* MarketplaceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketplaceDetailView.swift; sourceTree = "<group>"; };
 		F2433F5F25D6F94B00AE4097 /* AppHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppHelper.swift; sourceTree = "<group>"; };
 		F2433F8425D6FE6200AE4097 /* QuickLook.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLook.framework; path = System/Library/Frameworks/QuickLook.framework; sourceTree = SDKROOT; };
 		F25AC9FE27D30A2800C8AEDF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/PhotoPicker.storyboard; sourceTree = "<group>"; };
@@ -524,7 +515,6 @@
 		F2BC99AE25D0C6F900285C7B /* BundleScriptListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleScriptListView.swift; sourceTree = "<group>"; };
 		F2BE767225DC0806000AD28E /* KeyboardHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardHelper.swift; sourceTree = "<group>"; };
 		F2BE767425DC1C83000AD28E /* ImageHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageHelper.swift; sourceTree = "<group>"; };
-		F2C5C5DC27AF5A2F00797C5B /* BuyMeCoffeeView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BuyMeCoffeeView.swift; sourceTree = "<group>"; };
 		F2C5C5E127AF5B2000797C5B /* StoreManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreManager.swift; sourceTree = "<group>"; };
 		F2C5C5E327AF5B5400797C5B /* AppIconsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppIconsView.swift; sourceTree = "<group>"; };
 		F2C5C5E627AF5C3200797C5B /* blue@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "blue@2x.png"; sourceTree = "<group>"; };
@@ -726,14 +716,6 @@
 				F25ED6A028008180000089D0 /* FileRenameView.swift */,
 			);
 			path = View;
-			sourceTree = "<group>";
-		};
-		D16FE62428BB876C0062D43A /* Marketplace */ = {
-			isa = PBXGroup;
-			children = (
-				D16FE62228BB87600062D43A /* MarketplaceManager.swift */,
-			);
-			name = Marketplace;
 			sourceTree = "<group>";
 		};
 		D1824275254476A200223563 /* CodeEditor */ = {
@@ -941,16 +923,6 @@
 			path = Base.lproj;
 			sourceTree = "<group>";
 		};
-		F240AC7D27B2D67E00D249EA /* Marketplace */ = {
-			isa = PBXGroup;
-			children = (
-				F240AC7527B2CC2500D249EA /* MarketplaceHomeView.swift */,
-				F240AC7927B2CFAD00D249EA /* MarketplaceListView.swift */,
-				F240AC7B27B2D2BC00D249EA /* MarketplaceDetailView.swift */,
-			);
-			path = Marketplace;
-			sourceTree = "<group>";
-		};
 		F240AC7E27B2D68B00D249EA /* Scripts */ = {
 			isa = PBXGroup;
 			children = (
@@ -970,7 +942,6 @@
 				5AC769482CD370BC0022A138 /* ExportView.swift */,
 				5AC386D12CDA09760027B976 /* ImportView.swift */,
 				F2C5C5E327AF5B5400797C5B /* AppIconsView.swift */,
-				F2C5C5DC27AF5A2F00797C5B /* BuyMeCoffeeView.swift */,
 				F2BC995725CDABE200285C7B /* SettingsView.swift */,
 				F2D738C825D0CA8900021E08 /* SettingTemplatesView.swift */,
 				D19CAF5A28CB975D00DFF98B /* SettingComponentsView.swift */,
@@ -1010,7 +981,6 @@
 		F29118E92793033500B860B0 /* ScriptWidgetRuntime */ = {
 			isa = PBXGroup;
 			children = (
-				D16FE62428BB876C0062D43A /* Marketplace */,
 				F291198E2793039700B860B0 /* Resource */,
 				F29118FF2793035E00B860B0 /* Widget */,
 				F29118EA2793034D00B860B0 /* Common */,
@@ -1225,7 +1195,6 @@
 				D19CAF5428CB94A600DFF98B /* Components */,
 				F240AC7E27B2D68B00D249EA /* Scripts */,
 				F240AC7F27B2D6AB00D249EA /* Settings */,
-				F240AC7D27B2D67E00D249EA /* Marketplace */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -1587,7 +1556,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				F29119702793035E00B860B0 /* ScriptWidgetElementTagZStack.swift in Sources */,
-				F2C5C5DD27AF5A2F00797C5B /* BuyMeCoffeeView.swift in Sources */,
 				D132336528E08C15002C26A2 /* ScriptLiveActivityManager.swift in Sources */,
 				F2B20CC425D2EF5E00B62DAC /* NameAutoImageView.swift in Sources */,
 				D13832AE25A1EB6B00DC9C20 /* CreateGuideView.swift in Sources */,
@@ -1614,7 +1582,6 @@
 				F2C5C5E227AF5B2000797C5B /* StoreManager.swift in Sources */,
 				F2FC062A27DC5DB300A6A99D /* WKWebViewJavascriptBridgeBase.swift in Sources */,
 				F29119522793035E00B860B0 /* ScriptWidgetAttributeFrameModifier.swift in Sources */,
-				F240AC7627B2CC2500D249EA /* MarketplaceHomeView.swift in Sources */,
 				F291196C2793035E00B860B0 /* ScriptWidgetElementTagDate.swift in Sources */,
 				F2BC996725CE5B0800285C7B /* WidgetRowView.swift in Sources */,
 				F29119722793035E00B860B0 /* ScriptWidgetElementTagText.swift in Sources */,
@@ -1631,7 +1598,6 @@
 				F28D681427CE764B000C2D03 /* ScriptWidgetAttributeCornerRadiusModifier.swift in Sources */,
 				F224FE5B27AA1AF500617AF6 /* ImagePreviewView.swift in Sources */,
 				F205238727A58DDD00C6EB45 /* ResourceCodeView.swift in Sources */,
-				D16FE62328BB87600062D43A /* MarketplaceManager.swift in Sources */,
 				D1403E27255309FA0076F87C /* PhotoPickerViewController.swift in Sources */,
 				F2BC995D25CE452400285C7B /* SettingsLabelView.swift in Sources */,
 				D1403DEA2552FEB40076F87C /* TOCroppedImageAttributes.m in Sources */,
@@ -1657,8 +1623,6 @@
 				D18AAC32252A12D10065386A /* ContentView.swift in Sources */,
 				F29119402793035E00B860B0 /* MineRingView.swift in Sources */,
 				F291195A2793035E00B860B0 /* ScriptWidgetAttributeRotationEffectModifier.swift in Sources */,
-				F240AC7A27B2CFAD00D249EA /* MarketplaceListView.swift in Sources */,
-				F240AC7C27B2D2BC00D249EA /* MarketplaceDetailView.swift in Sources */,
 				F25ED69D27FF2227000089D0 /* FileDetailView.swift in Sources */,
 				F2F8398E27CBBC8800D74288 /* HomeHelloView.swift in Sources */,
 				F291195E2793035E00B860B0 /* ScriptWidgetAttributeGeneral.swift in Sources */,
@@ -2002,7 +1966,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6019;
+				CURRENT_PROJECT_VERSION = 9000;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
@@ -2013,7 +1977,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 6.9;
+				MARKETING_VERSION = 9.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2034,7 +1998,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6019;
+				CURRENT_PROJECT_VERSION = 9000;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
@@ -2045,7 +2009,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 6.9;
+				MARKETING_VERSION = 9.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2062,7 +2026,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6019;
+				CURRENT_PROJECT_VERSION = 9000;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -2071,7 +2035,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 6.9;
+				MARKETING_VERSION = 9.0;
 				OTHER_SWIFT_FLAGS = "-D IsWidgetTarget";
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2088,7 +2052,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6019;
+				CURRENT_PROJECT_VERSION = 9000;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -2097,7 +2061,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 6.9;
+				MARKETING_VERSION = 9.0;
 				OTHER_SWIFT_FLAGS = "-D IsWidgetTarget";
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2113,7 +2077,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6019;
+				CURRENT_PROJECT_VERSION = 9000;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -2122,7 +2086,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 6.9;
+				MARKETING_VERSION = 9.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.share;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -2137,7 +2101,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 6019;
+				CURRENT_PROJECT_VERSION = 9000;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -2146,7 +2110,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 6.9;
+				MARKETING_VERSION = 9.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.share;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

@@ -1,5 +1,5 @@
 // ScriptWidget
-// https://scriptwidget.app
+// https://xnu.app/jswidget
 //
 // app schemes
 //

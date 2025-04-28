@@ -64,22 +64,3 @@ struct SettingsTextRowView: View {
         }
     }
 }
-
-struct SettingsRowView_Previews: PreviewProvider {
-    static var previews: some View {
-        SettingsLinkRowView(name: "Documents", label: "", urlString: "https://scriptwidget.app/docs")
-            .preferredColorScheme(.light)
-            .previewLayout(.fixed(width: 375, height: 60))
-            .padding()
-        
-        SettingsTextRowView(name: "Images", content: "")
-            .preferredColorScheme(.light)
-            .previewLayout(.fixed(width: 375, height: 60))
-            .padding()
-        
-        SettingsLinkRowView(name: "Website", label: "Pale Blue Dot", urlString: "https://everettjf.github.io")
-            .preferredColorScheme(.dark)
-            .previewLayout(.fixed(width: 375, height: 60))
-            .padding()
-    }
-}
