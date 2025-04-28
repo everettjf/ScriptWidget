@@ -12,8 +12,7 @@ ScriptWidget is an innovative iOS app that allows you to create beautiful and dy
 
 ## Download
 
-- US App Store: [https://apps.apple.com/us/app/scriptwidget/id1555600758](https://apps.apple.com/us/app/scriptwidget/id1555600758)
-- CN App Store: [https://apps.apple.com/cn/app/scriptwidget/id1555600758](https://apps.apple.com/cn/app/scriptwidget/id1555600758)
+- App Store: [https://apps.apple.com/app/scriptwidget/id1555600758](https://apps.apple.com/app/scriptwidget/id1555600758)
 
 ## Documentation
 
