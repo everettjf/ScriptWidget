@@ -2,7 +2,6 @@
 
 ScriptWidget is an innovative iOS app that allows you to create beautiful and dynamic widgets using JavaScript and JSX. It's the predecessor to JSWidget, offering powerful capabilities for iOS widget development.
 
-![](https://xnu.app/jswidget/assets/images/screenshot-888432460db6bfcd7a207c15183adbc2.jpg)
 
 ## Features
 
