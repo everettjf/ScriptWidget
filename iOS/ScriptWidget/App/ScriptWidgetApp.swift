@@ -29,8 +29,8 @@ struct ScriptWidgetApp: App {
                         }
                     }
                     
-                    if host == "scriptwidget.app" {
-                        print("ignore open url for : scriptwidget.app")
+                    if host == "xnu.app/jswidget" {
+                        print("ignore open url for : xnu.app/jswidget")
                         UIApplication.shared.open(url)
                         return
                     }

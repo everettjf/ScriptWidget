@@ -1,12 +1,12 @@
 // 
 // ScriptWidget 
-// https://scriptwidget.app
+// https://xnu.app/jswidget
 // 
 // Usage for component link
 // 
 
 $render(
-  <vstack frame="max" linkurl="https://scriptwidget.app">
+  <vstack frame="max" linkurl="https://xnu.app/jswidget">
     <link url="https://www.baidu.com" background="blue">
       <text font="title">Hello Baidu</text>
     </link>

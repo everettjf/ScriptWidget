@@ -1,6 +1,6 @@
 // 
 // ScriptWidget 
-// https://scriptwidget.app
+// https://xnu.app/jswidget
 // 
 // Content Select Template
 // 

@@ -34,7 +34,6 @@ struct SettingsView: View {
                 VStack(spacing: 20) {
                     
                     GroupBox (label: SettingsLabelView(title: "ScriptWidget", image: "info.circle")) {
-                        SettingsLinkRowView(name: "Documents", label: "", urlString: "https://scriptwidget.app/docs")
                         NavigationLink(destination: SettingTemplatesView()) {
                             SettingsTextRowView(name: "Templates", content: "")
                         }
@@ -85,22 +84,12 @@ struct SettingsView: View {
                         SettingsICloudView()
                     }
                     
-                    
-                    GroupBox (label: SettingsLabelView(title: "Buy me a coffee", image: "lessthan")) {
-                        
-                        NavigationLink(destination: BuyMeCoffeeView()) {
-                            SettingsTextRowView(name: "Buy me a coffee", content: "")
-                        }
-                        
-                        if sharedStoreManager.hadCoffee() {
-                            NavigationLink(destination: AppIconsView()) {
-                                SettingsTextRowView(name: "App Icons", content: "")
-                            }
-                        }
-                    }
-                    
                     GroupBox (label: SettingsLabelView(title: "Application", image: "appclip")) {
-                        SettingsLinkRowView(name: "Website", label: "https://scriptwidget.app", urlString: "https://scriptwidget.app")
+                        
+                        NavigationLink(destination: AppIconsView()) {
+                            SettingsTextRowView(name: "App Icons", content: "")
+                        }
+                        SettingsLinkRowView(name: "Website", label: "https://xnu.app/jswidget", urlString: "https://xnu.app/jswidget")
                         SettingsLinkRowView(name: "Discord", label: "", urlString: "https://discord.gg/eGzEaP6TzR")
                         SettingsLinkRowView(name: "Mail", label: "", urlString: "mailto:everettjf@live.com?subject=ScriptWidget_Feedback")
                         SettingsLinkRowView(name: "Developer", label: "everettjf", urlString: "https://twitter.com/everettjf")

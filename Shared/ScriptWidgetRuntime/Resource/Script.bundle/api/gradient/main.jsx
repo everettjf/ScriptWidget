@@ -1,6 +1,6 @@
 // 
 // ScriptWidget 
-// https://scriptwidget.app
+// https://xnu.app/jswidget
 // 
 // Usage for api $gradient
 // 

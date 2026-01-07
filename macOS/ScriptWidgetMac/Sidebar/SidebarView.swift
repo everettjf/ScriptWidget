@@ -24,8 +24,6 @@ struct SidebarView: View {
     @State private var deleteCurrentName = ""
     @State private var deleteShowingSheet = false
     
-    // publish
-    @State private var selectedPublishModel: ScriptModel? = nil
     
     var body: some View {
         content
@@ -39,9 +37,6 @@ struct SidebarView: View {
             .sheet(isPresented: $createShowingSheet) {
                 CreateGuideView()
             }
-            .sheet(item: $selectedPublishModel, content: { model in
-                PublishGuideView(model:model)
-            })
             .toolbar {
                 ToolbarItem(placement: .automatic) {
                     Button{
@@ -120,10 +115,6 @@ struct SidebarView: View {
                                     }
                                 }
                             }
-                            
-                            Button("Publish") {
-                                self.selectedPublishModel = item
-                            }
                         })
                     }
                 }
@@ -137,12 +128,6 @@ struct SidebarView: View {
                 }
                 NavigationLink(destination: ResourceCodeView(resourceType: "template")) {
                     Label("Templates", systemImage: "scribble.variable")
-                }
-            }
-            
-            Section("Marketplace") {
-                NavigationLink(destination: MarketplaceHomeView()) {
-                    Label("Marketplace", systemImage: "skew")
                 }
             }
         }

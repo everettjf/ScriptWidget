@@ -31,8 +31,6 @@ struct ContentView: View {
                 .tabItem({ TabLabel(imageName: "chart.xyaxis.line", label: "Components")})
             APIsHomeView()
                 .tabItem({ TabLabel(imageName: "pencil.line", label: "APIs")})
-            MarketplaceHomeView()
-                .tabItem({ TabLabel(imageName: "skew", label: "Marketplace")})
         }
     }
 }
