@@ -11,7 +11,7 @@ let defaultCreateScriptContent = """
 
 //
 // ScriptWidget
-// https://xnu.app/jswidget
+// https://xnu.app/scriptwidget
 //
 //
 

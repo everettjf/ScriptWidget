@@ -51,7 +51,7 @@ struct ScriptWidgetMacApp: App {
                     NSWorkspace.shared.open(URL(string: "https://github.com/everettjf")!)
                 }
                 Button("Help") {
-                    NSWorkspace.shared.open(URL(string: "https://xnu.app/jswidget")!)
+                    NSWorkspace.shared.open(URL(string: "https://xnu.app/scriptwidget")!)
                 }
             }
         }
