@@ -61,8 +61,12 @@ struct CreateGuideView: View {
                         return;
                     }
                     
+                    
+                    // image copy path
+                    // todo
+                    
                     let scriptName = inputText
-                    let result = sharedScriptManager.createScript(content: defaultCreateScriptContent, recommendPackageName: scriptName)
+                    let result = sharedScriptManager.createScript(content: defaultCreateScriptContent, recommendPackageName: scriptName, imageCopyPath: nil)
 
                     if !result.0 {
                         print("Create failed : \(result.1)")

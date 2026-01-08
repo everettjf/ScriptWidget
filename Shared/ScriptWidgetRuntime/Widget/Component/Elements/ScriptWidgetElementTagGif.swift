@@ -5,10 +5,10 @@
 //  Created by eevv on 12/29/24.
 //
 
+#if os(iOS)
 import Foundation
 import SwiftUI
 import SDWebImageSwiftUI
-import ClockHandRotationKit
 
 
 struct DynamicGifArcView: Shape {
@@ -30,7 +30,9 @@ struct DynamicGifView: View {
     var gifPath: URL
     var body: some View {
         if let gifData = NSData(contentsOfFile: gifPath.path(percentEncoded: false)) {
-            if let gifImage = UIImage.sd_image(withGIFData: gifData as Data) {
+            
+            let data = UIImage.sd_image(withGIFData: gifData as Data)
+            if let gifImage = data {
                 if let gifImages = gifImage.images, gifImages.count > 0 {
                     GeometryReader { proxy in
                         let width = proxy.size.width
@@ -102,3 +104,4 @@ class ScriptWidgetElementTagGif {
         )
     }
 }
+#endif
