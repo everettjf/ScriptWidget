@@ -44,7 +44,10 @@ struct CreateGuideView: View {
                         // create
                         guard let content = item.package.readMainFile().0 else { return }
                         
-                        _ = sharedScriptManager.createScript(content: content, recommendPackageName: item.name)
+                        // image copy path
+                        let imageCopyPath = item.package.imagePath
+                        
+                        _ = sharedScriptManager.createScript(content: content, recommendPackageName: item.name, imageCopyPath: imageCopyPath)
                         
                         NotificationCenter.default.post(name: ScriptWidgetHomeViewDataObject.scriptCreateNotification, object: nil)
                         
@@ -57,15 +60,17 @@ struct CreateGuideView: View {
                     }
                 }
             }
-            .navigationBarTitle(Text("Create from Template"), displayMode: .large)
-            .navigationBarItems(
-                trailing: Button (action: {
-                    presentationMode.wrappedValue.dismiss()
-                }, label: {
-                    Image(systemName: "xmark")
-                })
-            )
-
+            .navigationBarTitle(Text("Create from template"), displayMode: .large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: {
+                        presentationMode.wrappedValue.dismiss()
+                    }) {
+                        Label("Close", systemImage: "xmark")
+                            .labelStyle(.iconOnly)
+                    }
+                }
+            }
         }
     }
 }

@@ -32,15 +32,6 @@ class ScriptWidgetHomeViewDataObject : ObservableObject {
             self.reload()
         }
         
-        NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: OperationQueue.main) { (noti) in
-            
-            if let userDefaults = UserDefaults(suiteName: "group.everettjf.scriptwidget") {
-                if let _ = userDefaults.string(forKey: "need_update_list") {
-                    userDefaults.removeObject(forKey: "need_update_list")
-                    self.reload()
-                }
-            }
-        }
     }
     
     func reload() {
@@ -94,30 +85,31 @@ struct ScriptWidgetHomeView: View {
                     
                 })
                 .navigationTitle("ScriptWidget")
-                .navigationBarItems(
-                    leading:Button(action: {
-                        isShowingSettings = true
-                    }) {
-                        Image(systemName: "slider.horizontal.3")
-                            .padding(.trailing, 30)
-                            .padding(.top, 5)
-                            .padding(.bottom, 5)
-                    }
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        Button(action: {
+                            isShowingSettings = true
+                        }) {
+                            Label("Settings", systemImage: "slider.horizontal.3")
+                                .labelStyle(.iconOnly)
+                        }
                         .sheet(isPresented: $isShowingSettings) {
                             SettingsView()
-                        },
-                    trailing: Button(action: {
-                        isShowingCreateGuide = true
-                    }) {
-                        Image(systemName: "plus.square")
-                            .padding(.leading, 30)
-                            .padding(.top, 5)
-                            .padding(.bottom, 5)
+                        }
                     }
+
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: {
+                            isShowingCreateGuide = true
+                        }) {
+                            Label("Create", systemImage: "plus.square")
+                                .labelStyle(.iconOnly)
+                        }
                         .sheet(isPresented: $isShowingCreateGuide) {
                             CreateGuideView()
                         }
-                )
+                    }
+                }
             
             HomeHelloView()
         }

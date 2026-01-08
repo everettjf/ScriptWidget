@@ -14,8 +14,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         
         let _ = sharedAppState.screenBounds
         
-        sharedStoreManager.start()
-        
         #if !DEBUG
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {
             AppHelper.requestReview()

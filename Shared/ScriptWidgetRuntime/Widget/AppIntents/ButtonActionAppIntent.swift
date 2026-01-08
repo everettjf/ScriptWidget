@@ -41,11 +41,11 @@ struct ButtonActionAppIntent: AppIntent {
             "widget-param": "",
         ])
         
-        let (JSX, errorInfo) = package.readMainFile()
+        let (JSX, _) = package.readMainFile()
         guard let JSX = JSX else {
             return .result()
         }
-        let result = runtime.executeJSXSyncForFunction(JSX, functionName)
+        _ = runtime.executeJSXSyncForFunction(JSX, functionName)
         
         WidgetCenter.shared.reloadTimelines(ofKind: "ScriptWidget")
         

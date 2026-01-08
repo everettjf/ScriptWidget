@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import AlertToast
 
 enum ScriptCodeEditorViewMode {
     case creator
@@ -58,8 +57,8 @@ struct ScriptCodeEditorView: View {
     @State var showShareActivity = false
     @State var showResourceCodeView = false
     
-    @State var showingToast = false
-    @State var toastMessage = ""
+    @State private var showingAlert = false
+    @State private var alertMessage = ""
 
     
     init(mode: ScriptCodeEditorViewMode, scriptModel: ScriptModel) {
@@ -81,25 +80,28 @@ struct ScriptCodeEditorView: View {
             }
     }
     
-    func showToast(_ message: String) {
-        toastMessage = message
-        showingToast.toggle()
+    func showAlert(_ message: String) {
+        alertMessage = message
+        showingAlert = true
     }
     
     var body: some View {
         VStack {
             codeeditor
                 .navigationBarTitle(self.dataObject.scriptModel.name, displayMode: .inline)
-                .navigationBarItems(
-                    leading: leadingButtons,
-                    trailing: trailingButtons
-                )
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        leadingButtons
+                    }
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        trailingButtons
+                    }
+                }
         }
         .ignoresSafeArea(.all, edges: .bottom)
-        .toast(isPresenting: $showingToast) {
-            AlertToast(type: .regular, title: toastMessage)
+        .alert(isPresented: $showingAlert) {
+            Alert(title: Text("Notification"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
         }
-        
     }
     
     var leadingButtons: some View {
@@ -130,7 +132,7 @@ struct ScriptCodeEditorView: View {
                     
                     // show lock screen widget
                     sharedLiveActivityManager.create(scriptName: self.dataObject.scriptModel.name, scriptParameter: "")
-                    showToast("Lock screen live activity created :)")
+                    showAlert("Lock screen live activity created :)")
                 }
             }
             

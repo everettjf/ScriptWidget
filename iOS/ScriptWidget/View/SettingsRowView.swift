@@ -64,3 +64,13 @@ struct SettingsTextRowView: View {
         }
     }
 }
+
+struct SettingsRowView_Previews: PreviewProvider {
+    static var previews: some View {
+        
+        SettingsLinkRowView(name: "Website", label: "Pale Blue Dot", urlString: "https://everettjf.github.io")
+            .preferredColorScheme(.dark)
+            .previewLayout(.fixed(width: 375, height: 60))
+            .padding()
+    }
+}

@@ -1,6 +1,6 @@
 // 
 // ScriptWidget 
-// https://xnu.app/jswidget
+// https://xnu.app/scriptwidget
 // 
 // Battery Gauge
 // 
@@ -14,6 +14,7 @@ let gaugeSections = [
   {color: "orange", value: 0.3},
   {color: "green", value: 0.4},
 ];
+
 
 $render(
   <vstack frame="max">

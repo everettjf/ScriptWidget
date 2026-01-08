@@ -1,6 +1,6 @@
 // 
 // ScriptWidget 
-// https://xnu.app/jswidget
+// https://xnu.app/scriptwidget
 // 
 // Usage for component ellipse
 // 
