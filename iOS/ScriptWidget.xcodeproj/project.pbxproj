@@ -1371,7 +1371,7 @@
 				F245BBF625B9E62300F25F68 /* XCRemoteSwiftPackageReference "SwiftyJSON" */,
 				F2997F03274A717A00CD7DD6 /* XCRemoteSwiftPackageReference "SwiftUIX" */,
 				F228DDB427A37776009E8F04 /* XCRemoteSwiftPackageReference "ZipArchive" */,
-				5A89B7842F0F958F008B90A2 /* XCRemoteSwiftPackageReference "ClockHandRotationKit" */,
+				5A89B7A32F10D408008B90A2 /* XCRemoteSwiftPackageReference "ClockHandRotationKit" */,
 			);
 			productRefGroup = D18AAC2D252A12D10065386A /* Products */;
 			projectDirPath = "";
@@ -2051,7 +2051,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		5A89B7842F0F958F008B90A2 /* XCRemoteSwiftPackageReference "ClockHandRotationKit" */ = {
+		5A89B7A32F10D408008B90A2 /* XCRemoteSwiftPackageReference "ClockHandRotationKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/xnuapp/ClockHandRotationKit";
 			requirement = {

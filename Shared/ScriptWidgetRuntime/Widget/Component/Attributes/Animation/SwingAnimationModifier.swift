@@ -33,7 +33,7 @@
 
 
 
-#if os(iOS)
+#if !os(macOS)
 import ClockHandRotationKit
 import SwiftUI
 

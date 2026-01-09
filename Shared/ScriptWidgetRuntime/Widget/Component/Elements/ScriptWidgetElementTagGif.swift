@@ -5,11 +5,11 @@
 //  Created by eevv on 12/29/24.
 //
 
-#if os(iOS)
+#if !os(macOS)
 import Foundation
 import SwiftUI
 import SDWebImageSwiftUI
-
+import ClockHandRotationKit
 
 struct DynamicGifArcView: Shape {
     var arcStartAngle: Double
@@ -105,3 +105,4 @@ class ScriptWidgetElementTagGif {
     }
 }
 #endif
+
