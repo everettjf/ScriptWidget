@@ -11,10 +11,9 @@ import Intents
 import Combine
 
 struct ScriptWidgetMainWidget: Widget {
-    let kind: String = "ScriptWidget"
 
     var body: some WidgetConfiguration {
-        AppIntentConfiguration(kind: kind, intent: ScriptWidgetAppIntent.self, provider: ScriptWidgetTimelineProvider()) { entry in
+        AppIntentConfiguration(kind: "ScriptWidget", intent: ScriptWidgetAppIntent.self, provider: ScriptWidgetTimelineProvider()) { entry in
             ScriptWidgetWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("ScriptWidget")
@@ -37,5 +36,6 @@ struct ScriptWidgets: WidgetBundle {
     var body: some Widget {
         ScriptWidgetMainWidget()
         ScriptLiveActivityWidget()
+        ScriptWidgetControlWidget()
     }
 }

@@ -8,6 +8,7 @@
 import SwiftUI
 #if IsWidgetTarget
 import SwiftyJSON
+import ClockHandRotationKit
 
 /*
  
@@ -60,16 +61,30 @@ struct ScriptWidgetAttributeAnimationModifier: ViewModifier {
     
     let animationType: String
     
+    // original clock animation
     let clockTimezone: TimeZone
     let clockAnchor: UnitPoint
     let clockCustomInterval: TimeInterval
     
+    // swing animation
+    let swingDuration: CGFloat
+    let swingDirection: SwingAnimationModifier.Direction
+    let swingDistance: CGFloat
+    
+    
     init(_ element: ScriptWidgetRuntimeElement) {
         
         var animationType = ""
+        
         var clockTimezone: TimeZone = .current
         var clockAnchor: UnitPoint = .center
         var clockCustomInterval: TimeInterval = 10
+        
+        var swingDuration: CGFloat = 1
+        var swingDirection: SwingAnimationModifier.Direction = .horizontal
+        var swingDistance: CGFloat = 10
+        
+        
         if let animationTypeValue = element.getPropString("animation") {
             
             if animationTypeValue.starts(with: "animation:") {
@@ -82,23 +97,55 @@ struct ScriptWidgetAttributeAnimationModifier: ViewModifier {
                         let type = json["type"].stringValue
                         animationType = type
                         
-                        if let timezoneValue = json["timezone"].string {
-                            clockTimezone = ScriptWidgetAttributeAnimationModifier.getTimezone(timezone: timezoneValue)
-                        }
-                        
-                        if let anchorValue = json["anchor"].string {
-                            clockAnchor = ScriptWidgetElementPoint.getPointFromPointValue(anchorValue)
-                        }
-                        
-                        if let intervalValue = json["interval"].double {
-                            clockCustomInterval = TimeInterval(intervalValue)
-                            if clockCustomInterval < 1 {
-                                clockCustomInterval = 1
+                        /*
+                         let animationDefinition = {
+                           type: "clock",
+                           timezone: "current", // "America/New_York" , "America/Los_Angeles" ,  "Asia/Shanghai"
+                           anchor: "center",
+                           interval: 30,
+                         }
+                         */
+                        if animationType == "clock" {
+                            if let timezoneValue = json["timezone"].string {
+                                clockTimezone = ScriptWidgetAttributeAnimationModifier.getTimezone(timezone: timezoneValue)
+                            }
+                            if let anchorValue = json["anchor"].string {
+                                clockAnchor = ScriptWidgetElementPoint.getPointFromPointValue(anchorValue)
+                            }
+                            if let intervalValue = json["interval"].double {
+                                clockCustomInterval = TimeInterval(intervalValue)
+                                if clockCustomInterval < 1 {
+                                    clockCustomInterval = 1
+                                }
                             }
                         }
                         
+                        /*
+                         let animationHorizontalDefinition = {
+                           type: "swing",
+                           duration: 2,
+                           direction: "horizontal", // "horizontal", "vertical"
+                           distance: 100,
+                         }
+                         */
+                        if animationType == "swing" {
+                            if let duration = json["duration"].double {
+                                swingDuration = CGFloat(duration)
+                            }
+                            if let direction = json["direction"].string {
+                                if direction == "horizontal" {
+                                    swingDirection = .horizontal
+                                } else {
+                                    swingDirection = .vertical
+                                }
+                            }
+                            if let distance = json["distance"].double {
+                                swingDistance = CGFloat(distance)
+                            }
+                        }
                     } catch {
                         print("animation json parse error : \(error)")
+                        animationType == "error"
                     }
                 }
             } else {
@@ -109,40 +156,40 @@ struct ScriptWidgetAttributeAnimationModifier: ViewModifier {
                     // clockMiniute
                     // clockHour
                     animationType = animationTypeValue
-                } else if parts.count == 2 {
-                    // clockCustom,10
-                    animationType = String(parts[0])
-                    if let intervalValue = Double(String(parts[1])) {
-                        clockCustomInterval = intervalValue
-                    }
                 }
             }
         }
         
         self.animationType = animationType
+        
         self.clockTimezone = clockTimezone
         self.clockAnchor = clockAnchor
         self.clockCustomInterval = clockCustomInterval
+        
+        self.swingDuration = swingDuration
+        self.swingDirection = swingDirection
+        self.swingDistance = swingDistance
     }
     
     @ViewBuilder
     func body(content: Content) -> some View {
         if animationType == "clockSecond" {
-            Text("Animations Not Support iOS16")
-//            content
-//                ._clockHandRotationEffect(.secondHand, in: self.clockTimezone, anchor: self.clockAnchor)
+            content
+                .clockHandRotationEffect(period: .secondHand, in: self.clockTimezone, anchor: self.clockAnchor)
         } else if animationType == "clockMiniute" {
-            Text("Animations Not Support iOS16")
-//            content
-//                ._clockHandRotationEffect(.minuteHand, in: self.clockTimezone, anchor: self.clockAnchor)
+            content
+                .clockHandRotationEffect(period: .minuteHand, in: self.clockTimezone, anchor: self.clockAnchor)
         } else if animationType == "clockHour" {
-            Text("Animations Not Support iOS16")
-//            content
-//                ._clockHandRotationEffect(.hourHand, in: self.clockTimezone, anchor: self.clockAnchor)
-        } else if animationType == "clockCustom" {
-            Text("Animations Not Support iOS16")
-//            content
-//                ._clockHandRotationEffect(.custom(self.clockCustomInterval), in: self.clockTimezone, anchor: self.clockAnchor)
+            content
+                .clockHandRotationEffect(period: .hourHand, in: self.clockTimezone, anchor: self.clockAnchor)
+        } else if animationType == "clock" {
+            content
+                .clockHandRotationEffect(period: .custom(self.clockCustomInterval), in: self.clockTimezone, anchor: self.clockAnchor)
+        } else if animationType == "swing" {
+            content
+                .swingAnimation(duration: self.swingDuration, direction: self.swingDirection, distance: self.swingDistance)
+        } else if animationType == "error" {
+            Text("animation json error")
         } else {
             content
         }

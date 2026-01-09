@@ -1,41 +1,94 @@
 # ScriptWidget
 
-ScriptWidget is an innovative iOS app that allows you to create beautiful and dynamic widgets using JavaScript and JSX. It's the predecessor to JSWidget, offering powerful capabilities for iOS widget development.
+[![App Store](https://img.shields.io/badge/App%20Store-ScriptWidget-blue)](https://apps.apple.com/app/scriptwidget/id1555600758)
+[![Platforms](https://img.shields.io/badge/platforms-iOS%20%7C%20iPadOS%20%7C%20macOS-lightgrey)](#architecture)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
+SwiftUI-powered widget builder that lets anyone author widgets with JavaScript + JSX and run them directly on iOS, iPadOS, macOS, widgets, Live Activities, and Dynamic Island surfaces. ScriptWidget is the multi-platform predecessor to **JSWidget** and remains useful for contributors exploring or extending the original runtime.
 
-## Features
+> Docs, gallery, and FAQ live at [xnu.app/scriptwidget](https://xnu.app/scriptwidget/)
 
-- **JSX Style Coding**: Create widgets using familiar JSX syntax for intuitive and efficient development
-- **JavaScript Powered**: Leverage the full power of JavaScript to build dynamic and interactive widgets
-- **SwiftUI Integration**: Built on SwiftUI for high performance and native look and feel on iOS and iPadOS
+## Table of Contents
+- [Highlights](#highlights)
+- [Architecture](#architecture)
+- [Quick Start](#quick-start)
+- [Repository Layout](#repository-layout)
+- [Writing Widgets](#writing-widgets)
+- [Development Tips](#development-tips)
+- [Contributing](#contributing)
+- [Roadmap](#roadmap)
+- [Community & Support](#community--support)
+- [License](#license)
 
-## Platform Support
+## Highlights
+- **JavaScript + JSX workflow** – Build widgets with `$render(<stack>)` and Babel-transpiled JSX primitives that map directly to SwiftUI components.
+- **Runtime helper APIs** – JavaScriptCore host injects `$fetch`, `$file`, `$location`, `$dynamic_island`, `$preferences`, and environment getters for widget size/parameters.
+- **Multi-target** – One codebase powers the iOS/iPadOS app, WidgetKit extension (AppIntents, Live Activity, Dynamic Island surfaces), macOS app, and share extension.
+- **Offline-first storage** – Scripts are stored under iCloud (`iCloud.ScriptWidget`) when available and fall back to the shared app group to keep data in sync.
+- **Open editor workflow** – React + CodeMirror web editor mirrors the native experience for rapid iteration and previewing.
 
-- **ScriptWidget**: Multi-platform support (macOS, iOS, and iPadOS)
-  - Development discontinued due to the high complexity of maintaining multiple platforms
-  - Significant time investment required for platform-specific adaptations
-  - Challenges in maintaining consistent behavior across different operating systems
-  - Limited resources to address platform-specific issues and feature requests
+## Architecture
+ScriptWidget is split across Swift and JavaScript targets while sharing the `ScriptWidgetRuntime` core.
 
-- **JSWidget**: iOS-focused development
-  - Streamlined development by focusing exclusively on iOS
-  - Faster feature development and bug fixes
-  - Better user experience through iOS-specific optimizations
-  - More efficient resource allocation for ongoing development
+| Area | Location | What it does |
+| --- | --- | --- |
+| iOS/iPadOS app | `iOS/ScriptWidget` | Script explorer/editor, gallery, import/export, photo picker, and settings. |
+| Widget extension | `iOS/ScriptWidgetWidget` | WidgetKit timelines plus Live Activity + Dynamic Island views backed by the runtime. |
+| Share extension | `iOS/ScriptWidgetShare` | Receives script bundles/assets from Safari, Files, and other apps. |
+| macOS app + widget | `macOS/ScriptWidgetMac*` | Desktop shell that reuses the shared runtime/resources. |
+| Shared runtime | `Shared/ScriptWidgetRuntime` | JavaScriptCore host, Babel preset, SwiftUI renderer, AppIntent glue, storage helpers. |
+| Web editor | `Editor/editorfe` | Create React App + CodeMirror 6 frontend for writing scripts. |
+| Assets | `Resource/` | App Store marketing artwork, screenshots, and promo material. |
 
-## Download
+## Quick Start
+### Prerequisites
+- Xcode 14+ with SwiftUI, WidgetKit, ActivityKit, and the `iCloud.ScriptWidget` container enabled.
+- Node.js 16+ / npm for the React editor.
+- No CocoaPods required — dependencies are vendored via Swift Package Manager.
 
-- App Store: [https://apps.apple.com/app/scriptwidget/id1555600758](https://apps.apple.com/app/scriptwidget/id1555600758)
+### Clone the repository
+```bash
+git clone https://github.com/everettjf/ScriptWidget.git
+cd ScriptWidget
+```
 
-## Documentation
+### iOS app, widgets, and share extension
+1. Open `iOS/ScriptWidget.xcodeproj` in Xcode.
+2. Choose one of the schemes:
+   - `ScriptWidget` – main app
+   - `ScriptWidgetWidget` – widget extension + Live Activities
+   - `ScriptWidgetShare` – share extension
+3. Enable the `iCloud.ScriptWidget` container and the `group.everettjf.scriptwidget` app group so script storage works on-device.
 
-For detailed documentation and guides, visit: [https://xnu.app/jswidget/](https://xnu.app/jswidget/)
+### macOS app + widget
+1. Open `macOS/ScriptWidgetMac.xcodeproj`.
+2. Select `ScriptWidgetMac` (app) or `ScriptWidgetMacWidget` (widget) scheme and build/run.
+3. macOS targets reuse `Shared/ScriptWidgetRuntime`, so changes here automatically benefit every platform.
 
-## Example Code
+### React editor frontend
+```bash
+cd Editor/editorfe
+npm install
+npm start        # Local dev server at http://localhost:3000
+npm run build    # Optional production build for embedding/distribution
+```
+
+## Repository Layout
+```
+Shared/ScriptWidgetRuntime/   # JavaScriptCore host, JSX renderer, runtime APIs
+iOS/ScriptWidget*             # App, widget, and share extensions for iOS/iPadOS
+macOS/ScriptWidgetMac*        # macOS app + widget sources
+Editor/editorfe/              # React + CodeMirror editor frontend
+Resource/                     # Screenshots, marketing assets, icons
+Scripts/                      # (runtime) user-created widget packages, synced via iCloud/app group
+```
+
+## Writing Widgets
+Use `$render` with JSX components inside `Scripts/<PackageName>/main.jsx` packages. Runtime helpers such as `$getenv("widget-size")`, `$getenv("widget-param")`, `$preferences`, `$file`, `$fetch`, `$location`, and `$dynamic_island` are injected automatically.
 
 ```javascript
-const widget_size = $getenv("widget-size");
-const widget_param = $getenv("widget-param");
+const widgetSize = $getenv("widget-size");
+const widgetParam = $getenv("widget-param");
 
 const beijingDate = new Date().toLocaleString("zh-CN", { timeZone: "Asia/Shanghai" });
 const sanJoseDate = new Date().toLocaleString("zh-CN", { timeZone: "America/Los_Angeles" });
@@ -55,7 +108,41 @@ $render(
 );
 ```
 
+## Development Tips
+- Keep user scripts under `Scripts/<PackageName>`; `ScriptManager` migrates them to `iCloud.ScriptWidget` via `moveSandboxFilesToICloud()` once the container is available.
+- Touching runtime or storage logic? Run the iOS/macOS app + widget schemes to confirm scripts render, Live Activity/Dynamic Island surfaces update, and migrations succeed.
+- For editor changes, run `npm test` inside `Editor/editorfe`, smoke-test save/export, and rebuild before shipping.
+- Marketing assets live under `Resource/`; refresh screenshots/icons if user-facing UI changes.
+
+## Contributing
+We welcome issues and pull requests! Before landing breaking runtime changes, please open an issue so we can discuss migration plans. Helpful areas right now:
+- ScriptWidgetRuntime unit tests that cover JSX ➜ SwiftUI conversion and error reporting.
+- React editor modernization (React 18, Vite/Vitest, TypeScript typings for runtime APIs).
+- Documentation refreshes (per-target onboarding, localization, screenshots) and CI automation for `xcodebuild` + `npm test`.
+
+When submitting PRs:
+1. Reference the GitHub issue (or open one) describing the problem.
+2. Include repro steps or screenshots where applicable.
+3. Verify builds/tests for the targets you touched (see [Development Tips](#development-tips)).
+
+## Roadmap
+| Item | Status | Notes |
+| --- | --- | --- |
+| Documentation refresh (README, AGENTS) | ✅ Done | High-level overview + contributor guidance landed.
+| Developer onboarding guide | ⏳ Planned | Add target-specific screenshots & debugging caveats.
+| Shared runtime unit tests | ⏳ Planned | Wrap `ScriptWidgetRuntime` transforms in XCTest.
+| React editor modernization | ⏳ Planned | Upgrade to React 18 + Vite (or CRA 5 alternative), add prettier/eslint + TS definitions.
+| Continuous Integration | ⏳ Planned | Automate `xcodebuild` (iOS + macOS) and `npm test` via GitHub Actions.
+| Distribution pipeline | ⏳ Planned | Script `fastlane` or `xcodebuild` archive steps for App Store Connect uploads.
+
+## Star History
+[![Star History Chart](https://api.star-history.com/svg?repos=everettjf/ScriptWidget&type=Date)](https://star-history.com/#everettjf/ScriptWidget&Date)
+
+## Community & Support
+- App Store: [ScriptWidget](https://apps.apple.com/app/scriptwidget/id1555600758)
+- Docs, gallery, FAQ: [xnu.app/scriptwidget](https://xnu.app/scriptwidget/)
+- Issues & discussions: GitHub Issues/Discussions on this repository
+
 ## License
 
-This project is open source and available under the MIT License.
-
+MIT License – see [LICENSE](LICENSE).

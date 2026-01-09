@@ -1,13 +1,13 @@
 {
-  "originHash" : "d82dcde36bf5b6dedd514ad4b4051ddb77b01570d8cce2c7a27cec12d32d63f4",
+  "originHash" : "a1224478333d09db55982de830ed5b9826df59c20413798533ad720d4cbf103c",
   "pins" : [
     {
-      "identity" : "alerttoast",
+      "identity" : "clockhandrotationkit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/elai950/AlertToast.git",
+      "location" : "https://github.com/xnuapp/ClockHandRotationKit",
       "state" : {
-        "branch" : "master",
-        "revision" : "a437862bb6605080a5816e866cbd4ac8c8657b49"
+        "revision" : "18ece16317fa2ef74bb38c56897d6908a78f64ec",
+        "version" : "1.0.1"
       }
     },
     {
@@ -29,15 +29,6 @@
       }
     },
     {
-      "identity" : "snapkit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/SnapKit/SnapKit.git",
-      "state" : {
-        "revision" : "d458564516e5676af9c70b4f4b2a9178294f1bc6",
-        "version" : "5.0.1"
-      }
-    },
-    {
       "identity" : "swiftuix",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SwiftUIX/SwiftUIX",
@@ -53,15 +44,6 @@
       "state" : {
         "revision" : "b3dcd7dbd0d488e1a7077cb33b00f2083e382f07",
         "version" : "5.0.1"
-      }
-    },
-    {
-      "identity" : "swiftystorekit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/bizz84/SwiftyStoreKit.git",
-      "state" : {
-        "revision" : "9ce911639680113dac9b554d6243e406a9758ebe",
-        "version" : "0.16.4"
       }
     },
     {

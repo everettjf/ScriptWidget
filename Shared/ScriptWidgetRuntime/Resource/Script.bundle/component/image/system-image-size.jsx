@@ -1,6 +1,6 @@
 //
 // ScriptWidget
-// https://xnu.app/jswidget
+// https://xnu.app/scriptwidget
 //
 // image systemName with font size
 //

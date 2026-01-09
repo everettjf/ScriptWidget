@@ -10,7 +10,7 @@ import SwiftUI
 struct ButtonOfficalSite: View {
     var body: some View {
         Button(action: {
-            NSWorkspace.shared.open(URL(string: "https://xnu.app/jswidget")!)
+            NSWorkspace.shared.open(URL(string: "https://xnu.app/scriptwidget")!)
         }) {
             Image(systemName: "questionmark.circle")
         }

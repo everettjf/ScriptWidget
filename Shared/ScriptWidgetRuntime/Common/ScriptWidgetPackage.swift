@@ -29,7 +29,6 @@ struct ScriptWidgetPackage {
     let path: URL
     let name: String
     let jsxPath: URL
-    let configPath: URL
     let imagePath: URL
     let readonly: Bool
     
@@ -37,7 +36,6 @@ struct ScriptWidgetPackage {
         self.readonly = readonly
         self.path = path
         self.jsxPath = self.path.appendingPathComponent("main.jsx")
-        self.configPath = self.path.appendingPathComponent("config.json")
         self.imagePath = self.path.appendingPathComponent("image")
         self.name = self.path.lastPathComponent
     }
@@ -124,7 +122,7 @@ struct ScriptWidgetPackage {
             print("icloud start download exception : \(error)")
         }
         do {
-            let content = try String(contentsOf: fullPath)
+            let content = try String(contentsOf: fullPath, encoding: .utf8)
             return (content, "succeed")
         } catch {
             let errorInfo = "\(error)"
@@ -220,6 +218,15 @@ struct ScriptWidgetPackage {
             return nil
         }
         return ImageModel(name: imageName, path: imagePath)
+    }
+    
+    
+    func getGifFile(_ fileName: String) -> URL? {
+        let gifPath = self.imagePath.appendingPathComponent(fileName).appendingPathExtension("gif")
+        if !FileManager.default.fileExists(atPath: gifPath.path) {
+            return nil
+        }
+        return gifPath
     }
     
     func getImageList() -> [ImageModel] {

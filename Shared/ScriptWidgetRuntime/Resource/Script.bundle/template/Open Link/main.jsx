@@ -1,26 +1,20 @@
 // 
 // ScriptWidget 
-// https://xnu.app/jswidget
+// https://xnu.app/scriptwidget
 // 
 // Template for component link
 // 
 
 $render(
-  <vstack frame="max" linkurl="https://xnu.app/jswidget">
+  <vstack frame="max">
     <link url="https://www.baidu.com" background="blue">
-      <text font="title">Hello Baidu</text>
+      <text>Baidu</text>
     </link>
-    <link url="https://www.google.com" background="green">
-      <hstack>
-        <text>Hello</text>
-        <text>Google</text>
-      </hstack>
+    <link url="https://www.qq.com" background="green">
+      <text>QQ</text>
     </link>
-    <link url="https://www.bing.com" background="yellow">
-      <vstack>
-        <text>Hello</text>
-        <text>Bing</text>
-      </vstack>
+    <link url="https://www.163.com" background="yellow">
+      <text>163</text>
     </link>
   </vstack>
 );

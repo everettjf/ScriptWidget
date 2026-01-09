@@ -1,7 +1,7 @@
 
 //
 // ScriptWidget
-// https://xnu.app/jswidget
+// https://xnu.app/scriptwidget
 //
 // Custom Component
 // Thanks for Reina for telling me this good idea

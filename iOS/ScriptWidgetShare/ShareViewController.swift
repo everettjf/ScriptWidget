@@ -80,9 +80,9 @@ class ShareViewController: UIViewController {
         let targetPackageName = fileNameWithoutExt
         
         do {
-            let fileContent = try String(contentsOf: fileURL)
+            let fileContent = try String(contentsOf: fileURL, encoding: .utf8)
             
-            let result = sharedScriptManager.createScript(content: fileContent, recommendPackageName: targetPackageName)
+            let result = sharedScriptManager.createScript(content: fileContent, recommendPackageName: targetPackageName, imageCopyPath: nil)
             if result.0 {
                 print("succeed import")
                 
@@ -98,10 +98,6 @@ class ShareViewController: UIViewController {
     }
     
     private func openAppAfterImported() {
-        // mark update notification
-        if let userDefaults = UserDefaults(suiteName: "group.everettjf.scriptwidget") {
-            userDefaults.set("share", forKey: "need_update_list")
-        }
         
         if let appurl = URL(string: "scriptwidget://") {
             self.openURL(appurl)

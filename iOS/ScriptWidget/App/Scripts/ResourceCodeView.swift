@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import AlertToast
 
 struct ResourceCodeView: View {
     
@@ -24,16 +23,8 @@ struct ResourceCodeView: View {
         self.model.package.updateImages()
     }
     
-    func showToast(_ message: String) {
-        toastMessage = message
-        showingToast.toggle()
-    }
-    
     var body: some View {
         content
-        .toast(isPresenting: $showingToast) {
-            AlertToast(type: .regular, title: toastMessage)
-        }
     }
     
     var content: some View {
@@ -49,7 +40,7 @@ struct ResourceCodeView: View {
                         Label("Files", systemImage: "doc.plaintext")
                     }
                 }
-                Section(header: Text("Documents")) {
+                Section(header: Text("Codes")) {
                     NavigationLink(destination: SettingComponentsView()) {
                         Label("Components", systemImage: "command")
                     }

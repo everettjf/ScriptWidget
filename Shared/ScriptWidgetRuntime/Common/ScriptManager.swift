@@ -194,10 +194,18 @@ class ScriptManager {
         return self.scriptDirectory.appendingPathComponent(packageName)
     }
     
-    func saveScript(packageName: String, content: String) -> (Bool,String) {
+    func saveScript(packageName: String, content: String, imageCopyPath: URL?) -> (Bool,String) {
         let packagePath = self.getPackagePathFromPackageName(packageName: packageName)
         let package = ScriptWidgetPackage(path: packagePath)
-        return package.writeMainFile(content: content)
+        let result = package.writeMainFile(content: content)
+
+        if let imageCopyPath = imageCopyPath {
+            // copy images to package
+            let targetDir = package.imagePath
+            try? FileManager.default.copyItem(at: imageCopyPath, to: targetDir)
+        }
+        
+        return result
     }
     
     func renameScript(srcPackageName: String, destPackageName: String) -> (Bool, String) {
@@ -225,10 +233,10 @@ class ScriptManager {
         return packageName
     }
     
-    func createScript(content: String, recommendPackageName: String) -> (Bool,String) {
+    func createScript(content: String, recommendPackageName: String, imageCopyPath: URL?) -> (Bool,String) {
         // get valid id (name)
         let packageName = self.getValidPackageName(recommendPackageName: recommendPackageName)
-        return self.saveScript(packageName: packageName, content: content)
+        return self.saveScript(packageName: packageName, content: content, imageCopyPath: imageCopyPath)
     }
     
     
@@ -307,7 +315,8 @@ class ScriptManager {
         guard let bundleUrl = Bundle.main.url(forResource: bundle, withExtension: "bundle") else {
             return nil
         }
-        guard let content = try? String(contentsOf: bundleUrl.appendingPathComponent(fileName)) else {
+        let filePath = bundleUrl.appendingPathComponent(fileName);
+        guard let content = try? String(contentsOf: filePath, encoding: .utf8) else {
             return nil
         }
         return content

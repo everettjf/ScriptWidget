@@ -7,9 +7,19 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5A89B7942F0FACFA008B90A2 /* SwingAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7932F0FACFA008B90A2 /* SwingAnimationModifier.swift */; };
+		5A89B7952F0FACFA008B90A2 /* SwingAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7932F0FACFA008B90A2 /* SwingAnimationModifier.swift */; };
+		5A89B7972F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7962F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift */; };
+		5A89B7982F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7962F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift */; };
+		5A912FA82D2131BA0050F250 /* ClockHandRotationKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5A912FA72D2131BA0050F250 /* ClockHandRotationKit */; };
+		5A912FAA2D2135330050F250 /* ClockHandRotationKit in Frameworks */ = {isa = PBXBuildFile; productRef = 5A912FA92D2135330050F250 /* ClockHandRotationKit */; };
+		5A912FB22D214B2C0050F250 /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 5A912FB12D214B2C0050F250 /* SDWebImageSwiftUI */; };
 		5AC386D22CDA09800027B976 /* ImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC386D12CDA09760027B976 /* ImportView.swift */; };
 		5AC386D42CDA0CB10027B976 /* ImportExportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC386D32CDA0CA90027B976 /* ImportExportManager.swift */; };
+		5AC386D62CDB483D0027B976 /* ScriptWidgetSelectTimerIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC386D52CDB48350027B976 /* ScriptWidgetSelectTimerIntent.swift */; };
 		5AC769492CD370C60022A138 /* ExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC769482CD370BC0022A138 /* ExportView.swift */; };
+		5AE2C8922CDB3D1000A9F4FF /* ScriptWidgetControlWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AE2C8912CDB3D1000A9F4FF /* ScriptWidgetControlWidget.swift */; };
+		5AE2C8942CDB3D7F00A9F4FF /* ScriptWidgetControlAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AE2C8932CDB3D7400A9F4FF /* ScriptWidgetControlAppIntent.swift */; };
 		D132336528E08C15002C26A2 /* ScriptLiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D132336428E08C15002C26A2 /* ScriptLiveActivityManager.swift */; };
 		D132336728E09630002C26A2 /* ScriptDynamicIslandCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D132336628E09630002C26A2 /* ScriptDynamicIslandCreator.swift */; };
 		D13832AE25A1EB6B00DC9C20 /* CreateGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13832AD25A1EB6B00DC9C20 /* CreateGuideView.swift */; };
@@ -47,7 +57,6 @@
 		D19CAF5F28CC3F8E00DFF98B /* ScriptPackageHorizontalFileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19CAF5E28CC3F8E00DFF98B /* ScriptPackageHorizontalFileView.swift */; };
 		D19CAF6128CC3FAC00DFF98B /* ScriptPackageEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19CAF6028CC3FAC00DFF98B /* ScriptPackageEditorView.swift */; };
 		D1BD329728DF0D9600F217ED /* ScriptCodePreviewDataObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1BD329628DF0D9600F217ED /* ScriptCodePreviewDataObject.swift */; };
-		D1BD329A28E06CC400F217ED /* AlertToast in Frameworks */ = {isa = PBXBuildFile; productRef = D1BD329928E06CC400F217ED /* AlertToast */; };
 		D1BD329C28E0713D00F217ED /* ScriptLiveActivityDataObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1BD329B28E0713D00F217ED /* ScriptLiveActivityDataObject.swift */; };
 		D1CBAED228D5B13400DE4E65 /* ScriptLiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CBAED128D5B13400DE4E65 /* ScriptLiveActivityAttributes.swift */; };
 		D1CBAED328D5B13400DE4E65 /* ScriptLiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CBAED128D5B13400DE4E65 /* ScriptLiveActivityAttributes.swift */; };
@@ -79,10 +88,6 @@
 		F0C7ECF92AD0759F0039D30D /* AppConfigFrequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C7ECF72AD0759F0039D30D /* AppConfigFrequency.swift */; };
 		F2032A6A25D3EEE30070E068 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F2B20D1825D3EAEA00B62DAC /* CloudKit.framework */; };
 		F205238727A58DDD00C6EB45 /* ResourceCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F205238627A58DDD00C6EB45 /* ResourceCodeView.swift */; };
-		F224FE3B27A8E20E00617AF6 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = F224FE3927A8E20E00617AF6 /* Localizable.strings */; };
-		F224FE4727A906C800617AF6 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = F224FE4527A906C800617AF6 /* InfoPlist.strings */; };
-		F224FE4D27A906DE00617AF6 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = F224FE4B27A906DE00617AF6 /* InfoPlist.strings */; };
-		F224FE5027A906F300617AF6 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = F224FE4E27A906F300617AF6 /* Localizable.strings */; };
 		F224FE5927A959E900617AF6 /* ImageListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F224FE5827A959E900617AF6 /* ImageListView.swift */; };
 		F224FE5B27AA1AF500617AF6 /* ImagePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F224FE5A27AA1AF500617AF6 /* ImagePreviewView.swift */; };
 		F228DDB627A37776009E8F04 /* ZipArchive in Frameworks */ = {isa = PBXBuildFile; productRef = F228DDB527A37776009E8F04 /* ZipArchive */; };
@@ -91,12 +96,9 @@
 		F23A40BB262492FF0035CBA7 /* DeepLinkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F23A40BA262492FF0035CBA7 /* DeepLinkManager.swift */; };
 		F240AC7827B2CE1C00D249EA /* TabBarAccessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F240AC7727B2CE1C00D249EA /* TabBarAccessor.swift */; };
 		F2433F6025D6F94B00AE4097 /* AppHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2433F5F25D6F94B00AE4097 /* AppHelper.swift */; };
-		F245BBDF25B9E4AE00F25F68 /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = F245BBDE25B9E4AE00F25F68 /* SnapKit */; };
 		F245BBED25B9E5DC00F25F68 /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = F245BBEC25B9E5DC00F25F68 /* SDWebImageSwiftUI */; };
 		F245BBF825B9E62300F25F68 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = F245BBF725B9E62300F25F68 /* SwiftyJSON */; };
 		F2534B3E27AA9C50000A4F98 /* PhotoPicker.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F2534B4027AA9C50000A4F98 /* PhotoPicker.storyboard */; };
-		F25ACA0F27D31B7300C8AEDF /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = F25ACA0D27D31B7300C8AEDF /* InfoPlist.strings */; };
-		F25ACA1227D31B7300C8AEDF /* TOCropViewControllerLocalizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = F25ACA1027D31B7300C8AEDF /* TOCropViewControllerLocalizable.strings */; };
 		F25ED68F27FDF9DD000089D0 /* ScriptWidgetRunningState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F25ED68E27FDF9DD000089D0 /* ScriptWidgetRunningState.swift */; };
 		F25ED69027FDF9DD000089D0 /* ScriptWidgetRunningState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F25ED68E27FDF9DD000089D0 /* ScriptWidgetRunningState.swift */; };
 		F25ED69D27FF2227000089D0 /* FileDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F25ED69C27FF2227000089D0 /* FileDetailView.swift */; };
@@ -238,8 +240,6 @@
 		F2BC99AF25D0C6F900285C7B /* BundleScriptListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2BC99AE25D0C6F900285C7B /* BundleScriptListView.swift */; };
 		F2BE767325DC0806000AD28E /* KeyboardHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2BE767225DC0806000AD28E /* KeyboardHelper.swift */; };
 		F2BE767525DC1C83000AD28E /* ImageHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2BE767425DC1C83000AD28E /* ImageHelper.swift */; };
-		F2C5C5E027AF5AB200797C5B /* SwiftyStoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = F2C5C5DF27AF5AB200797C5B /* SwiftyStoreKit */; };
-		F2C5C5E227AF5B2000797C5B /* StoreManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2C5C5E127AF5B2000797C5B /* StoreManager.swift */; };
 		F2C5C5E427AF5B5400797C5B /* AppIconsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2C5C5E327AF5B5400797C5B /* AppIconsView.swift */; };
 		F2C5C60E27AF5C3200797C5B /* blue@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F2C5C5E627AF5C3200797C5B /* blue@2x.png */; };
 		F2C5C60F27AF5C3200797C5B /* plain3@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = F2C5C5E727AF5C3200797C5B /* plain3@3x.png */; };
@@ -330,9 +330,14 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		5A89B7932F0FACFA008B90A2 /* SwingAnimationModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwingAnimationModifier.swift; sourceTree = "<group>"; };
+		5A89B7962F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagGif.swift; sourceTree = "<group>"; };
 		5AC386D12CDA09760027B976 /* ImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportView.swift; sourceTree = "<group>"; };
 		5AC386D32CDA0CA90027B976 /* ImportExportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportExportManager.swift; sourceTree = "<group>"; };
+		5AC386D52CDB48350027B976 /* ScriptWidgetSelectTimerIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetSelectTimerIntent.swift; sourceTree = "<group>"; };
 		5AC769482CD370BC0022A138 /* ExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportView.swift; sourceTree = "<group>"; };
+		5AE2C8912CDB3D1000A9F4FF /* ScriptWidgetControlWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetControlWidget.swift; sourceTree = "<group>"; };
+		5AE2C8932CDB3D7400A9F4FF /* ScriptWidgetControlAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetControlAppIntent.swift; sourceTree = "<group>"; };
 		D132336428E08C15002C26A2 /* ScriptLiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptLiveActivityManager.swift; sourceTree = "<group>"; };
 		D132336628E09630002C26A2 /* ScriptDynamicIslandCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptDynamicIslandCreator.swift; sourceTree = "<group>"; };
 		D13832AD25A1EB6B00DC9C20 /* CreateGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateGuideView.swift; sourceTree = "<group>"; };
@@ -407,24 +412,12 @@
 		F0C7ECF62AD0759F0039D30D /* ScriptWidgetAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAppIntent.swift; sourceTree = "<group>"; };
 		F0C7ECF72AD0759F0039D30D /* AppConfigFrequency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfigFrequency.swift; sourceTree = "<group>"; };
 		F205238627A58DDD00C6EB45 /* ResourceCodeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResourceCodeView.swift; sourceTree = "<group>"; };
-		F224FE3A27A8E20E00617AF6 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = Localizable.strings; sourceTree = "<group>"; };
-		F224FE4627A906C800617AF6 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = InfoPlist.strings; sourceTree = "<group>"; };
-		F224FE4C27A906DE00617AF6 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = InfoPlist.strings; sourceTree = "<group>"; };
-		F224FE4F27A906F300617AF6 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = Localizable.strings; sourceTree = "<group>"; };
 		F224FE5827A959E900617AF6 /* ImageListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageListView.swift; sourceTree = "<group>"; };
 		F224FE5A27AA1AF500617AF6 /* ImagePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePreviewView.swift; sourceTree = "<group>"; };
 		F23A40BA262492FF0035CBA7 /* DeepLinkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkManager.swift; sourceTree = "<group>"; };
 		F240AC7727B2CE1C00D249EA /* TabBarAccessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarAccessor.swift; sourceTree = "<group>"; };
 		F2433F5F25D6F94B00AE4097 /* AppHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppHelper.swift; sourceTree = "<group>"; };
 		F2433F8425D6FE6200AE4097 /* QuickLook.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLook.framework; path = System/Library/Frameworks/QuickLook.framework; sourceTree = SDKROOT; };
-		F25AC9FE27D30A2800C8AEDF /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/PhotoPicker.storyboard; sourceTree = "<group>"; };
-		F25ACA0627D3184500C8AEDF /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/PhotoPicker.strings"; sourceTree = "<group>"; };
-		F25ACA0827D3184600C8AEDF /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "../zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
-		F25ACA0927D3184600C8AEDF /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "../zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
-		F25ACA0A27D3184600C8AEDF /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "../zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
-		F25ACA0C27D3184600C8AEDF /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "../zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
-		F25ACA0E27D31B7300C8AEDF /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
-		F25ACA1127D31B7300C8AEDF /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/TOCropViewControllerLocalizable.strings"; sourceTree = "<group>"; };
 		F25ED68E27FDF9DD000089D0 /* ScriptWidgetRunningState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRunningState.swift; sourceTree = "<group>"; };
 		F25ED69C27FF2227000089D0 /* FileDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDetailView.swift; sourceTree = "<group>"; };
 		F25ED69E280067BD000089D0 /* FileCreateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCreateView.swift; sourceTree = "<group>"; };
@@ -515,7 +508,6 @@
 		F2BC99AE25D0C6F900285C7B /* BundleScriptListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BundleScriptListView.swift; sourceTree = "<group>"; };
 		F2BE767225DC0806000AD28E /* KeyboardHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardHelper.swift; sourceTree = "<group>"; };
 		F2BE767425DC1C83000AD28E /* ImageHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageHelper.swift; sourceTree = "<group>"; };
-		F2C5C5E127AF5B2000797C5B /* StoreManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StoreManager.swift; sourceTree = "<group>"; };
 		F2C5C5E327AF5B5400797C5B /* AppIconsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppIconsView.swift; sourceTree = "<group>"; };
 		F2C5C5E627AF5C3200797C5B /* blue@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "blue@2x.png"; sourceTree = "<group>"; };
 		F2C5C5E727AF5C3200797C5B /* plain3@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "plain3@3x.png"; sourceTree = "<group>"; };
@@ -580,12 +572,10 @@
 			files = (
 				F2997F05274A717A00CD7DD6 /* SwiftUIX in Frameworks */,
 				F2B20D1925D3EAEA00B62DAC /* CloudKit.framework in Frameworks */,
+				5A912FAA2D2135330050F250 /* ClockHandRotationKit in Frameworks */,
 				F296EA1A25E8909700E87A4A /* StoreKit.framework in Frameworks */,
-				D1BD329A28E06CC400F217ED /* AlertToast in Frameworks */,
-				F2C5C5E027AF5AB200797C5B /* SwiftyStoreKit in Frameworks */,
 				F245BBED25B9E5DC00F25F68 /* SDWebImageSwiftUI in Frameworks */,
 				F245BBF825B9E62300F25F68 /* SwiftyJSON in Frameworks */,
-				F245BBDF25B9E4AE00F25F68 /* SnapKit in Frameworks */,
 				F228DDB627A37776009E8F04 /* ZipArchive in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -594,7 +584,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5A912FB22D214B2C0050F250 /* SDWebImageSwiftUI in Frameworks */,
 				F228DDB827A3778A009E8F04 /* ZipArchive in Frameworks */,
+				5A912FA82D2131BA0050F250 /* ClockHandRotationKit in Frameworks */,
 				F2B20CED25D3AD6200B62DAC /* SwiftyJSON in Frameworks */,
 				F2032A6A25D3EEE30070E068 /* CloudKit.framework in Frameworks */,
 				D18AAC72252A14AE0065386A /* SwiftUI.framework in Frameworks */,
@@ -614,6 +606,16 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		5AE2C8902CDB3CE700A9F4FF /* ControlWidget */ = {
+			isa = PBXGroup;
+			children = (
+				5AC386D52CDB48350027B976 /* ScriptWidgetSelectTimerIntent.swift */,
+				5AE2C8932CDB3D7400A9F4FF /* ScriptWidgetControlAppIntent.swift */,
+				5AE2C8912CDB3D1000A9F4FF /* ScriptWidgetControlWidget.swift */,
+			);
+			path = ControlWidget;
+			sourceTree = "<group>";
+		};
 		D1403DA22552FE950076F87C /* PhotoPicker */ = {
 			isa = PBXGroup;
 			children = (
@@ -763,9 +765,6 @@
 				F2BC995325CDA7B900285C7B /* App */,
 				F2BE765625DB7C96000AD28E /* Assets */,
 				D18AAC3D252A12D20065386A /* Info.plist */,
-				F25ACA1027D31B7300C8AEDF /* TOCropViewControllerLocalizable.strings */,
-				F25ACA0D27D31B7300C8AEDF /* InfoPlist.strings */,
-				F224FE3727A8E1B500617AF6 /* Localizations */,
 				D1403D962552FE5C0076F87C /* ScriptWidget-Bridging-Header.h */,
 				D1907212256159B700F855C7 /* ScriptWidget.entitlements */,
 				D18AAC35252A12D20065386A /* Preview Content */,
@@ -796,6 +795,7 @@
 		D18AAC73252A14AE0065386A /* ScriptWidgetWidget */ = {
 			isa = PBXGroup;
 			children = (
+				5AE2C8902CDB3CE700A9F4FF /* ControlWidget */,
 				F0C7ECFA2AD075D20039D30D /* AppIntents */,
 				D1CBAED428D5B1B000DE4E65 /* LiveActivity */,
 				D190721F25615A1600F855C7 /* ScriptWidgetWidget.entitlements */,
@@ -807,7 +807,6 @@
 				D18AAC74252A14AE0065386A /* ScriptWidgetMain.swift */,
 				D18AAC77252A14AF0065386A /* Assets.xcassets */,
 				D18AAC79252A14AF0065386A /* Info.plist */,
-				F224FE3C27A9061100617AF6 /* Localizations */,
 			);
 			path = ScriptWidgetWidget;
 			sourceTree = "<group>";
@@ -872,55 +871,6 @@
 				F0C7ECF72AD0759F0039D30D /* AppConfigFrequency.swift */,
 			);
 			path = AppIntents;
-			sourceTree = "<group>";
-		};
-		F224FE3727A8E1B500617AF6 /* Localizations */ = {
-			isa = PBXGroup;
-			children = (
-				F224FE3827A8E1E400617AF6 /* Base.lproj */,
-			);
-			path = Localizations;
-			sourceTree = "<group>";
-		};
-		F224FE3827A8E1E400617AF6 /* Base.lproj */ = {
-			isa = PBXGroup;
-			children = (
-				F224FE3927A8E20E00617AF6 /* Localizable.strings */,
-			);
-			path = Base.lproj;
-			sourceTree = "<group>";
-		};
-		F224FE3C27A9061100617AF6 /* Localizations */ = {
-			isa = PBXGroup;
-			children = (
-				F224FE4227A9069800617AF6 /* Base.lproj */,
-			);
-			path = Localizations;
-			sourceTree = "<group>";
-		};
-		F224FE4027A9067E00617AF6 /* Localizations */ = {
-			isa = PBXGroup;
-			children = (
-				F224FE4427A906A500617AF6 /* Base.lproj */,
-			);
-			path = Localizations;
-			sourceTree = "<group>";
-		};
-		F224FE4227A9069800617AF6 /* Base.lproj */ = {
-			isa = PBXGroup;
-			children = (
-				F224FE4B27A906DE00617AF6 /* InfoPlist.strings */,
-				F224FE4E27A906F300617AF6 /* Localizable.strings */,
-			);
-			path = Base.lproj;
-			sourceTree = "<group>";
-		};
-		F224FE4427A906A500617AF6 /* Base.lproj */ = {
-			isa = PBXGroup;
-			children = (
-				F224FE4527A906C800617AF6 /* InfoPlist.strings */,
-			);
-			path = Base.lproj;
 			sourceTree = "<group>";
 		};
 		F240AC7E27B2D68B00D249EA /* Scripts */ = {
@@ -1088,6 +1038,7 @@
 		F29119182793035E00B860B0 /* Animation */ = {
 			isa = PBXGroup;
 			children = (
+				5A89B7932F0FACFA008B90A2 /* SwingAnimationModifier.swift */,
 				F29119192793035E00B860B0 /* ScriptWidgetAttributeAnimationModifier.swift */,
 			);
 			path = Animation;
@@ -1114,6 +1065,7 @@
 		F29119212793035E00B860B0 /* Elements */ = {
 			isa = PBXGroup;
 			children = (
+				5A89B7962F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift */,
 				F28D681A27CE8874000C2D03 /* ScriptWidgetElementTagGrid.swift */,
 				F28D681927CE8874000C2D03 /* ScriptWidgetElementTagStack.swift */,
 				F29119222793035E00B860B0 /* ScriptWidgetElementTagLink.swift */,
@@ -1178,7 +1130,6 @@
 			isa = PBXGroup;
 			children = (
 				5AC386D32CDA0CA90027B976 /* ImportExportManager.swift */,
-				F2C5C5E127AF5B2000797C5B /* StoreManager.swift */,
 				F23A40BA262492FF0035CBA7 /* DeepLinkManager.swift */,
 			);
 			path = Manager;
@@ -1287,7 +1238,6 @@
 		F2C6AC7226004B0F009CECE9 /* ScriptWidgetShare */ = {
 			isa = PBXGroup;
 			children = (
-				F224FE4027A9067E00617AF6 /* Localizations */,
 				F26D605B2600F742008D3212 /* ScriptWidgetShare.entitlements */,
 				F2C6AC7326004B0F009CECE9 /* ShareViewController.swift */,
 				F2C6AC7826004B0F009CECE9 /* Info.plist */,
@@ -1335,13 +1285,10 @@
 			);
 			name = ScriptWidget;
 			packageProductDependencies = (
-				F245BBDE25B9E4AE00F25F68 /* SnapKit */,
 				F245BBEC25B9E5DC00F25F68 /* SDWebImageSwiftUI */,
 				F245BBF725B9E62300F25F68 /* SwiftyJSON */,
 				F2997F04274A717A00CD7DD6 /* SwiftUIX */,
 				F228DDB527A37776009E8F04 /* ZipArchive */,
-				F2C5C5DF27AF5AB200797C5B /* SwiftyStoreKit */,
-				D1BD329928E06CC400F217ED /* AlertToast */,
 			);
 			productName = ScriptWidget;
 			productReference = D18AAC2C252A12D10065386A /* ScriptWidget.app */;
@@ -1417,17 +1364,14 @@
 			knownRegions = (
 				en,
 				Base,
-				"zh-Hans",
 			);
 			mainGroup = D18AAC23252A12D10065386A;
 			packageReferences = (
-				F245BBDD25B9E4AE00F25F68 /* XCRemoteSwiftPackageReference "SnapKit" */,
 				F245BBEB25B9E5DC00F25F68 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */,
 				F245BBF625B9E62300F25F68 /* XCRemoteSwiftPackageReference "SwiftyJSON" */,
 				F2997F03274A717A00CD7DD6 /* XCRemoteSwiftPackageReference "SwiftUIX" */,
 				F228DDB427A37776009E8F04 /* XCRemoteSwiftPackageReference "ZipArchive" */,
-				F2C5C5DE27AF5AB200797C5B /* XCRemoteSwiftPackageReference "SwiftyStoreKit" */,
-				D1BD329828E06CC400F217ED /* XCRemoteSwiftPackageReference "AlertToast" */,
+				5A89B7A32F10D408008B90A2 /* XCRemoteSwiftPackageReference "ClockHandRotationKit" */,
 			);
 			productRefGroup = D18AAC2D252A12D10065386A /* Products */;
 			projectDirPath = "";
@@ -1456,7 +1400,6 @@
 				F277CB8527CA73BB003AB97D /* newicon2@2x.png in Resources */,
 				F2C5C61F27AF5C3200797C5B /* plain5@3x.png in Resources */,
 				F2C5C61B27AF5C3200797C5B /* dark2@2x.png in Resources */,
-				F25ACA0F27D31B7300C8AEDF /* InfoPlist.strings in Resources */,
 				F277CB8727CA73BB003AB97D /* newicon6@3x.png in Resources */,
 				F0C613402AE9679C00877D9F /* Apple ][.ttf in Resources */,
 				F277CB8D27CA73BB003AB97D /* newicon6@2x.png in Resources */,
@@ -1498,7 +1441,6 @@
 				F2C5C61227AF5C3200797C5B /* color2@2x.png in Resources */,
 				F277CB8927CA73BB003AB97D /* newicon4@3x.png in Resources */,
 				F277CB8A27CA73BB003AB97D /* newicon8@3x.png in Resources */,
-				F224FE3B27A8E20E00617AF6 /* Localizable.strings in Resources */,
 				F29119842793035E00B860B0 /* support.bundle in Resources */,
 				F2C5C63027AF5C3200797C5B /* lightblue@3x.png in Resources */,
 				D18AAC34252A12D20065386A /* Assets.xcassets in Resources */,
@@ -1517,7 +1459,6 @@
 				F2C5C61527AF5C3200797C5B /* blue2@2x.png in Resources */,
 				F0C6133A2AE9679C00877D9F /* OneSlot.ttf in Resources */,
 				F2C5C62227AF5C3200797C5B /* color4@3x.png in Resources */,
-				F25ACA1227D31B7300C8AEDF /* TOCropViewControllerLocalizable.strings in Resources */,
 				F2C5C61927AF5C3200797C5B /* color2@3x.png in Resources */,
 				F2C5C62427AF5C3200797C5B /* plain5@2x.png in Resources */,
 			);
@@ -1530,12 +1471,10 @@
 				F0C6133D2AE9679C00877D9F /* Unispace.ttf in Resources */,
 				F0C6133B2AE9679C00877D9F /* OneSlot.ttf in Resources */,
 				D18AAC78252A14AF0065386A /* Assets.xcassets in Resources */,
-				F224FE4D27A906DE00617AF6 /* InfoPlist.strings in Resources */,
 				F0C613412AE9679C00877D9F /* Apple ][.ttf in Resources */,
 				F29119852793035E00B860B0 /* support.bundle in Resources */,
 				F0C6133F2AE9679C00877D9F /* New.ttf in Resources */,
 				F0C613452AE9679C00877D9F /* Monofonto.ttf in Resources */,
-				F224FE5027A906F300617AF6 /* Localizable.strings in Resources */,
 				F0C613432AE9679C00877D9F /* Larabiefont Free.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1544,7 +1483,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F224FE4727A906C800617AF6 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1561,6 +1499,7 @@
 				D13832AE25A1EB6B00DC9C20 /* CreateGuideView.swift in Sources */,
 				D19CAF5928CB94D500DFF98B /* APIsHomeView.swift in Sources */,
 				D1403DE82552FEB40076F87C /* TOActivityCroppedImageProvider.m in Sources */,
+				5A89B7972F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */,
 				F25ED68F27FDF9DD000089D0 /* ScriptWidgetRunningState.swift in Sources */,
 				F23A40BB262492FF0035CBA7 /* DeepLinkManager.swift in Sources */,
 				F29118F32793034D00B860B0 /* ScriptModel.swift in Sources */,
@@ -1579,7 +1518,6 @@
 				F28D681C27CE8874000C2D03 /* ScriptWidgetElementTagStack.swift in Sources */,
 				F2BC99AF25D0C6F900285C7B /* BundleScriptListView.swift in Sources */,
 				F29119662793035E00B860B0 /* ScriptWidgetAttributeDebugModeModifier.swift in Sources */,
-				F2C5C5E227AF5B2000797C5B /* StoreManager.swift in Sources */,
 				F2FC062A27DC5DB300A6A99D /* WKWebViewJavascriptBridgeBase.swift in Sources */,
 				F29119522793035E00B860B0 /* ScriptWidgetAttributeFrameModifier.swift in Sources */,
 				F291196C2793035E00B860B0 /* ScriptWidgetElementTagDate.swift in Sources */,
@@ -1620,6 +1558,7 @@
 				D19CAF6128CC3FAC00DFF98B /* ScriptPackageEditorView.swift in Sources */,
 				F277CB9A27CB2995003AB97D /* ScriptWidgetAttributeImageModifier.swift in Sources */,
 				D19CAF5F28CC3F8E00DFF98B /* ScriptPackageHorizontalFileView.swift in Sources */,
+				5A89B7952F0FACFA008B90A2 /* SwingAnimationModifier.swift in Sources */,
 				D18AAC32252A12D10065386A /* ContentView.swift in Sources */,
 				F29119402793035E00B860B0 /* MineRingView.swift in Sources */,
 				F291195A2793035E00B860B0 /* ScriptWidgetAttributeRotationEffectModifier.swift in Sources */,
@@ -1710,11 +1649,13 @@
 				F291194D2793035E00B860B0 /* ScriptWidgetRuntimeElement.swift in Sources */,
 				F29119832793035E00B860B0 /* ScriptWidgetRuntimeDevice.swift in Sources */,
 				F29119752793035E00B860B0 /* ScriptWidgetElementTagShape.swift in Sources */,
+				5AC386D62CDB483D0027B976 /* ScriptWidgetSelectTimerIntent.swift in Sources */,
 				F08113B82AD083BE00605DE1 /* ScriptWidgetEntryView.swift in Sources */,
 				F29119712793035E00B860B0 /* ScriptWidgetElementTagZStack.swift in Sources */,
 				F29119552793035E00B860B0 /* ScriptWidgetAttributeText.swift in Sources */,
 				F291196D2793035E00B860B0 /* ScriptWidgetElementTagDate.swift in Sources */,
 				F29119692793035E00B860B0 /* ScriptWidgetElementTagLink.swift in Sources */,
+				5AE2C8922CDB3D1000A9F4FF /* ScriptWidgetControlWidget.swift in Sources */,
 				F29119512793035E00B860B0 /* ScriptWidgetAttributePaddingModifier.swift in Sources */,
 				D18AAC75252A14AE0065386A /* ScriptWidgetMain.swift in Sources */,
 				F29119672793035E00B860B0 /* ScriptWidgetAttributeDebugModeModifier.swift in Sources */,
@@ -1725,12 +1666,15 @@
 				F29119612793035E00B860B0 /* ScriptWidgetAttributeForegroundModifier.swift in Sources */,
 				F05227B62AD1B0A10014BE09 /* ButtonActionAppIntent.swift in Sources */,
 				D1BD329C28E0713D00F217ED /* ScriptLiveActivityDataObject.swift in Sources */,
+				5AE2C8942CDB3D7F00A9F4FF /* ScriptWidgetControlAppIntent.swift in Sources */,
+				5A89B7982F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */,
 				F29119432793035E00B860B0 /* ScriptWidgetAppState.swift in Sources */,
 				F291195B2793035E00B860B0 /* ScriptWidgetAttributeRotationEffectModifier.swift in Sources */,
 				D1CBAED328D5B13400DE4E65 /* ScriptLiveActivityAttributes.swift in Sources */,
 				F291197F2793035E00B860B0 /* ScriptWidgetRuntimePromise.swift in Sources */,
 				F277CB9B27CB2995003AB97D /* ScriptWidgetAttributeImageModifier.swift in Sources */,
 				F291196B2793035E00B860B0 /* ScriptWidgetElementTagSpacer.swift in Sources */,
+				5A89B7942F0FACFA008B90A2 /* SwingAnimationModifier.swift in Sources */,
 				F28D681527CE764B000C2D03 /* ScriptWidgetAttributeCornerRadiusModifier.swift in Sources */,
 				F08113B42AD0831C00605DE1 /* ScriptWidgetTimelineProvider.swift in Sources */,
 				F277CBA527CB5A2C003AB97D /* ScriptWidgetAttributeOpacityModifier.swift in Sources */,
@@ -1772,65 +1716,11 @@
 /* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
-		F224FE3927A8E20E00617AF6 /* Localizable.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				F224FE3A27A8E20E00617AF6 /* en */,
-				F25ACA0827D3184600C8AEDF /* zh-Hans */,
-			);
-			name = Localizable.strings;
-			sourceTree = "<group>";
-		};
-		F224FE4527A906C800617AF6 /* InfoPlist.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				F224FE4627A906C800617AF6 /* en */,
-				F25ACA0C27D3184600C8AEDF /* zh-Hans */,
-			);
-			name = InfoPlist.strings;
-			sourceTree = "<group>";
-		};
-		F224FE4B27A906DE00617AF6 /* InfoPlist.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				F224FE4C27A906DE00617AF6 /* en */,
-				F25ACA0927D3184600C8AEDF /* zh-Hans */,
-			);
-			name = InfoPlist.strings;
-			sourceTree = "<group>";
-		};
-		F224FE4E27A906F300617AF6 /* Localizable.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				F224FE4F27A906F300617AF6 /* en */,
-				F25ACA0A27D3184600C8AEDF /* zh-Hans */,
-			);
-			name = Localizable.strings;
-			sourceTree = "<group>";
-		};
 		F2534B4027AA9C50000A4F98 /* PhotoPicker.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
-				F25AC9FE27D30A2800C8AEDF /* Base */,
-				F25ACA0627D3184500C8AEDF /* zh-Hans */,
 			);
 			name = PhotoPicker.storyboard;
-			sourceTree = "<group>";
-		};
-		F25ACA0D27D31B7300C8AEDF /* InfoPlist.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				F25ACA0E27D31B7300C8AEDF /* zh-Hans */,
-			);
-			name = InfoPlist.strings;
-			sourceTree = "<group>";
-		};
-		F25ACA1027D31B7300C8AEDF /* TOCropViewControllerLocalizable.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				F25ACA1127D31B7300C8AEDF /* zh-Hans */,
-			);
-			name = TOCropViewControllerLocalizable.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
@@ -1888,7 +1778,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1945,7 +1835,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
@@ -1966,18 +1856,18 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9000;
+				CURRENT_PROJECT_VERSION = 26000;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = ScriptWidget/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 9.0;
+				MARKETING_VERSION = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1998,18 +1888,18 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9000;
+				CURRENT_PROJECT_VERSION = 26000;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = ScriptWidget/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 9.0;
+				MARKETING_VERSION = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2026,16 +1916,16 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9000;
+				CURRENT_PROJECT_VERSION = 26000;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 9.0;
+				MARKETING_VERSION = 26.0;
 				OTHER_SWIFT_FLAGS = "-D IsWidgetTarget";
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2052,16 +1942,16 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9000;
+				CURRENT_PROJECT_VERSION = 26000;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 9.0;
+				MARKETING_VERSION = 26.0;
 				OTHER_SWIFT_FLAGS = "-D IsWidgetTarget";
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2077,16 +1967,16 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9000;
+				CURRENT_PROJECT_VERSION = 26000;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 9.0;
+				MARKETING_VERSION = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.share;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -2101,16 +1991,16 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 9000;
+				CURRENT_PROJECT_VERSION = 26000;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 9.0;
+				MARKETING_VERSION = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.share;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -2161,12 +2051,12 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		D1BD329828E06CC400F217ED /* XCRemoteSwiftPackageReference "AlertToast" */ = {
+		5A89B7A32F10D408008B90A2 /* XCRemoteSwiftPackageReference "ClockHandRotationKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/elai950/AlertToast.git";
+			repositoryURL = "https://github.com/xnuapp/ClockHandRotationKit";
 			requirement = {
-				branch = master;
-				kind = branch;
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.1;
 			};
 		};
 		F228DDB427A37776009E8F04 /* XCRemoteSwiftPackageReference "ZipArchive" */ = {
@@ -2175,14 +2065,6 @@
 			requirement = {
 				branch = master;
 				kind = branch;
-			};
-		};
-		F245BBDD25B9E4AE00F25F68 /* XCRemoteSwiftPackageReference "SnapKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/SnapKit/SnapKit.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 5.0.1;
 			};
 		};
 		F245BBEB25B9E5DC00F25F68 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */ = {
@@ -2209,21 +2091,21 @@
 				minimumVersion = 0.1.0;
 			};
 		};
-		F2C5C5DE27AF5AB200797C5B /* XCRemoteSwiftPackageReference "SwiftyStoreKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/bizz84/SwiftyStoreKit.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.9.3;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		D1BD329928E06CC400F217ED /* AlertToast */ = {
+		5A912FA72D2131BA0050F250 /* ClockHandRotationKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = D1BD329828E06CC400F217ED /* XCRemoteSwiftPackageReference "AlertToast" */;
-			productName = AlertToast;
+			productName = ClockHandRotationKit;
+		};
+		5A912FA92D2135330050F250 /* ClockHandRotationKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ClockHandRotationKit;
+		};
+		5A912FB12D214B2C0050F250 /* SDWebImageSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F245BBEB25B9E5DC00F25F68 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */;
+			productName = SDWebImageSwiftUI;
 		};
 		F228DDB527A37776009E8F04 /* ZipArchive */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -2239,11 +2121,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F228DDB427A37776009E8F04 /* XCRemoteSwiftPackageReference "ZipArchive" */;
 			productName = ZipArchive;
-		};
-		F245BBDE25B9E4AE00F25F68 /* SnapKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F245BBDD25B9E4AE00F25F68 /* XCRemoteSwiftPackageReference "SnapKit" */;
-			productName = SnapKit;
 		};
 		F245BBEC25B9E5DC00F25F68 /* SDWebImageSwiftUI */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -2269,11 +2146,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F245BBF625B9E62300F25F68 /* XCRemoteSwiftPackageReference "SwiftyJSON" */;
 			productName = SwiftyJSON;
-		};
-		F2C5C5DF27AF5AB200797C5B /* SwiftyStoreKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F2C5C5DE27AF5AB200797C5B /* XCRemoteSwiftPackageReference "SwiftyStoreKit" */;
-			productName = SwiftyStoreKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

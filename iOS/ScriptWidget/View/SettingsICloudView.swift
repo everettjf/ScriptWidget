@@ -12,15 +12,15 @@ struct SettingsICloudView: View {
     func getText() -> Text {
         let icloudEnable = sharedScriptManager.isICloudAvaliable()
         if !icloudEnable {
-            return Text(LocalizedStringKey("icloud_not_enable_tip"))
+            return Text("iCloud is not enabled. So scripts will store to app's private sandbox and can not eazy export. It is recommended to enable iCloud, since you could directly open or edit scripts in system Files app.")
         }
         
         let sandboxCount = ScriptManager.getSandboxFileCount()
         if sandboxCount > 0 {
-            return Text(LocalizedStringKey("icloud_enable_transfer_tip"))
+            return Text("iCloud storage is enabled but there are some older files that still needs to be moved to iCloud. Press \"MOVE\" to move those files to iCloud. This problem exists when you not enable iCloud sometimes previously.")
         }
         
-        return Text(LocalizedStringKey("icloud_enable_tip"))
+        return Text("iCloud is enabled, you could directly open or edit scripts in system Files app.")
     }
     
     var body: some View {

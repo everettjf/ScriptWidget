@@ -7,24 +7,22 @@
 
 import SwiftUI
 import WidgetKit
-import AlertToast
 
 struct SettingsView: View {
     
     @Environment(\.presentationMode) var presentationMode
-    @State var showingToast = false
-    @State var toastMessage = ""
+    @State private var showingAlert = false
+    @State private var alertMessage = ""
     
-    
-    func showToast(_ message: String) {
-        toastMessage = message
-        showingToast.toggle()
+    func showAlert(_ message: String) {
+        alertMessage = message
+        showingAlert = true
     }
     
     var body: some View {
         content
-            .toast(isPresenting: $showingToast) {
-                AlertToast(type: .regular, title: toastMessage)
+            .alert(isPresented: $showingAlert) {
+                Alert(title: Text("Notification"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
             }
     }
 
@@ -54,7 +52,7 @@ struct SettingsView: View {
                             Button {
                                 WidgetCenter.shared.reloadAllTimelines()
                                 
-                                showToast("Widgets are refreshed :)")
+                                showAlert("Widgets are refreshed :)")
                             } label: {
                                 Image(systemName: "paintbrush")
                                     .font(.caption)
@@ -89,9 +87,8 @@ struct SettingsView: View {
                         NavigationLink(destination: AppIconsView()) {
                             SettingsTextRowView(name: "App Icons", content: "")
                         }
-                        SettingsLinkRowView(name: "Website", label: "https://xnu.app/jswidget", urlString: "https://xnu.app/jswidget")
+                        SettingsLinkRowView(name: "Website", label: "https://xnu.app/scriptwidget", urlString: "https://xnu.app/scriptwidget")
                         SettingsLinkRowView(name: "Discord", label: "", urlString: "https://discord.gg/eGzEaP6TzR")
-                        SettingsLinkRowView(name: "Mail", label: "", urlString: "mailto:everettjf@live.com?subject=ScriptWidget_Feedback")
                         SettingsLinkRowView(name: "Developer", label: "everettjf", urlString: "https://twitter.com/everettjf")
                         SettingsLinkRowView(name: "Special Thanks", label: "Reina", urlString: "https://github.com/Reinachan")
                         SettingsTextRowView(name: "Version", content: AppHelper.getAppVersion())
@@ -99,14 +96,16 @@ struct SettingsView: View {
                     
                 }
                 .navigationBarTitle(Text("Settings"), displayMode: .large)
-                .navigationBarItems(
-                    trailing: Button (action: {
-                        presentationMode.wrappedValue.dismiss()
-                    }, label: {
-                        Image(systemName: "xmark")
-                            .padding()
-                    })
-                )
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button(action: {
+                            presentationMode.wrappedValue.dismiss()
+                        }) {
+                            Label("Close", systemImage: "xmark")
+                                .labelStyle(.iconOnly)
+                        }
+                    }
+                }
                 .padding()
             }
         }

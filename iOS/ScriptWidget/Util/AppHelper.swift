@@ -45,9 +45,9 @@ class AppHelper {
         return "\(mainVersion ?? "1.0").\(buildVersion ?? "0")"
     }
     
-    static func requestReview() {
+    @MainActor static func requestReview() {
         if let windowScene = UIApplication.shared.firstKeyWindow?.windowScene {
-            SKStoreReviewController.requestReview(in: windowScene)
+            AppStore.requestReview(in: windowScene)
         }
     }
     
