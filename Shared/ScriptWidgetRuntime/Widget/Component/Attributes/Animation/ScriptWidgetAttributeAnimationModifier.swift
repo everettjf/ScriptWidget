@@ -178,15 +178,12 @@ struct ScriptWidgetAttributeAnimationModifier: ViewModifier {
                 .clockHandRotationEffect(period: .secondHand, in: self.clockTimezone, anchor: self.clockAnchor)
         } else if animationType == "clockMiniute" {
             content
-                .background(Color.purple)
                 .clockHandRotationEffect(period: .minuteHand, in: self.clockTimezone, anchor: self.clockAnchor)
         } else if animationType == "clockHour" {
             content
-                .background(Color.yellow)
                 .clockHandRotationEffect(period: .hourHand, in: self.clockTimezone, anchor: self.clockAnchor)
         } else if animationType == "clock" {
             content
-                .background(Color.green)
                 .clockHandRotationEffect(period: .custom(self.clockCustomInterval), in: self.clockTimezone, anchor: self.clockAnchor)
         } else if animationType == "swing" {
             content
