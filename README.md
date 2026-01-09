@@ -129,11 +129,11 @@ When submitting PRs:
 | Item | Status | Notes |
 | --- | --- | --- |
 | Documentation refresh (README, AGENTS) | ✅ Done | High-level overview + contributor guidance landed.
-| Developer onboarding guide | ⏳ Planned | Add target-specific screenshots & debugging caveats.
-| Shared runtime unit tests | ⏳ Planned | Wrap `ScriptWidgetRuntime` transforms in XCTest.
-| React editor modernization | ⏳ Planned | Upgrade to React 18 + Vite (or CRA 5 alternative), add prettier/eslint + TS definitions.
-| Continuous Integration | ⏳ Planned | Automate `xcodebuild` (iOS + macOS) and `npm test` via GitHub Actions.
-| Distribution pipeline | ⏳ Planned | Script `fastlane` or `xcodebuild` archive steps for App Store Connect uploads.
+| AI-generated Widget Builder | ⏳ Planned | Prompt-based assistant that writes starter widget scripts automatically.
+| AI-generated Widget Template Library | ⏳ Planned | Auto-generate ready-to-use widget variations for each size and style.
+| AI-generated Widget Guardrails | ⏳ Planned | Sandboxing + linting to keep AI-authored scripts safe to run.
+| AI-generated Widget Editor Integration | ⏳ Planned | Surface AI suggestions directly inside the React editor for instant inserts.
+| AI-generated Widget Distribution Pipeline | ⏳ Planned | Publish AI-generated widgets to a shared catalog with one-click import.
 
 ## Star History
 [![Star History Chart](https://api.star-history.com/svg?repos=everettjf/ScriptWidget&type=Date)](https://star-history.com/#everettjf/ScriptWidget&Date)
