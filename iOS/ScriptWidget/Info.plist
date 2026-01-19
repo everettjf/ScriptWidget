@@ -329,6 +329,8 @@
 	</dict>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Allow ScriptWidget to read Health data for widget templates.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Allow ScriptWidget to update Health data if you enable it.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>App could save widget preview snapshot to album</string>
 	<key>NSSupportsLiveActivities</key>
