@@ -327,10 +327,10 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>App could save widget preview snapshot to album</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Allow ScriptWidget to read Health data for widget templates.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>App could save widget preview snapshot to album</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>NSUbiquitousContainers</key>
@@ -345,6 +345,15 @@
 			<string>Any</string>
 		</dict>
 	</dict>
+	<key>UIAppFonts</key>
+	<array>
+		<string>New.ttf</string>
+		<string>Unispace.ttf</string>
+		<string>OneSlot.ttf</string>
+		<string>Monofonto.ttf</string>
+		<string>Larabiefont Free.ttf</string>
+		<string>Apple ][.ttf</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -368,15 +377,6 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UIAppFonts</key>
-	<array>
-		<string>New.ttf</string>
-		<string>Unispace.ttf</string>
-		<string>OneSlot.ttf</string>
-		<string>Monofonto.ttf</string>
-		<string>Larabiefont Free.ttf</string>
-		<string>Apple ][.ttf</string>
 	</array>
 </dict>
 </plist>

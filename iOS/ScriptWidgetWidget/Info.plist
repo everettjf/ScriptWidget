@@ -30,6 +30,8 @@
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.widgetkit-extension</string>
 	</dict>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Allow ScriptWidget to read Health data for widget templates.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>New.ttf</string>
