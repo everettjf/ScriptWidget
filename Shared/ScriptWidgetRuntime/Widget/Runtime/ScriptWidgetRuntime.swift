@@ -251,6 +251,9 @@ extension ScriptWidgetRuntime {
             self.runtimeContext["$device"] = ScriptWidgetRuntimeDevice.self
             self.runtimeContext["$http"] = ScriptWidgetRuntimeHttp.self
             self.runtimeContext["$file"] = ScriptWidgetRuntimeFile.self
+            self.runtimeContext["$system"] = ScriptWidgetRuntimeSystem.self
+            self.runtimeContext["$health"] = ScriptWidgetRuntimeHealth.self
+            self.runtimeContext["$storage"] = ScriptWidgetRuntimeStorage.self
 
             let custom_getenv:@convention(block) (String)-> String = { [weak self] (key) in
                 if let value = self?.environments[key] {
@@ -467,6 +470,9 @@ extension ScriptWidgetRuntime {
             self.runtimeContext["$device"] = ScriptWidgetRuntimeDevice.self
             self.runtimeContext["$http"] = ScriptWidgetRuntimeHttp.self
             self.runtimeContext["$file"] = ScriptWidgetRuntimeFile.self
+            self.runtimeContext["$system"] = ScriptWidgetRuntimeSystem.self
+            self.runtimeContext["$health"] = ScriptWidgetRuntimeHealth.self
+            self.runtimeContext["$storage"] = ScriptWidgetRuntimeStorage.self
 
             let custom_getenv:@convention(block) (String)-> String = { [weak self] (key) in
                 if let value = self?.environments[key] {
@@ -699,6 +705,9 @@ extension ScriptWidgetRuntime {
             self.runtimeContext["$device"] = ScriptWidgetRuntimeDevice.self
             self.runtimeContext["$http"] = ScriptWidgetRuntimeHttp.self
             self.runtimeContext["$file"] = ScriptWidgetRuntimeFile.self
+            self.runtimeContext["$system"] = ScriptWidgetRuntimeSystem.self
+            self.runtimeContext["$health"] = ScriptWidgetRuntimeHealth.self
+            self.runtimeContext["$storage"] = ScriptWidgetRuntimeStorage.self
 
             let custom_getenv:@convention(block) (String)-> String = { [weak self] (key) in
                 if let value = self?.environments[key] {

@@ -223,6 +223,7 @@
 		F29119942793223300B860B0 /* ScriptWidgetPackage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29119922793223300B860B0 /* ScriptWidgetPackage.swift */; };
 		F29119962793223300B860B0 /* ScriptWidgetPackage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29119922793223300B860B0 /* ScriptWidgetPackage.swift */; };
 		F296EA1A25E8909700E87A4A /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F296EA1925E8909700E87A4A /* StoreKit.framework */; };
+		1E22E34C64E42F5CF2DA6EDD /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 95D38A9C0960C28615553017 /* HealthKit.framework */; };
 		F2997F02274A710100CD7DD6 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = F2997F01274A710100CD7DD6 /* SwiftyJSON */; };
 		F2997F05274A717A00CD7DD6 /* SwiftUIX in Frameworks */ = {isa = PBXBuildFile; productRef = F2997F04274A717A00CD7DD6 /* SwiftUIX */; };
 		F2B20CC425D2EF5E00B62DAC /* NameAutoImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B20CC325D2EF5E00B62DAC /* NameAutoImageView.swift */; };
@@ -286,6 +287,14 @@
 		F2D738C925D0CA8900021E08 /* SettingTemplatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D738C825D0CA8900021E08 /* SettingTemplatesView.swift */; };
 		F2F0A7AE27F6841700D7911B /* ScriptWidgetRuntimeFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F0A7AD27F6841700D7911B /* ScriptWidgetRuntimeFile.swift */; };
 		F2F0A7AF27F6841700D7911B /* ScriptWidgetRuntimeFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F0A7AD27F6841700D7911B /* ScriptWidgetRuntimeFile.swift */; };
+		7D960C5FE159D8D1CB823654 /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AE63BF6B17D4C800EFF80E9 /* ScriptWidgetRuntimeSystem.swift */; };
+		219AD8869A85F18C81A30804 /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AE63BF6B17D4C800EFF80E9 /* ScriptWidgetRuntimeSystem.swift */; };
+		8B3078FA29098AA7314D1B74 /* ScriptWidgetRuntimeHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 654916CAF3464C1D5149BB77 /* ScriptWidgetRuntimeHealth.swift */; };
+		D84E5F5BA6A8C145C140773A /* ScriptWidgetRuntimeHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 654916CAF3464C1D5149BB77 /* ScriptWidgetRuntimeHealth.swift */; };
+		742D49A1274DF1AC35D6D0A9 /* ScriptWidgetRuntimeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CAE338C670B4A70B52A6CFD /* ScriptWidgetRuntimeStorage.swift */; };
+		C803FC625CDC9D9CC69F403D /* ScriptWidgetRuntimeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CAE338C670B4A70B52A6CFD /* ScriptWidgetRuntimeStorage.swift */; };
+		D58FF19E4AF865ACBDAF306A /* ScriptWidgetElementTagExtras.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5116262BE362901C3EAD93A5 /* ScriptWidgetElementTagExtras.swift */; };
+		683E7A63FCBC7EA6D91BE81D /* ScriptWidgetElementTagExtras.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5116262BE362901C3EAD93A5 /* ScriptWidgetElementTagExtras.swift */; };
 		F2F8398E27CBBC8800D74288 /* HomeHelloView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F8398D27CBBC8800D74288 /* HomeHelloView.swift */; };
 		F2FC062327DC5D9000A6A99D /* MirrorEditorScriptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2FC062227DC5D9000A6A99D /* MirrorEditorScriptView.swift */; };
 		F2FC062827DC5DB300A6A99D /* WKWebViewJavascriptBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2FC062527DC5DB300A6A99D /* WKWebViewJavascriptBridge.swift */; };
@@ -494,6 +503,7 @@
 		F291198F2793039700B860B0 /* Script.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Script.bundle; sourceTree = "<group>"; };
 		F29119922793223300B860B0 /* ScriptWidgetPackage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetPackage.swift; sourceTree = "<group>"; };
 		F296EA1925E8909700E87A4A /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
+		95D38A9C0960C28615553017 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
 		F2B20CC325D2EF5E00B62DAC /* NameAutoImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NameAutoImageView.swift; sourceTree = "<group>"; };
 		F2B20CC825D37C1C00B62DAC /* GradientColorData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GradientColorData.swift; sourceTree = "<group>"; };
 		F2B20D0225D3B41600B62DAC /* ScriptWidgetHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetHomeView.swift; sourceTree = "<group>"; };
@@ -554,6 +564,10 @@
 		F2C6AC7826004B0F009CECE9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F2D738C825D0CA8900021E08 /* SettingTemplatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingTemplatesView.swift; sourceTree = "<group>"; };
 		F2F0A7AD27F6841700D7911B /* ScriptWidgetRuntimeFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeFile.swift; sourceTree = "<group>"; };
+		1AE63BF6B17D4C800EFF80E9 /* ScriptWidgetRuntimeSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeSystem.swift; sourceTree = "<group>"; };
+		654916CAF3464C1D5149BB77 /* ScriptWidgetRuntimeHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeHealth.swift; sourceTree = "<group>"; };
+		9CAE338C670B4A70B52A6CFD /* ScriptWidgetRuntimeStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeStorage.swift; sourceTree = "<group>"; };
+		5116262BE362901C3EAD93A5 /* ScriptWidgetElementTagExtras.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagExtras.swift; sourceTree = "<group>"; };
 		F2F8398D27CBBC8800D74288 /* HomeHelloView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeHelloView.swift; sourceTree = "<group>"; };
 		F2FC062227DC5D9000A6A99D /* MirrorEditorScriptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MirrorEditorScriptView.swift; sourceTree = "<group>"; };
 		F2FC062527DC5DB300A6A99D /* WKWebViewJavascriptBridge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WKWebViewJavascriptBridge.swift; sourceTree = "<group>"; };
@@ -574,6 +588,7 @@
 				F2B20D1925D3EAEA00B62DAC /* CloudKit.framework in Frameworks */,
 				5A912FAA2D2135330050F250 /* ClockHandRotationKit in Frameworks */,
 				F296EA1A25E8909700E87A4A /* StoreKit.framework in Frameworks */,
+				1E22E34C64E42F5CF2DA6EDD /* HealthKit.framework in Frameworks */,
 				F245BBED25B9E5DC00F25F68 /* SDWebImageSwiftUI in Frameworks */,
 				F245BBF825B9E62300F25F68 /* SwiftyJSON in Frameworks */,
 				F228DDB627A37776009E8F04 /* ZipArchive in Frameworks */,
@@ -784,6 +799,7 @@
 			isa = PBXGroup;
 			children = (
 				F296EA1925E8909700E87A4A /* StoreKit.framework */,
+				95D38A9C0960C28615553017 /* HealthKit.framework */,
 				F2B20D1825D3EAEA00B62DAC /* CloudKit.framework */,
 				D18AAC6F252A14AE0065386A /* WidgetKit.framework */,
 				D18AAC71252A14AE0065386A /* SwiftUI.framework */,
@@ -1079,6 +1095,7 @@
 				D183E0A328CE0EFE003F44A0 /* ScriptWidgetElementTagChart.swift */,
 				F05227B72AD1B50F0014BE09 /* ScriptWidgetElementTagButton.swift */,
 				F05227BA2AD1C2E50014BE09 /* ScriptWidgetElementTagToggle.swift */,
+				5116262BE362901C3EAD93A5 /* ScriptWidgetElementTagExtras.swift */,
 			);
 			path = Elements;
 			sourceTree = "<group>";
@@ -1091,6 +1108,9 @@
 				F291192F2793035E00B860B0 /* ScriptWidgetRuntimeConsole.swift */,
 				F29119302793035E00B860B0 /* ScriptWidgetRuntimeDevice.swift */,
 				F2F0A7AD27F6841700D7911B /* ScriptWidgetRuntimeFile.swift */,
+				1AE63BF6B17D4C800EFF80E9 /* ScriptWidgetRuntimeSystem.swift */,
+				654916CAF3464C1D5149BB77 /* ScriptWidgetRuntimeHealth.swift */,
+				9CAE338C670B4A70B52A6CFD /* ScriptWidgetRuntimeStorage.swift */,
 			);
 			path = API;
 			sourceTree = "<group>";
@@ -1508,6 +1528,10 @@
 				F277CBA427CB5A2C003AB97D /* ScriptWidgetAttributeOpacityModifier.swift in Sources */,
 				F29119582793035E00B860B0 /* ScriptWidgetAttributeShadowModifier.swift in Sources */,
 				F2F0A7AE27F6841700D7911B /* ScriptWidgetRuntimeFile.swift in Sources */,
+				7D960C5FE159D8D1CB823654 /* ScriptWidgetRuntimeSystem.swift in Sources */,
+				8B3078FA29098AA7314D1B74 /* ScriptWidgetRuntimeHealth.swift in Sources */,
+				742D49A1274DF1AC35D6D0A9 /* ScriptWidgetRuntimeStorage.swift in Sources */,
+				D58FF19E4AF865ACBDAF306A /* ScriptWidgetElementTagExtras.swift in Sources */,
 				F2BA1DA725D500B400363EEA /* EditAttributesView.swift in Sources */,
 				F29119802793035E00B860B0 /* ScriptWidgetRuntimeConsole.swift in Sources */,
 				F29119822793035E00B860B0 /* ScriptWidgetRuntimeDevice.swift in Sources */,
@@ -1645,6 +1669,10 @@
 				F28D681D27CE8874000C2D03 /* ScriptWidgetElementTagStack.swift in Sources */,
 				F28D681327CE764B000C2D03 /* ScriptWidgetAttributeClippedModifier.swift in Sources */,
 				F2F0A7AF27F6841700D7911B /* ScriptWidgetRuntimeFile.swift in Sources */,
+				219AD8869A85F18C81A30804 /* ScriptWidgetRuntimeSystem.swift in Sources */,
+				D84E5F5BA6A8C145C140773A /* ScriptWidgetRuntimeHealth.swift in Sources */,
+				C803FC625CDC9D9CC69F403D /* ScriptWidgetRuntimeStorage.swift in Sources */,
+				683E7A63FCBC7EA6D91BE81D /* ScriptWidgetElementTagExtras.swift in Sources */,
 				F0C7ECF82AD0759F0039D30D /* ScriptWidgetAppIntent.swift in Sources */,
 				F291194D2793035E00B860B0 /* ScriptWidgetRuntimeElement.swift in Sources */,
 				F29119832793035E00B860B0 /* ScriptWidgetRuntimeDevice.swift in Sources */,
