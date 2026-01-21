@@ -33,6 +33,7 @@ class MirrorEditorInternalView: WKWebView {
     var isEditorReady = false
     var pendingActions: [() -> Void] = []
     var cancellables = [Cancellable]()
+    var isTearingDown = false
     
     var saveTimer: Timer? = nil
     var lastSaveContent = ""
@@ -132,14 +133,17 @@ class MirrorEditorInternalView: WKWebView {
     
     deinit {
         print("de-init editor")
+        isTearingDown = true
+        pendingActions.removeAll()
         self.saveTimer?.invalidate()
         self.saveTimer = nil
-        
-        self.saveCurrentContent()
+        self.stopLoading()
         
         for cancellable in self.cancellables {
             cancellable.cancel()
         }
+        self.cancellables.removeAll()
+        self.bridge = nil
     }
     
     public override var inputAccessoryView: UIView? {
@@ -153,7 +157,12 @@ class MirrorEditorInternalView: WKWebView {
     }
     
     func saveCurrentContent() {
-        editor_getValue { (succeed, value) in
+        guard !isTearingDown else {
+            return
+        }
+        editor_getValue { [weak self] (succeed, value) in
+            guard let self = self else { return }
+            guard !self.isTearingDown else { return }
             if !succeed {
                 return
             }
@@ -177,6 +186,7 @@ class MirrorEditorInternalView: WKWebView {
     }
     
     func editor_setValue(value: String) {
+        guard !isTearingDown else { return }
         // tell editor
         let message = [
             "value": value
@@ -187,6 +197,7 @@ class MirrorEditorInternalView: WKWebView {
     }
     
     func editor_insertValue(value: String) {
+        guard !isTearingDown else { return }
         // tell editor
         let message = [
             "value": value
@@ -196,6 +207,7 @@ class MirrorEditorInternalView: WKWebView {
         })
     }
     func editor_formatCode() {
+        guard !isTearingDown else { return }
         // tell editor
         let message = [
             "value": "format"
@@ -205,6 +217,7 @@ class MirrorEditorInternalView: WKWebView {
         })
     }
     func editor_setReadonly(readonly: Bool) {
+        guard !isTearingDown else { return }
         // tell editor
         let message = [
             "readonly": readonly
@@ -215,6 +228,10 @@ class MirrorEditorInternalView: WKWebView {
     }
     
     func editor_getValue(callback: @escaping (Bool, String)-> Void){
+        guard !isTearingDown else {
+            callback(false, "")
+            return
+        }
         self.bridge?.call(handlerName: "editor_getValue", data: [], callback: { responseData in
             guard let data = responseData as? [String: Any] else {
                 callback(false, "")
@@ -240,6 +257,7 @@ class MirrorEditorInternalView: WKWebView {
     
     
     func runJSAction(_ action:@escaping () -> Void) {
+        guard !isTearingDown else { return }
         if self.isEditorReady {
             DispatchQueue.main.async {
                 action()

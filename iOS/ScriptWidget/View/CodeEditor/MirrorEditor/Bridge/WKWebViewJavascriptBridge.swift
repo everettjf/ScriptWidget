@@ -31,11 +31,14 @@ public class WKWebViewJavascriptBridge: NSObject {
         self.webView = webView
         base = WKWebViewJavascriptBridgeBase()
         base.delegate = self
-        addScriptMessageHandlers()
+        
+        self.webView?.configuration.userContentController.add(LeakAvoider(delegate: self), name: iOS_Native_InjectJavascript)
+        self.webView?.configuration.userContentController.add(LeakAvoider(delegate: self), name: iOS_Native_FlushMessageQueue)
     }
     
     deinit {
-        removeScriptMessageHandlers()
+        webView?.configuration.userContentController.removeScriptMessageHandler(forName: iOS_Native_InjectJavascript)
+        webView?.configuration.userContentController.removeScriptMessageHandler(forName: iOS_Native_FlushMessageQueue)
     }
     
     // MARK: - Public Funcs
@@ -67,15 +70,6 @@ public class WKWebViewJavascriptBridge: NSObject {
         }
     }
     
-    private func addScriptMessageHandlers() {
-        webView?.configuration.userContentController.add(LeakAvoider(delegate: self), name: iOS_Native_InjectJavascript)
-        webView?.configuration.userContentController.add(LeakAvoider(delegate: self), name: iOS_Native_FlushMessageQueue)
-    }
-    
-    private func removeScriptMessageHandlers() {
-        webView?.configuration.userContentController.removeScriptMessageHandler(forName: iOS_Native_InjectJavascript)
-        webView?.configuration.userContentController.removeScriptMessageHandler(forName: iOS_Native_FlushMessageQueue)
-    }
 }
 
 extension WKWebViewJavascriptBridge: WKWebViewJavascriptBridgeBaseDelegate {
