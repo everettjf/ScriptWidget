@@ -8,6 +8,7 @@
 import SwiftUI
 import WidgetKit
 import HealthKit
+import CoreLocation
 import UIKit
 
 struct SettingsView: View {
@@ -88,6 +89,12 @@ struct SettingsView: View {
                         Divider().padding(.vertical, 4)
 
                         SettingsHealthView()
+                    }
+
+                    GroupBox (label: SettingsLabelView(title: "Location", image: "location")) {
+                        Divider().padding(.vertical, 4)
+
+                        SettingsLocationView()
                     }
                     
                     GroupBox (label: SettingsLabelView(title: "Application", image: "appclip")) {
@@ -365,5 +372,187 @@ private struct SettingsHealthView: View {
     private func openHealthApp() {
         guard let url = URL(string: "x-apple-health://") else { return }
         UIApplication.shared.open(url)
+    }
+}
+
+private struct SettingsLocationView: View {
+    private enum LocationAuthorizationState {
+        case checking
+        case disabled
+        case notDetermined
+        case restricted
+        case denied
+        case authorizedWhenInUse
+        case authorizedAlways
+
+        var title: String {
+            switch self {
+            case .checking:
+                return "Checking..."
+            case .disabled:
+                return "Location Disabled"
+            case .notDetermined:
+                return "Not Authorized"
+            case .restricted:
+                return "Restricted"
+            case .denied:
+                return "Access Denied"
+            case .authorizedWhenInUse:
+                return "Authorized (When In Use)"
+            case .authorizedAlways:
+                return "Authorized (Always)"
+            }
+        }
+
+        var detail: String {
+            switch self {
+            case .checking:
+                return "Checking Location permissions."
+            case .disabled:
+                return "Location services are disabled on this device."
+            case .notDetermined:
+                return "Tap Authorize to request access for location."
+            case .restricted:
+                return "Location access is restricted by system policy."
+            case .denied:
+                return "Access is denied. Enable ScriptWidget in Settings."
+            case .authorizedWhenInUse:
+                return "Location access is ready for scripts and widgets."
+            case .authorizedAlways:
+                return "Location access is ready for scripts and widgets."
+            }
+        }
+
+        var shouldShowAuthorizeButton: Bool {
+            switch self {
+            case .notDetermined:
+                return true
+            case .checking, .disabled, .restricted, .denied, .authorizedWhenInUse, .authorizedAlways:
+                return false
+            }
+        }
+
+        var shouldShowOpenSettingsButton: Bool {
+            switch self {
+            case .restricted, .denied:
+                return true
+            case .checking, .disabled, .notDetermined, .authorizedWhenInUse, .authorizedAlways:
+                return false
+            }
+        }
+    }
+
+    @StateObject private var manager = SettingsLocationManager()
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(manager.state.title)
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .padding(.top, 4)
+
+            Text(manager.state.detail)
+                .font(.footnote)
+                .multilineTextAlignment(.leading)
+
+            HStack(spacing: 8) {
+                if manager.state.shouldShowAuthorizeButton {
+                    Button {
+                        manager.requestAuthorization()
+                    } label: {
+                        Text(manager.isRequesting ? "Authorizing..." : "Authorize")
+                            .font(.caption)
+                            .frame(minWidth: 90)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(manager.isRequesting)
+                }
+
+                if manager.state.shouldShowOpenSettingsButton {
+                    Button {
+                        openSettings()
+                    } label: {
+                        Text("Open Settings")
+                            .font(.caption)
+                            .frame(minWidth: 110)
+                    }
+                    .buttonStyle(.bordered)
+                }
+
+                Spacer()
+            }
+        }
+        .onAppear {
+            manager.refresh()
+        }
+    }
+
+    private func openSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
+    }
+
+    private final class SettingsLocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
+        @Published var state: LocationAuthorizationState = .checking
+        @Published var isRequesting = false
+
+        private let locationManager = CLLocationManager()
+
+        override init() {
+            super.init()
+            locationManager.delegate = self
+        }
+
+        func refresh() {
+            state = makeState()
+        }
+
+        func requestAuthorization() {
+            guard CLLocationManager.locationServicesEnabled() else {
+                state = .disabled
+                return
+            }
+            isRequesting = true
+            locationManager.requestWhenInUseAuthorization()
+        }
+
+        func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+            handleAuthorizationChange(status: manager.authorizationStatus)
+        }
+
+        func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+            handleAuthorizationChange(status: status)
+        }
+
+        private func handleAuthorizationChange(status: CLAuthorizationStatus) {
+            state = makeState(status: status)
+            if status != .notDetermined {
+                isRequesting = false
+            }
+        }
+
+        private func makeState() -> LocationAuthorizationState {
+            return makeState(status: locationManager.authorizationStatus)
+        }
+
+        private func makeState(status: CLAuthorizationStatus) -> LocationAuthorizationState {
+            guard CLLocationManager.locationServicesEnabled() else {
+                return .disabled
+            }
+            switch status {
+            case .notDetermined:
+                return .notDetermined
+            case .restricted:
+                return .restricted
+            case .denied:
+                return .denied
+            case .authorizedAlways:
+                return .authorizedAlways
+            case .authorizedWhenInUse:
+                return .authorizedWhenInUse
+            @unknown default:
+                return .notDetermined
+            }
+        }
     }
 }

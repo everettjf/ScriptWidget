@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		07676AEFBC394DE89F001041 /* ScriptWidgetRuntimeLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC40ED375515427089251479 /* ScriptWidgetRuntimeLocation.swift */; };
 		1E22E34C64E42F5CF2DA6EDD /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 95D38A9C0960C28615553017 /* HealthKit.framework */; };
 		219AD8869A85F18C81A30804 /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AE63BF6B17D4C800EFF80E9 /* ScriptWidgetRuntimeSystem.swift */; };
 		5A89B7942F0FACFA008B90A2 /* SwingAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7932F0FACFA008B90A2 /* SwingAnimationModifier.swift */; };
@@ -24,8 +25,10 @@
 		5AE2C8942CDB3D7F00A9F4FF /* ScriptWidgetControlAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AE2C8932CDB3D7400A9F4FF /* ScriptWidgetControlAppIntent.swift */; };
 		683E7A63FCBC7EA6D91BE81D /* ScriptWidgetElementTagExtras.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5116262BE362901C3EAD93A5 /* ScriptWidgetElementTagExtras.swift */; };
 		742D49A1274DF1AC35D6D0A9 /* ScriptWidgetRuntimeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CAE338C670B4A70B52A6CFD /* ScriptWidgetRuntimeStorage.swift */; };
+		774D548855AA4BF0BF1E9DBA /* ScriptWidgetRuntimeLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC40ED375515427089251479 /* ScriptWidgetRuntimeLocation.swift */; };
 		7D960C5FE159D8D1CB823654 /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AE63BF6B17D4C800EFF80E9 /* ScriptWidgetRuntimeSystem.swift */; };
 		8B3078FA29098AA7314D1B74 /* ScriptWidgetRuntimeHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 654916CAF3464C1D5149BB77 /* ScriptWidgetRuntimeHealth.swift */; };
+		BFD2727EF994405AAC85396D /* ReloadWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750919EB639B4EB3B07D27FC /* ReloadWidgetAppIntent.swift */; };
 		C803FC625CDC9D9CC69F403D /* ScriptWidgetRuntimeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CAE338C670B4A70B52A6CFD /* ScriptWidgetRuntimeStorage.swift */; };
 		D132336528E08C15002C26A2 /* ScriptLiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D132336428E08C15002C26A2 /* ScriptLiveActivityManager.swift */; };
 		D132336728E09630002C26A2 /* ScriptDynamicIslandCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D132336628E09630002C26A2 /* ScriptDynamicIslandCreator.swift */; };
@@ -72,6 +75,7 @@
 		D1F9883228CCE7BF00C56B06 /* ScriptCodePreviewConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1F9883128CCE7BF00C56B06 /* ScriptCodePreviewConsoleView.swift */; };
 		D58FF19E4AF865ACBDAF306A /* ScriptWidgetElementTagExtras.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5116262BE362901C3EAD93A5 /* ScriptWidgetElementTagExtras.swift */; };
 		D84E5F5BA6A8C145C140773A /* ScriptWidgetRuntimeHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 654916CAF3464C1D5149BB77 /* ScriptWidgetRuntimeHealth.swift */; };
+		DEB6D6E331AD41C1B6018642 /* ReloadWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750919EB639B4EB3B07D27FC /* ReloadWidgetAppIntent.swift */; };
 		F05227B52AD1B0A10014BE09 /* ButtonActionAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F05227B42AD1B0A10014BE09 /* ButtonActionAppIntent.swift */; };
 		F05227B62AD1B0A10014BE09 /* ButtonActionAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F05227B42AD1B0A10014BE09 /* ButtonActionAppIntent.swift */; };
 		F05227B82AD1B50F0014BE09 /* ScriptWidgetElementTagButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = F05227B72AD1B50F0014BE09 /* ScriptWidgetElementTagButton.swift */; };
@@ -350,6 +354,7 @@
 		5AE2C8912CDB3D1000A9F4FF /* ScriptWidgetControlWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetControlWidget.swift; sourceTree = "<group>"; };
 		5AE2C8932CDB3D7400A9F4FF /* ScriptWidgetControlAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetControlAppIntent.swift; sourceTree = "<group>"; };
 		654916CAF3464C1D5149BB77 /* ScriptWidgetRuntimeHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeHealth.swift; sourceTree = "<group>"; };
+		750919EB639B4EB3B07D27FC /* ReloadWidgetAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReloadWidgetAppIntent.swift; sourceTree = "<group>"; };
 		95D38A9C0960C28615553017 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
 		9CAE338C670B4A70B52A6CFD /* ScriptWidgetRuntimeStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeStorage.swift; sourceTree = "<group>"; };
 		D132336428E08C15002C26A2 /* ScriptLiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptLiveActivityManager.swift; sourceTree = "<group>"; };
@@ -411,6 +416,7 @@
 		D1CBAED528D5B1DE00DE4E65 /* ScriptLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptLiveActivityWidget.swift; sourceTree = "<group>"; };
 		D1CBAED928D5DA9700DE4E65 /* ScriptWidgetDataObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetDataObject.swift; sourceTree = "<group>"; };
 		D1F9883128CCE7BF00C56B06 /* ScriptCodePreviewConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptCodePreviewConsoleView.swift; sourceTree = "<group>"; };
+		DC40ED375515427089251479 /* ScriptWidgetRuntimeLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeLocation.swift; sourceTree = "<group>"; };
 		F05227B42AD1B0A10014BE09 /* ButtonActionAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonActionAppIntent.swift; sourceTree = "<group>"; };
 		F05227B72AD1B50F0014BE09 /* ScriptWidgetElementTagButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagButton.swift; sourceTree = "<group>"; };
 		F05227BA2AD1C2E50014BE09 /* ScriptWidgetElementTagToggle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagToggle.swift; sourceTree = "<group>"; };
@@ -876,6 +882,7 @@
 			isa = PBXGroup;
 			children = (
 				F05227B42AD1B0A10014BE09 /* ButtonActionAppIntent.swift */,
+				750919EB639B4EB3B07D27FC /* ReloadWidgetAppIntent.swift */,
 			);
 			path = AppIntents;
 			sourceTree = "<group>";
@@ -1110,6 +1117,7 @@
 				F2F0A7AD27F6841700D7911B /* ScriptWidgetRuntimeFile.swift */,
 				1AE63BF6B17D4C800EFF80E9 /* ScriptWidgetRuntimeSystem.swift */,
 				654916CAF3464C1D5149BB77 /* ScriptWidgetRuntimeHealth.swift */,
+				DC40ED375515427089251479 /* ScriptWidgetRuntimeLocation.swift */,
 				9CAE338C670B4A70B52A6CFD /* ScriptWidgetRuntimeStorage.swift */,
 			);
 			path = API;
@@ -1530,6 +1538,7 @@
 				F2F0A7AE27F6841700D7911B /* ScriptWidgetRuntimeFile.swift in Sources */,
 				7D960C5FE159D8D1CB823654 /* ScriptWidgetRuntimeSystem.swift in Sources */,
 				8B3078FA29098AA7314D1B74 /* ScriptWidgetRuntimeHealth.swift in Sources */,
+				07676AEFBC394DE89F001041 /* ScriptWidgetRuntimeLocation.swift in Sources */,
 				742D49A1274DF1AC35D6D0A9 /* ScriptWidgetRuntimeStorage.swift in Sources */,
 				D58FF19E4AF865ACBDAF306A /* ScriptWidgetElementTagExtras.swift in Sources */,
 				F2BA1DA725D500B400363EEA /* EditAttributesView.swift in Sources */,
@@ -1538,6 +1547,7 @@
 				F2B5CAE825DCE7B8004FF214 /* InputAlertHelper.swift in Sources */,
 				D1403DEF2552FEB40076F87C /* TOCropOverlayView.m in Sources */,
 				D19CAF5D28CB976C00DFF98B /* SettingAPIsView.swift in Sources */,
+				DEB6D6E331AD41C1B6018642 /* ReloadWidgetAppIntent.swift in Sources */,
 				F291194E2793035E00B860B0 /* ScriptWidgetAttributeBackgroundModifier.swift in Sources */,
 				F28D681C27CE8874000C2D03 /* ScriptWidgetElementTagStack.swift in Sources */,
 				F2BC99AF25D0C6F900285C7B /* BundleScriptListView.swift in Sources */,
@@ -1671,6 +1681,7 @@
 				F2F0A7AF27F6841700D7911B /* ScriptWidgetRuntimeFile.swift in Sources */,
 				219AD8869A85F18C81A30804 /* ScriptWidgetRuntimeSystem.swift in Sources */,
 				D84E5F5BA6A8C145C140773A /* ScriptWidgetRuntimeHealth.swift in Sources */,
+				774D548855AA4BF0BF1E9DBA /* ScriptWidgetRuntimeLocation.swift in Sources */,
 				C803FC625CDC9D9CC69F403D /* ScriptWidgetRuntimeStorage.swift in Sources */,
 				683E7A63FCBC7EA6D91BE81D /* ScriptWidgetElementTagExtras.swift in Sources */,
 				F0C7ECF82AD0759F0039D30D /* ScriptWidgetAppIntent.swift in Sources */,
@@ -1693,6 +1704,7 @@
 				F25ED69027FDF9DD000089D0 /* ScriptWidgetRunningState.swift in Sources */,
 				F29119612793035E00B860B0 /* ScriptWidgetAttributeForegroundModifier.swift in Sources */,
 				F05227B62AD1B0A10014BE09 /* ButtonActionAppIntent.swift in Sources */,
+				BFD2727EF994405AAC85396D /* ReloadWidgetAppIntent.swift in Sources */,
 				D1BD329C28E0713D00F217ED /* ScriptLiveActivityDataObject.swift in Sources */,
 				5AE2C8942CDB3D7F00A9F4FF /* ScriptWidgetControlAppIntent.swift in Sources */,
 				5A89B7982F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */,
@@ -1884,7 +1896,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26100;
+				CURRENT_PROJECT_VERSION = 26101;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
@@ -1916,7 +1928,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26100;
+				CURRENT_PROJECT_VERSION = 26101;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
@@ -1944,7 +1956,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26100;
+				CURRENT_PROJECT_VERSION = 26101;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -1970,7 +1982,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26100;
+				CURRENT_PROJECT_VERSION = 26101;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -1995,7 +2007,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26100;
+				CURRENT_PROJECT_VERSION = 26101;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -2019,7 +2031,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26100;
+				CURRENT_PROJECT_VERSION = 26101;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;

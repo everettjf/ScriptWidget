@@ -253,6 +253,7 @@ extension ScriptWidgetRuntime {
             self.runtimeContext["$file"] = ScriptWidgetRuntimeFile.self
             self.runtimeContext["$system"] = ScriptWidgetRuntimeSystem.self
             self.runtimeContext["$health"] = ScriptWidgetRuntimeHealth.self
+            self.runtimeContext["$location"] = ScriptWidgetRuntimeLocation.self
             self.runtimeContext["$storage"] = ScriptWidgetRuntimeStorage.self
 
             let custom_getenv:@convention(block) (String)-> String = { [weak self] (key) in
@@ -472,6 +473,7 @@ extension ScriptWidgetRuntime {
             self.runtimeContext["$file"] = ScriptWidgetRuntimeFile.self
             self.runtimeContext["$system"] = ScriptWidgetRuntimeSystem.self
             self.runtimeContext["$health"] = ScriptWidgetRuntimeHealth.self
+            self.runtimeContext["$location"] = ScriptWidgetRuntimeLocation.self
             self.runtimeContext["$storage"] = ScriptWidgetRuntimeStorage.self
 
             let custom_getenv:@convention(block) (String)-> String = { [weak self] (key) in
@@ -707,6 +709,7 @@ extension ScriptWidgetRuntime {
             self.runtimeContext["$file"] = ScriptWidgetRuntimeFile.self
             self.runtimeContext["$system"] = ScriptWidgetRuntimeSystem.self
             self.runtimeContext["$health"] = ScriptWidgetRuntimeHealth.self
+            self.runtimeContext["$location"] = ScriptWidgetRuntimeLocation.self
             self.runtimeContext["$storage"] = ScriptWidgetRuntimeStorage.self
 
             let custom_getenv:@convention(block) (String)-> String = { [weak self] (key) in
