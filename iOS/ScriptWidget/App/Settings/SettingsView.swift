@@ -107,6 +107,7 @@ struct SettingsView: View {
                         SettingsLinkRowView(name: "Developer", label: "everettjf", urlString: "https://twitter.com/everettjf")
                         SettingsLinkRowView(name: "Special Thanks", label: "Reina", urlString: "https://github.com/Reinachan")
                         SettingsTextRowView(name: "Version", content: AppHelper.getAppVersion())
+                        SettingsLinkRowView(name: "More Apps", label: "https://xnu.app", urlString: "https://xnu.app")
                     }
                     
                 }
