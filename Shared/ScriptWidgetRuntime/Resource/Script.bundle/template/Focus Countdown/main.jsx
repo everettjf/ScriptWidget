@@ -19,7 +19,7 @@ const ss = Math.floor(remaining % 60);
 const timeText = `${mm.toString().padStart(2, "0")}:${ss.toString().padStart(2, "0")}`;
 
 $render(
-  <vstack frame="max" padding="12" background="#1e293b">
+  <vstack frame="max" background="#1e293b">
     <text font="caption" color="#94a3b8">Focus Timer</text>
     <text font="title2" color="#e2e8f0">{timeText}</text>
     <gauge

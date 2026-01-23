@@ -497,6 +497,7 @@ private struct SettingsLocationView: View {
         @Published var isRequesting = false
 
         private let locationManager = CLLocationManager()
+        private var hasRequestedLocation = false
 
         override init() {
             super.init()
@@ -505,6 +506,9 @@ private struct SettingsLocationView: View {
 
         func refresh() {
             state = makeState()
+            if state == .authorizedAlways || state == .authorizedWhenInUse {
+                requestLocationIfNeeded()
+            }
         }
 
         func requestAuthorization() {
@@ -528,6 +532,9 @@ private struct SettingsLocationView: View {
             state = makeState(status: status)
             if status != .notDetermined {
                 isRequesting = false
+            }
+            if status == .authorizedAlways || status == .authorizedWhenInUse {
+                requestLocationIfNeeded()
             }
         }
 
@@ -553,6 +560,24 @@ private struct SettingsLocationView: View {
             @unknown default:
                 return .notDetermined
             }
+        }
+
+        private func requestLocationIfNeeded() {
+            guard !hasRequestedLocation else { return }
+            hasRequestedLocation = true
+            locationManager.requestLocation()
+        }
+
+        func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+            guard let location = locations.last else { return }
+            ScriptWidgetRuntimeLocation.cacheLocation(
+                location,
+                accuracyAuthorization: ScriptWidgetRuntimeLocation.accuracyAuthorizationString(manager)
+            )
+        }
+
+        func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+            print("settings location error: \(error)")
         }
     }
 }

@@ -8,7 +8,7 @@
 
 if (!$location.isAvailable()) {
   $render(
-    <vstack frame="max" padding="12" background="#0f172a">
+    <vstack frame="max" background="#0f172a">
       <text font="title3" color="#f87171">Location Unavailable</text>
       <text font="caption" color="#94a3b8">Location services are disabled.</text>
     </vstack>
@@ -19,7 +19,7 @@ if (!$location.isAvailable()) {
 
   if (!authorized) {
     $render(
-      <vstack frame="max" padding="12" background="#0f172a">
+      <vstack frame="max" background="#0f172a">
         <text font="title3" color="#fbbf24">Permission Needed</text>
         <text font="caption" color="#94a3b8">Enable Location access in the app.</text>
       </vstack>
@@ -31,7 +31,7 @@ if (!$location.isAvailable()) {
     const accuracy = Math.max(0, Math.round(location.accuracy));
 
     $render(
-      <vstack frame="max" padding="12" background="#111827" spacing="6">
+      <vstack frame="max" background="#111827" spacing="6">
         <text font="caption" color="#94a3b8">Location Snapshot</text>
         <text font="title3" color="#e2e8f0">{lat}, {lon}</text>
         <text font="caption" color="#94a3b8">Accuracy: {accuracy}m</text>

@@ -15,17 +15,33 @@ import JavaScriptCore
     static func current(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise
 }
 
-#if canImport(CoreLocation) && !IsWidgetTarget && os(iOS)
+#if canImport(CoreLocation) && os(iOS)
 import CoreLocation
 
 @objc public class ScriptWidgetRuntimeLocation: NSObject, ScriptWidgetRuntimeLocationExports {
     private static var activeRequests = [LocationRequest]()
+    private static let locationCacheKey = "ScriptWidget.LocationCache.v1"
+
+    private static func defaults() -> UserDefaults {
+        return UserDefaults(suiteName: "group.everettjf.scriptwidget") ?? UserDefaults.standard
+    }
 
     static func isAvailable() -> Bool {
+        #if IsWidgetTarget
+        return true
+        #else
         return CLLocationManager.locationServicesEnabled()
+        #endif
     }
 
     static func authorizationStatus() -> String {
+        #if IsWidgetTarget
+        if cachedLocationPayload(maxAgeSeconds: nil) != nil {
+            return "authorizedWhenInUse"
+        }
+        return "notDetermined"
+        #endif
+
         guard CLLocationManager.locationServicesEnabled() else {
             return "disabled"
         }
@@ -39,6 +55,11 @@ import CoreLocation
 
     static func requestAuthorization(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise {
         return ScriptWidgetRuntimePromise { resolve, reject in
+            #if IsWidgetTarget
+            resolve.call(withArguments: [cachedLocationPayload(maxAgeSeconds: nil) != nil])
+            return
+            #endif
+
             guard CLLocationManager.locationServicesEnabled() else {
                 reject.call(withArguments: ["Location services are disabled on this device"])
                 return
@@ -53,7 +74,12 @@ import CoreLocation
                 resolve.call(withArguments: [false])
                 return
             case .notDetermined:
+                #if IsWidgetTarget
+                resolve.call(withArguments: [false])
+                return
+                #else
                 break
+                #endif
             @unknown default:
                 resolve.call(withArguments: [false])
                 return
@@ -80,6 +106,16 @@ import CoreLocation
 
     static func current(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise {
         return ScriptWidgetRuntimePromise { resolve, reject in
+            #if IsWidgetTarget
+            let cachedMaxAgeSeconds = maxAgeSeconds(from: options, defaultSeconds: 0)
+            if let cached = cachedLocationPayload(maxAgeSeconds: cachedMaxAgeSeconds) {
+                resolve.call(withArguments: [cached])
+            } else {
+                reject.call(withArguments: ["Location data unavailable. Open the main app to refresh location."])
+            }
+            return
+            #endif
+
             guard CLLocationManager.locationServicesEnabled() else {
                 reject.call(withArguments: ["Location services are disabled on this device"])
                 return
@@ -140,7 +176,7 @@ import CoreLocation
         return formatter.string(from: date)
     }
 
-    private static func accuracyAuthorizationString(_ manager: CLLocationManager) -> String {
+    static func accuracyAuthorizationString(_ manager: CLLocationManager) -> String {
         if #available(iOS 14.0, *) {
             switch manager.accuracyAuthorization {
             case .fullAccuracy:
@@ -260,7 +296,12 @@ import CoreLocation
                 return
             }
 
-            resolve.call(withArguments: [payload(for: location, isStale: false)])
+            let payload = payload(for: location, isStale: false)
+            ScriptWidgetRuntimeLocation.cacheLocation(
+                location,
+                accuracyAuthorization: ScriptWidgetRuntimeLocation.accuracyAuthorizationString(manager)
+            )
+            resolve.call(withArguments: [payload])
             ScriptWidgetRuntimeLocation.finish(request: self)
         }
 
@@ -390,6 +431,55 @@ import CoreLocation
         if let index = activeRequests.firstIndex(where: { $0 === request }) {
             activeRequests.remove(at: index)
         }
+    }
+
+    static func cacheLocation(_ location: CLLocation, accuracyAuthorization: String) {
+        let payload: [String: Any] = [
+            "latitude": location.coordinate.latitude,
+            "longitude": location.coordinate.longitude,
+            "altitude": location.altitude,
+            "accuracy": location.horizontalAccuracy,
+            "verticalAccuracy": location.verticalAccuracy,
+            "speed": location.speed,
+            "course": location.course,
+            "timestampSeconds": location.timestamp.timeIntervalSince1970,
+            "accuracyAuthorization": accuracyAuthorization
+        ]
+
+        do {
+            let data = try JSONSerialization.data(withJSONObject: payload, options: [])
+            defaults().set(data, forKey: locationCacheKey)
+        } catch {
+            print("location cache error: \(error)")
+        }
+    }
+
+    private static func cachedLocationPayload(maxAgeSeconds: Double?) -> [String: Any]? {
+        guard let data = defaults().data(forKey: locationCacheKey) else {
+            return nil
+        }
+        guard let raw = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
+            return nil
+        }
+        guard let timestampSeconds = raw["timestampSeconds"] as? Double else {
+            return nil
+        }
+
+        let timestamp = Date(timeIntervalSince1970: timestampSeconds)
+        let age = max(0, Date().timeIntervalSince(timestamp))
+        let isStale: Bool
+        if let maxAgeSeconds = maxAgeSeconds, maxAgeSeconds > 0 {
+            isStale = age > maxAgeSeconds
+        } else {
+            isStale = age > 0
+        }
+
+        var payload = raw
+        payload["timestamp"] = isoString(timestamp)
+        payload["age"] = age
+        payload["isStale"] = isStale
+        payload.removeValue(forKey: "timestampSeconds")
+        return payload
     }
 }
 #else

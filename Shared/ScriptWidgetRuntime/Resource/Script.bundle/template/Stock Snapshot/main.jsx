@@ -33,7 +33,7 @@ if (openValue !== "-" && closeValue !== "-") {
 }
 
 $render(
-  <vstack frame="max" padding="12" background="#0f172a">
+  <vstack frame="max" background="#0f172a">
     <text font="caption" color="#94a3b8">Stock Snapshot</text>
     <text font="title3" color="#e2e8f0">{symbol.toUpperCase()}</text>
     <text font="caption" color="#94a3b8">Close: {closeValue}</text>

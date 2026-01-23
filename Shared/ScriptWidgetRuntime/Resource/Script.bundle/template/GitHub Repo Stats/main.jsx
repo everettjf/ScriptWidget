@@ -12,7 +12,7 @@ const result = await fetch(url);
 const data = JSON.parse(result);
 
 $render(
-  <vstack frame="max" padding="12" background="#0f172a">
+  <vstack frame="max" background="#0f172a">
     <text font="caption" color="#94a3b8">GitHub</text>
     <text font="title3" color="#e2e8f0">{repo}</text>
     <hstack spacing="12">
