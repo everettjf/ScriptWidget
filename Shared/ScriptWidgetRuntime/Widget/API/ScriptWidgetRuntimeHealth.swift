@@ -17,7 +17,7 @@ import JavaScriptCore
     static func heartRateLatest() -> ScriptWidgetRuntimePromise
 }
 
-#if canImport(HealthKit) && !IsWidgetTarget
+#if canImport(HealthKit)
 import HealthKit
 
 @objc public class ScriptWidgetRuntimeHealth: NSObject, ScriptWidgetRuntimeHealthExports {
@@ -45,6 +45,22 @@ import HealthKit
                 readTypes.insert(heartRateType)
             }
 
+            #if IsWidgetTarget
+            healthStore.getRequestStatusForAuthorization(toShare: [], read: readTypes) { status, error in
+                if let error = error {
+                    reject.call(withArguments: [error.localizedDescription])
+                    return
+                }
+                switch status {
+                case .unnecessary:
+                    resolve.call(withArguments: [true])
+                case .unknown, .shouldRequest:
+                    resolve.call(withArguments: [false])
+                @unknown default:
+                    resolve.call(withArguments: [false])
+                }
+            }
+            #else
             healthStore.requestAuthorization(toShare: nil, read: readTypes) { success, error in
                 if let error = error {
                     reject.call(withArguments: [error.localizedDescription])
@@ -52,6 +68,7 @@ import HealthKit
                     resolve.call(withArguments: [success])
                 }
             }
+            #endif
         }
     }
 
