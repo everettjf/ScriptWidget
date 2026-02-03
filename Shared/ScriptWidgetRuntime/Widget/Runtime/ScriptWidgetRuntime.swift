@@ -87,6 +87,9 @@ class ScriptWidgetRuntime {
     init(package: ScriptWidgetPackage, environments: [String:String]) {
         self.package = package
         self.environments = environments
+        // APIs like $file/$console read runtime data from sharedRunningState.
+        // Ensure widget/extension runtime also initializes it.
+        sharedRunningState = ScriptWidgetRunningState(package: package)
     }
     
     public func setEnvironment(_ key: String, _ value: String) {
