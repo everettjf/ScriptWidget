@@ -340,6 +340,8 @@
 	</dict>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>App could save widget preview snapshot to album</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Allow ScriptWidget to pick photos for script resources.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
 	<key>NSUbiquitousContainers</key>
