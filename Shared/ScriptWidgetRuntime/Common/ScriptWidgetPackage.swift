@@ -123,10 +123,54 @@ struct ScriptWidgetPackage {
         }
         do {
             let content = try String(contentsOf: fullPath, encoding: .utf8)
+            syncBuildCache(fullPath: fullPath, content: content)
             return (content, "succeed")
         } catch {
             let errorInfo = "\(error)"
+            if let buildCachePath = buildCachePath(for: fullPath),
+               let content = try? String(contentsOf: buildCachePath, encoding: .utf8) {
+                return (content, "read from build cache: \(buildCachePath.path)")
+            }
             return (nil, errorInfo)
+        }
+    }
+
+    private func buildCachePath(for fullPath: URL) -> URL? {
+        guard let buildDirectory = ScriptManager.getSandboxBuildDirectoryURL() else {
+            return nil
+        }
+        let packageRootPath = self.path.path
+        let fullPathValue = fullPath.path
+        guard fullPathValue.hasPrefix(packageRootPath) else {
+            return nil
+        }
+        var relativePath = String(fullPathValue.dropFirst(packageRootPath.count))
+        if relativePath.hasPrefix("/") {
+            relativePath.removeFirst()
+        }
+        var cacheFilePath = buildDirectory.appendingPathComponent(self.name)
+        if !relativePath.isEmpty {
+            cacheFilePath = cacheFilePath.appendingPathComponent(relativePath)
+        }
+        return cacheFilePath
+    }
+
+    private func syncBuildCache(fullPath: URL, content: String) {
+        guard let cacheFilePath = buildCachePath(for: fullPath) else {
+            return
+        }
+        guard let data = content.data(using: .utf8) else {
+            return
+        }
+        let directory = cacheFilePath.deletingLastPathComponent()
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [
+                FileAttributeKey.protectionKey: FileProtectionType.none
+            ])
+            try data.write(to: cacheFilePath)
+            try FileManager.default.setAttributes([FileAttributeKey.protectionKey: FileProtectionType.none], ofItemAtPath: cacheFilePath.path)
+        } catch {
+            print("sync build cache failed: \(error)")
         }
     }
     

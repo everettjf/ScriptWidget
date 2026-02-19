@@ -204,6 +204,10 @@ class ScriptManager {
             let targetDir = package.imagePath
             try? FileManager.default.copyItem(at: imageCopyPath, to: targetDir)
         }
+
+        if result.0, !self.isBuild {
+            _ = buildScriptPackage(package: package)
+        }
         
         return result
     }
@@ -216,7 +220,13 @@ class ScriptManager {
         let destScriptPath = self.getPackagePathFromPackageName(packageName: destPackageName)
 
         let file = ScriptWidgetPackage(path: srcScriptPath)
-        return file.rename(destPath: destScriptPath)
+        let renameResult = file.rename(destPath: destScriptPath)
+        if renameResult.0, !self.isBuild {
+            _ = removeBuildScriptPackage(package: file)
+            let newPackage = self.getScriptPackage(packageName: destPackageName)
+            _ = buildScriptPackage(package: newPackage)
+        }
+        return renameResult
     }
     
     func getValidPackageName(recommendPackageName: String) -> String {
@@ -390,6 +400,11 @@ extension ScriptManager {
             try FileManager.default.moveItem(at: tempPackagePath, to: confirmPackagePath)
         } catch {
             return false
+        }
+        
+        if !self.isBuild {
+            let package = self.getScriptPackage(packageName: confirmImportScriptName)
+            _ = buildScriptPackage(package: package)
         }
         return true
     }
