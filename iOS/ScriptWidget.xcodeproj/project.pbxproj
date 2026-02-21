@@ -383,7 +383,6 @@
 		D1403E0C2552FF850076F87C /* CropViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CropViewController.swift; sourceTree = "<group>"; };
 		D1403E26255309FA0076F87C /* PhotoPickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoPickerViewController.swift; sourceTree = "<group>"; };
 		D1403E2C25530A0B0076F87C /* PhotoPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoPickerView.swift; sourceTree = "<group>"; };
-		F2534B4127AA9C50000A4F98 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = en; path = en.lproj/PhotoPicker.storyboard; sourceTree = "<group>"; };
 		D149EF5C2559920500A24CAD /* TOCropViewConstants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TOCropViewConstants.h; sourceTree = "<group>"; };
 		D149EF65255994CA00A24CAD /* TOCropWidgetSizeHelper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TOCropWidgetSizeHelper.h; sourceTree = "<group>"; };
 		D149EF66255994CA00A24CAD /* TOCropWidgetSizeHelper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TOCropWidgetSizeHelper.m; sourceTree = "<group>"; };
@@ -439,6 +438,7 @@
 		F240AC7727B2CE1C00D249EA /* TabBarAccessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarAccessor.swift; sourceTree = "<group>"; };
 		F2433F5F25D6F94B00AE4097 /* AppHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppHelper.swift; sourceTree = "<group>"; };
 		F2433F8425D6FE6200AE4097 /* QuickLook.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLook.framework; path = System/Library/Frameworks/QuickLook.framework; sourceTree = SDKROOT; };
+		F2534B4127AA9C50000A4F98 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = en; path = en.lproj/PhotoPicker.storyboard; sourceTree = "<group>"; };
 		F25ED68E27FDF9DD000089D0 /* ScriptWidgetRunningState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRunningState.swift; sourceTree = "<group>"; };
 		F25ED69C27FF2227000089D0 /* FileDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDetailView.swift; sourceTree = "<group>"; };
 		F25ED69E280067BD000089D0 /* FileCreateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCreateView.swift; sourceTree = "<group>"; };
@@ -1898,7 +1898,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26302;
+				CURRENT_PROJECT_VERSION = 26303;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
@@ -1930,7 +1930,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26302;
+				CURRENT_PROJECT_VERSION = 26303;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
@@ -1958,7 +1958,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26302;
+				CURRENT_PROJECT_VERSION = 26303;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -1984,7 +1984,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26302;
+				CURRENT_PROJECT_VERSION = 26303;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -2009,7 +2009,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26302;
+				CURRENT_PROJECT_VERSION = 26303;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -2033,7 +2033,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26302;
+				CURRENT_PROJECT_VERSION = 26303;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
