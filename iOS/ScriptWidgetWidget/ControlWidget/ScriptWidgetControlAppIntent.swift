@@ -12,6 +12,7 @@ import AppIntents
 struct ScriptWidgetControlAppIntent: AppIntent {
   static var title: LocalizedStringResource = "ScriptWidget control app intent"
   static var description = IntentDescription("ScriptWidget control app intent description")
+  static var isDiscoverable: Bool { false }
 
   init() {
   }

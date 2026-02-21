@@ -69,6 +69,7 @@ struct Timer: Identifiable, AppEntity {
 
 struct SelectTimerIntent: ControlConfigurationIntent {
   static var title: LocalizedStringResource = "Select Timer"
+  static var isDiscoverable: Bool { false }
   @Parameter(title: "Timer")
   var timer: Timer?
   
@@ -83,6 +84,7 @@ struct SelectTimerIntent: ControlConfigurationIntent {
 }
 struct ToggleTimerIntent: SetValueIntent {
   static let title: LocalizedStringResource = "Productivity Timer"
+  static var isDiscoverable: Bool { false }
   @Parameter(title: "Running")
   var value: Bool
   @Parameter(title: "Timer")
