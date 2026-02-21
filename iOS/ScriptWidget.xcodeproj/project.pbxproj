@@ -383,6 +383,7 @@
 		D1403E0C2552FF850076F87C /* CropViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CropViewController.swift; sourceTree = "<group>"; };
 		D1403E26255309FA0076F87C /* PhotoPickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoPickerViewController.swift; sourceTree = "<group>"; };
 		D1403E2C25530A0B0076F87C /* PhotoPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoPickerView.swift; sourceTree = "<group>"; };
+		F2534B4127AA9C50000A4F98 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = en; path = en.lproj/PhotoPicker.storyboard; sourceTree = "<group>"; };
 		D149EF5C2559920500A24CAD /* TOCropViewConstants.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TOCropViewConstants.h; sourceTree = "<group>"; };
 		D149EF65255994CA00A24CAD /* TOCropWidgetSizeHelper.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TOCropWidgetSizeHelper.h; sourceTree = "<group>"; };
 		D149EF66255994CA00A24CAD /* TOCropWidgetSizeHelper.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TOCropWidgetSizeHelper.m; sourceTree = "<group>"; };
@@ -1759,6 +1760,7 @@
 		F2534B4027AA9C50000A4F98 /* PhotoPicker.storyboard */ = {
 			isa = PBXVariantGroup;
 			children = (
+				F2534B4127AA9C50000A4F98 /* en */,
 			);
 			name = PhotoPicker.storyboard;
 			sourceTree = "<group>";
