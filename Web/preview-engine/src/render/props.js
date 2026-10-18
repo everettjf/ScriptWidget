@@ -72,7 +72,31 @@ const systemColors = {
   },
 };
 
-export const systemBackground = { light: [255, 255, 255, 1], dark: [0, 0, 0, 1] };
+// macOS 26 differs from iOS in label alphas and the dark gray, measured by
+// sampling SwiftUI colors with ImageRenderer (Tools/ScriptWidgetPreview).
+const macSystemColors = {
+  light: { ...systemColors.light, primary: [0, 0, 0, 0.847], secondary: [0, 0, 0, 0.498] },
+  dark: { ...systemColors.dark, gray: [152, 152, 157, 1], primary: [255, 255, 255, 0.847], secondary: [255, 255, 255, 0.549] },
+};
+
+const systemBackgrounds = {
+  ios: { light: [255, 255, 255, 1], dark: [0, 0, 0, 1] },
+  // ShapeStyle.background, which the macOS widget's containerBackground uses.
+  macos: { light: [255, 255, 255, 1], dark: [46, 46, 46, 1] },
+};
+
+/// The platform whose SwiftUI metrics the renderer follows ("ios" or
+/// "macos"). renderWidget sets it for the synchronous layout pass.
+let currentPlatform = "ios";
+export const platform = () => currentPlatform;
+export function setPlatform(name) {
+  const previous = currentPlatform;
+  currentPlatform = name === "macos" ? "macos" : "ios";
+  return previous;
+}
+
+const palette = () => (currentPlatform === "macos" ? macSystemColors : systemColors);
+export const systemBackground = (appearance) => systemBackgrounds[currentPlatform][appearance];
 
 /// Color(hex:): trims non-alphanumerics, scans leading hex digits, and treats
 /// 8 digits as ARGB. Any other length becomes (1,1,1,1)/255.
@@ -90,7 +114,7 @@ export function hexColor(value) {
 }
 
 function builtinColor(name, appearance) {
-  return Object.prototype.hasOwnProperty.call(systemColors.light, name) ? systemColors[appearance][name] : null;
+  return Object.prototype.hasOwnProperty.call(systemColors.light, name) ? palette()[appearance][name] : null;
 }
 
 /// getColorFromColorValue: "#hex", "name", "#hex,opacity", "name,opacity".
@@ -124,7 +148,7 @@ export function parsePoint(value) {
 /// ScriptWidgetElementGradient.getGradient (SwiftyJSON `stringValue` and
 /// `doubleValue` coerce numbers and strings and default to "" / 0).
 export function parseGradient(value, appearance = "light") {
-  const fallback = { type: "linear", colors: [systemColors[appearance].orange, systemColors[appearance].red], start: [0, 0.5], end: [1, 0.5] };
+  const fallback = { type: "linear", colors: [palette()[appearance].orange, palette()[appearance].red], start: [0, 0.5], end: [1, 0.5] };
   let json;
   try { json = JSON.parse(value.slice("gradient:".length)); } catch { return fallback; }
   if (!json || typeof json !== "object") return fallback;
@@ -241,6 +265,25 @@ export const textStyles = {
   headline: [17, 22, 600], body: [17, 22, 400], callout: [16, 21, 400], subheadline: [15, 20, 400],
   footnote: [13, 18, 400], caption: [12, 16, 400], caption2: [11, 13, 400],
 };
+// macOS 26 text styles: size, first-line height, line advance, weight, and
+// the gap SwiftUI leaves below the line in a VStack (the font's leading on
+// the 2x grid). Measured with NSHostingController at display scale 2.
+const macTextStyles = {
+  largeTitle: [26, 31, 32, 400, 1.5], title: [22, 26, 26, 400, 0.5], title2: [17, 20.5, 22, 400, 2], title3: [15, 19, 20, 400, 2.5],
+  headline: [13, 16, 16, 700, 1], body: [13, 16, 16, 400, 1], callout: [12, 15, 15, 400, 1], subheadline: [11, 14, 14, 400, 1.5],
+  footnote: [10, 13, 13, 400, 1.5], caption: [10, 13, 13, 400, 1.5], caption2: [10, 13, 13, 400, 1.5],
+};
+
+/// A named text style as a font for the current platform.
+export function styleFont(name) {
+  if (currentPlatform === "macos") {
+    const [size, natural, lineHeight, weight, gap] = macTextStyles[name];
+    return { size, natural, lineHeight, weight, gap, design: "default" };
+  }
+  const [size, lineHeight, weight] = textStyles[name];
+  return { size, lineHeight, weight, design: "default" };
+}
+
 const weights = { ultraLight: 100, thin: 200, light: 300, regular: 400, medium: 500, semibold: 600, bold: 700, heavy: 800, black: 900 };
 const designs = { monospaced: "monospaced", rounded: "rounded", serif: "serif", default: "default" };
 
@@ -248,7 +291,7 @@ const designs = { monospaced: "monospaced", rounded: "rounded", serif: "serif", 
 export function parseFont(value) {
   if (typeof value !== "string") return null;
   const fromName = (name, designName) => {
-    if (textStyles[name]) { const [size, lineHeight, weight] = textStyles[name]; return { size, lineHeight, weight, design: "default" }; }
+    if (textStyles[name]) return styleFont(name);
     const size = swiftDouble(name);
     if (size === null) return null;
     return { size, lineHeight: null, weight: 400, design: (designName && designs[designName]) || "default" };
@@ -266,11 +309,12 @@ export function parseFont(value) {
   return font;
 }
 
-export const defaultFont = { size: 17, lineHeight: 22, weight: 400, design: "default" };
+/// Text without a font uses .body.
+export const defaultFont = () => styleFont("body");
 
 /// ScriptWidgetAttributeFontModifier: `font`, refined by `fontWeight` (or
 /// the older `weight`) and `fontDesign`.
-export function elementFont(reader, fallback = defaultFont) {
+export function elementFont(reader, fallback = defaultFont()) {
   const font = { ...(parseFont(reader.string("font")) ?? fallback) };
   const weight = weights[reader.string("fontWeight") ?? reader.string("weight") ?? ""];
   if (weight !== undefined) font.weight = weight;

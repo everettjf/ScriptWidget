@@ -14,6 +14,8 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 - Browser preview engine (`Web/preview-engine`): JavaScriptCore-compatible execution in a sandboxed browser worker and a SwiftUI-calibrated web renderer.
 - Web Studio in the browser (`Web/studio`, published at `/studio/`): edit, preview, import, and export widgets on any desktop OS and install them on iPhone through the share sheet.
 - `scriptwidget-preview` CLI and `scriptwidget-mcp` server for agent workflows, with optional sync to Web Studio on iPhone for native previews.
+- ScriptWidget Preview (`Tools/ScriptWidgetPreview`), a macOS developer app that compares the native macOS rendering of a package with the web engine, one package at a time or across the whole corpus.
+- A **Mac** device in the web preview and Web Studio, calibrated to macOS 26 text styles, colors, spacing, line breaking, buttons, and charts.
 
 ### Changed
 

@@ -27,7 +27,7 @@ the browser and previews them itself.
 
 ## Preview
 
-- Choose a device (iPhone sizes or iPad), a widget size from the manifest's
+- Choose a device (iPhone sizes, iPad, or Mac), a widget size from the manifest's
   `supportedFamilies`, light or dark appearance, a rendering mode, and the
   `widget-param` value.
 - The preview runs your code in an isolated sandbox with the same rules as the

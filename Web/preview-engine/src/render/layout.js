@@ -23,12 +23,18 @@ export class TextNode extends Node {
   }
   /// Like UIKit, a word wider than the line is hyphenated: it is split into
   /// the longest prefixes that fit with a trailing "-" instead of breaking
-  /// at an arbitrary character.
+  /// at an arbitrary character. AppKit (style.hyphenate false) breaks such
+  /// words between characters without a hyphen, as the browser does.
   displayText(width) {
     if (width === null || width === Infinity || width <= 0) return this.text;
     const key = `${width}`;
     this.hyphenated ??= new Map();
     if (this.hyphenated.has(key)) return this.hyphenated.get(key);
+    if (this.style.hyphenate === false) {
+      const result = this.text.split("\n").map((paragraph) => this.pushOut(paragraph, width)).join("\n");
+      this.hyphenated.set(key, result);
+      return result;
+    }
     const fits = (piece) => this.measurer.measure(piece, this.style, null).width <= width + 0.01;
     const result = this.text.replace(/\S+/g, (word) => {
       if (fits(word) || [...word].length < 4) return word;
@@ -50,13 +56,47 @@ export class TextNode extends Node {
     this.hyphenated.set(key, result);
     return result;
   }
+  /// AppKit's standard line break strategy pushes a word down so that the
+  /// last line of a paragraph is not a single short word ("October /
+  /// 18, 2026").
+  /// Breaks before punctuation are not allowed (UAX #14), so "Size :" stays
+  /// together. Paragraphs with a word wider than the line are left alone.
+  pushOut(paragraph, width) {
+    const words = paragraph.split(/ +/).filter(Boolean).reduce((tokens, word) => {
+      if (tokens.length && /^[:;,.!?)\]}%]/.test(word)) tokens[tokens.length - 1] += ` ${word}`;
+      else tokens.push(word);
+      return tokens;
+    }, []);
+    const fits = (line) => this.measurer.measure(line.join(" "), this.style, null).width <= width + 0.01;
+    if (words.length < 3 || fits(words) || !words.every((word) => fits([word]))) return paragraph;
+    const lines = [[]];
+    for (const word of words) {
+      const line = lines.at(-1);
+      if (!line.length || fits([...line, word])) line.push(word); else lines.push([word]);
+    }
+    const last = lines.at(-1); const previous = lines.at(-2);
+    if (lines.length < 2 || last.length !== 1 || previous.length < 2) return paragraph;
+    // Only a short orphan is pushed out: "Hello from / GitHub" stays.
+    if (this.measurer.measure(last[0], this.style, null).width >= width * 0.5) return paragraph;
+    const moved = [previous.at(-1), ...last];
+    if (!fits(moved)) return paragraph;
+    lines.splice(-2, 2, previous.slice(0, -1), moved);
+    return lines.map((line) => line.join(" ")).join("\n");
+  }
+  /// AppKit keeps breaking a word one character per line in a column
+  /// narrower than "…" as long as its first character fits.
+  wrapsCharacters(width) {
+    if (this.style.hyphenate !== false) return false;
+    const first = [...this.text.trim()][0];
+    return first !== undefined && this.measurer.measure(first, this.style, null).width <= width + 0.01;
+  }
   metrics(width) { return this.measurer.measure(width === null ? this.text : this.displayText(width), this.style, width); }
   layout(pw, ph) {
     const { natural, leading } = this.style;
     if (this.text === "") return { width: 0, height: 0, lines: 0, total: 0 };
     let width; let lines;
     if (pw === null || pw === Infinity) { const m = this.metrics(null); width = m.width; lines = m.lines; }
-    else if (pw < this.measurer.ellipsisWidth(this.style)) { width = this.measurer.ellipsisWidth(this.style); lines = 1; }
+    else if (pw < this.measurer.ellipsisWidth(this.style) && !this.wrapsCharacters(pw)) { width = this.measurer.ellipsisWidth(this.style); lines = 1; }
     else {
       // Offered at least the natural width: keep the unwrapped layout rather
       // than re-measuring at an explicit width, which can wrap on sub-pixel

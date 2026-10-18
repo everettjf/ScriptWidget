@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { hexColor, parseColor, parseFont, parseFrame, parsePadding, parseGradient, propReader, swiftDouble } from "../src/render/props.js";
+import { hexColor, parseColor, parseFont, parseFrame, parsePadding, parseGradient, propReader, setPlatform, swiftDouble, systemBackground } from "../src/render/props.js";
 import { FixedNode, FlexibleNode, SpacerNode, StackNode, TextNode } from "../src/render/layout.js";
 import { lineHeight } from "../src/render/renderer.js";
+import { deviceProfiles } from "../src/render/profiles.js";
+import { symbolMetrics } from "../src/render/symbolMetrics.generated.js";
 
 const frame = (value) => parseFrame(propReader({ frame: value }));
 
@@ -66,4 +68,39 @@ test("stacks give spacers only the leftover space", () => {
   tight.place(0, 0, 200, 20);
   assert.equal(tight.children[1].frame.width, 42);
   assert.equal(new FlexibleNode().size(null, null)[0], 10);
+});
+
+test("the macOS profile uses macOS 26 SwiftUI metrics", () => {
+  assert.equal(deviceProfiles.macos.platform, "macos");
+  assert.deepEqual(deviceProfiles.macos.medium, [329, 170]);
+  const previous = setPlatform("macos");
+  try {
+    // Measured by Tools/ScriptWidgetPreview with NSHostingController at 2x.
+    const measured = { 10: 13, 13: 16, 15: 19, 16: 19, 17: 20, 20: 24, 30: 35, 60: 71, 16.5: 20, 20.5: 25 };
+    for (const [size, height] of Object.entries(measured)) assert.equal(lineHeight(Number(size)), height, `font size ${size}`);
+    assert.deepEqual(parseFont("body"), { size: 13, natural: 16, lineHeight: 16, weight: 400, gap: 1, design: "default" });
+    assert.equal(parseFont("headline").weight, 700);
+    assert.deepEqual(parseColor("primary"), [0, 0, 0, 0.847]);
+    assert.deepEqual(parseColor("gray", "dark"), [152, 152, 157, 1]);
+    assert.deepEqual(systemBackground("dark"), [46, 46, 46, 1]);
+  } finally {
+    setPlatform(previous);
+  }
+  assert.equal(lineHeight(13), 16);
+  assert.deepEqual(parseColor("primary"), [0, 0, 0, 1]);
+});
+
+test("macOS text breaks words without hyphens and pushes out short orphans", () => {
+  const measurer = { measure: (text, style, width) => ({ width: Math.max(...text.split("\n").map((line) => line.length * 10)), lines: text.split("\n").length }), ellipsisWidth: () => 10 };
+  const mac = { natural: 16, leading: 16, size: 13, hyphenate: false };
+  assert.equal(new TextNode("Widget Size : small", mac, measurer).displayText(140), "Widget\nSize : small");
+  assert.equal(new TextNode("Hello from GitHubbb", mac, measurer).displayText(110), "Hello from GitHubbb");
+  assert.equal(new TextNode("SYSTEM", mac, measurer).displayText(30), "SYSTEM");
+  assert.equal(new TextNode("TUE", mac, measurer).wrapsCharacters(10), true);
+  assert.match(new TextNode("SYSTEM", { ...mac, hyphenate: true }, measurer).displayText(30), /^SY-\n/);
+});
+
+test("SF Symbol metrics come from SwiftUI", () => {
+  assert.deepEqual(symbolMetrics.hourglass, [0.825, 1.07]);
+  assert.deepEqual(symbolMetrics.globe, [1.17, 1.17]);
 });
