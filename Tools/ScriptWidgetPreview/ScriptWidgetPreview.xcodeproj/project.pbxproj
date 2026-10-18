@@ -1,0 +1,712 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		01AF664CBA4EAF15BBB28F7B /* ScriptWidgetElementTagSpacer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF10EF9A243E213F1CB2A198 /* ScriptWidgetElementTagSpacer.swift */; };
+		07557726459678957777FF7C /* ScriptWidgetRuntimeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 779CA7B806D71000A72EA8BB /* ScriptWidgetRuntimeStorage.swift */; };
+		0A38DF684FE798E0D43ABBC6 /* ScriptWidgetElementTagToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FAB675C9C6FF28F348B26EE /* ScriptWidgetElementTagToggle.swift */; };
+		0B41E4F46F41A4E7B672BFE3 /* ScriptWidgetRuntimeFetch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0263A8E796DEB2A9BE2EF649 /* ScriptWidgetRuntimeFetch.swift */; };
+		0E72CB4094D83AEC864568BC /* BatchComparison.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C7673353364BB0AEDDB965F /* BatchComparison.swift */; };
+		142E192D13D152034227B368 /* ScriptWidgetRuntimeDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = A64E0D2C33EDB8871F3D2FA8 /* ScriptWidgetRuntimeDevice.swift */; };
+		1B0E9298A02371C8863576F0 /* ScriptWidgetRuntimeDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5912615112764647F824C67F /* ScriptWidgetRuntimeDiagnostics.swift */; };
+		1D9D1616C15A9B39ACC8CFFB /* ScriptWidgetElementTagExtras.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90FE479B727E15CD43C026F /* ScriptWidgetElementTagExtras.swift */; };
+		1E4B65B033AB391A1D07E455 /* NativeRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B207D898BC74B33F41BDF3C /* NativeRenderer.swift */; };
+		1F0F12B124ED8259BB2A239A /* ScriptWidgetAttributeBackgroundModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AB5706AB0DAFEBF3EE117FD /* ScriptWidgetAttributeBackgroundModifier.swift */; };
+		23B7D91CD3BF30146C2E9095 /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02FC33625277B140151A1CC8 /* ScriptWidgetRuntimeSystem.swift */; };
+		240BBDD6B5D2D6FC8F04ADA6 /* ScriptMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC2D908F8EF2CD25E5F8ADB6 /* ScriptMetadata.swift */; };
+		2536DE8C46F6571A2BE4B65B /* MineRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 204A840C617F0151174CAA70 /* MineRingView.swift */; };
+		277DE86E6D55E875B2E7B6C6 /* ScriptWidgetRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB47FBE2FCA38603720B4347 /* ScriptWidgetRuntime.swift */; };
+		2DE8E460B9A1F172708AD5C2 /* ScriptWidgetAttributePaddingModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2761100B6BC31AC5848AAF7D /* ScriptWidgetAttributePaddingModifier.swift */; };
+		2EF002BB7B6DE61BD8D0A1D0 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5CE43CC1E3511180C5308A8 /* ContentView.swift */; };
+		305A004D458F0CF6EFA07F8D /* ScriptWidgetAttributeCornerRadiusModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5824C4494B88B54CDF8D8AC /* ScriptWidgetAttributeCornerRadiusModifier.swift */; };
+		318F779EA863C8A2DD0B0D00 /* ScriptWidgetRuntimeFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DD8C9E40FC0CF18D45598D3 /* ScriptWidgetRuntimeFile.swift */; };
+		3477019D02EFFC62A7F90DE0 /* ScriptWidgetElementTagShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C6491F33A677450964D105 /* ScriptWidgetElementTagShape.swift */; };
+		3A0EA812759D813C058241FC /* support.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 08A8C1163C8EC8B3EFB17508 /* support.bundle */; };
+		44F45C6BC59C2AAFB05A6BEB /* WebRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44FA3AFB41106A42A58EECC7 /* WebRenderer.swift */; };
+		486DCD3892359D58AE944D2A /* Repository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 210AF71D06C749261E153111 /* Repository.swift */; };
+		4B3EA045D2B897D957522246 /* Monofonto.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5CB5AE3EDAF471DA72D8AE8D /* Monofonto.ttf */; };
+		509B3ABBBE8133930D011724 /* ScriptWidgetAppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 095E8928B68F65119D80073F /* ScriptWidgetAppState.swift */; };
+		53975CECE7175D8F83B57A98 /* ScriptModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D4C12DE4E3AD19E0CB027F4 /* ScriptModel.swift */; };
+		57BD3F81EDFC871747CFC2F2 /* ScriptWidgetAttributeAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59A3F3D4EE6656CA95D7FD7 /* ScriptWidgetAttributeAnimationModifier.swift */; };
+		5A0A6DACCACF748B13F82258 /* ScriptWidgetAttributeClippedModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECA02472033430919EAC65A5 /* ScriptWidgetAttributeClippedModifier.swift */; };
+		5C7943024C6BDD9AAE21D0E4 /* ScriptWidgetAttributeGeneral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 430AF039C216C68D0A5783D9 /* ScriptWidgetAttributeGeneral.swift */; };
+		6139E05DAE562E7155073F95 /* ScriptWidgetRunningState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15AB42AF39F51931AFD7C17C /* ScriptWidgetRunningState.swift */; };
+		62E937430263896922A2DDE7 /* ScriptWidgetElementTagLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3929E6EF52C464586560D671 /* ScriptWidgetElementTagLink.swift */; };
+		64A8B4DC06F84157229ED0FB /* AppConfigFrequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7319267ACDBCE261F492E791 /* AppConfigFrequency.swift */; };
+		6BD30D65622F6477ED02D0C8 /* SwingAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C43D5D9B01CC98CA203B53E /* SwingAnimationModifier.swift */; };
+		6D0AA2001ADB4728445A15E1 /* ScriptWidgetDataSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B420B81B5680DC88EB4E198 /* ScriptWidgetDataSources.swift */; };
+		6F3A4D460AB73233E725C90C /* ZipArchive in Frameworks */ = {isa = PBXBuildFile; productRef = A6A11B466F7772E78E066DD6 /* ZipArchive */; };
+		6F660D4EE6F1B7657766EBC9 /* ScriptWidgetAttributeForegroundModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74676DD3E861CEED658C7FAF /* ScriptWidgetAttributeForegroundModifier.swift */; };
+		6F9C7BC00A8ACEE0E13832BF /* ScriptWidgetAttributeImageModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98BAF843BA098A96671B3872 /* ScriptWidgetAttributeImageModifier.swift */; };
+		74526AC3C99B5936394DBBAE /* ScriptWidgetPackage.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3181DF8724ED930C377E913 /* ScriptWidgetPackage.swift */; };
+		74BEFF4C6DF04D457D4084CC /* ScriptWidgetPreviewApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 343010D751A3F8412FDA7A8C /* ScriptWidgetPreviewApp.swift */; };
+		751F5CA3ED3ECB9C17BE7F5D /* ScriptWidgetElementTagGif.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CA7AB419BE5200B9827BF03 /* ScriptWidgetElementTagGif.swift */; };
+		7A52CF0493ECAC47FBF38A3E /* ScriptWidgetAttributeFrameModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A71F8055B0A0C129D94733F /* ScriptWidgetAttributeFrameModifier.swift */; };
+		7B75DD695A9269109BAF408C /* ScriptWidgetElementTagGauge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D89A422EDB34C65E4D54716 /* ScriptWidgetElementTagGauge.swift */; };
+		7C1CD291557F279F10015471 /* ScriptWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B6F215257FA2DE1B4C3186 /* ScriptWidgetAppIntent.swift */; };
+		805F9FB982666CCD89E41042 /* ScriptWidgetRuntimeElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8592AB70139A30534BBCD978 /* ScriptWidgetRuntimeElement.swift */; };
+		87A5D1DA5D3FBB4B4D175CD1 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = 2FED329A4E1DB49EAE393E63 /* SwiftyJSON */; };
+		8835386A14F7133BAA0528DA /* ScriptWidgetElementTagImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69E92800A6E280534F8EB542 /* ScriptWidgetElementTagImage.swift */; };
+		8A422FD08053E7F1EAF54A4D /* CompareModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 455D5664AEA5C2F615823A2C /* CompareModel.swift */; };
+		8CC4526E82316BE21DA9AB91 /* ButtonActionAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48F2FE39420DBDAB74523572 /* ButtonActionAppIntent.swift */; };
+		8E870B157F1CA45A0CAECE5E /* ScriptWidgetElementTagText.swift in Sources */ = {isa = PBXBuildFile; fileRef = F136B057E241AA7BD763A761 /* ScriptWidgetElementTagText.swift */; };
+		909FC4DC4330EA023FB73205 /* ScriptWidgetAttributeRotationEffectModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80EA3145479281CBCC380CAA /* ScriptWidgetAttributeRotationEffectModifier.swift */; };
+		92ED8301C96DE7A11A998F5B /* MineGaugeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB1ADA1660891F9673BA1A35 /* MineGaugeView.swift */; };
+		9539363D92F314F55F244326 /* ClockHandRotationEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752F86D0534755F7F81EB51E /* ClockHandRotationEffect.swift */; };
+		997EDEFDAC2B3D23B5B83753 /* ScriptManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4AD615D760B9CA0E3FFCA52A /* ScriptManager.swift */; };
+		9D9470D37B4B0741097AAE23 /* OneSlot.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5F8A0466A2CA28F82E34F12A /* OneSlot.ttf */; };
+		9DB30C59DD32D255D1667644 /* ImageDiff.swift in Sources */ = {isa = PBXBuildFile; fileRef = B26418C9074552F9D6D0C96B /* ImageDiff.swift */; };
+		A24AE8636A7C8D86F98741D0 /* ScriptWidgetAttributeTextAlignmentModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE02CCCD5FB2CC0CC68B4465 /* ScriptWidgetAttributeTextAlignmentModifier.swift */; };
+		A2E959FA89501E896054DD07 /* ScriptWidgetElementColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBDDB0DA2385330B77519517 /* ScriptWidgetElementColor.swift */; };
+		A3B9A813F21E49CC82142A15 /* ScriptWidgetAttributeRotation3DEffectModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62404EA90D9EA7FADFCA0BFE /* ScriptWidgetAttributeRotation3DEffectModifier.swift */; };
+		AD9C741919FC3785D0DDEC2E /* ScriptWidgetAttributeFontModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9DE458FEFED9E8FC94FD995 /* ScriptWidgetAttributeFontModifier.swift */; };
+		ADA0670D037924D60FFDFD05 /* ScriptWidgetElementTagChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8126E40E43DCD444AD7E5991 /* ScriptWidgetElementTagChart.swift */; };
+		B6637969BFB11E7595B9C01D /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 36AA6835A751272361409865 /* WidgetKit.framework */; };
+		B89A53E5B1B7ECE28EB83C38 /* ScriptWidgetRuntimeLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DEEC0FAEF7B680F6B674ED4 /* ScriptWidgetRuntimeLocation.swift */; };
+		B92B8D417632651F8D765D89 /* ReloadWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C48385FFFC535B866FA06C0D /* ReloadWidgetAppIntent.swift */; };
+		BE51F6DDA11BB6C9CDB4B50C /* ScriptWidgetElementPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE05A32BA83B76B4FC4A3D05 /* ScriptWidgetElementPoint.swift */; };
+		C35482C1767599A5B80529C2 /* Apple ][.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 594A4E0E9F48F394462E8059 /* Apple ][.ttf */; };
+		C503AEF8BEA67CA505B31AD4 /* ScriptWidgetAttributeText.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC6EEFA3B8604DC143781ADD /* ScriptWidgetAttributeText.swift */; };
+		C7E6CA69BEB4410F9725692D /* ScriptWidgetRuntimeHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46A1E9308AA2263EE60EF72D /* ScriptWidgetRuntimeHealth.swift */; };
+		C81613A2B1D1B3621FF35AA3 /* ScriptWidgetElementTagZStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE81A7C11747FCA0A9A1EF71 /* ScriptWidgetElementTagZStack.swift */; };
+		C91A59B558BF5A8070DF2895 /* LocalServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 842996F701AD92922473C97F /* LocalServer.swift */; };
+		CFDE5BFDE6CCA4EC917BC0D0 /* ScriptWidgetAttributeDebugModeModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E4A1A72F98702A025D0B0F8 /* ScriptWidgetAttributeDebugModeModifier.swift */; };
+		D080A4A890DA2874DEEFF5B6 /* Unispace.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 82C782BE1DC50F09624124FA /* Unispace.ttf */; };
+		D31204CBF01AFC1F5F386B91 /* ScriptWidgetElementGradient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 381BA7C2A1E0539643385912 /* ScriptWidgetElementGradient.swift */; };
+		D6646D6DD6D466D1BBC1C1C6 /* ScriptWidgetRuntimePromise.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8FCE9F192A1F9865F1BB523 /* ScriptWidgetRuntimePromise.swift */; };
+		DEFC9925F7366C9EC38391BB /* ScriptWidgetElementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 278C27AE86F68F45173E9469 /* ScriptWidgetElementView.swift */; };
+		E79E9BA4E85446D2AFC1CB2F /* ScriptWidgetElementTagGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 49D18AE4673B0255B6AA9296 /* ScriptWidgetElementTagGrid.swift */; };
+		EC0BA7E0AF736B818C98EBEC /* New.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D669D5BFB60C172B72DB5CFC /* New.ttf */; };
+		ED94393BC52A5A980467BDC9 /* DeepLinkDefine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9465F2F9A7EEFC2DE428EBE /* DeepLinkDefine.swift */; };
+		F36A00862687DAB3D96B75D0 /* ScriptWidgetElementTagButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0733BEFD6B2710CFBC6F4BE9 /* ScriptWidgetElementTagButton.swift */; };
+		F38A152C36B62E03F79FF86B /* ScriptWidgetElementTagDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 721850A9130BE6C70060A389 /* ScriptWidgetElementTagDate.swift */; };
+		F63CB02F9E4406054DB48BE0 /* Larabiefont Free.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F54FDE6B9584BFC7925A4CBB /* Larabiefont Free.ttf */; };
+		F844CD775DAE66005F5212C0 /* ScriptWidgetElementTagStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 988C9D2B47D80274328B7AE1 /* ScriptWidgetElementTagStack.swift */; };
+		F8D692EF9B1B848E059B036F /* ScriptWidgetRuntimeConsole.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CE0A34B204DEA4DF8A986B1 /* ScriptWidgetRuntimeConsole.swift */; };
+		F917DBE76D263AD59323EDC0 /* ScriptWidgetAttributeOpacityModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 731C0F40092A237DBDED1DD3 /* ScriptWidgetAttributeOpacityModifier.swift */; };
+		FE7D09E96A24E999F9DBD09A /* ScriptWidgetAttributeShadowModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB8B5E88C3BB990EDD239BE9 /* ScriptWidgetAttributeShadowModifier.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		0263A8E796DEB2A9BE2EF649 /* ScriptWidgetRuntimeFetch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetRuntimeFetch.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeFetch.swift; sourceTree = "<group>"; };
+		02FC33625277B140151A1CC8 /* ScriptWidgetRuntimeSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetRuntimeSystem.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeSystem.swift; sourceTree = "<group>"; };
+		0733BEFD6B2710CFBC6F4BE9 /* ScriptWidgetElementTagButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementTagButton.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagButton.swift; sourceTree = "<group>"; };
+		08A8C1163C8EC8B3EFB17508 /* support.bundle */ = {isa = PBXFileReference; lastKnownFileType = wrapper.cfbundle; name = support.bundle; path = ../../Shared/ScriptWidgetRuntime/Widget/Resource/support.bundle; sourceTree = "<group>"; };
+		095E8928B68F65119D80073F /* ScriptWidgetAppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAppState.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Runtime/ScriptWidgetAppState.swift; sourceTree = "<group>"; };
+		0AB5706AB0DAFEBF3EE117FD /* ScriptWidgetAttributeBackgroundModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAttributeBackgroundModifier.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/General/ScriptWidgetAttributeBackgroundModifier.swift; sourceTree = "<group>"; };
+		0B207D898BC74B33F41BDF3C /* NativeRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeRenderer.swift; sourceTree = "<group>"; };
+		0C43D5D9B01CC98CA203B53E /* SwingAnimationModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SwingAnimationModifier.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Animation/SwingAnimationModifier.swift; sourceTree = "<group>"; };
+		15AB42AF39F51931AFD7C17C /* ScriptWidgetRunningState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetRunningState.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Runtime/ScriptWidgetRunningState.swift; sourceTree = "<group>"; };
+		1C7673353364BB0AEDDB965F /* BatchComparison.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatchComparison.swift; sourceTree = "<group>"; };
+		204A840C617F0151174CAA70 /* MineRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MineRingView.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Util/MineRingView.swift; sourceTree = "<group>"; };
+		210AF71D06C749261E153111 /* Repository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Repository.swift; sourceTree = "<group>"; };
+		2761100B6BC31AC5848AAF7D /* ScriptWidgetAttributePaddingModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAttributePaddingModifier.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/General/ScriptWidgetAttributePaddingModifier.swift; sourceTree = "<group>"; };
+		278C27AE86F68F45173E9469 /* ScriptWidgetElementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementView.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/ScriptWidgetElementView.swift; sourceTree = "<group>"; };
+		343010D751A3F8412FDA7A8C /* ScriptWidgetPreviewApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetPreviewApp.swift; sourceTree = "<group>"; };
+		36AA6835A751272361409865 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		381BA7C2A1E0539643385912 /* ScriptWidgetElementGradient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementGradient.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Util/ScriptWidgetElementGradient.swift; sourceTree = "<group>"; };
+		3929E6EF52C464586560D671 /* ScriptWidgetElementTagLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementTagLink.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagLink.swift; sourceTree = "<group>"; };
+		3CA7AB419BE5200B9827BF03 /* ScriptWidgetElementTagGif.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementTagGif.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagGif.swift; sourceTree = "<group>"; };
+		3DEEC0FAEF7B680F6B674ED4 /* ScriptWidgetRuntimeLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetRuntimeLocation.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeLocation.swift; sourceTree = "<group>"; };
+		430AF039C216C68D0A5783D9 /* ScriptWidgetAttributeGeneral.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAttributeGeneral.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/ScriptWidgetAttributeGeneral.swift; sourceTree = "<group>"; };
+		44FA3AFB41106A42A58EECC7 /* WebRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebRenderer.swift; sourceTree = "<group>"; };
+		455D5664AEA5C2F615823A2C /* CompareModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompareModel.swift; sourceTree = "<group>"; };
+		46A1E9308AA2263EE60EF72D /* ScriptWidgetRuntimeHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetRuntimeHealth.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeHealth.swift; sourceTree = "<group>"; };
+		48F2FE39420DBDAB74523572 /* ButtonActionAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ButtonActionAppIntent.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/AppIntents/ButtonActionAppIntent.swift; sourceTree = "<group>"; };
+		49D18AE4673B0255B6AA9296 /* ScriptWidgetElementTagGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementTagGrid.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagGrid.swift; sourceTree = "<group>"; };
+		4AD615D760B9CA0E3FFCA52A /* ScriptManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptManager.swift; path = ../../Shared/ScriptWidgetRuntime/Common/ScriptManager.swift; sourceTree = "<group>"; };
+		4D89A422EDB34C65E4D54716 /* ScriptWidgetElementTagGauge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementTagGauge.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagGauge.swift; sourceTree = "<group>"; };
+		4FAB675C9C6FF28F348B26EE /* ScriptWidgetElementTagToggle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementTagToggle.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagToggle.swift; sourceTree = "<group>"; };
+		5912615112764647F824C67F /* ScriptWidgetRuntimeDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetRuntimeDiagnostics.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Runtime/ScriptWidgetRuntimeDiagnostics.swift; sourceTree = "<group>"; };
+		594A4E0E9F48F394462E8059 /* Apple ][.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Apple ][.ttf"; path = "../../Shared/ScriptWidgetRuntime/Widget/Resource/Fonts/Apple ][.ttf"; sourceTree = "<group>"; };
+		5B420B81B5680DC88EB4E198 /* ScriptWidgetDataSources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetDataSources.swift; path = ../../Shared/ScriptWidgetRuntime/Plugin/ScriptWidgetDataSources.swift; sourceTree = "<group>"; };
+		5CB5AE3EDAF471DA72D8AE8D /* Monofonto.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = Monofonto.ttf; path = ../../Shared/ScriptWidgetRuntime/Widget/Resource/Fonts/Monofonto.ttf; sourceTree = "<group>"; };
+		5F8A0466A2CA28F82E34F12A /* OneSlot.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = OneSlot.ttf; path = ../../Shared/ScriptWidgetRuntime/Widget/Resource/Fonts/OneSlot.ttf; sourceTree = "<group>"; };
+		62404EA90D9EA7FADFCA0BFE /* ScriptWidgetAttributeRotation3DEffectModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAttributeRotation3DEffectModifier.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Effect/ScriptWidgetAttributeRotation3DEffectModifier.swift; sourceTree = "<group>"; };
+		69E92800A6E280534F8EB542 /* ScriptWidgetElementTagImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementTagImage.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagImage.swift; sourceTree = "<group>"; };
+		6CE0A34B204DEA4DF8A986B1 /* ScriptWidgetRuntimeConsole.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetRuntimeConsole.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeConsole.swift; sourceTree = "<group>"; };
+		6D4C12DE4E3AD19E0CB027F4 /* ScriptModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptModel.swift; path = ../../Shared/ScriptWidgetRuntime/Common/ScriptModel.swift; sourceTree = "<group>"; };
+		721850A9130BE6C70060A389 /* ScriptWidgetElementTagDate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementTagDate.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagDate.swift; sourceTree = "<group>"; };
+		7319267ACDBCE261F492E791 /* AppConfigFrequency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppConfigFrequency.swift; path = ../../macOS/ScriptWidgetMacWidget/AppIntents/AppConfigFrequency.swift; sourceTree = "<group>"; };
+		731C0F40092A237DBDED1DD3 /* ScriptWidgetAttributeOpacityModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAttributeOpacityModifier.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/General/ScriptWidgetAttributeOpacityModifier.swift; sourceTree = "<group>"; };
+		74676DD3E861CEED658C7FAF /* ScriptWidgetAttributeForegroundModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAttributeForegroundModifier.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Text/ScriptWidgetAttributeForegroundModifier.swift; sourceTree = "<group>"; };
+		752F86D0534755F7F81EB51E /* ClockHandRotationEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ClockHandRotationEffect.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Animation/ClockHandRotationEffect.swift; sourceTree = "<group>"; };
+		779CA7B806D71000A72EA8BB /* ScriptWidgetRuntimeStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetRuntimeStorage.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeStorage.swift; sourceTree = "<group>"; };
+		7823B6F22FD8591AB231AC6F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		7DD8C9E40FC0CF18D45598D3 /* ScriptWidgetRuntimeFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetRuntimeFile.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeFile.swift; sourceTree = "<group>"; };
+		7E4A1A72F98702A025D0B0F8 /* ScriptWidgetAttributeDebugModeModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAttributeDebugModeModifier.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Debug/ScriptWidgetAttributeDebugModeModifier.swift; sourceTree = "<group>"; };
+		80EA3145479281CBCC380CAA /* ScriptWidgetAttributeRotationEffectModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAttributeRotationEffectModifier.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Effect/ScriptWidgetAttributeRotationEffectModifier.swift; sourceTree = "<group>"; };
+		8126E40E43DCD444AD7E5991 /* ScriptWidgetElementTagChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementTagChart.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagChart.swift; sourceTree = "<group>"; };
+		82C782BE1DC50F09624124FA /* Unispace.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = Unispace.ttf; path = ../../Shared/ScriptWidgetRuntime/Widget/Resource/Fonts/Unispace.ttf; sourceTree = "<group>"; };
+		842996F701AD92922473C97F /* LocalServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalServer.swift; sourceTree = "<group>"; };
+		8592AB70139A30534BBCD978 /* ScriptWidgetRuntimeElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetRuntimeElement.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/ScriptWidgetRuntimeElement.swift; sourceTree = "<group>"; };
+		8A71F8055B0A0C129D94733F /* ScriptWidgetAttributeFrameModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAttributeFrameModifier.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/General/ScriptWidgetAttributeFrameModifier.swift; sourceTree = "<group>"; };
+		988C9D2B47D80274328B7AE1 /* ScriptWidgetElementTagStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementTagStack.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagStack.swift; sourceTree = "<group>"; };
+		98BAF843BA098A96671B3872 /* ScriptWidgetAttributeImageModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAttributeImageModifier.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Image/ScriptWidgetAttributeImageModifier.swift; sourceTree = "<group>"; };
+		A59A3F3D4EE6656CA95D7FD7 /* ScriptWidgetAttributeAnimationModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAttributeAnimationModifier.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Animation/ScriptWidgetAttributeAnimationModifier.swift; sourceTree = "<group>"; };
+		A64E0D2C33EDB8871F3D2FA8 /* ScriptWidgetRuntimeDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetRuntimeDevice.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeDevice.swift; sourceTree = "<group>"; };
+		A9465F2F9A7EEFC2DE428EBE /* DeepLinkDefine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeepLinkDefine.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Runtime/DeepLinkDefine.swift; sourceTree = "<group>"; };
+		A9B6F215257FA2DE1B4C3186 /* ScriptWidgetAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAppIntent.swift; path = ../../macOS/ScriptWidgetMacWidget/AppIntents/ScriptWidgetAppIntent.swift; sourceTree = "<group>"; };
+		AC2D908F8EF2CD25E5F8ADB6 /* ScriptMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptMetadata.swift; path = ../../Shared/ScriptWidgetRuntime/Common/ScriptMetadata.swift; sourceTree = "<group>"; };
+		AE02CCCD5FB2CC0CC68B4465 /* ScriptWidgetAttributeTextAlignmentModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAttributeTextAlignmentModifier.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Text/ScriptWidgetAttributeTextAlignmentModifier.swift; sourceTree = "<group>"; };
+		AE81A7C11747FCA0A9A1EF71 /* ScriptWidgetElementTagZStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementTagZStack.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagZStack.swift; sourceTree = "<group>"; };
+		B0C6491F33A677450964D105 /* ScriptWidgetElementTagShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementTagShape.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagShape.swift; sourceTree = "<group>"; };
+		B26418C9074552F9D6D0C96B /* ImageDiff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDiff.swift; sourceTree = "<group>"; };
+		B90FE479B727E15CD43C026F /* ScriptWidgetElementTagExtras.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementTagExtras.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagExtras.swift; sourceTree = "<group>"; };
+		B9DE458FEFED9E8FC94FD995 /* ScriptWidgetAttributeFontModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAttributeFontModifier.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Text/ScriptWidgetAttributeFontModifier.swift; sourceTree = "<group>"; };
+		BB1ADA1660891F9673BA1A35 /* MineGaugeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MineGaugeView.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Util/MineGaugeView.swift; sourceTree = "<group>"; };
+		C3181DF8724ED930C377E913 /* ScriptWidgetPackage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetPackage.swift; path = ../../Shared/ScriptWidgetRuntime/Common/ScriptWidgetPackage.swift; sourceTree = "<group>"; };
+		C48385FFFC535B866FA06C0D /* ReloadWidgetAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ReloadWidgetAppIntent.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/AppIntents/ReloadWidgetAppIntent.swift; sourceTree = "<group>"; };
+		C5824C4494B88B54CDF8D8AC /* ScriptWidgetAttributeCornerRadiusModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAttributeCornerRadiusModifier.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/General/ScriptWidgetAttributeCornerRadiusModifier.swift; sourceTree = "<group>"; };
+		C5CE43CC1E3511180C5308A8 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		CF10EF9A243E213F1CB2A198 /* ScriptWidgetElementTagSpacer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementTagSpacer.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagSpacer.swift; sourceTree = "<group>"; };
+		D669D5BFB60C172B72DB5CFC /* New.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = New.ttf; path = ../../Shared/ScriptWidgetRuntime/Widget/Resource/Fonts/New.ttf; sourceTree = "<group>"; };
+		DB47FBE2FCA38603720B4347 /* ScriptWidgetRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetRuntime.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Runtime/ScriptWidgetRuntime.swift; sourceTree = "<group>"; };
+		DBDDB0DA2385330B77519517 /* ScriptWidgetElementColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementColor.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Util/ScriptWidgetElementColor.swift; sourceTree = "<group>"; };
+		DC6EEFA3B8604DC143781ADD /* ScriptWidgetAttributeText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAttributeText.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/ScriptWidgetAttributeText.swift; sourceTree = "<group>"; };
+		DE05A32BA83B76B4FC4A3D05 /* ScriptWidgetElementPoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementPoint.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Util/ScriptWidgetElementPoint.swift; sourceTree = "<group>"; };
+		EB8B5E88C3BB990EDD239BE9 /* ScriptWidgetAttributeShadowModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAttributeShadowModifier.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Effect/ScriptWidgetAttributeShadowModifier.swift; sourceTree = "<group>"; };
+		ECA02472033430919EAC65A5 /* ScriptWidgetAttributeClippedModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAttributeClippedModifier.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/General/ScriptWidgetAttributeClippedModifier.swift; sourceTree = "<group>"; };
+		F136B057E241AA7BD763A761 /* ScriptWidgetElementTagText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementTagText.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagText.swift; sourceTree = "<group>"; };
+		F54FDE6B9584BFC7925A4CBB /* Larabiefont Free.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = "Larabiefont Free.ttf"; path = "../../Shared/ScriptWidgetRuntime/Widget/Resource/Fonts/Larabiefont Free.ttf"; sourceTree = "<group>"; };
+		F6BEBB9710E0B4AE70EE66D2 /* ScriptWidgetPreview.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ScriptWidgetPreview.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F8FCE9F192A1F9865F1BB523 /* ScriptWidgetRuntimePromise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetRuntimePromise.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimePromise.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		46B95C48957E2C299AB5079C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				87A5D1DA5D3FBB4B4D175CD1 /* SwiftyJSON in Frameworks */,
+				6F3A4D460AB73233E725C90C /* ZipArchive in Frameworks */,
+				B6637969BFB11E7595B9C01D /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		6FE86127CFCA4810FF77D85C /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				594A4E0E9F48F394462E8059 /* Apple ][.ttf */,
+				F54FDE6B9584BFC7925A4CBB /* Larabiefont Free.ttf */,
+				5CB5AE3EDAF471DA72D8AE8D /* Monofonto.ttf */,
+				D669D5BFB60C172B72DB5CFC /* New.ttf */,
+				5F8A0466A2CA28F82E34F12A /* OneSlot.ttf */,
+				08A8C1163C8EC8B3EFB17508 /* support.bundle */,
+				82C782BE1DC50F09624124FA /* Unispace.ttf */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		8D98C3D2976FAF3FD8989AE5 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				36AA6835A751272361409865 /* WidgetKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		9690A5AB83D3EE1E417A0728 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				7319267ACDBCE261F492E791 /* AppConfigFrequency.swift */,
+				48F2FE39420DBDAB74523572 /* ButtonActionAppIntent.swift */,
+				752F86D0534755F7F81EB51E /* ClockHandRotationEffect.swift */,
+				A9465F2F9A7EEFC2DE428EBE /* DeepLinkDefine.swift */,
+				BB1ADA1660891F9673BA1A35 /* MineGaugeView.swift */,
+				204A840C617F0151174CAA70 /* MineRingView.swift */,
+				C48385FFFC535B866FA06C0D /* ReloadWidgetAppIntent.swift */,
+				4AD615D760B9CA0E3FFCA52A /* ScriptManager.swift */,
+				AC2D908F8EF2CD25E5F8ADB6 /* ScriptMetadata.swift */,
+				6D4C12DE4E3AD19E0CB027F4 /* ScriptModel.swift */,
+				A9B6F215257FA2DE1B4C3186 /* ScriptWidgetAppIntent.swift */,
+				095E8928B68F65119D80073F /* ScriptWidgetAppState.swift */,
+				A59A3F3D4EE6656CA95D7FD7 /* ScriptWidgetAttributeAnimationModifier.swift */,
+				0AB5706AB0DAFEBF3EE117FD /* ScriptWidgetAttributeBackgroundModifier.swift */,
+				ECA02472033430919EAC65A5 /* ScriptWidgetAttributeClippedModifier.swift */,
+				C5824C4494B88B54CDF8D8AC /* ScriptWidgetAttributeCornerRadiusModifier.swift */,
+				7E4A1A72F98702A025D0B0F8 /* ScriptWidgetAttributeDebugModeModifier.swift */,
+				B9DE458FEFED9E8FC94FD995 /* ScriptWidgetAttributeFontModifier.swift */,
+				74676DD3E861CEED658C7FAF /* ScriptWidgetAttributeForegroundModifier.swift */,
+				8A71F8055B0A0C129D94733F /* ScriptWidgetAttributeFrameModifier.swift */,
+				430AF039C216C68D0A5783D9 /* ScriptWidgetAttributeGeneral.swift */,
+				98BAF843BA098A96671B3872 /* ScriptWidgetAttributeImageModifier.swift */,
+				731C0F40092A237DBDED1DD3 /* ScriptWidgetAttributeOpacityModifier.swift */,
+				2761100B6BC31AC5848AAF7D /* ScriptWidgetAttributePaddingModifier.swift */,
+				62404EA90D9EA7FADFCA0BFE /* ScriptWidgetAttributeRotation3DEffectModifier.swift */,
+				80EA3145479281CBCC380CAA /* ScriptWidgetAttributeRotationEffectModifier.swift */,
+				EB8B5E88C3BB990EDD239BE9 /* ScriptWidgetAttributeShadowModifier.swift */,
+				DC6EEFA3B8604DC143781ADD /* ScriptWidgetAttributeText.swift */,
+				AE02CCCD5FB2CC0CC68B4465 /* ScriptWidgetAttributeTextAlignmentModifier.swift */,
+				5B420B81B5680DC88EB4E198 /* ScriptWidgetDataSources.swift */,
+				DBDDB0DA2385330B77519517 /* ScriptWidgetElementColor.swift */,
+				381BA7C2A1E0539643385912 /* ScriptWidgetElementGradient.swift */,
+				DE05A32BA83B76B4FC4A3D05 /* ScriptWidgetElementPoint.swift */,
+				0733BEFD6B2710CFBC6F4BE9 /* ScriptWidgetElementTagButton.swift */,
+				8126E40E43DCD444AD7E5991 /* ScriptWidgetElementTagChart.swift */,
+				721850A9130BE6C70060A389 /* ScriptWidgetElementTagDate.swift */,
+				B90FE479B727E15CD43C026F /* ScriptWidgetElementTagExtras.swift */,
+				4D89A422EDB34C65E4D54716 /* ScriptWidgetElementTagGauge.swift */,
+				3CA7AB419BE5200B9827BF03 /* ScriptWidgetElementTagGif.swift */,
+				49D18AE4673B0255B6AA9296 /* ScriptWidgetElementTagGrid.swift */,
+				69E92800A6E280534F8EB542 /* ScriptWidgetElementTagImage.swift */,
+				3929E6EF52C464586560D671 /* ScriptWidgetElementTagLink.swift */,
+				B0C6491F33A677450964D105 /* ScriptWidgetElementTagShape.swift */,
+				CF10EF9A243E213F1CB2A198 /* ScriptWidgetElementTagSpacer.swift */,
+				988C9D2B47D80274328B7AE1 /* ScriptWidgetElementTagStack.swift */,
+				F136B057E241AA7BD763A761 /* ScriptWidgetElementTagText.swift */,
+				4FAB675C9C6FF28F348B26EE /* ScriptWidgetElementTagToggle.swift */,
+				AE81A7C11747FCA0A9A1EF71 /* ScriptWidgetElementTagZStack.swift */,
+				278C27AE86F68F45173E9469 /* ScriptWidgetElementView.swift */,
+				C3181DF8724ED930C377E913 /* ScriptWidgetPackage.swift */,
+				15AB42AF39F51931AFD7C17C /* ScriptWidgetRunningState.swift */,
+				DB47FBE2FCA38603720B4347 /* ScriptWidgetRuntime.swift */,
+				6CE0A34B204DEA4DF8A986B1 /* ScriptWidgetRuntimeConsole.swift */,
+				A64E0D2C33EDB8871F3D2FA8 /* ScriptWidgetRuntimeDevice.swift */,
+				5912615112764647F824C67F /* ScriptWidgetRuntimeDiagnostics.swift */,
+				8592AB70139A30534BBCD978 /* ScriptWidgetRuntimeElement.swift */,
+				0263A8E796DEB2A9BE2EF649 /* ScriptWidgetRuntimeFetch.swift */,
+				7DD8C9E40FC0CF18D45598D3 /* ScriptWidgetRuntimeFile.swift */,
+				46A1E9308AA2263EE60EF72D /* ScriptWidgetRuntimeHealth.swift */,
+				3DEEC0FAEF7B680F6B674ED4 /* ScriptWidgetRuntimeLocation.swift */,
+				F8FCE9F192A1F9865F1BB523 /* ScriptWidgetRuntimePromise.swift */,
+				779CA7B806D71000A72EA8BB /* ScriptWidgetRuntimeStorage.swift */,
+				02FC33625277B140151A1CC8 /* ScriptWidgetRuntimeSystem.swift */,
+				0C43D5D9B01CC98CA203B53E /* SwingAnimationModifier.swift */,
+			);
+			name = Shared;
+			sourceTree = "<group>";
+		};
+		C6ACF94EA1A95513F0F10CC5 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F6BEBB9710E0B4AE70EE66D2 /* ScriptWidgetPreview.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		E2039840FF0C4DA72C3AB169 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				1C7673353364BB0AEDDB965F /* BatchComparison.swift */,
+				455D5664AEA5C2F615823A2C /* CompareModel.swift */,
+				C5CE43CC1E3511180C5308A8 /* ContentView.swift */,
+				B26418C9074552F9D6D0C96B /* ImageDiff.swift */,
+				842996F701AD92922473C97F /* LocalServer.swift */,
+				0B207D898BC74B33F41BDF3C /* NativeRenderer.swift */,
+				210AF71D06C749261E153111 /* Repository.swift */,
+				343010D751A3F8412FDA7A8C /* ScriptWidgetPreviewApp.swift */,
+				44FA3AFB41106A42A58EECC7 /* WebRenderer.swift */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		FD2387E2CA801F2EE83C09AC = {
+			isa = PBXGroup;
+			children = (
+				7823B6F22FD8591AB231AC6F /* Info.plist */,
+				6FE86127CFCA4810FF77D85C /* Resources */,
+				9690A5AB83D3EE1E417A0728 /* Shared */,
+				E2039840FF0C4DA72C3AB169 /* Sources */,
+				8D98C3D2976FAF3FD8989AE5 /* Frameworks */,
+				C6ACF94EA1A95513F0F10CC5 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		4E093A659092B6BE79EE3754 /* ScriptWidgetPreview */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8877BA24B7C67595FF7D24EF /* Build configuration list for PBXNativeTarget "ScriptWidgetPreview" */;
+			buildPhases = (
+				E2F70B93C21C064714E3C88B /* Sources */,
+				92FF84C23EF51B0C6F9579EF /* Resources */,
+				46B95C48957E2C299AB5079C /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ScriptWidgetPreview;
+			packageProductDependencies = (
+				2FED329A4E1DB49EAE393E63 /* SwiftyJSON */,
+				A6A11B466F7772E78E066DD6 /* ZipArchive */,
+			);
+			productName = ScriptWidgetPreview;
+			productReference = F6BEBB9710E0B4AE70EE66D2 /* ScriptWidgetPreview.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E617EE54FE32D0220B8E24E5 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					4E093A659092B6BE79EE3754 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = E360385E3BECE2AEE045A690 /* Build configuration list for PBXProject "ScriptWidgetPreview" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = FD2387E2CA801F2EE83C09AC;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				885E6FC0B6F9F84E9525A681 /* XCRemoteSwiftPackageReference "SwiftyJSON" */,
+				4BF3EDADF0D742BA1A8373F1 /* XCRemoteSwiftPackageReference "ZipArchive" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = C6ACF94EA1A95513F0F10CC5 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				4E093A659092B6BE79EE3754 /* ScriptWidgetPreview */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		92FF84C23EF51B0C6F9579EF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C35482C1767599A5B80529C2 /* Apple ][.ttf in Resources */,
+				F63CB02F9E4406054DB48BE0 /* Larabiefont Free.ttf in Resources */,
+				4B3EA045D2B897D957522246 /* Monofonto.ttf in Resources */,
+				EC0BA7E0AF736B818C98EBEC /* New.ttf in Resources */,
+				9D9470D37B4B0741097AAE23 /* OneSlot.ttf in Resources */,
+				D080A4A890DA2874DEEFF5B6 /* Unispace.ttf in Resources */,
+				3A0EA812759D813C058241FC /* support.bundle in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		E2F70B93C21C064714E3C88B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				64A8B4DC06F84157229ED0FB /* AppConfigFrequency.swift in Sources */,
+				0E72CB4094D83AEC864568BC /* BatchComparison.swift in Sources */,
+				8CC4526E82316BE21DA9AB91 /* ButtonActionAppIntent.swift in Sources */,
+				9539363D92F314F55F244326 /* ClockHandRotationEffect.swift in Sources */,
+				8A422FD08053E7F1EAF54A4D /* CompareModel.swift in Sources */,
+				2EF002BB7B6DE61BD8D0A1D0 /* ContentView.swift in Sources */,
+				ED94393BC52A5A980467BDC9 /* DeepLinkDefine.swift in Sources */,
+				9DB30C59DD32D255D1667644 /* ImageDiff.swift in Sources */,
+				C91A59B558BF5A8070DF2895 /* LocalServer.swift in Sources */,
+				92ED8301C96DE7A11A998F5B /* MineGaugeView.swift in Sources */,
+				2536DE8C46F6571A2BE4B65B /* MineRingView.swift in Sources */,
+				1E4B65B033AB391A1D07E455 /* NativeRenderer.swift in Sources */,
+				B92B8D417632651F8D765D89 /* ReloadWidgetAppIntent.swift in Sources */,
+				486DCD3892359D58AE944D2A /* Repository.swift in Sources */,
+				997EDEFDAC2B3D23B5B83753 /* ScriptManager.swift in Sources */,
+				240BBDD6B5D2D6FC8F04ADA6 /* ScriptMetadata.swift in Sources */,
+				53975CECE7175D8F83B57A98 /* ScriptModel.swift in Sources */,
+				7C1CD291557F279F10015471 /* ScriptWidgetAppIntent.swift in Sources */,
+				509B3ABBBE8133930D011724 /* ScriptWidgetAppState.swift in Sources */,
+				57BD3F81EDFC871747CFC2F2 /* ScriptWidgetAttributeAnimationModifier.swift in Sources */,
+				1F0F12B124ED8259BB2A239A /* ScriptWidgetAttributeBackgroundModifier.swift in Sources */,
+				5A0A6DACCACF748B13F82258 /* ScriptWidgetAttributeClippedModifier.swift in Sources */,
+				305A004D458F0CF6EFA07F8D /* ScriptWidgetAttributeCornerRadiusModifier.swift in Sources */,
+				CFDE5BFDE6CCA4EC917BC0D0 /* ScriptWidgetAttributeDebugModeModifier.swift in Sources */,
+				AD9C741919FC3785D0DDEC2E /* ScriptWidgetAttributeFontModifier.swift in Sources */,
+				6F660D4EE6F1B7657766EBC9 /* ScriptWidgetAttributeForegroundModifier.swift in Sources */,
+				7A52CF0493ECAC47FBF38A3E /* ScriptWidgetAttributeFrameModifier.swift in Sources */,
+				5C7943024C6BDD9AAE21D0E4 /* ScriptWidgetAttributeGeneral.swift in Sources */,
+				6F9C7BC00A8ACEE0E13832BF /* ScriptWidgetAttributeImageModifier.swift in Sources */,
+				F917DBE76D263AD59323EDC0 /* ScriptWidgetAttributeOpacityModifier.swift in Sources */,
+				2DE8E460B9A1F172708AD5C2 /* ScriptWidgetAttributePaddingModifier.swift in Sources */,
+				A3B9A813F21E49CC82142A15 /* ScriptWidgetAttributeRotation3DEffectModifier.swift in Sources */,
+				909FC4DC4330EA023FB73205 /* ScriptWidgetAttributeRotationEffectModifier.swift in Sources */,
+				FE7D09E96A24E999F9DBD09A /* ScriptWidgetAttributeShadowModifier.swift in Sources */,
+				C503AEF8BEA67CA505B31AD4 /* ScriptWidgetAttributeText.swift in Sources */,
+				A24AE8636A7C8D86F98741D0 /* ScriptWidgetAttributeTextAlignmentModifier.swift in Sources */,
+				6D0AA2001ADB4728445A15E1 /* ScriptWidgetDataSources.swift in Sources */,
+				A2E959FA89501E896054DD07 /* ScriptWidgetElementColor.swift in Sources */,
+				D31204CBF01AFC1F5F386B91 /* ScriptWidgetElementGradient.swift in Sources */,
+				BE51F6DDA11BB6C9CDB4B50C /* ScriptWidgetElementPoint.swift in Sources */,
+				F36A00862687DAB3D96B75D0 /* ScriptWidgetElementTagButton.swift in Sources */,
+				ADA0670D037924D60FFDFD05 /* ScriptWidgetElementTagChart.swift in Sources */,
+				F38A152C36B62E03F79FF86B /* ScriptWidgetElementTagDate.swift in Sources */,
+				1D9D1616C15A9B39ACC8CFFB /* ScriptWidgetElementTagExtras.swift in Sources */,
+				7B75DD695A9269109BAF408C /* ScriptWidgetElementTagGauge.swift in Sources */,
+				751F5CA3ED3ECB9C17BE7F5D /* ScriptWidgetElementTagGif.swift in Sources */,
+				E79E9BA4E85446D2AFC1CB2F /* ScriptWidgetElementTagGrid.swift in Sources */,
+				8835386A14F7133BAA0528DA /* ScriptWidgetElementTagImage.swift in Sources */,
+				62E937430263896922A2DDE7 /* ScriptWidgetElementTagLink.swift in Sources */,
+				3477019D02EFFC62A7F90DE0 /* ScriptWidgetElementTagShape.swift in Sources */,
+				01AF664CBA4EAF15BBB28F7B /* ScriptWidgetElementTagSpacer.swift in Sources */,
+				F844CD775DAE66005F5212C0 /* ScriptWidgetElementTagStack.swift in Sources */,
+				8E870B157F1CA45A0CAECE5E /* ScriptWidgetElementTagText.swift in Sources */,
+				0A38DF684FE798E0D43ABBC6 /* ScriptWidgetElementTagToggle.swift in Sources */,
+				C81613A2B1D1B3621FF35AA3 /* ScriptWidgetElementTagZStack.swift in Sources */,
+				DEFC9925F7366C9EC38391BB /* ScriptWidgetElementView.swift in Sources */,
+				74526AC3C99B5936394DBBAE /* ScriptWidgetPackage.swift in Sources */,
+				74BEFF4C6DF04D457D4084CC /* ScriptWidgetPreviewApp.swift in Sources */,
+				6139E05DAE562E7155073F95 /* ScriptWidgetRunningState.swift in Sources */,
+				277DE86E6D55E875B2E7B6C6 /* ScriptWidgetRuntime.swift in Sources */,
+				F8D692EF9B1B848E059B036F /* ScriptWidgetRuntimeConsole.swift in Sources */,
+				142E192D13D152034227B368 /* ScriptWidgetRuntimeDevice.swift in Sources */,
+				1B0E9298A02371C8863576F0 /* ScriptWidgetRuntimeDiagnostics.swift in Sources */,
+				805F9FB982666CCD89E41042 /* ScriptWidgetRuntimeElement.swift in Sources */,
+				0B41E4F46F41A4E7B672BFE3 /* ScriptWidgetRuntimeFetch.swift in Sources */,
+				318F779EA863C8A2DD0B0D00 /* ScriptWidgetRuntimeFile.swift in Sources */,
+				C7E6CA69BEB4410F9725692D /* ScriptWidgetRuntimeHealth.swift in Sources */,
+				B89A53E5B1B7ECE28EB83C38 /* ScriptWidgetRuntimeLocation.swift in Sources */,
+				D6646D6DD6D466D1BBC1C1C6 /* ScriptWidgetRuntimePromise.swift in Sources */,
+				07557726459678957777FF7C /* ScriptWidgetRuntimeStorage.swift in Sources */,
+				23B7D91CD3BF30146C2E9095 /* ScriptWidgetRuntimeSystem.swift in Sources */,
+				6BD30D65622F6477ED02D0C8 /* SwingAnimationModifier.swift in Sources */,
+				44F45C6BC59C2AAFB05A6BEB /* WebRenderer.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		B1351CFAE85C668586F24A57 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.xnu.scriptwidget.preview;
+				PRODUCT_NAME = "ScriptWidget Preview";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		BB0301A88A45DFDF002F63AA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = app.xnu.scriptwidget.preview;
+				PRODUCT_NAME = "ScriptWidget Preview";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		D5B5BC65E607A200AF07503C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		FF589B73C4167BBB369C52B2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		8877BA24B7C67595FF7D24EF /* Build configuration list for PBXNativeTarget "ScriptWidgetPreview" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BB0301A88A45DFDF002F63AA /* Debug */,
+				B1351CFAE85C668586F24A57 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E360385E3BECE2AEE045A690 /* Build configuration list for PBXProject "ScriptWidgetPreview" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FF589B73C4167BBB369C52B2 /* Debug */,
+				D5B5BC65E607A200AF07503C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4BF3EDADF0D742BA1A8373F1 /* XCRemoteSwiftPackageReference "ZipArchive" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ZipArchive/ZipArchive.git";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+		885E6FC0B6F9F84E9525A681 /* XCRemoteSwiftPackageReference "SwiftyJSON" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SwiftyJSON/SwiftyJSON.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2FED329A4E1DB49EAE393E63 /* SwiftyJSON */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 885E6FC0B6F9F84E9525A681 /* XCRemoteSwiftPackageReference "SwiftyJSON" */;
+			productName = SwiftyJSON;
+		};
+		A6A11B466F7772E78E066DD6 /* ZipArchive */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4BF3EDADF0D742BA1A8373F1 /* XCRemoteSwiftPackageReference "ZipArchive" */;
+			productName = ZipArchive;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = E617EE54FE32D0220B8E24E5 /* Project object */;
+}

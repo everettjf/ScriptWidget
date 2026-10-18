@@ -311,6 +311,53 @@ claude mcp add scriptwidget -- node Web/preview-engine/bin/scriptwidget-mcp.mjs
   to the next line (`ScriptWid-get`); chart category labels that do not fit
   their band are truncated with "…".
 
+## macOS comparison: ScriptWidget Preview
+
+`Tools/ScriptWidgetPreview` is a small macOS app that renders each package
+with the native runtime on macOS and with the web engine in a `WKWebView`,
+side by side, and measures the difference (see its README). It made it
+practical to compare every corpus package on macOS, and it showed that macOS
+SwiftUI differs from iOS in ways the iOS-calibrated renderer did not model.
+The web engine now has a `macos` device profile (also offered as **Mac** in
+Web Studio) that uses these measured macOS 26 behaviors:
+
+- Text styles are smaller (`body` 13 pt, `title` 22 pt, `headline` bold) and
+  text lays out on whole points; sized fonts use a measured height table.
+- `.primary` is black or white at 84.7% opacity and `.secondary` 49.8% /
+  54.9%; dark `gray` is (152, 152, 157); the widget background (`.background`)
+  is (46, 46, 46) in dark mode.
+- In a `VStack`, text to text adds only the upper font's leading, text above
+  another view 0.4729 × size, and a view above text 0.2109 × size, each plus
+  a half-point step of about 0.118 × size (iOS uses 8 + 0.18 × size).
+- Words wider than the line break between characters without a hyphen, a
+  short last-line orphan is pushed down a line ("October / 18, 2026"),
+  truncation drops the space before "…", and a narrow column keeps wrapping
+  one character per line.
+- `<button>` uses the bordered style: a 5-point rounded bezel of 7.45%
+  primary around 4 × 12 points of padding, with the label in the primary
+  color.
+- Swift Charts starts the plot at the top edge and reserves 20 points for x
+  labels and 20.5 for y labels.
+
+SF Symbols now use their real proportions on every platform:
+`symbolMetrics.generated.js` holds the SwiftUI size of all 281 mapped
+symbols, so an `hourglass` is 0.825 em wide instead of 1.2 em.
+
+Results from `--batch` (macOS 27, `WKWebView`, same 48/255 rule):
+
+| Set | Count | Median | ≤1% | ≤3% | ≤5% | ≤10% | ≤20% |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Corpus, iOS metrics at macOS sizes (before) | 300 | 3.23% | 62 | 142 | 190 | 268 | 298 |
+| Corpus, `macos` profile (after) | 300 | 0.97% | 153 | 254 | 280 | 296 | 299 |
+| Calibration cases (before) | 38 | 1.92% | 15 | 23 | 30 | 36 | 37 |
+| Calibration cases (after) | 38 | 0.24% | 30 | 35 | 37 | 38 | 38 |
+
+The iOS comparison did not regress with the shared symbol metrics: corpus
+median 1.80% (247/300 within 5%, 299/300 within 20%), cases unchanged at
+0.84%. The largest remaining macOS differences are animated or time-based
+templates (native clock hands are not captured by `ImageRenderer`), a few
+narrow multi-column layouts, and icon artwork.
+
 ## Verification matrix
 
 | Check | Result |
@@ -319,7 +366,8 @@ claude mcp add scriptwidget -- node Web/preview-engine/bin/scriptwidget-mcp.mjs
 | Tree parity, iOS 27.0 simulator JavaScriptCore | identical to the reference |
 | Tree parity, Node 24 / Chromium (headless and Claude pane) | 100/100 byte-identical |
 | Tree parity, iOS 27 Safari (WebKit) in the simulator | 100/100 byte-identical; all isolation probes blocked; CSP control reached |
-| Pixel comparison vs iOS 27 snapshots, Chrome on macOS | corpus median 1.83% (243/300 within 5%, 298/300 within 20%); 1.51% over the 234 renders that do not depend on the current time; calibration cases median 0.84% |
+| Pixel comparison vs iOS 27 snapshots, Chrome on macOS | corpus median 1.80% (247/300 within 5%, 299/300 within 20%); calibration cases median 0.84% |
+| Pixel comparison vs macOS 27 native, `WKWebView` (ScriptWidget Preview) | corpus median 0.97% (280/300 within 5%, 299/300 within 20%); calibration cases median 0.24% |
 | Web Studio, headless Chrome smoke test | starter, 71 templates, image template, `.swt` import all render |
 | Web Studio, iOS 27 Safari | renders with the strict page CSP and URL-loaded sandbox |
 | Web-exported `.swt` imported by native code | passes preflight, extraction, validation, execution |

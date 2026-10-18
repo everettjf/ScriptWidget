@@ -5,10 +5,11 @@
 
 import {
   alignments, cssColor, defaultFont, elementFont, fontFamily, gradientCSS, parseColor, parseFont, parseFrame,
-  parsePadding, parsePaint, propReader, swiftDouble, systemBackground, textStyles,
+  parsePadding, parsePaint, platform, propReader, setPlatform, styleFont, swiftDouble, systemBackground,
 } from "./props.js";
 import { coverage, generalProps, ignoredProp } from "./coverage.js";
-import { widgetSize } from "./profiles.js";
+import { deviceProfiles, widgetSize } from "./profiles.js";
+import { symbolMetrics } from "./symbolMetrics.generated.js";
 import { lucideIcons, sfSymbolToLucide } from "./icons.generated.js";
 
 /// A path is closed when it uses Z or its final absolute point returns to
@@ -55,14 +56,29 @@ class BottomOverlayNode extends Node {
 
 const naturalLineRatio = 1.1934;
 
-/// Single-line Text height: SF natural line height on the 2x pixel grid.
-export const lineHeight = (size) => Math.ceil(size * naturalLineRatio * 2) / 2;
+// macOS 26 single-line heights of .system(size:) for sizes 1...160; SwiftUI
+// lays macOS text out on whole points. A fractional size uses the next whole
+// size, which matches most but not all measured half sizes.
+const macLineHeights = [2,3,4,5,7,8,9,10,11,13,14,15,16,17,19,19,20,21,23,24,25,26,27,28,29,30,32,33,34,35,37,38,39,40,41,43,44,45,46,47,49,50,51,52,53,54,55,56,57,59,60,61,62,63,65,66,67,68,69,71,72,73,74,76,77,78,79,80,82,83,84,85,86,88,89,89,90,91,93,94,95,96,98,99,100,101,102,104,105,106,107,108,110,111,112,113,114,116,117,118,119,121,122,123,124,124,126,127,128,129,130,132,133,134,135,136,138,139,140,141,143,144,145,146,147,149,150,151,152,153,155,156,157,158,159,160,161,162,163,165,166,167,168,169,171,172,173,174,175,177,178,179,180,181,183,184,185,186,188,189];
+
+/// Single-line Text height: SF natural line height on the 2x pixel grid
+/// (iOS) or the measured whole-point height (macOS).
+export function lineHeight(size) {
+  if (platform() === "macos") {
+    const whole = Math.ceil(size);
+    if (whole <= 0) return 0;
+    return macLineHeights[whole - 1] ?? Math.ceil(size * naturalLineRatio);
+  }
+  return Math.ceil(size * naturalLineRatio * 2) / 2;
+}
 
 function textStyleFor(font) {
-  const natural = lineHeight(font.size);
-  const leading = Math.max(natural, font.lineHeight ?? font.size * 1.29);
+  const natural = font.natural ?? lineHeight(font.size);
+  // iOS adds Dynamic Type leading between lines; macOS lines advance by the
+  // style's line height (the natural height for sized fonts).
+  const leading = platform() === "macos" ? Math.max(natural, font.lineHeight ?? natural) : Math.max(natural, font.lineHeight ?? font.size * 1.29);
   const family = fontFamily(font);
-  return { ...font, natural, leading, family, key: `${family}|${font.size}|${font.weight}|${leading}` };
+  return { ...font, natural, leading, family, hyphenate: platform() !== "macos", key: `${family}|${font.size}|${font.weight}|${leading}` };
 }
 
 // MARK: - Tree decoding
@@ -176,7 +192,9 @@ export async function renderWidget(treeJSON, {
         whiteSpace: "pre-wrap", overflowWrap: "break-word", textAlign: alignment,
       });
       const content = element.ownerDocument.createElement("div");
-      content.textContent = node.displayText(node.frame.width);
+      content.textContent = node.lines && node.lines.lines === 1 && node.lines.total > 1 && platform() === "macos"
+        ? truncatedLine(node.text, style, node.frame.width)
+        : node.displayText(node.frame.width);
       const trim = (style.leading - style.natural) / 2;
       Object.assign(content.style, { marginTop: `${-trim}px`, width: `${node.frame.width + 2}px` });
       if (alignment !== "left") content.style.width = `${node.frame.width}px`;
@@ -188,6 +206,16 @@ export async function renderWidget(treeJSON, {
     });
   }
 
+  /// AppKit tail truncation: the longest prefix that fits with "…", with
+  /// trailing spaces dropped ("Travel…", not "Travel …").
+  function truncatedLine(value, style, width) {
+    const characters = [...value.replace(/\s+/g, " ")];
+    let low = 0; let high = characters.length;
+    const fits = (count) => measurer.measure(`${characters.slice(0, count).join("").trimEnd()}…`, style, null).width <= width + 0.01;
+    while (low < high) { const middle = Math.ceil((low + high) / 2); if (fits(middle)) low = middle; else high = middle - 1; }
+    return `${characters.slice(0, low).join("").trimEnd()}…`;
+  }
+
   function applyTextPaint(element, paint, width, height) {
     if (paint?.gradient) {
       Object.assign(element.style, { color: "transparent", backgroundImage: gradientCSS(paint.gradient, width, height) });
@@ -196,7 +224,6 @@ export async function renderWidget(treeJSON, {
   }
 
   const paintOf = (reader, field) => (reader.string(field) !== null ? parsePaint(reader.string(field), appearance) : null);
-  const styleFont = (name) => { const [size, leading, weight] = textStyles[name]; return { size, lineHeight: leading, weight, design: "default" }; };
 
   // MARK: Shapes
 
@@ -327,7 +354,11 @@ export async function renderWidget(treeJSON, {
     const icon = lucideIconFor(systemName);
     if (icon) report("info", "icon.approximated", `SF Symbol "${systemName}" is drawn with an open-source look-alike icon`);
     else report("warning", "icon.unmapped", `SF Symbol "${systemName}" has no web icon yet; a placeholder is shown`);
-    const node = leaf(new FixedNode(Math.ceil(style.size * 1.2 * 2) / 2, style.natural), (target, element) => {
+    // Real SF Symbol proportions when known (symbolMetrics.generated.js).
+    const ratio = symbolMetrics[systemName];
+    const half = (value) => Math.round(value * 2) / 2;
+    const box = ratio ? [half(style.size * ratio[0]), half(style.size * ratio[1])] : [Math.ceil(style.size * 1.2 * 2) / 2, style.natural];
+    const node = leaf(new FixedNode(box[0], box[1]), (target, element) => {
       const { width, height } = target.frame;
       const colorValue = cssColor(paint.color ?? paint.gradient?.colors[0] ?? primary());
       if (!icon) {
@@ -336,7 +367,7 @@ export async function renderWidget(treeJSON, {
         return;
       }
       const svgNS = "http://www.w3.org/2000/svg";
-      const side = style.size * 1.08;
+      const side = Math.min(style.size * 1.08, Math.max(width, height));
       const svg = element.ownerDocument.createElementNS(svgNS, "svg");
       for (const [key, value] of Object.entries({ width: side, height: side, viewBox: "0 0 24 24", fill: "none", stroke: colorValue,
         "stroke-width": String(Math.max(1.5, Math.min(3, 1.4 + (style.weight - 100) / 400))), "stroke-linecap": "round", "stroke-linejoin": "round" })) svg.setAttribute(key, String(value));
@@ -384,12 +415,22 @@ export async function renderWidget(treeJSON, {
   // Measured on iOS 27: HStack children are 8 apart. In a VStack, text to
   // text uses the style's leading minus its natural height, and text to
   // other views 8 + 0.18 x the font size. Spacers add no spacing.
+  // On macOS 26 text to text adds only the upper font's leading, text above
+  // another view 0.4729 x size and a view above text 0.2109 x size, both
+  // plus a half-point step of about 0.118 x size.
   function defaultSpacing(axis) {
     return (previous, next) => {
       if (previous.isSpacer || next.isSpacer) return 0;
       if (axis === "h") return 8;
       const above = previous.edge("bottom"); const below = next.edge("top");
       const half = (value) => Math.round(value * 2) / 2;
+      if (platform() === "macos") {
+        const step = (size) => Math.ceil(0.118 * size * 2) / 2;
+        if (above && below) return above.gap ?? 0;
+        if (above) return half(0.4729 * above.size + step(above.size));
+        if (below) return half(0.2109 * below.size + step(below.size));
+        return 8;
+      }
       if (above && below) return Math.max(0, half(above.leading - above.natural));
       if (above) return half(8 + 0.18 * above.size);
       if (below) return half(8 + 0.18 * below.size);
@@ -439,7 +480,7 @@ export async function renderWidget(treeJSON, {
     const opacity = reader.double("opacity");
     if (opacity !== null) decoration.opacity = Math.max(0, Math.min(1, opacity));
     const animation = parseAnimation(reader.string("animation"));
-    if (animation?.type === "error") return text("animation json error", defaultFont, null);
+    if (animation?.type === "error") return text("animation json error", defaultFont(), null);
     if (animation) {
       // The animation modifier sits between opacity and rotation, so it
       // gets its own layer: CSS animations own the transform property.
@@ -556,7 +597,7 @@ export async function renderWidget(treeJSON, {
         break;
       }
       case "icon": {
-        const base = reader.double("size") !== null ? { ...defaultFont, lineHeight: null, size: reader.double("size") } : defaultFont;
+        const base = reader.double("size") !== null ? { ...defaultFont(), natural: undefined, gap: undefined, lineHeight: null, size: reader.double("size") } : defaultFont();
         content = glyph(reader.string("systemName") ?? "questionmark.circle", elementFont(reader, base), paintOf(reader, "color"));
         break;
       }
@@ -564,7 +605,7 @@ export async function renderWidget(treeJSON, {
       case "gif": {
         const url = packageGif(reader.string("file") ?? "");
         if (url) { report("info", "tag.approximated", "<gif> animates with the browser's GIF player"); content = leaf(new FlexibleNode(), drawPicture(url, "contain")); }
-        else content = text("GIF unavailable", defaultFont, null);
+        else content = text("GIF unavailable", defaultFont(), null);
         break;
       }
       case "label": {
@@ -600,7 +641,8 @@ export async function renderWidget(treeJSON, {
       }
       case "link": case "button": case "toggle": {
         const outerTint = tint;
-        if (tag === "button") tint = color("blue");
+        const macButton = tag === "button" && platform() === "macos";
+        if (tag === "button" && !macButton) tint = color("blue");
         const children = buildChildren(element, "v");
         tint = outerTint;
         if (tag === "toggle") {
@@ -616,6 +658,12 @@ export async function renderWidget(treeJSON, {
         } else {
           if (tag === "button") report("info", "tag.approximated", "<button> renders its label; taps run only on iPhone");
           content = new StackNode("v", children, { alignment: "center", spacing: defaultSpacing("v") });
+          // macOS draws the automatic (bordered) style: a 5-point rounded
+          // bezel of 7.45% primary around 4 x 12 points of padding.
+          if (macButton) {
+            const bezel = appearance === "dark" ? [255, 255, 255, 0.0745] : [0, 0, 0, 0.0745];
+            content = new DecorationNode(new PaddingNode(content, [4, 12, 4, 12]), { background: { color: bezel }, cornerRadius: 5 });
+          }
         }
         break;
       }
@@ -628,7 +676,7 @@ export async function renderWidget(treeJSON, {
       }
       default: {
         report("warning", "tag.unknown", tag === null ? "Element has a non-string tag" : `Unknown tag <${tag}> renders as "UnknownTagName" on iPhone`);
-        return new DecorationNode(text(tag === null ? "UnknownTagType" : "UnknownTagName", defaultFont, null), { background: { color: color(tag === null ? "purple" : "pink") } });
+        return new DecorationNode(text(tag === null ? "UnknownTagType" : "UnknownTagName", defaultFont(), null), { background: { color: color(tag === null ? "purple" : "pink") } });
       }
     }
     return applyGeneral(content, element, reader, { isRoot });
@@ -798,7 +846,7 @@ export async function renderWidget(treeJSON, {
       svgElement(group, "rect", { x: cx, y: cy - rectHeight / 2, width: rectWidth, height: rectHeight, rx: Math.min(lineWidth / 2, rectHeight / 2), fill: cssColor([needle[0], needle[1], needle[2], needle[3] * 0.8]) });
       svgElement(svg, "circle", { cx, cy, r: lineWidth / 2, fill: cssColor(needle) });
     });
-    const labelFont = parseFont(reader.string("labelFont")) ?? defaultFont;
+    const labelFont = parseFont(reader.string("labelFont")) ?? defaultFont();
     // Native quirk: the default label is computed before `value` is read.
     const label = text(reader.string("label") ?? "60%", labelFont, paintOf(reader, "labelColor"));
     const title = text(reader.string("title") ?? "", labelFont, paintOf(reader, "titleColor"));
@@ -812,7 +860,7 @@ export async function renderWidget(treeJSON, {
     const label = reader.string("text") ?? ""; const current = reader.string("current") ?? "";
     const min = reader.string("min") ?? ""; const max = reader.string("max") ?? "";
     const tintColor = cssColor(primary());
-    const background = cssColor(systemBackground[appearance]);
+    const background = cssColor(systemBackground(appearance));
     if (style === "linear") {
       // accessoryLinear: a solid capsule with a ring marker; min/max labels
       // at the ends; the title label is not shown.
@@ -850,16 +898,16 @@ export async function renderWidget(treeJSON, {
     report("info", "tag.approximated", "<chart> is drawn with an SVG approximation of Swift Charts");
     const type = reader.string("type") ?? "bar";
     const data = reader.string("data") ?? "";
-    if (data === "") return text("#chart no data#", defaultFont, null);
+    if (data === "") return text("#chart no data#", defaultFont(), null);
     let items;
-    try { items = JSON.parse(data); } catch { return text("#chart data json invalid#", defaultFont, null); }
+    try { items = JSON.parse(data); } catch { return text("#chart data json invalid#", defaultFont(), null); }
     const gantt = type === "bar-gantt"; const rule = type === "rule-x";
     const valid = Array.isArray(items) && items.every((item) => item && typeof item === "object" && (gantt
       ? typeof item.job === "string" && typeof item.start === "number" && typeof item.end === "number"
       : rule ? typeof item.xstart === "number" && typeof item.xend === "number" && typeof item.y === "number"
         : typeof item.label === "string" && typeof item.value === "number"));
-    if (!["bar", "bar-x", "bar-y", "bar-gantt", "line", "point", "line-point", "area", "rect", "rule-x"].includes(type)) return text("#unknown chart type#", defaultFont, null);
-    if (!valid) return text("#chart data json invalid#", defaultFont, null);
+    if (!["bar", "bar-x", "bar-y", "bar-gantt", "line", "point", "line-point", "area", "rect", "rule-x"].includes(type)) return text("#unknown chart type#", defaultFont(), null);
+    if (!valid) return text("#chart data json invalid#", defaultFont(), null);
     const categoryEnabled = reader.bool("category") ?? false;
     const hideLegend = reader.bool("hideLegend") ?? false;
     const hideX = reader.bool("hideXAxis") ?? false; const hideY = reader.bool("hideYAxis") ?? false;
@@ -871,11 +919,15 @@ export async function renderWidget(treeJSON, {
       const { width, height } = node.frame;
       const svg = svgCanvas(element, width, height);
       const legendHeight = categoryEnabled && !hideLegend ? 14 : 0;
-      const xLabelHeight = hideX ? 0 : 18;
-      const yLabelWidth = hideY ? 0 : 26;
-      const plot = { x: 0, y: 4, width: Math.max(1, width - yLabelWidth - 4), height: Math.max(1, height - xLabelHeight - legendHeight - 6) };
+      // Swift Charts on macOS starts the plot at the top edge, keeps 20 points
+      // for x labels and 20.5 for y labels, and draws slightly larger labels.
+      const mac = platform() === "macos";
+      const metrics = mac ? { top: 0, bottom: 0, xLabels: 20, yLabels: 20.5, yGap: 5, baseline: 16, tick: 17.5, font: 10.5 } : { top: 4, bottom: 6, xLabels: 18, yLabels: 30, yGap: 4, baseline: 14, tick: 16, font: 10 };
+      const xLabelHeight = hideX ? 0 : metrics.xLabels;
+      const yLabelWidth = hideY ? 0 : metrics.yLabels;
+      const plot = { x: 0, y: metrics.top, width: Math.max(1, width - yLabelWidth), height: Math.max(1, height - xLabelHeight - legendHeight - metrics.top - metrics.bottom) };
       const textAt = (x, y, value, anchor = "middle") => {
-        const label = svgElement(svg, "text", { x, y, "text-anchor": anchor, fill: axisColor, "font-size": 10, "font-family": fontFamily(defaultFont) });
+        const label = svgElement(svg, "text", { x, y, "text-anchor": anchor, fill: axisColor, "font-size": metrics.font, "font-family": fontFamily(defaultFont()) });
         label.textContent = value;
         return label;
       };
@@ -891,7 +943,7 @@ export async function renderWidget(treeJSON, {
         if (!hideY) for (const tick of ticks) {
           const y = plot.y + plot.height - (tick / niceMax) * plot.height;
           svgElement(svg, "line", { x1: plot.x, x2: plot.x + plot.width, y1: y, y2: y, stroke: axisColor, "stroke-opacity": 0.35 });
-          textAt(plot.x + plot.width + 4, y + 3, Number(tick.toPrecision(3)).toString(), "start");
+          textAt(plot.x + plot.width + metrics.yGap, y + 3, Number(tick.toPrecision(3)).toString(), "start");
         }
         const labels = [...new Set(items.map((item) => item.label))];
         const band = plot.width / Math.max(1, labels.length);
@@ -901,17 +953,17 @@ export async function renderWidget(treeJSON, {
           // Swift Charts truncates category labels that do not fit their band.
           // Measured with the in-document measurer: the chart is drawn before
           // the widget is attached, so SVG text metrics are not available yet.
-          const labelStyle = textStyleFor({ size: 10, lineHeight: null, weight: 400, design: "default" });
+          const labelStyle = textStyleFor({ size: metrics.font, lineHeight: null, weight: 400, design: "default" });
           const labelWidth = (value) => measurer.measure(value, labelStyle, null).width;
           labels.forEach((label) => {
             const limit = band * 0.9;
             let shown = label;
             for (let length = label.length; length > 1 && labelWidth(shown) > limit; length -= 1) shown = `${label.slice(0, length - 1)}…`;
-            textAt(xOf(label), plot.y + plot.height + 14, shown);
+            textAt(xOf(label), plot.y + plot.height + metrics.baseline, shown);
           });
           for (let index = 0; index <= labels.length; index += 1) {
             const x = plot.x + band * index;
-            svgElement(svg, "line", { x1: x, x2: x, y1: plot.y, y2: plot.y + plot.height + 16, stroke: axisColor, "stroke-opacity": 0.35, "stroke-dasharray": "2 2" });
+            svgElement(svg, "line", { x1: x, x2: x, y1: plot.y, y2: plot.y + plot.height + metrics.tick, stroke: axisColor, "stroke-opacity": 0.35, "stroke-dasharray": "2 2" });
           }
         }
         if (type === "bar" || type === "rect") {
@@ -1023,6 +1075,7 @@ export async function renderWidget(treeJSON, {
 
   // MARK: Widget container (ScriptWidgetWidgetElementRootView)
 
+  const previousPlatform = setPlatform(deviceProfiles[profile]?.platform ?? "ios");
   try {
     const rootNode = build(root, "z", { isRoot: root.tag !== "Fragment" });
     const [w, h] = rootNode.size(size.width, size.height);
@@ -1031,7 +1084,7 @@ export async function renderWidget(treeJSON, {
     widget.className = "sw-widget";
     widget.setAttribute("role", "img");
     widget.setAttribute("aria-label", "Widget preview");
-    Object.assign(widget.style, { position: "relative", width: `${size.width}px`, height: `${size.height}px`, overflow: "hidden", backgroundColor: cssColor(systemBackground[appearance]), colorScheme: appearance });
+    Object.assign(widget.style, { position: "relative", width: `${size.width}px`, height: `${size.height}px`, overflow: "hidden", backgroundColor: cssColor(systemBackground(appearance)), colorScheme: appearance });
     const rootPaint = parsePaint(propReader(root.props).string("background"), appearance);
     if (renderingMode === "fullColor" && !(lockScreen && family.startsWith("accessory"))) {
       if (rootPaint?.color) widget.style.backgroundColor = cssColor(rootPaint.color);
@@ -1049,6 +1102,7 @@ export async function renderWidget(treeJSON, {
     draw(rootNode, widget);
     return { element: widget, size, diagnostics };
   } finally {
+    setPlatform(previousPlatform);
     measurer.dispose();
   }
 }

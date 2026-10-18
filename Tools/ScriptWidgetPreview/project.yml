@@ -1,0 +1,188 @@
+name: ScriptWidgetPreview
+options:
+  bundleIdPrefix: app.xnu.scriptwidget
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+packages:
+  SwiftyJSON:
+    url: https://github.com/SwiftyJSON/SwiftyJSON.git
+    from: 5.0.0
+  ZipArchive:
+    url: https://github.com/ZipArchive/ZipArchive.git
+    branch: master
+targets:
+  ScriptWidgetPreview:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources
+      - path: Info.plist
+        buildPhase: none
+      - path: ../../Shared/ScriptWidgetRuntime/Common/ScriptManager.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Common/ScriptMetadata.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Common/ScriptModel.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Common/ScriptWidgetPackage.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Plugin/ScriptWidgetDataSources.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeConsole.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeDevice.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeFetch.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeFile.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeHealth.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeLocation.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimePromise.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeStorage.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeSystem.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/AppIntents/ButtonActionAppIntent.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/AppIntents/ReloadWidgetAppIntent.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Animation/ClockHandRotationEffect.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Animation/ScriptWidgetAttributeAnimationModifier.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Animation/SwingAnimationModifier.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Debug/ScriptWidgetAttributeDebugModeModifier.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Effect/ScriptWidgetAttributeRotation3DEffectModifier.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Effect/ScriptWidgetAttributeRotationEffectModifier.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Effect/ScriptWidgetAttributeShadowModifier.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/General/ScriptWidgetAttributeBackgroundModifier.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/General/ScriptWidgetAttributeClippedModifier.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/General/ScriptWidgetAttributeCornerRadiusModifier.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/General/ScriptWidgetAttributeFrameModifier.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/General/ScriptWidgetAttributeOpacityModifier.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/General/ScriptWidgetAttributePaddingModifier.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Image/ScriptWidgetAttributeImageModifier.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/ScriptWidgetAttributeGeneral.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/ScriptWidgetAttributeText.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Text/ScriptWidgetAttributeFontModifier.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Text/ScriptWidgetAttributeForegroundModifier.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Text/ScriptWidgetAttributeTextAlignmentModifier.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagButton.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagChart.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagDate.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagExtras.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagGauge.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagGif.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagGrid.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagImage.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagLink.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagShape.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagSpacer.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagStack.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagText.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagToggle.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagZStack.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/ScriptWidgetElementView.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Component/ScriptWidgetRuntimeElement.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Runtime/DeepLinkDefine.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Runtime/ScriptWidgetAppState.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Runtime/ScriptWidgetRunningState.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Runtime/ScriptWidgetRuntime.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Runtime/ScriptWidgetRuntimeDiagnostics.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Util/MineGaugeView.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Util/MineRingView.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Util/ScriptWidgetElementColor.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Util/ScriptWidgetElementGradient.swift
+        group: Shared
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Util/ScriptWidgetElementPoint.swift
+        group: Shared
+      - path: ../../macOS/ScriptWidgetMacWidget/AppIntents/AppConfigFrequency.swift
+        group: Shared
+      - path: ../../macOS/ScriptWidgetMacWidget/AppIntents/ScriptWidgetAppIntent.swift
+        group: Shared
+      - path: "../../Shared/ScriptWidgetRuntime/Widget/Resource/Fonts/OneSlot.ttf"
+        group: Resources
+        buildPhase: resources
+      - path: "../../Shared/ScriptWidgetRuntime/Widget/Resource/Fonts/Monofonto.ttf"
+        group: Resources
+        buildPhase: resources
+      - path: "../../Shared/ScriptWidgetRuntime/Widget/Resource/Fonts/Unispace.ttf"
+        group: Resources
+        buildPhase: resources
+      - path: "../../Shared/ScriptWidgetRuntime/Widget/Resource/Fonts/Larabiefont Free.ttf"
+        group: Resources
+        buildPhase: resources
+      - path: "../../Shared/ScriptWidgetRuntime/Widget/Resource/Fonts/New.ttf"
+        group: Resources
+        buildPhase: resources
+      - path: "../../Shared/ScriptWidgetRuntime/Widget/Resource/Fonts/Apple ][.ttf"
+        group: Resources
+        buildPhase: resources
+      - path: "../../Shared/ScriptWidgetRuntime/Widget/Resource/support.bundle"
+        group: Resources
+        buildPhase: resources
+    dependencies:
+      - package: SwiftyJSON
+      - package: ZipArchive
+      - sdk: WidgetKit.framework
+    settings:
+      base:
+        PRODUCT_NAME: ScriptWidget Preview
+        PRODUCT_BUNDLE_IDENTIFIER: app.xnu.scriptwidget.preview
+        INFOPLIST_FILE: Info.plist
+        SWIFT_VERSION: "5.0"
+        CODE_SIGN_IDENTITY: "-"
+        CODE_SIGN_STYLE: Manual
+        DEVELOPMENT_TEAM: ""
+        ENABLE_APP_SANDBOX: NO
+        ENABLE_HARDENED_RUNTIME: NO
+        GENERATE_INFOPLIST_FILE: NO
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"

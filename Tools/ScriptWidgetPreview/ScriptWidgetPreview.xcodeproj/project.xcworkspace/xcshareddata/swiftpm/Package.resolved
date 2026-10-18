@@ -1,0 +1,23 @@
+{
+  "pins": [
+    {
+      "identity": "swiftyjson",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/SwiftyJSON/SwiftyJSON.git",
+      "state": {
+        "revision": "af76cf3ef710b6ca5f8c05f3a31307d44a3c5828",
+        "version": "5.0.2"
+      }
+    },
+    {
+      "identity": "ziparchive",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/ZipArchive/ZipArchive.git",
+      "state": {
+        "branch": "master",
+        "revision": "1d2c7b604c74b9eef0b99bfc83f07f4c29216e13"
+      }
+    }
+  ],
+  "version": 3
+}
