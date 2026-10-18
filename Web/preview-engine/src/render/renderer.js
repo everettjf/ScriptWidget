@@ -510,7 +510,7 @@ export async function renderWidget(treeJSON, {
       case "text": case "date": {
         const font = elementFont(reader);
         const align = { leading: "left", center: "center", trailing: "right" }[reader.string("alignment")] ?? "left";
-        if (tag === "date") report("info", "tag.approximated", "<date> shows a fixed-clock value");
+        if (tag === "date") report("info", "tag.approximated", "<date> uses English formats; timers show the value at render time");
         content = text(tag === "date" ? formatDate(reader) : textFromChildren(element), font, paintOf(reader, "color"), align);
         break;
       }
