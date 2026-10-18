@@ -14,6 +14,10 @@ export function renderWidget(treeJSON: string, options?: {
   lockScreen?: boolean;
   resources?: Record<string, string>;
   document?: Document;
+  /// A fixed clock for absolute <date> styles, in milliseconds since 1970.
+  now?: number | null;
+  /// "live" animates with CSS; "firstFrame" draws what ImageRenderer captures.
+  animations?: "live" | "firstFrame";
 }): Promise<RenderedWidget>;
 
 export function lineHeight(size: number): number;

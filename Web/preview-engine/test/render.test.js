@@ -66,7 +66,8 @@ test("stacks give spacers only the leftover space", () => {
   assert.equal(stack.children[1].frame.width, 80);
   const tight = new StackNode("h", [new FixedNode(150, 10), new TextNode("abcdefghij", style, fakeMeasurer)], { alignment: "center", spacing: () => 8 });
   tight.place(0, 0, 200, 20);
-  assert.equal(tight.children[1].frame.width, 42);
+  // Truncated text reports the width it draws ("abc…"), as SwiftUI does.
+  assert.equal(tight.children[1].frame.width, 40);
   assert.equal(new FlexibleNode().size(null, null)[0], 10);
 });
 
@@ -107,6 +108,8 @@ test("text pushes out orphans like TextKit; macOS breaks long words without hyph
   assert.match(new TextNode("SYSTEM", ios, measurer).displayText(30), /^SY-\n/);
   assert.equal(new TextNode("SYSTEM", ios, measurer).displayText(20), "SYSTEM");
   assert.equal(new TextNode("把今天过得有意义", ios, measurer).displayText(30), "把今天过得有意义");
+  // CJK characters are break units for push-out too: "今年还 / 剩" -> "今年 / 还剩".
+  assert.equal(new TextNode("今年还剩", ios, measurer).displayText(30), "今年\n还剩");
 });
 
 test("SF Symbol metrics come from SwiftUI", () => {

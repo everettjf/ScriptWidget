@@ -99,18 +99,49 @@ enum ScriptWidgetElementTreeJSON {
 import SwiftUI
 import UIKit
 
-/// Widget family sizes for the 393-point iPhone class (Apple HIG), shared with
-/// Web/preview-engine/src/render/profiles.js.
+/// Device profiles parsed from Web/preview-engine/src/render/profiles.js so
+/// the native and web snapshots always use the same widget sizes.
 enum BrowserPreviewSnapshotProfile {
-    static func size(_ family: String) -> CGSize {
-        switch family {
-        case "small": return CGSize(width: 158, height: 158)
-        case "large": return CGSize(width: 338, height: 354)
-        case "accessoryCircular": return CGSize(width: 72, height: 72)
-        case "accessoryRectangular": return CGSize(width: 170, height: 72)
-        case "accessoryInline": return CGSize(width: 250, height: 30)
-        default: return CGSize(width: 338, height: 158)
+    struct Render {
+        let profile: String
+        let family: String
+        let size: CGSize
+        /// Snapshot name suffix; the default profile keeps the historical names.
+        var suffix: String { profile == defaultProfile ? "@\(family)" : "@\(family)~\(profile)" }
+    }
+
+    static let defaultProfile = "iphone-393"
+
+    /// Every profile and family, skipping sizes another profile already
+    /// renders (iPad small equals the 430-point iPhone small) and accessory
+    /// families outside the default profile (they share one size).
+    static func renders(profilesSource: String) -> [Render] {
+        func pairs(_ text: String) -> [(String, CGSize)] {
+            let regex = try! NSRegularExpression(pattern: #"(\w+): \[(\d+), (\d+)\]"#)
+            return regex.matches(in: text, range: NSRange(text.startIndex..., in: text)).map { match in
+                let value = { (index: Int) in String(text[Range(match.range(at: index), in: text)!]) }
+                return (value(1), CGSize(width: Double(value(2))!, height: Double(value(3))!))
+            }
         }
+        let accessoryLine = profilesSource.components(separatedBy: "\n").first { $0.hasPrefix("const accessories") } ?? ""
+        let accessories = pairs(accessoryLine)
+        let profileRegex = try! NSRegularExpression(pattern: #"\"?([\w-]+)\"?: \{ label: [^\n]*"#)
+        var result: [Render] = []
+        var seen = Set<String>()
+        for match in profileRegex.matches(in: profilesSource, range: NSRange(profilesSource.startIndex..., in: profilesSource)) {
+            let line = String(profilesSource[Range(match.range, in: profilesSource)!])
+            let profile = String(profilesSource[Range(match.range(at: 1), in: profilesSource)!])
+            // Native snapshots come from the iOS simulator; macOS has its own app.
+            guard !line.contains("platform: \"macos\"") else { continue }
+            var families = pairs(line)
+            if line.contains("...accessories") && profile == defaultProfile { families += accessories }
+            for (family, size) in families {
+                let key = "\(family) \(Int(size.width))x\(Int(size.height))"
+                guard seen.insert(key).inserted else { continue }
+                result.append(Render(profile: profile, family: family, size: size))
+            }
+        }
+        return result
     }
 }
 
@@ -145,28 +176,37 @@ final class BrowserPreviewParityTests: XCTestCase {
         let output = Self.repositoryRoot.appendingPathComponent("Web/preview-engine/dist/native-snapshots")
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         let prelude = try String(contentsOf: Self.parityDirectory.appendingPathComponent("prelude.js"), encoding: .utf8)
-        var jobs: [(name: String, family: String, source: String, package: ScriptWidgetPackage, dark: Bool)] = []
+        let profilesSource = try String(contentsOf: Self.repositoryRoot.appendingPathComponent("Web/preview-engine/src/render/profiles.js"), encoding: .utf8)
+        let allRenders = BrowserPreviewSnapshotProfile.renders(profilesSource: profilesSource)
+        // SCRIPTWIDGET_EXPORT_PROFILES=all exports every size; the default is
+        // the 393-point iPhone small, medium, and large.
+        let everySize = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_PROFILES"] == "all"
+        let renders = everySize ? allRenders : allRenders.filter { $0.profile == BrowserPreviewSnapshotProfile.defaultProfile && ["small", "medium", "large"].contains($0.family) }
+        var jobs: [(name: String, render: BrowserPreviewSnapshotProfile.Render, source: String, package: ScriptWidgetPackage, dark: Bool)] = []
         for (name, directory) in try Self.corpusPackages() {
             let package = ScriptWidgetPackage(path: directory, readonly: true)
             guard let source = package.readMainFile().0, !Self.usesLiveData(source) else { continue }
-            for family in ["small", "medium", "large"] { jobs.append(("\(name)@\(family)", family, prelude + source, package, false)) }
+            for render in renders { jobs.append(("\(name)\(render.suffix)", render, prelude + source, package, false)) }
         }
         let casesURL = Self.repositoryRoot.appendingPathComponent("Web/preview-engine/test/render/cases.json")
         let cases = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: casesURL)) as? [[String: Any]])
         let scratch = ScriptWidgetPackage(path: FileManager.default.temporaryDirectory, readonly: true)
         for item in cases {
             let family = item["size"] as? String ?? "medium"
-            jobs.append(("case/\(item["name"] as? String ?? "")@\(family)", family, prelude + (item["source"] as? String ?? ""), scratch, item["dark"] as? Bool ?? false))
+            guard let render = allRenders.first(where: { $0.profile == BrowserPreviewSnapshotProfile.defaultProfile && $0.family == family }) else { continue }
+            jobs.append(("case/\(item["name"] as? String ?? "")\(render.suffix)", render, prelude + (item["source"] as? String ?? ""), scratch, item["dark"] as? Bool ?? false))
         }
+        // Absolute <date> styles use the parity prelude's fixed clock.
+        ScriptWidgetRenderClock.fixedNow = Date(timeIntervalSince1970: 1_767_268_800)
+        defer { ScriptWidgetRenderClock.fixedNow = nil }
         let filter = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_FILTER"] ?? ""
         for job in jobs where filter.isEmpty || job.name.hasPrefix(filter) {
-            let runtime = ScriptWidgetRuntime(package: job.package, environments: ["widget-size": job.family, "widget-param": ""])
+            let runtime = ScriptWidgetRuntime(package: job.package, environments: ["widget-size": job.render.family, "widget-param": ""])
             let result = await Task.detached { runtime.executeJSXSyncForWidget(job.source) }.value
             guard let element = result.0 else { continue }
             let context = ScriptWidgetElementContext(runtime: runtime, debugMode: false, scriptName: job.name, scriptParameter: "",
                                                      package: job.package, containerBackgroundElement: element)
-            let renderer = ImageRenderer(content: BrowserPreviewSnapshotView(element: element, context: context,
-                                                                             size: BrowserPreviewSnapshotProfile.size(job.family))
+            let renderer = ImageRenderer(content: BrowserPreviewSnapshotView(element: element, context: context, size: job.render.size)
                 .environment(\.colorScheme, job.dark ? .dark : .light))
             renderer.scale = 2
             guard let data = renderer.uiImage?.pngData() else { continue }
@@ -176,6 +216,37 @@ final class BrowserPreviewParityTests: XCTestCase {
     }
     #endif
 
+
+    /// Prints SwiftUI's first text baseline for sizes and text styles when
+    /// TEST_RUNNER_SCRIPTWIDGET_PRINT_BASELINES=1 (renderer calibration).
+    @MainActor
+    func testPrintTextBaselines() throws {
+        guard ProcessInfo.processInfo.environment["SCRIPTWIDGET_PRINT_BASELINES"] == "1" else {
+            throw XCTSkip("Set TEST_RUNNER_SCRIPTWIDGET_PRINT_BASELINES=1 to print text baselines")
+        }
+        // The ink bottom of "H" at 8x is the baseline (H has no descender).
+        func baseline(_ font: Font) -> (CGFloat, CGFloat) {
+            let renderer = ImageRenderer(content: Text("H").font(font).fixedSize())
+            renderer.scale = 8
+            guard let image = renderer.cgImage else { return (0, 0) }
+            let width = image.width, height = image.height
+            var pixels = [UInt8](repeating: 0, count: width * height * 4)
+            pixels.withUnsafeMutableBytes { buffer in
+                CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8, bytesPerRow: width * 4,
+                          space: CGColorSpace(name: CGColorSpace.sRGB)!, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)?
+                    .draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+            }
+            var bottom = 0
+            for y in 0..<height { for x in 0..<width where pixels[(y * width + x) * 4 + 3] > 128 { bottom = max(bottom, y + 1) } }
+            return (CGFloat(bottom) / 8, CGFloat(height) / 8)
+        }
+        var lines: [String] = []
+        for size in 6...80 { let (b, h) = baseline(.system(size: CGFloat(size))); lines.append("size \(size) \(b) \(h)") }
+        let styles: [(String, Font)] = [("largeTitle", .largeTitle), ("title", .title), ("title2", .title2), ("title3", .title3), ("headline", .headline), ("body", .body), ("callout", .callout), ("subheadline", .subheadline), ("footnote", .footnote), ("caption", .caption), ("caption2", .caption2)]
+        for (name, font) in styles { let (b, h) = baseline(font); lines.append("style \(name) \(b) \(h)") }
+        let output = Self.repositoryRoot.appendingPathComponent("Web/preview-engine/dist/native-baselines.txt")
+        try lines.joined(separator: "\n").write(to: output, atomically: true, encoding: .utf8)
+    }
 
     private static let repositoryRoot = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
