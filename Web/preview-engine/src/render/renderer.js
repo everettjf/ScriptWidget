@@ -88,7 +88,7 @@ function textStyleFor(font) {
   // style's line height (the natural height for sized fonts).
   const leading = platform() === "macos" ? Math.max(natural, font.lineHeight ?? natural) : Math.max(natural, font.lineHeight ?? font.size * 1.29);
   const family = fontFamily(font);
-  return { ...font, natural, leading, family, custom: Boolean(font.family), hyphenate: platform() !== "macos", key: `${family}|${font.size}|${font.weight}|${leading}` };
+  return { ...font, natural, leading, family, custom: Boolean(font.family), hyphenate: platform() !== "macos" && Boolean(font.textStyle), key: `${family}|${font.size}|${font.weight}|${leading}` };
 }
 
 // MARK: - Tree decoding
@@ -366,7 +366,11 @@ export async function renderWidget(treeJSON, {
     const ratio = symbolMetrics[systemName];
     const half = (value) => Math.round(value * 2) / 2;
     const box = ratio ? [half(style.size * ratio[0]), half(style.size * ratio[1])] : [Math.ceil(style.size * 1.2 * 2) / 2, style.natural];
-    const node = leaf(new FixedNode(box[0], box[1]), (target, element) => {
+    const fixed = new FixedNode(box[0], box[1]);
+    // SF Symbols take part in text spacing (see defaultSpacing).
+    const symbolEdge = { symbol: true, size: style.size };
+    fixed.edge = () => symbolEdge;
+    const node = leaf(fixed, (target, element) => {
       const { width, height } = target.frame;
       const colorValue = cssColor(paint.color ?? paint.gradient?.colors[0] ?? primary());
       if (!icon) {
@@ -421,9 +425,9 @@ export async function renderWidget(treeJSON, {
   // MARK: Stacks
 
   // Measured on iOS 27: HStack children are 8 apart. In a VStack, text to
-  // text uses the style's leading minus its natural height, and text to
-  // other views 8 + 0.18 x the font size. Spacers add no spacing.
-  // On macOS 26 text to text adds only the upper font's leading, text above
+  // text adds the lower text's leading; between text and other views see
+  // below. Spacers add no spacing.
+  // On macOS 26 text to text adds only the lower font's leading, text above
   // another view 0.4729 x size and a view above text 0.2109 x size, both
   // plus a half-point step of about 0.118 x size.
   function defaultSpacing(axis) {
@@ -432,16 +436,29 @@ export async function renderWidget(treeJSON, {
       if (axis === "h") return 8;
       const above = previous.edge("bottom"); const below = next.edge("top");
       const half = (value) => Math.round(value * 2) / 2;
+      // SF Symbols sit flush against text and other symbols; next to other
+      // views they leave 0.135 x size (+1 below the symbol), measured on iOS.
+      if (above?.symbol || below?.symbol) {
+        if (above && below) return 0;
+        if (above) return half(0.135 * above.size + 1);
+        return Math.ceil(0.1354 * below.size * 2) / 2;
+      }
       if (platform() === "macos") {
         const step = (size) => Math.ceil(0.118 * size * 2) / 2;
-        if (above && below) return above.gap ?? 0;
+        if (above && below) return below.gap ?? 0;
         if (above) return half(0.4729 * above.size + step(above.size));
         if (below) return half(0.2109 * below.size + step(below.size));
         return 8;
       }
-      if (above && below) return Math.max(0, half(above.leading - above.natural));
-      if (above) return half(8 + 0.18 * above.size);
-      if (below) return half(8 + 0.18 * below.size);
+      // Text to text: the lower text's Dynamic Type leading (its style line
+      // height minus the natural height, up to the half point); sized fonts
+      // have none.
+      if (above && below) return below.textStyle ? Math.max(0, Math.ceil((below.lineHeight - below.size * naturalLineRatio) * 2) / 2) : 0;
+      // Text above another view leaves 0.6094 x its size, a view above text
+      // 0.3625 x the text's size (measured at 8x for sizes 1...80), which
+      // snaps up to the half point.
+      if (above) return half(0.6094 * above.size);
+      if (below) return Math.ceil(0.3625 * below.size * 2) / 2;
       return 8;
     };
   }

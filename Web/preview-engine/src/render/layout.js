@@ -4,6 +4,7 @@
 // maximum, finite = offered space. Stacks distribute space to the least
 // flexible children first, which is what makes text truncate and fixed
 // content overflow the way it does on iPhone.
+import { hyphenationPoints } from "./hyphenate.js";
 
 export const sub = (value, amount) => (value === null || value === Infinity ? value : Math.max(0, value - amount));
 const snap = (value) => Math.ceil(value * 2 - 1e-6) / 2;
@@ -42,10 +43,10 @@ export class TextNode extends Node {
     this.text = text; this.style = style; this.measurer = measurer;
   }
   /// When every word fits, the standard line break strategy may push a word
-  /// down (see pushOut). Otherwise, like UIKit, a word wider than the line
-  /// is hyphenated: it is split into the longest prefixes that fit with a
-  /// trailing "-". AppKit (style.hyphenate false) breaks such words between
-  /// characters without a hyphen, as the browser does.
+  /// down (see pushOut). A word wider than the line breaks between
+  /// characters, as the browser does, except that iOS text styles (Dynamic
+  /// Type fonts, style.hyphenate) hyphenate it at the longest dictionary
+  /// break that fits ("Depar- / ture gate").
   displayText(width) {
     if (width === null || width === Infinity || width <= 0) return this.text;
     const key = `${width}`;
@@ -58,25 +59,23 @@ export class TextNode extends Node {
     }
     const fits = (piece) => this.measurer.measure(piece, this.style, null).width <= width + 0.01;
     const result = this.text.replace(/\S+/g, (word) => {
-      // CJK text breaks between any two characters without a hyphen.
-      if (fits(word) || [...word].length < 4 || cjk.test(word)) return word;
-      const characters = [...word];
+      if (fits(word)) return word;
+      // Only the letters of a word hyphenate; punctuation stays attached.
+      const [, lead, core, tail] = /^([^A-Za-z]*)([A-Za-z]*)(.*)$/s.exec(word);
+      const points = hyphenationPoints(core).map((point) => point + lead.length);
       const pieces = [];
-      let start = 0;
-      while (start < characters.length) {
-        const rest = characters.slice(start).join("");
-        if (fits(rest)) { pieces.push(rest); break; }
-        // A column too narrow for two letters and a hyphen breaks the word
-        // one character per line instead ("S / Y / S").
-        if (!fits(`${characters.slice(start, start + 2).join("")}-`)) return word;
-        let end = start + 2;
-        while (end < characters.length && fits(`${characters.slice(start, end + 1).join("")}-`)) end += 1;
-        // Like iOS, carry at least three letters to the next line.
-        if (characters.length - end < 3) end = Math.max(start + 1, characters.length - 3);
-        pieces.push(`${characters.slice(start, end).join("")}-`);
-        start = end;
+      let rest = word; let consumed = 0;
+      while (!fits(rest)) {
+        // The longest prefix that fits with a hyphen; without one the word
+        // breaks between characters.
+        const point = points.filter((value) => value > consumed && value < consumed + rest.length && fits(`${word.slice(consumed, value)}-`)).at(-1);
+        if (point === undefined) break;
+        pieces.push(`${word.slice(consumed, point)}-`);
+        rest = word.slice(point);
+        consumed = point;
       }
-      return pieces.join("\n");
+      pieces.push(rest);
+      return tail === undefined ? word : pieces.join("\n");
     });
     this.hyphenated.set(key, result);
     return result;
@@ -152,7 +151,8 @@ export class TextNode extends Node {
     const lines = this.breakLines(width);
     if (lines.length <= count) return null;
     const kept = lines.slice(0, count - 1);
-    const rest = lines.slice(count - 1).reduce((all, line) => (all === "" ? line : cjk.test(all.at(-1)) && cjk.test(line[0]) ? all + line : `${all} ${line}`), "");
+    // A single truncated line cuts the original text: no hyphen ("REM…").
+    const rest = count === 1 ? this.text : lines.slice(count - 1).reduce((all, line) => (all === "" ? line : cjk.test(all.at(-1)) && cjk.test(line[0]) ? all + line : `${all} ${line}`), "");
     const last = this.ellipsize(rest, width);
     const drawn = [...kept, last];
     return { text: drawn.join("\n"), width: Math.max(...drawn.map((line) => this.measurer.measure(line, this.style, null).width)) };
@@ -342,7 +342,10 @@ export class StackNode extends Node {
 }
 
 function mergedEdge(children, side) {
-  return children.map((child) => child.edge(side)).filter(Boolean).reduce((best, edge) => (!best || edge.size > best.size ? edge : best), null);
+  // The largest text edge wins; SF Symbol edges count only without text.
+  const edges = children.map((child) => child.edge(side)).filter(Boolean);
+  const text = edges.filter((edge) => !edge.symbol);
+  return (text.length ? text : edges).reduce((best, edge) => (!best || edge.size > best.size ? edge : best), null);
 }
 
 export class ZStackNode extends Node {

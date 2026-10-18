@@ -248,6 +248,59 @@ final class BrowserPreviewParityTests: XCTestCase {
         try lines.joined(separator: "\n").write(to: output, atomically: true, encoding: .utf8)
     }
 
+    /// Writes the default VStack spacing between a shape and text (both
+    /// orders) for sizes 1...80 and every text style to
+    /// dist/native-spacing.json when TEST_RUNNER_SCRIPTWIDGET_PRINT_SPACING=1.
+    @MainActor
+    func testPrintTextSpacing() throws {
+        guard ProcessInfo.processInfo.environment["SCRIPTWIDGET_PRINT_SPACING"] == "1" else {
+            throw XCTSkip("Set TEST_RUNNER_SCRIPTWIDGET_PRINT_SPACING=1 to measure spacing")
+        }
+        // Stack heights minus their parts give the default spacing.
+        // Rendered at 8x to read the spacing to an eighth of a point.
+        func height<V: View>(_ view: V) -> Double {
+            let renderer = ImageRenderer(content: view.fixedSize())
+            renderer.scale = 8
+            return Double(renderer.cgImage?.height ?? 0) / 8
+        }
+        func gaps(_ font: Font) -> [Double] {
+            let text = height(Text("Hxg").font(font))
+            let shapeAbove = height(VStack { Rectangle().frame(width: 20, height: 4); Text("Hxg").font(font) }) - text - 4
+            let textAbove = height(VStack { Text("Hxg").font(font); Rectangle().frame(width: 20, height: 4) }) - text - 4
+            return [shapeAbove, textAbove]
+        }
+        var sizes: [[Double]] = []
+        for size in 1...80 { sizes.append(gaps(.system(size: CGFloat(size)))) }
+        let styles: [(String, Font)] = [("largeTitle", .largeTitle), ("title", .title), ("title2", .title2), ("title3", .title3), ("headline", .headline), ("body", .body), ("callout", .callout), ("subheadline", .subheadline), ("footnote", .footnote), ("caption", .caption), ("caption2", .caption2)]
+        func width<V: View>(_ view: V) -> Double {
+            let renderer = ImageRenderer(content: view.fixedSize())
+            renderer.scale = 8
+            return Double(renderer.cgImage?.width ?? 0) / 8
+        }
+        // Other pairings at a few sizes: [size, image above text, text above
+        // image, image above shape, HStack text-text, image-text, shape-text,
+        // shape above image, image above image].
+        var pairs: [[Double]] = []
+        for size in [10, 13, 17, 22, 28, 34] as [CGFloat] {
+            let font = Font.system(size: size)
+            let text = Text("Hxg").font(font), image = Image(systemName: "star.fill").font(font)
+            let shape = Rectangle().frame(width: 20, height: 4)
+            let th = height(text), ih = height(image), tw = width(text), iw = width(image)
+            pairs.append([Double(size),
+                          height(VStack { image; text }) - ih - th,
+                          height(VStack { text; image }) - ih - th,
+                          height(VStack { image; shape }) - ih - 4,
+                          width(HStack { text; text }) - 2 * tw,
+                          width(HStack { image; text }) - iw - tw,
+                          width(HStack { Rectangle().frame(width: 20, height: 4); text }) - 20 - tw,
+                          height(VStack { shape; image }) - ih - 4,
+                          height(VStack { image; image }) - 2 * ih])
+        }
+        let json: [String: Any] = ["sizes": sizes, "pairs": pairs, "styles": Dictionary(uniqueKeysWithValues: styles.map { ($0.0, gaps($0.1)) })]
+        let data = try JSONSerialization.data(withJSONObject: json, options: [.sortedKeys])
+        try data.write(to: Self.repositoryRoot.appendingPathComponent("Web/preview-engine/dist/native-spacing.json"))
+    }
+
     private static let repositoryRoot = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
     private static let parityDirectory = repositoryRoot.appendingPathComponent("Web/preview-engine/test/parity")
