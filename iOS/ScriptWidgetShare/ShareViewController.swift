@@ -25,22 +25,62 @@ class ShareViewController: UIViewController {
             return
         }
         
-        if !itemProvider.hasItemConformingToTypeIdentifier(typeURL) {
-            print("Error: No url or text found")
-            self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+        if itemProvider.hasItemConformingToTypeIdentifier(typeURL) {
+            itemProvider.loadItem(forTypeIdentifier: typeURL, options: nil) { (item, error) in
+                if let error = error {
+                    print("URL-Error: \(error.localizedDescription)")
+                }
+
+                if let url = item as? NSURL {
+                    self.importFileWithURL(fileURL: url as URL)
+                }
+
+                self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+            }
             return
         }
-        
-        itemProvider.loadItem(forTypeIdentifier: typeURL, options: nil) { (item, error) in
-            if let error = error {
-                print("URL-Error: \(error.localizedDescription)")
-            }
 
-            if let url = item as? NSURL {
-                self.importFileWithURL(fileURL: url as URL)
-            }
+        // Files shared from a web page (Web Share API in Safari) arrive as a
+        // file representation typed by MIME, not as a URL.
+        if itemProvider.hasItemConformingToTypeIdentifier(UTType.data.identifier) {
+            let suggestedName = itemProvider.suggestedName
+            itemProvider.loadFileRepresentation(forTypeIdentifier: UTType.data.identifier) { (url, error) in
+                if let error = error {
+                    print("File-Error: \(error.localizedDescription)")
+                }
 
-            self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+                // The representation is only valid inside this handler.
+                if let url = url {
+                    self.importSharedFile(at: url, suggestedName: suggestedName)
+                }
+
+                self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+            }
+            return
+        }
+
+        print("Error: No url or file found")
+        self.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+    }
+
+    /// Copies a shared file under its suggested name so the extension decides
+    /// the import format, then imports it.
+    private func importSharedFile(at url: URL, suggestedName: String?) {
+        var fileName = url.lastPathComponent
+        if let suggestedName = suggestedName, !suggestedName.isEmpty {
+            let safeName = (suggestedName as NSString).lastPathComponent
+            fileName = (safeName as NSString).pathExtension.isEmpty ? "\(safeName).\(url.pathExtension)" : safeName
+        }
+
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: directory) }
+            let copy = directory.appendingPathComponent(fileName)
+            try FileManager.default.copyItem(at: url, to: copy)
+            importFileWithURL(fileURL: copy)
+        } catch {
+            print("copy shared file failed : \(error)")
         }
     }
     
