@@ -81,6 +81,12 @@ for the latest edit. With `--device` and `--pair-code`, the CLI also uploads
 the package to an iPhone running Web Studio and saves the native preview next
 to the web one. Details are in [browser preview engine](browser-preview-engine.md).
 
+## Supported browsers
+
+Every change to the web code is checked in Chromium, Firefox, and WebKit on
+Linux and Windows (the Web Browsers workflow), and the engine is also checked
+in Safari on iOS. Use a current version of Chrome, Edge, Firefox, or Safari.
+
 ## Privacy and security
 
 - Your code runs in a sandboxed frame with an opaque origin and no network

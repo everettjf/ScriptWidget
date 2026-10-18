@@ -136,7 +136,8 @@ Probes run as user code in the sandboxed executor (Chromium):
 
 The CSP, not the global scrubbing, is the security boundary; scrubbing exists
 for parity. The same probes pass in iOS 27 Safari (see the verification
-matrix). Firefox and the deployed GitHub Pages site are not yet verified.
+matrix), and in Chromium, Firefox, and WebKit on Linux and Windows (the Web
+Browsers workflow).
 
 ## Known differences
 
@@ -325,7 +326,9 @@ claude mcp add scriptwidget -- node Web/preview-engine/bin/scriptwidget-mcp.mjs
 | Device sync, end to end | CLI → ScriptWidget app (Debug, iOS 27 simulator) over Web Studio API v1: paired, uploaded the changed entry, received the native PNG of the same source |
 | Non-Apple fonts | corpus median 2.58% with the bundled Inter fallback (222/300 within 5%, 299/300 within 20%); 2.67% with generic fallback fonts |
 | Pages layout | `site/` + Studio at `/studio/` assembled like the workflow passes the smoke test; both workflows parse |
-| **Not verified** | Firefox; real Windows/Linux machines (measured on macOS with Apple fonts excluded); a physical iPhone; share-sheet install (needs taps); the live site, which publishes after merging into `main` |
+| Chromium, Firefox, WebKit on Ubuntu and Windows (GitHub Actions, Web Browsers workflow) | Studio renders (28–90 ms), 71 templates, `.swt` import; 100/100 byte-identical trees; every isolation probe blocked; engine test suite passes on both OSes |
+| Live site | https://xnu.app/scriptwidget/studio/ deployed by Pages and rendering over HTTPS in headless Chrome |
+| **Not verified** | A physical iPhone, and the share-sheet install (needs taps on the device or simulator) |
 
 WebKit note: revoking a blob URL immediately after `new Worker(url)` prevents
 WebKit from starting the Worker because it fetches the script asynchronously.
