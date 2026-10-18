@@ -1,0 +1,203 @@
+[
+ {
+  "name": "spacing-default",
+  "size": "medium",
+  "source": "$render(<vstack><text>One</text><text>Two</text><hstack><text>A</text><text>B</text></hstack></vstack>)"
+ },
+ {
+  "name": "spacing-explicit",
+  "size": "medium",
+  "source": "$render(<vstack spacing=\"0\" background=\"#fde68a\"><text background=\"#93c5fd\">Zero</text><text background=\"#fca5a5\">Gap</text><hstack spacing=\"20\"><rect frame=\"20,20\" color=\"red\"/><rect frame=\"20,20\" color=\"blue\"/></hstack></vstack>)"
+ },
+ {
+  "name": "spacer-vertical",
+  "size": "medium",
+  "source": "$render(<vstack frame=\"max\" background=\"#e0f2fe\"><text>Top</text><spacer/><text>Bottom</text></vstack>)"
+ },
+ {
+  "name": "spacer-horizontal",
+  "size": "medium",
+  "source": "$render(<hstack padding=\"12\" background=\"#dcfce7\"><text>Left</text><spacer/><text>Right</text></hstack>)"
+ },
+ {
+  "name": "fonts",
+  "size": "large",
+  "source": "$render(<vstack alignment=\"leading\" spacing=\"2\"><text font=\"largeTitle\">largeTitle</text><text font=\"title\">title</text><text font=\"title2\">title2</text><text font=\"title3\">title3</text><text font=\"headline\">headline</text><text font=\"body\">body</text><text font=\"callout\">callout</text><text font=\"subheadline\">subheadline</text><text font=\"footnote\">footnote</text><text font=\"caption\">caption</text><text font=\"caption2\">caption2</text><text font=\"20,bold,rounded\">20 bold rounded</text><text font=\"15,regular,monospaced\">15 mono 0123</text></vstack>)"
+ },
+ {
+  "name": "frame-alignments",
+  "size": "large",
+  "source": "$render(<vstack spacing=\"4\"><hstack spacing=\"4\"><text frame=\"90,60,topLeading\" background=\"#fee2e2\">TL</text><text frame=\"90,60,top\" background=\"#fef3c7\">T</text><text frame=\"90,60,topTrailing\" background=\"#dcfce7\">TR</text></hstack><hstack spacing=\"4\"><text frame=\"90,60,leading\" background=\"#e0e7ff\">L</text><text frame=\"90,60,center\" background=\"#f3e8ff\">C</text><text frame=\"90,60,trailing\" background=\"#fce7f3\">R</text></hstack><hstack spacing=\"4\"><text frame=\"90,60,bottomLeading\" background=\"#ccfbf1\">BL</text><text frame=\"90,60,bottom\" background=\"#e5e7eb\">B</text><text frame=\"90,60,bottomTrailing\" background=\"#fde68a\">BR</text></hstack></vstack>)"
+ },
+ {
+  "name": "frame-max-variants",
+  "size": "large",
+  "source": "$render(<vstack spacing=\"6\" frame=\"max\" background=\"#f1f5f9\"><text frame=\"max,40\" background=\"#fca5a5\">max,40</text><text frame=\"120,max\" background=\"#93c5fd\">120,max</text><text frame=\"max,topLeading\" background=\"#86efac\">max,topLeading</text></vstack>)"
+ },
+ {
+  "name": "padding-forms",
+  "size": "medium",
+  "source": "$render(<hstack spacing=\"8\"><text padding=\"12\" background=\"#fde68a\">all</text><text padding=\"horizontal,20\" background=\"#bfdbfe\">h20</text><text padding=\"4,8,12,16\" background=\"#fecaca\">4 sides</text><text padding={30} background=\"#bbf7d0\">num</text></hstack>)"
+ },
+ {
+  "name": "background-corner-clip",
+  "size": "medium",
+  "source": "$render(<hstack spacing=\"10\"><vstack padding=\"10\" background=\"#0f172a\" corner=\"12\"><text color=\"white\">Card</text></vstack><zstack frame=\"60,60\" background=\"orange\" clip=\"circle\"><text>Clip</text></zstack><text padding=\"8\" background=\"blue,0.3\" corner=\"6\" opacity=\"0.5\">Fade</text></hstack>)"
+ },
+ {
+  "name": "colors-named",
+  "size": "medium",
+  "source": "$render(<hstack spacing=\"4\">{['black','white','gray','red','green','blue','orange','yellow','pink','purple','primary','secondary','clear'].map(c => <rect frame=\"22,40\" color={c}/>)}</hstack>)"
+ },
+ {
+  "name": "colors-hex",
+  "size": "medium",
+  "source": "$render(<hstack spacing=\"4\"><rect frame=\"40,40\" color=\"#ff0000\"/><rect frame=\"40,40\" color=\"#80ff0000\"/><rect frame=\"40,40\" color=\"#fff\"/><rect frame=\"40,40\" color=\"#00ff00,0.4\"/><rect frame=\"40,40\" color=\"nonsense\"/></hstack>)"
+ },
+ {
+  "name": "shapes-fill",
+  "size": "medium",
+  "source": "$render(<hstack spacing=\"8\"><rect frame=\"50,40\" color=\"red\"/><rect frame=\"50,40\" corner=\"12\" color=\"blue\"/><circle frame=\"60,40\" color=\"green\"/><ellipse frame=\"60,40\" color=\"orange\"/><capsule frame=\"60,30\" color=\"purple\"/><roundedrect frame=\"50,40\" radius=\"8\"/></hstack>)"
+ },
+ {
+  "name": "shapes-stroke-trim",
+  "size": "medium",
+  "source": "$render(<hstack spacing=\"14\"><circle frame=\"50,50\" stroke=\"6\" color=\"blue\"/><circle frame=\"50,50\" stroke=\"6\" trim=\"0,0.7\" color=\"red\"/><rect frame=\"50,40\" stroke=\"3\" color=\"green\"/><ellipse frame=\"60,40\" stroke=\"4\" color=\"purple\"/></hstack>)"
+ },
+ {
+  "name": "shapes-flexible",
+  "size": "small",
+  "source": "$render(<vstack spacing=\"4\"><rect color=\"red\"/><circle color=\"blue\"/></vstack>)"
+ },
+ {
+  "name": "gradients",
+  "size": "medium",
+  "source": "$render(<hstack spacing=\"8\"><rect frame=\"90,120\" color={$gradient({type:'linear',colors:['blue','white','pink'],startPoint:'topLeading',endPoint:'bottomTrailing'})}/><vstack frame=\"90,120\" background={$gradient({type:'radial',colors:['orange','red'],center:'center',startRadius:5,endRadius:60})}/><vstack frame=\"90,120\" background={$gradient({type:'angular',colors:['green','blue','black','green'],center:'center'})}/></hstack>)"
+ },
+ {
+  "name": "gradient-text",
+  "size": "small",
+  "source": "$render(<text font=\"34,bold\" color={$gradient({type:'linear',colors:['#f97316','#db2777'],startPoint:'leading',endPoint:'trailing'})}>Glow</text>)"
+ },
+ {
+  "name": "zstack-overlay",
+  "size": "medium",
+  "source": "$render(<zstack><circle frame=\"100,100\" color=\"#fde68a\"/><text font=\"title\">Z</text><rect frame=\"30,30\" color=\"red,0.5\"/></zstack>)"
+ },
+ {
+  "name": "text-wrap",
+  "size": "small",
+  "source": "$render(<vstack alignment=\"leading\" padding=\"10\"><text font=\"headline\">A long headline that will wrap across lines</text><text font=\"caption\" alignment=\"center\">Centered multiline caption text that wraps too</text></vstack>)"
+ },
+ {
+  "name": "hstack-alignment",
+  "size": "medium",
+  "source": "$render(<hstack alignment=\"top\" spacing=\"6\" background=\"#e2e8f0\"><text font=\"largeTitle\">Big</text><text>top</text><vstack alignment=\"trailing\"><text>trailing</text><text font=\"caption\">x</text></vstack></hstack>)"
+ },
+ {
+  "name": "root-background",
+  "size": "small",
+  "source": "$render(<vstack background=\"#1e3a8a\"><text color=\"white\">Root bg</text></vstack>)"
+ },
+ {
+  "name": "root-gradient-background",
+  "size": "small",
+  "source": "$render(<vstack padding=\"8\" background={$gradient({type:'linear',colors:['#0ea5e9','#6366f1'],startPoint:'top',endPoint:'bottom'})}><text color=\"white\" font=\"title3\">Sky</text></vstack>)"
+ },
+ {
+  "name": "shadow-rotation",
+  "size": "medium",
+  "source": "$render(<hstack spacing=\"24\"><rect frame=\"50,50\" color=\"white\" shadow=\"black,6,0,4\"/><text font=\"title\" rotation={-15}>Tilt</text><text shadow=\"red\">Shadow</text></hstack>)"
+ },
+ {
+  "name": "composites",
+  "size": "large",
+  "source": "$render(<vstack spacing=\"10\" padding=\"12\"><hstack><badge text=\"NEW\"/><chip text=\"Chip\"/></hstack><stat title=\"Steps\" value=\"8,421\" subtitle=\"Today\"/><progress value={0.6} color=\"#22c55e\"/><hstack><ring value={0.7} frame=\"40,40\"/><progress value={3} total={4} style=\"circular\" label=\"75\"/></hstack><divider/><line length=\"80\"/></vstack>)"
+ },
+ {
+  "name": "text-children",
+  "size": "small",
+  "source": "$render(<vstack><text>{true}</text><text>{1.5}{' '}{null}</text><vstack>loose string</vstack></vstack>)"
+ },
+ {
+  "name": "image-system",
+  "size": "small",
+  "source": "$render(<hstack><image systemName=\"star.fill\"/><image systemName=\"star.fill\" font=\"title\"/><image/></hstack>)"
+ },
+ {
+  "name": "calib-text-heights",
+  "size": "large",
+  "source": "$render(<hstack spacing=\"0\" alignment=\"top\"><text font=\"largeTitle\" background=\"#fecaca\">Hg</text><text font=\"title\" background=\"#fed7aa\">Hg</text><text font=\"title2\" background=\"#fef08a\">Hg</text><text font=\"title3\" background=\"#bbf7d0\">Hg</text><text font=\"headline\" background=\"#a5f3fc\">Hg</text><text font=\"body\" background=\"#bfdbfe\">Hg</text><text font=\"callout\" background=\"#c7d2fe\">Hg</text><text font=\"subheadline\" background=\"#e9d5ff\">Hg</text><text font=\"footnote\" background=\"#fbcfe8\">Hg</text><text font=\"caption\" background=\"#d9f99d\">Hg</text><text font=\"caption2\" background=\"#99f6e4\">Hg</text></hstack>)"
+ },
+ {
+  "name": "calib-text-heights-numeric",
+  "size": "large",
+  "source": "$render(<hstack spacing=\"0\" alignment=\"top\"><text font=\"10\" background=\"#fecaca\">Hg</text><text font=\"14\" background=\"#fed7aa\">Hg</text><text font=\"20\" background=\"#fef08a\">Hg</text><text font=\"24\" background=\"#bbf7d0\">Hg</text><text font=\"30\" background=\"#a5f3fc\">Hg</text><text font=\"40\" background=\"#bfdbfe\">Hg</text><text font=\"50\" background=\"#c7d2fe\">Hg</text><text font=\"60\" background=\"#e9d5ff\">Hg</text></hstack>)"
+ },
+ {
+  "name": "calib-default-spacing",
+  "size": "large",
+  "source": "$render(<hstack alignment=\"top\"><vstack><text background=\"#fecaca\">Text</text><text background=\"#bfdbfe\">Text</text></vstack><vstack><text background=\"#fecaca\">Text</text><rect frame=\"30,20\" color=\"blue\"/></vstack><vstack><rect frame=\"30,20\" color=\"red\"/><rect frame=\"30,20\" color=\"blue\"/></vstack><vstack><text font=\"caption\" background=\"#fecaca\">Cap</text><text font=\"caption\" background=\"#bfdbfe\">Cap</text></vstack><vstack><text font=\"title\" background=\"#fecaca\">Ti</text><text font=\"title\" background=\"#bfdbfe\">Ti</text></vstack><vstack frame=\"20,120\" background=\"#bbf7d0\"><rect frame=\"20,20\" color=\"red\"/><spacer/><rect frame=\"20,20\" color=\"blue\"/></vstack></hstack>)"
+ },
+ {
+  "name": "calib-hstack-spacing",
+  "size": "medium",
+  "source": "$render(<vstack><hstack><text background=\"#fecaca\">A</text><text background=\"#bfdbfe\">B</text></hstack><hstack><rect frame=\"20,20\" color=\"red\"/><rect frame=\"20,20\" color=\"blue\"/></hstack><hstack><text background=\"#fecaca\">A</text><rect frame=\"20,20\" color=\"blue\"/></hstack><hstack frame=\"120,20\" background=\"#bbf7d0\"><rect frame=\"20,20\" color=\"red\"/><spacer/><rect frame=\"20,20\" color=\"blue\"/></hstack></vstack>)"
+ },
+ {
+  "name": "calib-shadow-radius",
+  "size": "medium",
+  "source": "$render(<hstack spacing=\"40\"><rect frame=\"40,40\" color=\"white\" shadow=\"black,0,0,0\"/><rect frame=\"40,40\" color=\"white\" shadow=\"black,4,0,0\"/><rect frame=\"40,40\" color=\"white\" shadow=\"black,10,0,0\"/></hstack>)"
+ },
+ {
+  "name": "gauge-original",
+  "size": "medium",
+  "source": "$render(<hstack><gauge value={0.35} frame=\"120,120\" title=\"Speed\"/><gauge value=\"0.8\" angle=\"200\" thickness=\"6\" needleColor=\"red\" sections='[{\"color\":\"green\",\"value\":0.5},{\"color\":\"red\",\"value\":0.5}]' label=\"80\" frame=\"120,120\"/></hstack>)"
+ },
+ {
+  "name": "gauge-system",
+  "size": "medium",
+  "source": "$render(<hstack spacing=\"20\"><gauge type=\"system\" value=\"0.4\" current=\"40\" text=\"CPU\"/><gauge type=\"system\" style=\"linear\" value=\"0.7\" text=\"Disk\" min=\"0\" max=\"100\" frame=\"120,40\"/></hstack>)"
+ },
+ {
+  "name": "chart-bar",
+  "size": "medium",
+  "source": "$render(<chart type=\"bar\" frame=\"300,130\" data='[{\"label\":\"Mon\",\"value\":3},{\"label\":\"Tue\",\"value\":5},{\"label\":\"Wed\",\"value\":2},{\"label\":\"Thu\",\"value\":7}]'/>)"
+ },
+ {
+  "name": "chart-line",
+  "size": "medium",
+  "source": "$render(<chart type=\"line-point\" frame=\"300,130\" data='[{\"label\":\"A\",\"value\":10},{\"label\":\"B\",\"value\":30},{\"label\":\"C\",\"value\":20},{\"label\":\"D\",\"value\":40}]'/>)"
+ },
+ {
+  "name": "grid-default",
+  "size": "medium",
+  "source": "$render(<vgrid padding=\"10\">{Array.from({length:12},(_, i)=><text background=\"#bfdbfe\">{i}</text>)}</vgrid>)"
+ },
+ {
+  "name": "grid-flexible",
+  "size": "large",
+  "source": "$render(<vgrid spacing=\"6\" columns='[{\"type\":\"flexible\"},{\"type\":\"flexible\"},{\"type\":\"fixed\",\"value\":\"60\"}]'>{Array.from({length:6},(_, i)=><rect frame=\"max,40\" color=\"orange\"/>)}</vgrid>)"
+ },
+ {
+  "name": "dark-basics",
+  "size": "medium",
+  "dark": true,
+  "source": "$render(<vstack spacing=\"6\"><text>Primary</text><text color=\"secondary\">Secondary</text><hstack spacing=\"4\">{['red','green','blue','orange','yellow','pink','purple','gray'].map(c => <circle frame=\"20,20\" color={c}/>)}</hstack><rect frame=\"80,20\"/></vstack>)"
+ },
+ {
+  "name": "accessory-circular",
+  "size": "accessoryCircular",
+  "source": "$render(<zstack><circle stroke=\"4\" color=\"white\"/><text font=\"title3\">42</text></zstack>)"
+ },
+ {
+  "name": "accessory-rectangular",
+  "size": "accessoryRectangular",
+  "source": "$render(<vstack alignment=\"leading\"><text font=\"headline\">Next</text><text font=\"caption\">Standup 10:00</text></vstack>)"
+ },
+ {
+  "name": "weight-props",
+  "size": "medium",
+  "source": "$render(<vstack><text weight=\"bold\">weight bold</text><text fontWeight=\"heavy\" font=\"title3\">fontWeight heavy</text><text fontDesign=\"serif\">fontDesign serif</text><text fontDesign=\"monospaced\" fontWeight=\"light\">mono light 012</text></vstack>)"
+ }
+]

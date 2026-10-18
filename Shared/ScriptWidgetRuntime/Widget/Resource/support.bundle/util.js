@@ -34,6 +34,19 @@ function $json(obj) {
     return JSON.stringify(obj)
 }
 
+const $xml = Object.freeze({
+    parse(source) {
+        if (typeof source !== "string") {
+            throw new TypeError("$xml.parse expects a string")
+        }
+        const result = JSON.parse($xml_parse(source))
+        if (!result.ok) {
+            throw new Error(result.error)
+        }
+        return result.value
+    }
+})
+
 function $type_of_object(obj) {
     return typeof obj
 }

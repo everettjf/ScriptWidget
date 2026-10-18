@@ -1,0 +1,2 @@
+Fixed an issue where widget links opened ScriptWidget instead of the intended website or app.
+Updated the Generate with AI icon for a cleaner appearance.

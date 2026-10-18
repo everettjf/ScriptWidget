@@ -18,9 +18,13 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: Editor/editorfe/package-lock.json
+          cache-dependency-path: |
+            Editor/editorfe/package-lock.json
+            Web/studio/package-lock.json
       - run: npm ci
         working-directory: Editor/editorfe
+      - run: npm ci
+        working-directory: Web/studio
       - run: SCRIPTWIDGET_SKIP_XCODE=1 ./Scripts/release-readiness.sh
 
   apple-platforms:
@@ -31,9 +35,13 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: Editor/editorfe/package-lock.json
+          cache-dependency-path: |
+            Editor/editorfe/package-lock.json
+            Web/studio/package-lock.json
       - run: npm ci
         working-directory: Editor/editorfe
+      - run: npm ci
+        working-directory: Web/studio
       - name: Report Apple toolchain
         run: |
           xcodebuild -version

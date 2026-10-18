@@ -30,6 +30,15 @@ final class WebStudioServerTests: XCTestCase {
         XCTAssertEqual(request.query["path"], "main.jsx")
     }
 
+    func testDecodesFormEncodedQuerySpaces() throws {
+        // Browsers' URLSearchParams encode spaces as "+"; package names such as
+        // "My Widget" must still resolve, and an encoded "+" must stay literal.
+        let data = Data("GET /api/v1/document?package=My+Widget&path=lib%2Fa+b%2B.js HTTP/1.1\r\nHost: x\r\n\r\n".utf8)
+        let request = try XCTUnwrap(HTTPRequest.parse(data))
+        XCTAssertEqual(request.query["package"], "My Widget")
+        XCTAssertEqual(request.query["path"], "lib/a b+.js")
+    }
+
     func testHTTPServerServesStudioAndAuthenticatedSession() async throws {
         let server = WebStudioServer(sessionLease: 5)
         await MainActor.run { server.start() }

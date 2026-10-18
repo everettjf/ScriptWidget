@@ -1,0 +1,32 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "preview-engine",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "4178",
+        "--directory",
+        "Web/preview-engine"
+      ],
+      "port": 4178
+    },
+    {
+      "name": "studio",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "Web/studio",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "4179",
+        "--strictPort"
+      ],
+      "port": 4179
+    }
+  ]
+}

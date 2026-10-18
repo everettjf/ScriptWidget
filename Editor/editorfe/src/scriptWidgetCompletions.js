@@ -78,6 +78,22 @@ export function scriptWidgetCompletions(context) {
     };
   }
 
+  const xmlMethod = context.matchBefore(/\$xml\.[A-Za-z]*$/);
+  if (xmlMethod) {
+    return {
+      from: xmlMethod.from + "$xml.".length,
+      options: Object.entries(scriptWidgetAPI.functions)
+        .filter(([name]) => name.startsWith("$xml."))
+        .map(([name, definition]) => ({
+          label: name.slice("$xml.".length),
+          type: "function",
+          detail: definition.returns,
+          info: definition.documentation,
+        })),
+      validFor: /^[A-Za-z]*$/,
+    };
+  }
+
   if (!context.explicit) return null;
   return {
     from: context.pos,

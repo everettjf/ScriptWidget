@@ -55,8 +55,10 @@ class ScriptWidgetHomeViewDataObject : ObservableObject {
 }
 
 struct ScriptWidgetHomeView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var isShowingSettings: Bool = false
     @State private var isShowingCreateGuide: Bool = false
+    @State private var createTemplatePath: [String] = []
     @State private var isShowingWidgetGuide = false
     @State private var isShowingWebStudio = false
     @State private var searchText = ""
@@ -95,7 +97,7 @@ struct ScriptWidgetHomeView: View {
                 .navigationTitle("Widgets")
                 .searchable(text: $searchText, prompt: "Search widgets")
                 .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
+                    ToolbarItem(placement: horizontalSizeClass == .regular ? .secondaryAction : .navigationBarLeading) {
                         Button(action: {
                             isShowingSettings = true
                         }) {
@@ -109,13 +111,14 @@ struct ScriptWidgetHomeView: View {
 
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button(action: {
+                            createTemplatePath.removeAll()
                             isShowingCreateGuide = true
                         }) {
                             Label("Create", systemImage: "plus")
                                 .labelStyle(.iconOnly)
                         }
-                        .sheet(isPresented: $isShowingCreateGuide) {
-                            CreateGuideView()
+                        .fullScreenCover(isPresented: $isShowingCreateGuide) {
+                            CreateGuideView(templatePath: $createTemplatePath)
                         }
                     }
 
@@ -147,6 +150,15 @@ struct ScriptWidgetHomeView: View {
                 .sheet(isPresented: $isShowingWidgetGuide) {
                     WidgetSetupGuideView()
                 }
+#if DEBUG
+                .onAppear {
+                    // QA: the native preview snapshot is captured only while the
+                    // Web Studio screen is visible.
+                    if ProcessInfo.processInfo.arguments.contains("-WebStudioAutoStart") {
+                        isShowingWebStudio = true
+                    }
+                }
+#endif
                 .fullScreenCover(isPresented: $isShowingWebStudio, onDismiss: {
                     WebStudioServer.shared.stop()
                 }) {

@@ -40,3 +40,9 @@ test("enum values are completed from the API schema", () => {
   const result = scriptWidgetCompletions(context('<Progress style="cir'));
   assert.ok(result.options.some((option) => option.label === "circular"));
 });
+
+test("XML parser is completed in JavaScript", () => {
+  const result = scriptWidgetCompletions(context("const feed = $xml.pa"));
+  assert.equal(result.from, "const feed = $xml.".length);
+  assert.ok(result.options.some((option) => option.label === "parse"));
+});

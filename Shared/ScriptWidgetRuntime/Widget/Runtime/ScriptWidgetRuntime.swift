@@ -113,7 +113,7 @@ enum ScriptWidgetError: Error {
 }
 
 enum ScriptWidgetRuntimeContract {
-    static let apiVersion = "1.0"
+    static let apiVersion = "1.1"
     static let maximumSourceBytes = 512 * 1_024
     static let maximumTranspiledBytes = 2 * 1_024 * 1_024
     static let executionTimeout: DispatchTimeInterval = .seconds(5)
@@ -124,7 +124,7 @@ enum ScriptWidgetRuntimeContract {
     static let globalAPIs = [
         "$component", "$console", "$device", "$dynamic_island", "$element",
         "$error", "$fetch", "$file", "$getenv", "$health", "$http", "$import",
-        "$location", "$render", "$runtime", "$storage", "$system", "console", "fetch",
+        "$location", "$render", "$runtime", "$storage", "$system", "$xml", "console", "fetch",
     ]
 
     static func validateSource(_ source: String) -> ScriptWidgetError? {
@@ -183,6 +183,110 @@ enum ScriptWidgetRuntimeContract {
         }
 
         return visit(root, depth: 1)
+    }
+}
+
+/// A bounded XML-to-object bridge for scripts. XML input is untrusted even when
+/// it comes from a declared network host or a package resource.
+private final class ScriptWidgetXMLParser: NSObject, XMLParserDelegate {
+    private static let maximumInputBytes = 256 * 1_024
+    private static let maximumNodes = 2_048
+    private static let maximumDepth = 32
+    private static let maximumTextBytes = 256 * 1_024
+
+    private final class Node {
+        let name: String
+        let attributes: [String: String]
+        var text = ""
+        var children: [Node] = []
+
+        init(name: String, attributes: [String: String]) {
+            self.name = name
+            self.attributes = attributes
+        }
+
+        var object: [String: Any] {
+            ["name": name, "attributes": attributes, "text": text,
+             "children": children.map(\.object)]
+        }
+    }
+
+    private var stack: [Node] = []
+    private var root: Node?
+    private var nodeCount = 0
+    private var textBytes = 0
+    private var failure: String?
+
+    static func parse(_ source: String) -> String {
+        guard source.utf8.count <= maximumInputBytes else {
+            return response(error: "XML exceeds the 256 KiB input limit")
+        }
+        // DTDs and entities are unnecessary for widget data feeds. Reject them
+        // before libxml sees the input, in addition to disabling resolution.
+        guard source.range(of: "<!DOCTYPE", options: .caseInsensitive) == nil,
+              source.range(of: "<!ENTITY", options: .caseInsensitive) == nil else {
+            return response(error: "XML DTDs and entity declarations are not supported")
+        }
+        let delegate = ScriptWidgetXMLParser()
+        let parser = XMLParser(data: Data(source.utf8))
+        parser.delegate = delegate
+        parser.shouldResolveExternalEntities = false
+        parser.externalEntityResolvingPolicy = .never
+        parser.allowedExternalEntityURLs = []
+        guard parser.parse(), delegate.failure == nil, let root = delegate.root else {
+            return response(error: delegate.failure ?? "Invalid XML")
+        }
+        return response(value: root.object)
+    }
+
+    private static func response(value: [String: Any]? = nil, error: String? = nil) -> String {
+        var payload: [String: Any] = ["ok": error == nil]
+        if let value { payload["value"] = value }
+        if let error { payload["error"] = error }
+        guard let data = try? JSONSerialization.data(withJSONObject: payload),
+              let string = String(data: data, encoding: .utf8) else {
+            return "{\"ok\":false,\"error\":\"Invalid XML\"}"
+        }
+        return string
+    }
+
+    func parser(_ parser: XMLParser, didStartElement elementName: String,
+                namespaceURI: String?, qualifiedName qName: String?,
+                attributes attributeDict: [String: String]) {
+        nodeCount += 1
+        guard nodeCount <= Self.maximumNodes, stack.count < Self.maximumDepth else {
+            failure = "XML exceeds the node or depth limit"
+            parser.abortParsing()
+            return
+        }
+        let node = Node(name: elementName, attributes: attributeDict)
+        if let parent = stack.last { parent.children.append(node) }
+        else { root = node }
+        stack.append(node)
+    }
+
+    func parser(_ parser: XMLParser, didEndElement elementName: String,
+                namespaceURI: String?, qualifiedName qName: String?) {
+        if !stack.isEmpty { stack.removeLast() }
+    }
+
+    func parser(_ parser: XMLParser, foundCharacters string: String) {
+        textBytes += string.utf8.count
+        guard textBytes <= Self.maximumTextBytes else {
+            failure = "XML exceeds the text limit"
+            parser.abortParsing()
+            return
+        }
+        stack.last?.text += string
+    }
+
+    func parser(_ parser: XMLParser, foundCDATA CDATABlock: Data) {
+        guard let text = String(data: CDATABlock, encoding: .utf8) else {
+            failure = "Invalid XML"
+            parser.abortParsing()
+            return
+        }
+        self.parser(parser, foundCharacters: text)
     }
 }
 
@@ -391,6 +495,11 @@ class ScriptWidgetRuntime {
             runtimeContext["$storage"] = ScriptWidgetRuntimeStorage.self
             runtimeContext["$runtime"] = ScriptWidgetRuntimeContract.javascriptDescriptor
             runtimeContext["$dataSource"] = ScriptWidgetRuntimeDataSource.self
+
+            let parseXML: @convention(block) (String) -> String = { source in
+                ScriptWidgetXMLParser.parse(source)
+            }
+            runtimeContext["$xml_parse"] = unsafeBitCast(parseXML, to: JSValue.self)
 
             let environment = environments
             let getenv: @convention(block) (String) -> String = { key in environment[key] ?? "" }

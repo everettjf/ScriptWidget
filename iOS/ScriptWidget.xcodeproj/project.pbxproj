@@ -66,6 +66,7 @@
 		BFD2727EF994405AAC85396D /* ReloadWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750919EB639B4EB3B07D27FC /* ReloadWidgetAppIntent.swift */; };
 		C803FC625CDC9D9CC69F403D /* ScriptWidgetRuntimeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CAE338C670B4A70B52A6CFD /* ScriptWidgetRuntimeStorage.swift */; };
 		CE64AF58A011259D931CFF8F /* RuntimeExecutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9ABF8F095487FE21DB73700 /* RuntimeExecutionTests.swift */; };
+		264B37FB1BB1BFADE1A20B70 /* BrowserPreviewParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4504B2C47E011F6AE74734CD /* BrowserPreviewParityTests.swift */; };
 		D132336528E08C15002C26A2 /* ScriptLiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D132336428E08C15002C26A2 /* ScriptLiveActivityManager.swift */; };
 		D132336728E09630002C26A2 /* ScriptDynamicIslandCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D132336628E09630002C26A2 /* ScriptDynamicIslandCreator.swift */; };
 		D13832AE25A1EB6B00DC9C20 /* CreateGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13832AD25A1EB6B00DC9C20 /* CreateGuideView.swift */; };
@@ -527,6 +528,7 @@
 		D1F9883128CCE7BF00C56B06 /* ScriptCodePreviewConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptCodePreviewConsoleView.swift; sourceTree = "<group>"; };
 		DC40ED375515427089251479 /* ScriptWidgetRuntimeLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeLocation.swift; sourceTree = "<group>"; };
 		E9ABF8F095487FE21DB73700 /* RuntimeExecutionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RuntimeExecutionTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/RuntimeExecutionTests.swift; sourceTree = "<group>"; };
+		4504B2C47E011F6AE74734CD /* BrowserPreviewParityTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BrowserPreviewParityTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/BrowserPreviewParityTests.swift; sourceTree = "<group>"; };
 		EEC225821E756693BA1FE765 /* ScriptWidgetRuntimeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ScriptWidgetRuntimeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F05227B42AD1B0A10014BE09 /* ButtonActionAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonActionAppIntent.swift; sourceTree = "<group>"; };
 		F05227B72AD1B50F0014BE09 /* ScriptWidgetElementTagButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagButton.swift; sourceTree = "<group>"; };
@@ -792,6 +794,7 @@
 				3652233A3AB5536745D0BC47 /* RuntimeUnitTests.swift */,
 				6A6FE5687E8CD01E2ED9C23C /* AIGenerationTests.swift */,
 				E9ABF8F095487FE21DB73700 /* RuntimeExecutionTests.swift */,
+				4504B2C47E011F6AE74734CD /* BrowserPreviewParityTests.swift */,
 				99DD0AE0F4C799D5DFEE8E76 /* PackageCacheTests.swift */,
 			);
 			name = Tests;
@@ -1851,6 +1854,7 @@
 				B165542F120D2E511D4012B9 /* AIGenerationTests.swift in Sources */,
 				84C1353FBC065F971E23478C /* PackageCacheTests.swift in Sources */,
 				CE64AF58A011259D931CFF8F /* RuntimeExecutionTests.swift in Sources */,
+				264B37FB1BB1BFADE1A20B70 /* BrowserPreviewParityTests.swift in Sources */,
 				74884F234581499E712CA059 /* RuntimeUnitTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

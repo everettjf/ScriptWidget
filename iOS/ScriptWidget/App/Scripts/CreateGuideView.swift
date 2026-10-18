@@ -40,6 +40,7 @@ class CreateGuideDataObject: ObservableObject {
 
 struct CreateGuideView: View {
     @StateObject private var dataObject = CreateGuideDataObject()
+    @Binding var templatePath: [String]
 
     @Environment(\.dismiss) private var dismiss
 
@@ -50,7 +51,7 @@ struct CreateGuideView: View {
     @State private var searchText: String = ""
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $templatePath) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     quickStartRows
@@ -78,7 +79,7 @@ struct CreateGuideView: View {
 
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 12)], spacing: 12) {
                             ForEach(filteredModels) { item in
-                                NavigationLink(destination: editorDestination(for: item)) {
+                                NavigationLink(value: item.name) {
                                     TemplateCardView(model: item)
                                 }
                                 .buttonStyle(.plain)
@@ -104,6 +105,13 @@ struct CreateGuideView: View {
             }
             .navigationDestination(isPresented: $showingAIGenerate) {
                 AIGenerateView()
+            }
+            .navigationDestination(for: String.self) { name in
+                if let item = dataObject.models.first(where: { $0.name == name }) {
+                    editorDestination(for: item)
+                } else {
+                    Text("Template unavailable")
+                }
             }
             .sheet(isPresented: $showingGallery) {
                 ScriptWidgetGalleryView()
@@ -405,5 +413,5 @@ struct DifficultyBadge: View {
 }
 
 #Preview("New Widget") {
-    CreateGuideView()
+    CreateGuideView(templatePath: .constant([]))
 }

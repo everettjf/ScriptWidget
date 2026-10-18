@@ -7,6 +7,7 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 - [Your first widget](getting-started.md) — create, preview, debug, and install a widget.
 - [Five-minute tutorial](five-minute-tutorial.md) — the built-in first-launch walkthrough and its complete workflow.
 - [ScriptWidget Studio](studio.md) — Mac editor, multi-size preview, Copilot, and Skills.
+- [Web Studio in the browser](web-studio-browser.md) — design and preview on Windows, macOS, or Linux, then install on iPhone.
 - [Runtime API](runtime-api.md) — supported components, properties, globals, and limits.
 - [AI generation](ai-generate.md) — provider setup, prompting, iteration, privacy, and troubleshooting.
 - [AI quality testing](ai-quality-testing.md) — bounded live generation, native snapshots, offline replay, and visual review.
@@ -21,6 +22,9 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 
 - [Runtime API contract](scriptwidget-runtime-api.md) — versioning and compatibility policy.
 - [Studio architecture](scriptwidget-studio-plan.md) — editor and bridge design.
+- [Browser widget preview research](browser-widget-preview-research.md) — browser-first fast preview proposal, fidelity model, and staged validation plan.
+- [Browser preview engine](browser-preview-engine.md) — engine, renderer, measured JavaScriptCore and SwiftUI parity, sandbox isolation, and known differences.
+- [Browser preview coverage](browser-preview-coverage.md) — generated per-tag and per-property support matrix.
 - [Release readiness](release-readiness.md) — platform and quality checklist.
 - [Contributing](../CONTRIBUTING.md) — repository workflow and contribution guide.
 - [Roadmap](../ROADMAP.md), [governance](../GOVERNANCE.md), and [changelog](../CHANGELOG.md) — direction, decisions, and shipped work.

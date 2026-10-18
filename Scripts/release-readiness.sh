@@ -8,6 +8,13 @@ cd "$ROOT"
 node Scripts/validate-release.mjs
 node Scripts/validate-doc-links.mjs
 (cd Editor/editorfe && npm test && npm run release)
+(cd Web/preview-engine && npm test)
+(cd Web/studio && npm test && npm run build)
+if node -e 'import("./Web/preview-engine/scripts/lib/chrome.mjs").then((m) => process.exit(m.findChrome() ? 0 : 1))'; then
+  node Web/studio/scripts/smoke.mjs
+else
+  echo "Skipping Web Studio browser smoke test: Chrome not found"
+fi
 git diff --exit-code -- \
   iOS/ScriptWidget/View/CodeEditor/MirrorEditor/StudioEditor.bundle \
   macOS/ScriptWidgetMac/StudioEditor.bundle

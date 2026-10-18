@@ -311,7 +311,37 @@ final class RuntimeExecutionTests: XCTestCase {
         let jsx = "$render(<text>{$runtime.apiVersion}</text>);"
         let (element, error) = makeRuntime().executeJSXSyncForWidget(jsx)
         XCTAssertNil(error)
-        XCTAssertTrue(collectText(element!).contains("1.0"))
+        XCTAssertTrue(collectText(element!).contains("1.1"))
+    }
+
+    func testXMLParserReturnsStructuredNodes() {
+        let source = """
+        const root = $xml.parse('<feed lang="en"><title>News &amp; More</title><item id="7"><![CDATA[Hi]]></item></feed>');
+        const title = root.children.find(node => node.name === 'title');
+        const item = root.children.find(node => node.name === 'item');
+        $render(<text>{root.name + ':' + root.attributes.lang + ':' + title.text + ':' + item.attributes.id + ':' + item.text}</text>);
+        """
+        let (element, error) = makeRuntime().executeJSXSyncForWidget(source)
+        XCTAssertNil(error, "\(String(describing: error?.displayMessage))")
+        XCTAssertEqual(element.map(collectText), "feed:en:News & More:7:Hi")
+    }
+
+    func testXMLParserRejectsInvalidAndUnsafeInput() {
+        let source = """
+        const cases = [
+          '<feed><title></feed>',
+          '<!DOCTYPE feed [<!ENTITY secret SYSTEM "file:///etc/passwd">]><feed>&secret;</feed>',
+          '<feed>' + '<item/>'.repeat(2049) + '</feed>',
+          '<feed>' + 'x'.repeat(262145) + '</feed>'
+        ];
+        const rejected = cases.every(input => {
+          try { $xml.parse(input); return false; } catch (error) { return true; }
+        });
+        $render(<text>{String(rejected)}</text>);
+        """
+        let (element, error) = makeRuntime().executeJSXSyncForWidget(source)
+        XCTAssertNil(error, "\(String(describing: error?.displayMessage))")
+        XCTAssertEqual(element.map(collectText), "true")
     }
 
     func testNeverResolvingScriptTimesOut() {

@@ -19,6 +19,7 @@
 //
 
 import XCTest
+import ZipArchive
 import JavaScriptCore
 import ImageIO
 #if canImport(AppIntentsTesting)
@@ -370,10 +371,11 @@ final class ScriptWidgetErrorTests: XCTestCase {
 
 final class RuntimeContractTests: XCTestCase {
     func testPublicAPIVersionAndGlobalsAreFixed() {
-        XCTAssertEqual(ScriptWidgetRuntimeContract.apiVersion, "1.0")
+        XCTAssertEqual(ScriptWidgetRuntimeContract.apiVersion, "1.1")
         XCTAssertEqual(ScriptWidgetRuntimeContract.globalAPIs, ScriptWidgetRuntimeContract.globalAPIs.sorted())
         XCTAssertTrue(ScriptWidgetRuntimeContract.globalAPIs.contains("$render"))
         XCTAssertTrue(ScriptWidgetRuntimeContract.globalAPIs.contains("$runtime"))
+        XCTAssertTrue(ScriptWidgetRuntimeContract.globalAPIs.contains("$xml"))
     }
 
     func testSourceMemoryBudgetRejectsOversizedScripts() {
@@ -1431,6 +1433,25 @@ final class ScriptManagerLifecycleTests: XCTestCase {
         XCTAssertNil(result.packageName)
         XCTAssertTrue(manager.listScripts().isEmpty)
         XCTAssertEqual(manager.scriptCount(), 0)
+    }
+
+    func testMalformedPresentManifestFailsClosedOnImport() throws {
+        // A present but malformed widget.json is authoritative: import must
+        // reject the package instead of replacing it with a legacy manifest.
+        let manager = try makeManager("MalformedManifest")
+        let packageRoot = try makeDirectory("MalformedManifestSource").appendingPathComponent("Tampered")
+        try FileManager.default.createDirectory(at: packageRoot, withIntermediateDirectories: true)
+        try Data("$render(<text>Tampered</text>)".utf8).write(to: packageRoot.appendingPathComponent("main.jsx"))
+        let manifest = #"{"formatVersion":2,"id":"com.example.tampered","name":"Tampered","version":"1.0.0","runtimeVersion":"1.0","entry":"main.jsx","supportedFamilies":["systemSmall"],"permissions":[],"networkDomains":[],"permissionz":["network"]}"#
+        try Data(manifest.utf8).write(to: packageRoot.appendingPathComponent("widget.json"))
+        let archive = try makeDirectory("MalformedManifestArchive").appendingPathComponent("tampered.swt")
+        XCTAssertTrue(SSZipArchive.createZipFile(atPath: archive.path, withContentsOfDirectory: packageRoot.path, keepParentDirectory: true))
+
+        let result = manager.importScriptPackage(fromPath: archive)
+
+        XCTAssertFalse(result.succeeded)
+        XCTAssertEqual(result.message, "widget.json is invalid.")
+        XCTAssertTrue(manager.listScripts().isEmpty)
     }
 
     func testDefaultRepositoryPreservesManagerListingAndOrdering() throws {

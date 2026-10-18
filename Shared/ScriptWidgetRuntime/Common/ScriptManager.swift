@@ -644,7 +644,9 @@ extension ScriptManager {
         }
 
         let temporaryPackage = ScriptWidgetPackage(path: extractedPackage)
-        if temporaryPackage.readManifest() == nil {
+        // Only a package without widget.json is legacy. A present but malformed
+        // manifest is authoritative and fails closed below.
+        if !temporaryPackage.hasManifest {
             let migration = temporaryPackage.writeManifest(.legacy(
                 name: extractedPackage.lastPathComponent,
                 metadata: temporaryPackage.readMetadata()

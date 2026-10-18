@@ -63,7 +63,8 @@ export const scriptWidgetAPI = {
   "functions": {
     "fetch": { "documentation": "Perform a network request." },
     "importJS": { "documentation": "Import a package-relative JavaScript file." },
-    "$dataSource.request": { "documentation": "Call a declared Data Source Plugin operation. Requires Package 2.0 plugins, network permission, and networkDomains declarations.", "arguments": ["pluginID", "operationID", "parameters"], "returns": "Promise<json|string>" }
+    "$dataSource.request": { "documentation": "Call a declared Data Source Plugin operation. Requires Package 2.0 plugins, network permission, and networkDomains declarations.", "arguments": ["pluginID", "operationID", "parameters"], "returns": "Promise<json|string>" },
+    "$xml.parse": { "documentation": "Parse up to 256 KiB of XML into {name, attributes, text, children}. DTDs and external entities are rejected; depth and node limits apply.", "arguments": ["source"], "returns": "XMLNode" }
   },
   "environmentValues": ["widget-size", "widget-param", "widget-rendering-mode", "live-activity-state", "live-activity-surface", "action-id", "action-source", "action-value", "control-id", "control-value"]
 };
