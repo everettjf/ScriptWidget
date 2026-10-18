@@ -1,0 +1,53 @@
+name: Web Browsers
+
+# Runs the Web Studio and the browser preview engine in Chromium, Firefox,
+# and WebKit on Linux and Windows: rendering, template and .swt import flows,
+# byte-identical tree parity with the native runtime, and sandbox isolation.
+on:
+  push:
+    paths:
+      - 'Web/**'
+      - 'Editor/editorfe/src/**'
+      - 'Shared/ScriptWidgetRuntime/Widget/Resource/support.bundle/**'
+      - '.github/workflows/web-browsers.yml'
+  pull_request:
+    paths:
+      - 'Web/**'
+      - 'Editor/editorfe/src/**'
+      - '.github/workflows/web-browsers.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: web-browsers-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browsers:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: Web/studio/package-lock.json
+      - run: npm ci
+        working-directory: Web/studio
+      - name: Install Playwright browsers
+        working-directory: Web/studio
+        run: npx playwright install --with-deps chromium firefox webkit
+      - name: Build engine check page and Studio
+        run: |
+          node Web/preview-engine/scripts/build-browser.mjs
+          npm run build --prefix Web/studio
+      - name: Engine unit and parity tests
+        working-directory: Web/preview-engine
+        run: npm test
+      - name: Cross-browser checks
+        working-directory: Web/studio
+        run: node scripts/cross-browser.mjs chromium firefox webkit
