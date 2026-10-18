@@ -1,35 +1,61 @@
 // Cross-browser check for the built Studio and the engine's isolation page.
 // Runs in CI on Linux and Windows with Playwright's Chromium, Firefox, and
 // WebKit. Usage (after `npm run build` here and `npm run build` in
-// Web/preview-engine): node scripts/cross-browser.mjs [chromium|firefox|webkit ...]
+// Web/preview-engine): node scripts/cross-browser.ts [chromium|firefox|webkit ...]
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { chromium, firefox, webkit } from "playwright";
+import { chromium, firefox, webkit, type Browser, type BrowserType } from "playwright";
 import { serveDirectory } from "../../preview-engine/scripts/lib/chrome.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const dist = path.resolve(here, "../dist");
 const engine = path.resolve(here, "../../preview-engine");
 const fixture = fs.readFileSync(path.join(engine, "test/fixtures/web-export.swt"));
-const browsers = { chromium, firefox, webkit };
+const browsers: Record<string, BrowserType> = { chromium, firefox, webkit };
+
+interface EngineReport {
+  parity: { matches: number; total: number };
+  isolation: Array<{ name: string; text: string }>;
+  timing: { warmEditMedianMilliseconds: number };
+}
+
+interface Result {
+  browser: string;
+  platform: string;
+  studioStatus?: string | null;
+  templates?: number;
+  import?: string;
+  parity?: string;
+  probes?: Record<string, string>;
+  warmEditMs?: number;
+  checks?: Record<string, boolean>;
+  pageErrors?: string[];
+  error?: string;
+}
+
+declare global {
+  interface Window { __report?: EngineReport }
+}
 // Native trees were recorded in this zone; date templates depend on it.
 const { timeZone } = JSON.parse(fs.readFileSync(path.join(engine, "test/parity/native-trees.json"), "utf8"));
 const requested = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(browsers);
 
 const studio = await serveDirectory(dist, { "/__fixture.swt": { type: "application/zip", body: fixture } });
 const engineServer = await serveDirectory(engine);
-const results = [];
+const results: Result[] = [];
 let failed = false;
 
 for (const name of requested) {
-  const result = { browser: name, platform: process.platform };
-  let browser;
+  const result: Result = { browser: name, platform: process.platform };
+  let browser: Browser | undefined;
   try {
-    browser = await browsers[name].launch();
+    const type = browsers[name];
+    if (!type) throw new Error(`Unknown browser ${name}`);
+    browser = await type.launch();
     const context = await browser.newContext({ viewport: { width: 1400, height: 900 }, timezoneId: timeZone, locale: "en-US" });
     const page = await context.newPage();
-    const errors = [];
+    const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
 
     // Studio: starter preview, templates, and .swt import.
@@ -41,17 +67,18 @@ for (const name of requested) {
     result.templates = await page.locator(".template-card").count();
     await page.keyboard.press("Escape");
     await page.setInputFiles("#import-input", { name: "Web Export Fixture.swt", mimeType: "application/zip", buffer: fixture });
-    await page.waitForFunction(() => document.querySelector(".sw-widget")?.textContent.includes("From the web"), null, { timeout: 60000 });
+    await page.waitForFunction(() => document.querySelector(".sw-widget")?.textContent?.includes("From the web"), null, { timeout: 60000 });
     result.import = "ok";
 
     // Engine: byte-identical trees against the native reference, isolation probes.
     await page.goto(`${engineServer.origin}/demo/index.html`);
     await page.waitForFunction(() => window.__report !== undefined, null, { timeout: 180000 });
-    const report = await page.evaluate(() => window.__report);
+    const report = await page.evaluate(() => window.__report as EngineReport);
     result.parity = `${report.parity.matches}/${report.parity.total}`;
     result.probes = Object.fromEntries(report.isolation.map((probe) => [probe.name, probe.text.replace(/^\{.*"children":\["(.*)"\]\}$/, "$1")]));
     result.warmEditMs = report.timing.warmEditMedianMilliseconds;
-    const blocked = (key, pattern) => pattern.test(result.probes[key] ?? "");
+    const probes = result.probes;
+    const blocked = (key: string, pattern: RegExp) => pattern.test(probes[key] ?? "");
     const checks = {
       parity: report.parity.matches === report.parity.total,
       globals: blocked("scrubbed globals", /^undefined(,undefined)+$/),
@@ -64,7 +91,7 @@ for (const name of requested) {
     result.pageErrors = errors;
     if (!Object.values(checks).every(Boolean) || errors.length) failed = true;
   } catch (error) {
-    result.error = error.message.split("\n")[0];
+    result.error = (error as Error).message.split("\n")[0];
     failed = true;
   } finally {
     await browser?.close();

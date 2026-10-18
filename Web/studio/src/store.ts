@@ -1,9 +1,11 @@
 // Browser-local project drafts in IndexedDB. Each project stores package
 // files (strings or Uint8Arrays) plus preview-only fixtures.
+import type { Project } from "./project.ts";
+
 const databaseName = "scriptwidget-studio";
 const storeName = "projects";
 
-function open() {
+function open(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(databaseName, 1);
     request.onupgradeneeded = () => request.result.createObjectStore(storeName, { keyPath: "id" });
@@ -12,10 +14,10 @@ function open() {
   });
 }
 
-async function run(mode, action) {
+async function run<T>(mode: IDBTransactionMode, action: (store: IDBObjectStore) => IDBRequest<T> | undefined): Promise<T | undefined> {
   const database = await open();
   try {
-    return await new Promise((resolve, reject) => {
+    return await new Promise<T | undefined>((resolve, reject) => {
       const transaction = database.transaction(storeName, mode);
       const request = action(transaction.objectStore(storeName));
       transaction.oncomplete = () => resolve(request?.result);
@@ -29,16 +31,16 @@ async function run(mode, action) {
 
 /// Falls back to memory when IndexedDB is unavailable (private browsing,
 /// blocked storage); the UI warns that drafts will not persist.
-const memory = new Map();
+const memory = new Map<string, Project>();
 let persistent = typeof indexedDB !== "undefined";
 
 export const storage = {
-  get persistent() { return persistent; },
-  async list() {
+  get persistent(): boolean { return persistent; },
+  async list(): Promise<Project[]> {
     if (!persistent) return [...memory.values()];
-    try { return await run("readonly", (store) => store.getAll()); } catch { persistent = false; return [...memory.values()]; }
+    try { return (await run<Project[]>("readonly", (store) => store.getAll())) ?? []; } catch { persistent = false; return [...memory.values()]; }
   },
-  async save(project) {
+  async save(project: Project): Promise<Project> {
     const value = { ...project, updatedAt: Date.now() };
     memory.set(value.id, value);
     if (persistent) {
@@ -46,7 +48,7 @@ export const storage = {
     }
     return value;
   },
-  async remove(id) {
+  async remove(id: string): Promise<void> {
     memory.delete(id);
     if (persistent) {
       try { await run("readwrite", (store) => store.delete(id)); } catch { persistent = false; }
@@ -55,10 +57,10 @@ export const storage = {
 };
 
 export const preferences = {
-  read(key, fallback) {
-    try { const value = localStorage.getItem(`scriptwidget-studio.${key}`); return value === null ? fallback : JSON.parse(value); } catch { return fallback; }
+  read<T>(key: string, fallback: T): T {
+    try { const value = localStorage.getItem(`scriptwidget-studio.${key}`); return value === null ? fallback : (JSON.parse(value) as T); } catch { return fallback; }
   },
-  write(key, value) {
+  write(key: string, value: unknown): void {
     try { localStorage.setItem(`scriptwidget-studio.${key}`, JSON.stringify(value)); } catch { /* storage unavailable */ }
   },
 };

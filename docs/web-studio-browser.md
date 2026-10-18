@@ -87,6 +87,25 @@ Every change to the web code is checked in Chromium, Firefox, and WebKit on
 Linux and Windows (the Web Browsers workflow), and the engine is also checked
 in Safari on iOS. Use a current version of Chrome, Edge, Firefox, or Safari.
 
+## Development
+
+Web Studio is a React 19 app in strict TypeScript, built with Vite 7,
+Tailwind CSS 4, and shadcn/ui components on Radix primitives. CodeMirror 6
+is the editor; the widget preview comes from `Web/preview-engine`.
+
+```bash
+cd Web/studio && npm install
+```
+
+```bash
+npm run dev
+```
+
+`npm test` runs the project helper tests, `npm run build` typechecks and
+builds `dist/`, and `node scripts/smoke.ts` checks the built site in headless
+Chrome. Add shadcn components with `npx shadcn@latest add <name>`; they are
+copied into `src/components/ui` and import `cn` from `@/lib/utils`.
+
 ## Privacy and security
 
 - Your code runs in a sandboxed frame with an opaque origin and no network

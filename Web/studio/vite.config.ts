@@ -1,27 +1,31 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
+import { defineConfig, type Plugin } from "vite";
+import type { Template } from "./src/project.ts";
+// @ts-expect-error The engine build script is untyped JavaScript.
 import { buildSandboxSources, sandboxPolicy } from "../preview-engine/scripts/build-browser.mjs";
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const repository = path.resolve(root, "../..");
 const supportBundle = path.join(repository, "Shared/ScriptWidgetRuntime/Widget/Resource/support.bundle");
-const templateRoots = [
+const templateRoots: Array<[string, string]> = [
   ["template", path.join(repository, "Shared/ScriptWidgetRuntime/Resource/Script.bundle/template")],
   ["gallery", path.join(repository, "Gallery/widgets")],
 ];
-const binaryTypes = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif" };
+const binaryTypes: Record<string, string> = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif" };
 
 /// Template catalog: every bundled template and Gallery widget as files.
-function templateCatalog() {
-  const templates = [];
+function templateCatalog(): string {
+  const templates: Template[] = [];
   for (const [source, directory] of templateRoots) {
     for (const name of fs.readdirSync(directory).filter((item) => !item.startsWith(".")).sort()) {
       const folder = path.join(directory, name);
       if (!fs.existsSync(path.join(folder, "main.jsx"))) continue;
-      const files = {};
-      const visit = (relative) => {
+      const files: Template["files"] = {};
+      const visit = (relative: string) => {
         for (const entry of fs.readdirSync(path.join(folder, relative), { withFileTypes: true })) {
           if (entry.name.startsWith(".") || entry.name === "__Build") continue;
           const child = relative ? `${relative}/${entry.name}` : entry.name;
@@ -33,34 +37,35 @@ function templateCatalog() {
         }
       };
       visit("");
-      let meta = {};
-      try { meta = JSON.parse(files["meta.json"] ?? files["widget.json"] ?? "{}"); } catch { meta = {}; }
+      let meta: { name?: string; description?: string; category?: string } = {};
+      const metaText = files["meta.json"] ?? files["widget.json"];
+      try { meta = typeof metaText === "string" ? JSON.parse(metaText) : {}; } catch { meta = {}; }
       templates.push({ id: `${source}/${name}`, source, name: meta.name ?? name, description: meta.description ?? "", category: meta.category ?? (source === "gallery" ? "gallery" : "starter"), files });
     }
   }
   return JSON.stringify({ templates });
 }
 
-function sandboxHTML() {
-  return buildSandboxSources().sandboxDocument;
+function sandboxHTML(): string {
+  return buildSandboxSources().sandboxDocument as string;
 }
 
 /// Serves and emits the runtime sandbox, support scripts, and templates.
-function scriptWidgetRuntime() {
-  const generated = () => ({
+function scriptWidgetRuntime(): Plugin {
+  const generated = (): Record<string, { type: string; body: string }> => ({
     "sandbox.html": { type: "text/html", body: sandboxHTML() },
     "templates.json": { type: "application/json", body: templateCatalog() },
     ...Object.fromEntries(["core.js", "util.js", "moment.min.js"].map((name) => [`runtime/${name}`, { type: "text/javascript", body: fs.readFileSync(path.join(supportBundle, name), "utf8") }])),
     // Third-party assets bundled into the site: Inter (OFL 1.1) and the
     // generated Lucide icon subset (ISC).
     "licenses/inter-OFL.txt": { type: "text/plain", body: fs.readFileSync(path.join(root, "node_modules/@fontsource-variable/inter/LICENSE"), "utf8") },
-    "licenses/lucide-ISC.txt": { type: "text/plain", body: /\/\*\r?\n([\s\S]*?)\r?\n\*\//.exec(fs.readFileSync(path.join(root, "../preview-engine/src/render/icons.generated.js"), "utf8"))[1] },
+    "licenses/lucide-ISC.txt": { type: "text/plain", body: /\/\*\r?\n([\s\S]*?)\r?\n\*\//.exec(fs.readFileSync(path.join(root, "../preview-engine/src/render/icons.generated.js"), "utf8"))?.[1] ?? "" },
   });
   return {
     name: "scriptwidget-runtime",
     configureServer(server) {
       server.middlewares.use((request, response, next) => {
-        const url = new URL(request.url, "http://localhost");
+        const url = new URL(request.url ?? "/", "http://localhost");
         const file = generated()[url.pathname.replace(/^\//, "")];
         if (!file) { next(); return; }
         response.setHeader("Content-Type", file.type);
@@ -77,10 +82,25 @@ export { sandboxPolicy };
 
 export default defineConfig({
   base: "./",
-  plugins: [scriptWidgetRuntime()],
+  plugins: [react(), tailwindcss(), scriptWidgetRuntime()],
   server: { fs: { allow: [repository] } },
-  build: { target: "es2022", outDir: "dist", emptyOutDir: true },
+  build: {
+    target: "es2022", outDir: "dist", emptyOutDir: true,
+    // CodeMirror with the JavaScript grammar is one ~500 kB chunk.
+    chunkSizeWarningLimit: 600,
+    // Libraries change less often than the app: separate chunks cache longer.
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (/node_modules\/(react|react-dom|scheduler|radix-ui|@radix-ui|sonner|@floating-ui)\//.test(id)) return "ui";
+          if (/node_modules\/(@codemirror|@lezer|crelt|style-mod|w3c-keyname)\//.test(id)) return "editor";
+          return undefined;
+        },
+      },
+    },
+  },
   resolve: {
+    alias: { "@": path.join(root, "src") },
     dedupe: ["@codemirror/language", "@codemirror/state", "@codemirror/view", "@lezer/common", "@lezer/highlight"],
   },
   optimizeDeps: {

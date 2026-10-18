@@ -246,12 +246,23 @@ See the user guide, [Web Studio in the browser](web-studio-browser.md).
 
 | File | Role |
 | --- | --- |
-| `Web/studio/src/main.js` | Projects, files, preview controls, Problems/Console/Package/Fixtures panels, templates, import, export, install. |
-| `Web/studio/src/editor.js` | CodeMirror 6 with the Studio completions, diagnostics, and hover from `Editor/editorfe`. |
-| `Web/studio/src/store.js` | IndexedDB drafts with an in-memory fallback and a visible warning when storage is unavailable. |
-| `Web/studio/vite.config.js` | Generates `sandbox.html`, copies the runtime scripts, and builds `templates.json` from the 70 bundled templates and the Gallery. |
+| `Web/studio/src/App.tsx` | React app: projects, files, preview controls, templates, import, export, install. Built with shadcn/ui components (Radix primitives, Tailwind CSS 4) in `src/components/ui`. |
+| `Web/studio/src/components/*.tsx` | Top bar, sidebar, editor pane, preview pane (Problems/Console/Package/Fixtures tabs), and dialogs. |
+| `Web/studio/src/hooks/*.ts` | `useProjects` (drafts and debounced saves), `usePreview` (sandbox runs and rendering, stale results dropped), `useConfirm`, `useColorScheme`. |
+| `Web/studio/src/editor.ts` | CodeMirror 6 with the Studio completions, diagnostics, and hover from `Editor/editorfe`. |
+| `Web/studio/src/store.ts` | IndexedDB drafts with an in-memory fallback and a visible warning when storage is unavailable. |
+| `Web/studio/vite.config.ts` | Generates `sandbox.html`, copies the runtime scripts, and builds `templates.json` from the 70 bundled templates and the Gallery. |
 | `src/package/manifest.js` | Ports of `ScriptWidgetPackage.readManifest` (strict keys, Codable types) and `WidgetPackageManifestValidator`. |
 | `src/package/archive.js` | Port of `ScriptPackageArchivePreflight`, extraction with the native root detection, and stored-ZIP export under the package directory. |
+
+The Studio is written in strict TypeScript; `npm run build` typechecks before
+bundling. The engine stays plain JavaScript because it runs directly in Node
+and is concatenated into the sandbox; `.d.ts` files beside its public modules
+(`src/types.d.ts`, `browser/client.d.ts`, `render/*.d.ts`, `package/*.d.ts`)
+type it for the Studio. `scripts/smoke.ts` (headless Chrome: starter,
+templates, `.swt` import, live editing, phone layout) and
+`scripts/cross-browser.ts` (Playwright Chromium, Firefox, WebKit) run on Node
+24 without a build step.
 
 A present but malformed `widget.json` fails closed in the browser. Package
 export is checked natively: `BrowserPreviewParityTests.testWebExportedPackageImportsNatively`

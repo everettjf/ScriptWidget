@@ -12,6 +12,7 @@ ScriptWidget lets users author native WidgetKit experiences with JavaScript and 
 - `iOS/ScriptWidget`, `ScriptWidgetWidget`, `ScriptWidgetShare`: iPhone/iPad app, WidgetKit/Live Activity/Control Widget extension, and share extension.
 - `macOS/ScriptWidgetMac`, `ScriptWidgetMacWidget`: Studio app and macOS widget extension. Studio features live in `Editor/`, `AIGenerate/`, `Skills/`, `Plugin/`, and `Onboarding/`.
 - `Editor/editorfe/`: Vite frontend with CodeMirror 6. Built files are copied into both platform `StudioEditor.bundle` directories.
+- `Web/preview-engine/`: browser preview engine (plain JavaScript with `.d.ts` types); `Web/studio/`: Web Studio, a React + strict TypeScript + shadcn/ui app published to GitHub Pages.
 - `Tests/ScriptWidgetRuntimeTests/`: shared runtime, execution, performance, package/cache, iCloud-state, Gallery, AI, and security tests.
 - `Gallery/`: curated Gallery 1.0 index, JSON Schema, widget seeds, and Skill seeds.
 - `docs/`: authoritative user and contributor documentation. The native JSX switch is the runtime authority; Studio completion metadata lives in `Editor/editorfe/src/scriptWidgetAPI.js`. Package contracts live in `Shared/ScriptWidgetRuntime/Resource/*.schema.json`.
