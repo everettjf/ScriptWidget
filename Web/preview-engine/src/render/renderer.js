@@ -423,7 +423,15 @@ export async function renderWidget(treeJSON, {
     if (clipShape !== null) decoration.clip = clipShape;
     const opacity = reader.double("opacity");
     if (opacity !== null) decoration.opacity = Math.max(0, Math.min(1, opacity));
-    if (reader.string("animation") !== null) report("info", "prop.approximated", `<${element.tag} animation> renders the first frame only`);
+    const animation = parseAnimation(reader.string("animation"));
+    if (animation?.type === "error") return text("animation json error", defaultFont, null);
+    if (animation) {
+      // The animation modifier sits between opacity and rotation, so it
+      // gets its own layer: CSS animations own the transform property.
+      if (Object.keys(decoration).length) node = new DecorationNode(node, { ...decoration, keepsEdges: !padding && frame.mode === "none" });
+      node = new DecorationNode(node, { animation, keepsEdges: true });
+      for (const key of Object.keys(decoration)) delete decoration[key];
+    }
     const transforms = [];
     const rotation = reader.double("rotation");
     if (rotation !== null) transforms.push(`rotate(${rotation}deg)`);
@@ -455,6 +463,37 @@ export async function renderWidget(treeJSON, {
       node = new DecorationNode(node, decoration);
     }
     return node;
+  }
+
+  // MARK: Animations (ScriptWidgetAttributeAnimationModifier)
+
+  function parseAnimation(value) {
+    if (value === null) return null;
+    if (value.startsWith("animation:")) {
+      let json;
+      try { json = JSON.parse(value.slice("animation:".length)); } catch { return { type: "error" }; }
+      const type = typeof json?.type === "string" ? json.type : "";
+      if (type === "clock") {
+        return { type, timezone: typeof json.timezone === "string" ? json.timezone : "current", anchor: typeof json.anchor === "string" ? json.anchor : "center", interval: typeof json.interval === "number" ? Math.max(1, json.interval) : 10 };
+      }
+      if (type === "swing") return { type, duration: typeof json.duration === "number" ? json.duration : 1, direction: json.direction === "horizontal" ? "horizontal" : json.direction === undefined ? "horizontal" : "vertical", distance: typeof json.distance === "number" ? json.distance : 10 };
+      return clockPeriods[type] ? { type, timezone: "current", anchor: "center" } : null;
+    }
+    const parts = value.split(",").filter((part) => part !== "");
+    if (parts.length === 1) return clockPeriods[value] || value === "swing" ? (value === "swing" ? { type: "swing", duration: 1, direction: "horizontal", distance: 10 } : { type: value, timezone: "current", anchor: "center" }) : null;
+    if (parts.length === 2 && parts[0].trim() === "clockCustom" && swiftDouble(parts[1].trim()) !== null) return { type: "clock", timezone: "current", anchor: "center", interval: Math.max(1, swiftDouble(parts[1].trim())) };
+    return null;
+  }
+
+  const clockPeriods = { clockSecond: 60, clockMinute: 3600, clockMiniute: 3600, clockHour: 43200 };
+
+  function secondsSinceMidnight(timezone) {
+    const options = { hour: "numeric", minute: "numeric", second: "numeric", hourCycle: "h23" };
+    let parts;
+    try { parts = new Intl.DateTimeFormat("en-US", timezone === "current" ? options : { ...options, timeZone: timezone }).formatToParts(new Date()); }
+    catch { parts = new Intl.DateTimeFormat("en-US", options).formatToParts(new Date()); }
+    const get = (type) => Number(parts.find((part) => part.type === type)?.value ?? 0);
+    return get("hour") * 3600 + get("minute") * 60 + get("second") + new Date().getMilliseconds() / 1000;
   }
 
   // MARK: Tags
@@ -928,6 +967,20 @@ export async function renderWidget(treeJSON, {
 
   function applyDecoration(element, decoration, width, height) {
     const style = element.style;
+    if (decoration.animation) {
+      const animation = decoration.animation;
+      if (animation.type === "swing") {
+        const axis = animation.direction === "horizontal" ? "X" : "Y";
+        style.animation = `sw-swing-${axis} ${Math.max(0.1, animation.duration)}s ease-in-out infinite alternate`;
+        style.setProperty("--sw-swing", `${animation.distance}px`);
+      } else {
+        const period = animation.type === "clock" ? animation.interval : clockPeriods[animation.type];
+        const [ax, ay] = alignments[animation.anchor] ? { center: [0.5, 0.5], leading: [0, 0.5], trailing: [1, 0.5], top: [0.5, 0], bottom: [0.5, 1], topLeading: [0, 0], topTrailing: [1, 0], bottomLeading: [0, 1], bottomTrailing: [1, 1] }[animation.anchor] : [0.5, 0.5];
+        style.transformOrigin = `${ax * 100}% ${ay * 100}%`;
+        style.animation = `sw-clock ${period}s linear infinite`;
+        style.animationDelay = `${-(secondsSinceMidnight(animation.timezone) % period)}s`;
+      }
+    }
     if (decoration.background?.color) style.backgroundColor = cssColor(decoration.background.color);
     else if (decoration.background?.gradient) style.backgroundImage = gradientCSS(decoration.background.gradient, width, height);
     if (decoration.cornerRadius !== undefined) { style.borderRadius = `${decoration.cornerRadius}px`; style.overflow = "hidden"; }
@@ -964,6 +1017,9 @@ export async function renderWidget(treeJSON, {
       widget.style.colorScheme = "dark";
       if (renderingMode !== "fullColor") report("info", "mode.approximated", `${renderingMode} rendering mode is approximated`);
     }
+    const keyframes = doc.createElement("style");
+    keyframes.textContent = "@keyframes sw-clock{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}@keyframes sw-swing-X{from{transform:translateX(calc(-1*var(--sw-swing)))}to{transform:translateX(var(--sw-swing))}}@keyframes sw-swing-Y{from{transform:translateY(calc(-1*var(--sw-swing)))}to{transform:translateY(var(--sw-swing))}}";
+    widget.appendChild(keyframes);
     draw(rootNode, widget);
     return { element: widget, size, diagnostics };
   } finally {

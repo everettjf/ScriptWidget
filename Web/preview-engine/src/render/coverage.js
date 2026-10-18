@@ -17,7 +17,7 @@ export const generalProps = Object.freeze({
   corner: s(),
   clip: s(),
   opacity: s(),
-  animation: a("First frame only; widget animations run on iPhone"),
+  animation: a("Clock hands rotate with the current time and swing animates with CSS; WidgetKit timing differs slightly"),
   rotation: s(),
   rotation3d: a("CSS perspective differs from SwiftUI's"),
   shadow: a("Blur radius mapped to CSS drop-shadow; edges may differ slightly"),

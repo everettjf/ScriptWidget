@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "description": "Browser and Node execution of ScriptWidget JSX packages that mirrors the native JavaScriptCore runtime contract.",
+  "bin": {
+    "scriptwidget-preview": "./bin/scriptwidget-preview.mjs",
+    "scriptwidget-mcp": "./bin/scriptwidget-mcp.mjs"
+  },
   "exports": {
     ".": "./src/index.js",
     "./node": "./src/node.js"

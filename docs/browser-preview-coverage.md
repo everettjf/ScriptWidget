@@ -50,7 +50,7 @@ Applied by every tag except `spacer` (frame only) and `Fragment`, in this order:
 | `corner` | supported |  |
 | `clip` | supported |  |
 | `opacity` | supported |  |
-| `animation` | approximated | First frame only; widget animations run on iPhone |
+| `animation` | approximated | Clock hands rotate with the current time and swing animates with CSS; WidgetKit timing differs slightly |
 | `rotation` | supported |  |
 | `rotation3d` | approximated | CSS perspective differs from SwiftUI's |
 | `shadow` | approximated | Blur radius mapped to CSS drop-shadow; edges may differ slightly |
