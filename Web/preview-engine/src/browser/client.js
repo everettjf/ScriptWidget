@@ -3,13 +3,20 @@ import { runtimeContract } from "../contract.js";
 /// Parent-page API for the sandboxed preview runtime. User code runs only in
 /// Workers owned by an `<iframe sandbox="allow-scripts">` (opaque origin,
 /// `connect-src 'none'`), never in the editor page.
-export function createPreviewSandbox({ sandboxDocument, assetBaseURL, container = document.body }) {
+///
+/// Pass `sandboxURL` (a static sandbox.html with its own CSP) on sites with a
+/// strict Content-Security-Policy: a `srcdoc` frame inherits the parent's
+/// policy, a URL-loaded sandboxed frame does not. `sandboxDocument` (srcdoc)
+/// suits pages without a CSP.
+export function createPreviewSandbox({ sandboxDocument, sandboxURL, assetBaseURL, container = document.body }) {
   const iframe = document.createElement("iframe");
   iframe.setAttribute("sandbox", "allow-scripts");
   iframe.setAttribute("aria-hidden", "true");
   iframe.setAttribute("tabindex", "-1");
+  iframe.setAttribute("title", "Widget runtime sandbox");
   iframe.style.cssText = "position:absolute;width:0;height:0;border:0;visibility:hidden";
-  iframe.srcdoc = sandboxDocument;
+  if (sandboxURL) iframe.src = sandboxURL;
+  else iframe.srcdoc = sandboxDocument;
 
   const pending = new Map();
   let sequence = 0;

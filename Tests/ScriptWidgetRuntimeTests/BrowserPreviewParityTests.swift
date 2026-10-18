@@ -12,6 +12,7 @@
 import Foundation
 import JavaScriptCore
 import XCTest
+import ZipArchive
 @testable import ScriptWidget
 
 /// Canonical tree JSON shared with `encodeElement` in Web/preview-engine/src/kernel.js.
@@ -215,6 +216,26 @@ final class BrowserPreviewParityTests: XCTestCase {
         case .scriptException: return "scriptException"
         case .resourceLimit: return "resourceLimit"
         }
+    }
+
+    /// Web/preview-engine writes this .swt with the Studio export code; iPhone
+    /// must accept it with the same preflight, extraction, and validation.
+    func testWebExportedPackageImportsNatively() throws {
+        let archive = Self.repositoryRoot.appendingPathComponent("Web/preview-engine/test/fixtures/web-export.swt")
+        XCTAssertNil(ScriptPackageArchivePreflight.validate(archive))
+        let destination = FileManager.default.temporaryDirectory.appendingPathComponent("web-export-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: destination) }
+        XCTAssertTrue(SSZipArchive.unzipFile(atPath: archive.path, toDestination: destination.path))
+        let root = destination.appendingPathComponent("Web Export Fixture")
+        let package = ScriptWidgetPackage(path: root, readonly: true)
+        let manifest = try XCTUnwrap(package.readManifest())
+        XCTAssertEqual(manifest.id, "web.export.fixture")
+        XCTAssertTrue(WidgetPackageManifestValidator.validate(manifest, package: package).isValid)
+        XCTAssertNotNil(package.getImage("dot"))
+        let runtime = ScriptWidgetRuntime(package: package, environments: ["widget-size": "small", "widget-param": ""])
+        let (element, error) = runtime.executeJSXSyncForWidget(try XCTUnwrap(package.readMainFile().0))
+        XCTAssertNil(error)
+        XCTAssertEqual(element?.tagAsString(), "vstack")
     }
 
     func testFontWeightAndDesignPropertiesAreRead() {
