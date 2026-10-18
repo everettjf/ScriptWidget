@@ -4,6 +4,7 @@
 // maximum, finite = offered space. Stacks distribute space to the least
 // flexible children first, which is what makes text truncate and fixed
 // content overflow the way it does on iPhone.
+import { hyphenationPoints } from "./hyphenate.js";
 
 export const sub = (value, amount) => (value === null || value === Infinity ? value : Math.max(0, value - amount));
 const snap = (value) => Math.ceil(value * 2 - 1e-6) / 2;
@@ -15,6 +16,26 @@ export class Node {
   edge() { return null; }
 }
 
+const cjk = /[\u2e80-\u9fff\uac00-\ud7af\uf900-\ufaff\uff00-\uffef]/u;
+
+/// Break units of a paragraph: words, and each CJK character, which breaks
+/// without a space. A unit keeps the separator that precedes it, and closing
+/// punctuation stays with the unit before it (UAX #14).
+function breakUnits(paragraph) {
+  const units = [];
+  for (const word of paragraph.split(/ +/).filter(Boolean)) {
+    const pieces = cjk.test(word) ? word.split(/(?=[\u2e80-\u9fff\uac00-\ud7af\uf900-\ufaff])/u).filter(Boolean) : [word];
+    pieces.forEach((piece, index) => {
+      const separator = index === 0 ? " " : "";
+      if (units.length && /^[:;,.!?)\]}%，。！？、：；）」』]/.test(piece)) units[units.length - 1].text += separator + piece;
+      else units.push({ text: piece, separator });
+    });
+  }
+  return units;
+}
+
+const joinUnits = (line) => line.map((unit, index) => (index === 0 ? unit.text : unit.separator + unit.text)).join("");
+
 /// Text: one line is the natural height; extra lines advance by `leading`.
 export class TextNode extends Node {
   constructor(text, style, measurer) {
@@ -22,41 +43,42 @@ export class TextNode extends Node {
     this.text = text; this.style = style; this.measurer = measurer;
   }
   /// When every word fits, the standard line break strategy may push a word
-  /// down (see pushOut). Otherwise, like UIKit, a word wider than the line
-  /// is hyphenated: it is split into the longest prefixes that fit with a
-  /// trailing "-". AppKit (style.hyphenate false) breaks such words between
-  /// characters without a hyphen, as the browser does.
+  /// down (see pushOut). A word wider than the line breaks between
+  /// characters, as the browser does, except that iOS text styles (Dynamic
+  /// Type fonts, style.hyphenate) hyphenate it at the longest dictionary
+  /// break that fits ("Depar- / ture gate").
   displayText(width) {
     if (width === null || width === Infinity || width <= 0) return this.text;
     const key = `${width}`;
     this.hyphenated ??= new Map();
     if (this.hyphenated.has(key)) return this.hyphenated.get(key);
-    const pushed = this.text.split("\n").map((paragraph) => this.pushOut(paragraph, width)).join("\n");
-    if (this.style.hyphenate === false || pushed !== this.text) {
+    // No break before closing punctuation (UAX #14), which browsers allow
+    // after a space: a no-break space keeps "Size :" together.
+    const broken = this.text.split("\n").map((paragraph) => this.pushOut(paragraph, width)).join("\n");
+    const pushed = broken.replace(/ (?=[:;!?%)\]}，。！？、：；）」』])/g, "\u00a0");
+    if (this.style.hyphenate === false || broken !== this.text) {
       this.hyphenated.set(key, pushed);
       return pushed;
     }
     const fits = (piece) => this.measurer.measure(piece, this.style, null).width <= width + 0.01;
-    const result = this.text.replace(/\S+/g, (word) => {
-      // CJK text breaks between any two characters without a hyphen.
-      if (fits(word) || [...word].length < 4 || /[\u2e80-\u9fff\uac00-\ud7af\uf900-\ufaff\uff00-\uffef]/.test(word)) return word;
-      const characters = [...word];
+    const result = pushed.replace(/[^\s]+/g, (word) => {
+      if (fits(word)) return word;
+      // Only the letters of a word hyphenate; punctuation stays attached.
+      const [, lead, core, tail] = /^([^A-Za-z]*)([A-Za-z]*)(.*)$/s.exec(word);
+      const points = hyphenationPoints(core).map((point) => point + lead.length);
       const pieces = [];
-      let start = 0;
-      while (start < characters.length) {
-        const rest = characters.slice(start).join("");
-        if (fits(rest)) { pieces.push(rest); break; }
-        // A column too narrow for two letters and a hyphen breaks the word
-        // one character per line instead ("S / Y / S").
-        if (!fits(`${characters.slice(start, start + 2).join("")}-`)) return word;
-        let end = start + 2;
-        while (end < characters.length && fits(`${characters.slice(start, end + 1).join("")}-`)) end += 1;
-        // Like iOS, carry at least three letters to the next line.
-        if (characters.length - end < 3) end = Math.max(start + 1, characters.length - 3);
-        pieces.push(`${characters.slice(start, end).join("")}-`);
-        start = end;
+      let rest = word; let consumed = 0;
+      while (!fits(rest)) {
+        // The longest prefix that fits with a hyphen; without one the word
+        // breaks between characters.
+        const point = points.filter((value) => value > consumed && value < consumed + rest.length && fits(`${word.slice(consumed, value)}-`)).at(-1);
+        if (point === undefined) break;
+        pieces.push(`${word.slice(consumed, point)}-`);
+        rest = word.slice(point);
+        consumed = point;
       }
-      return pieces.join("\n");
+      pieces.push(rest);
+      return tail === undefined ? word : pieces.join("\n");
     });
     this.hyphenated.set(key, result);
     return result;
@@ -69,12 +91,9 @@ export class TextNode extends Node {
   /// TextKit's .standard strategy in 24,420 of 24,441 width/size/weight
   /// cases (Tools/ScriptWidgetPreview/Scripts/line-break-sweep.swift).
   pushOut(paragraph, width) {
-    const words = [];
-    for (const word of paragraph.split(/ +/).filter(Boolean)) {
-      if (words.length && /^[:;,.!?)\]}%]/.test(word)) words[words.length - 1] += ` ${word}`;
-      else words.push(word);
-    }
-    const measure = (line) => this.measurer.measure(line.join(" "), this.style, null).width;
+    const words = breakUnits(paragraph);
+    const join = joinUnits;
+    const measure = (line) => this.measurer.measure(join(line), this.style, null).width;
     const fits = (line) => measure(line) <= width + 0.01;
     if (words.length < 3 || fits(words) || !words.every((word) => fits([word]))) return paragraph;
     const lines = [[]];
@@ -84,23 +103,78 @@ export class TextNode extends Node {
     }
     if (lines.length !== 2) return paragraph;
     const [first, last] = lines;
-    if (last.length !== 1 || last[0].includes(" ") || first.length < 2) return paragraph;
+    if (last.length !== 1 || last[0].text.includes(" ") || first.length < 2) return paragraph;
     const moved = [first.at(-1), ...last];
     const rest = first.slice(0, -1);
     if (!fits(moved) || measure(rest) < measure(moved) * 0.55) return paragraph;
-    return `${rest.join(" ")}\n${moved.join(" ")}`;
+    return `${join(rest)}\n${join(moved)}`;
   }
+
   /// SwiftUI keeps breaking a word one character per line in a column
   /// narrower than "…" as long as its first character fits.
   wrapsCharacters(width) {
     const first = [...this.text.trim()][0];
     return first !== undefined && this.measurer.measure(first, this.style, null).width <= width + 0.01;
   }
+  /// The lines drawn at `width`: explicit breaks from displayText, then
+  /// greedy breaking by units; a unit wider than the line breaks between
+  /// characters.
+  breakLines(width) {
+    const fits = (value) => this.measurer.measure(value, this.style, null).width <= width + 0.01;
+    const lines = [];
+    for (const paragraph of this.displayText(width).split("\n")) {
+      let line = [];
+      for (const unit of breakUnits(paragraph)) {
+        if (fits(joinUnits([...line, unit]))) { line.push(unit); continue; }
+        if (line.length) lines.push(joinUnits(line));
+        line = [];
+        let piece = "";
+        for (const character of [...unit.text]) {
+          if (piece && !fits(piece + character)) { lines.push(piece); piece = character; } else piece += character;
+        }
+        line = [{ text: piece, separator: unit.separator }];
+      }
+      lines.push(joinUnits(line));
+    }
+    return lines;
+  }
+  /// The longest prefix that fits with "…", cut mid-word, with trailing
+  /// spaces dropped ("Hello fr…", "Travel…").
+  ellipsize(value, width) {
+    const characters = [...value.replace(/\s+/g, " ")];
+    const fits = (count) => this.measurer.measure(`${characters.slice(0, count).join("").trimEnd()}…`, this.style, null).width <= width + 0.01;
+    let low = 0; let high = characters.length;
+    while (low < high) { const middle = Math.ceil((low + high) / 2); if (fits(middle)) low = middle; else high = middle - 1; }
+    return `${characters.slice(0, low).join("").trimEnd()}…`;
+  }
+  /// SwiftUI truncation to `count` lines: earlier lines stay as broken, the
+  /// rest is cut mid-word with "…", and the text reports the widest drawn
+  /// line (not the offered width).
+  truncate(width, count) {
+    const lines = this.breakLines(width);
+    if (lines.length <= count) return null;
+    const kept = lines.slice(0, count - 1);
+    // The truncated line cuts the original text after the kept lines, so it
+    // carries no inserted hyphen ("REM…", "An- / gula…").
+    let position = 0;
+    for (const line of kept) {
+      for (const character of line.replace(/-$/, "")) {
+        while (position < this.text.length && /\s/.test(this.text[position]) && !/\s/.test(character)) position += 1;
+        if (this.text[position] === character || (character === "\u00a0" && this.text[position] === " ")) position += 1;
+      }
+    }
+    const rest = this.text.slice(position).trimStart();
+    const last = this.ellipsize(rest, width);
+    const drawn = [...kept, last];
+    return { text: drawn.join("\n"), width: Math.max(...drawn.map((line) => this.measurer.measure(line, this.style, null).width)) };
+  }
   metrics(width) { return this.measurer.measure(width === null ? this.text : this.displayText(width), this.style, width); }
   layout(pw, ph) {
     const { natural, leading } = this.style;
     if (this.text === "") return { width: 0, height: 0, lines: 0, total: 0 };
     let width; let lines;
+    // Offered no width at all, SwiftUI draws nothing.
+    if (pw !== null && pw <= 0.01) return { width: 0, height: natural, lines: 1, total: 1, text: "" };
     if (pw === null || pw === Infinity) { const m = this.metrics(null); width = m.width; lines = m.lines; }
     else if (pw < this.measurer.ellipsisWidth(this.style) && !this.wrapsCharacters(pw)) { width = this.measurer.ellipsisWidth(this.style); lines = 1; }
     else {
@@ -113,9 +187,12 @@ export class TextNode extends Node {
     }
     const total = lines;
     if (ph !== null && ph !== Infinity) lines = Math.min(lines, Math.max(1, Math.floor((ph - natural) / leading + 1e-6) + 1));
-    // Truncated text reports the whole offered width.
-    if (lines < total && pw !== null && pw !== Infinity) width = Math.max(width, pw);
-    return { width: snap(width), height: natural + (lines - 1) * leading, lines, total };
+    let text = null;
+    if (lines < total && pw !== null && pw !== Infinity && pw >= this.measurer.ellipsisWidth(this.style)) {
+      const truncated = this.truncate(pw, lines);
+      if (truncated) { text = truncated.text; width = truncated.width; }
+    }
+    return { width: snap(width), height: natural + (lines - 1) * leading, lines, total, text };
   }
   size(pw, ph) { const { width, height } = this.layout(pw, ph); return [width, height]; }
   place(x, y, width, height) { super.place(x, y, width, height); this.lines = this.layout(width, height); }
@@ -248,6 +325,8 @@ export class StackNode extends Node {
     return sizes;
   }
   size(pw, ph) {
+    // Remembered for place(): the parent's last call is the real offer.
+    this.proposal = [pw, ph];
     const pAlong = this.axis === "h" ? pw : ph; const pCross = this.axis === "h" ? ph : pw;
     const sizes = this.allocate(pAlong, pCross);
     const along = sizes.reduce((sum, size) => sum + this.along(size), 0) + this.spacing.reduce((sum, value) => sum + value, 0);
@@ -256,13 +335,24 @@ export class StackNode extends Node {
   }
   place(x, y, width, height) {
     super.place(x, y, width, height);
-    const pAlong = this.axis === "h" ? width : height; const pCross = this.axis === "h" ? height : width;
+    // SwiftUI places subviews with the proposal the stack was sized with:
+    // along the axis children get the same offers as when sizing (an HStack
+    // narrower than its proposal does not squeeze them), and across it a
+    // stack that grew past its proposal because a child cannot shrink (a
+    // 120-point line in a 72-point widget) lays out the others within it.
+    const [pw, ph] = this.proposal ?? [width, height];
+    const proposedAlong = this.axis === "h" ? pw : ph;
+    const proposedCross = this.axis === "h" ? ph : pw;
+    const finalCross = this.axis === "h" ? height : width;
+    const rigid = (limit) => this.children.some((child) => this.cross(this.propose(child, null, 0)) > limit + 0.01);
+    const pAlong = proposedAlong;
+    const pCross = proposedCross !== null && proposedCross !== Infinity && finalCross > proposedCross + 0.01 && rigid(proposedCross) ? proposedCross : finalCross;
     const sizes = this.allocate(pAlong, pCross);
     let cursor = 0;
     this.children.forEach((child, index) => {
       cursor += this.spacing[index];
       const size = sizes[index];
-      const offset = alignOffset(pCross, this.cross(size), this.alignment);
+      const offset = alignOffset(this.axis === "h" ? height : width, this.cross(size), this.alignment);
       if (this.axis === "h") child.place(cursor, offset, size[0], size[1]);
       else child.place(offset, cursor, size[0], size[1]);
       cursor += this.along(size);
@@ -278,7 +368,10 @@ export class StackNode extends Node {
 }
 
 function mergedEdge(children, side) {
-  return children.map((child) => child.edge(side)).filter(Boolean).reduce((best, edge) => (!best || edge.size > best.size ? edge : best), null);
+  // The largest text edge wins; SF Symbol edges count only without text.
+  const edges = children.map((child) => child.edge(side)).filter(Boolean);
+  const text = edges.filter((edge) => !edge.symbol);
+  return (text.length ? text : edges).reduce((best, edge) => (!best || edge.size > best.size ? edge : best), null);
 }
 
 export class ZStackNode extends Node {
@@ -358,6 +451,29 @@ export class GridNode extends Node {
   }
 }
 
+// Apple Color Emoji in CoreText (SwiftUI on macOS 27; WebKit matches it), for
+// font sizes 1...160: the advance of one glyph and the width it is drawn at.
+// Small sizes draw the glyph larger than the font size and leave about a point
+// on each side. Chrome draws emoji at exactly 1 em, so the measurer resizes
+// and pads emoji runs where the browser differs.
+const emojiAdvances = [1,3,4,6,7,9,10,12,13,14,16,17,19,20,21,23,23,24,24,25,26,26,27,27,28,30,31,32,33,34,35,36,37,38,40,41,42,43,44,45,46,47,48,49,50,50,51,52,53,54,55,56,57,58,59,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,79,80,81,82,83,84,85,86,87,88,89,91,92,93,94,95,96,97,98,99,100,101,102,104,105,106,107,108,109,110,111,112,113,114,116,117,118,119,120,121,122,123,124,125,127,128,129,130,131,132,133,134,135,136,137,139,140,141,142,143,144,145,146,147,148,150,151,152,153,154,155,156,157,158,159,161,162,163,164,165,166,167,168,169,171,172,173,174];
+const emojiGlyphs = [1,2.5,4,5,6.5,7.5,9,10,11.5,12.5,14,15,16.5,17.5,19,20,20.5,21,21.5,22,22.5,23,23.5,24,24.5,25.5,26.5,27.5,28.5,29.5,30.5,31.5,32.5,33.5,34.5,35.5,36.5,37.5,38.5,39.5,40.5,41.5,42.5,43.5,44.5,45.5,46.5,47.5,48.5,49.5,50.5,51.5,52.5,53.5,54.5,55.5,56.5,57.5,58.5,59.5,60.5,61.5,62.5,63.5,64.5,65.5,66,66.5,67.5,68.5,69.5,70.5,71.5,72.5,73.5,74.5,75.5,76.5,77.5,78.5,79.5,80.5,81.5,82.5,83.5,84.5,85.5,86.5,87.5,88.5,89.5,90.5,91.5,92.5,93.5,94.5,95.5,96.5,97.5,98.5,99.5,100.5,101.5,102.5,103.5,104.5,105.5,106.5,107.5,108.5,109.5,110.5,111.5,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158];
+const emojiRun = /(\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic}|[\u{1F3FB}-\u{1F3FF}])*|[\u{1F1E6}-\u{1F1FF}]{2})/u;
+
+/// Sets element's text, drawing emoji runs with `emoji` ({fontSize,
+/// padding} in px, from the measurer) when the browser needs adjusting.
+export function fillText(element, text, emoji) {
+  if (!emoji || !emojiRun.test(text)) { element.textContent = text; return; }
+  const doc = element.ownerDocument;
+  element.replaceChildren(...text.split(emojiRun).filter((part) => part !== "").map((part) => {
+    if (!emojiRun.test(part)) return doc.createTextNode(part);
+    const span = doc.createElement("span");
+    Object.assign(span.style, { fontSize: `${emoji.fontSize}px`, lineHeight: "0", padding: `0 ${emoji.padding}px` });
+    span.textContent = part;
+    return span;
+  }));
+}
+
 /// Measures text with the browser's line breaker. Results are cached.
 export function createTextMeasurer(doc) {
   const host = doc.createElement("div");
@@ -377,7 +493,7 @@ export function createTextMeasurer(doc) {
     if (cache.has(key)) return cache.get(key);
     apply(style);
     probe.style.width = width === null ? "max-content" : `${width}px`;
-    probe.textContent = text;
+    fillText(probe, text, emojiSize(style));
     const range = doc.createRange();
     range.selectNodeContents(probe);
     const rects = [...range.getClientRects()].filter((rect) => rect.width > 0 || rect.height > 0);
@@ -387,8 +503,43 @@ export function createTextMeasurer(doc) {
     cache.set(key, result);
     return result;
   };
+  // How to draw emoji so each glyph is as wide and advances as far as in
+  // CoreText, or null when the browser already matches (WebKit).
+  const emojiStyles = new Map();
+  function emojiSize(style) {
+    if (emojiStyles.has(style.key)) return emojiStyles.get(style.key);
+    apply(style);
+    probe.style.width = "max-content";
+    probe.textContent = "\u{1F420}";
+    const measured = probe.getBoundingClientRect().width;
+    const index = Math.round(style.size) - 1;
+    const advance = emojiAdvances[index] ?? style.size * 1.09;
+    const glyph = emojiGlyphs[index] ?? style.size;
+    // Browsers that differ draw the glyph as wide as its advance.
+    const result = measured > 0 && Math.abs(measured - advance) > 0.5
+      ? { fontSize: style.size * glyph / measured, padding: Math.max(0, (advance - glyph) / 2) }
+      : null;
+    emojiStyles.set(style.key, result);
+    return result;
+  }
+  // Where the browser draws the first baseline below the top of a line box
+  // of the style's leading (fonts round their metrics differently).
+  const baselines = new Map();
+  function baseline(style) {
+    if (baselines.has(style.key)) return baselines.get(style.key);
+    apply(style);
+    probe.style.width = "max-content";
+    const marker = doc.createElement("span");
+    Object.assign(marker.style, { display: "inline-block", width: "0", height: "0", verticalAlign: "baseline" });
+    probe.replaceChildren(doc.createTextNode("H"), marker);
+    const value = marker.getBoundingClientRect().top - probe.getBoundingClientRect().top;
+    baselines.set(style.key, value);
+    return value;
+  }
   return {
     measure,
+    baseline,
+    emojiSize,
     ellipsisWidth: (style) => measure("…", style, null).width,
     dispose() { host.remove(); },
   };

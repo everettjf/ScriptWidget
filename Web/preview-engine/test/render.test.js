@@ -5,6 +5,7 @@ import { FixedNode, FlexibleNode, SpacerNode, StackNode, TextNode } from "../src
 import { lineHeight } from "../src/render/renderer.js";
 import { deviceProfiles } from "../src/render/profiles.js";
 import { symbolMetrics } from "../src/render/symbolMetrics.generated.js";
+import { hyphenationPoints } from "../src/render/hyphenate.js";
 
 const frame = (value) => parseFrame(propReader({ frame: value }));
 
@@ -39,7 +40,7 @@ test("colors follow Color(hex:) and the iOS 26 system palette", () => {
 });
 
 test("fonts and numbers parse like Swift", () => {
-  assert.deepEqual(parseFont("title,bold"), { size: 28, lineHeight: 34, weight: 700, design: "default" });
+  assert.deepEqual(parseFont("title,bold"), { size: 28, lineHeight: 34, weight: 700, design: "default", textStyle: "title" });
   assert.deepEqual(parseFont("20,bold,rounded"), { size: 20, lineHeight: null, weight: 700, design: "rounded" });
   assert.equal(parseFont("custom,Menlo,15").family, "Menlo");
   assert.equal(parseFont("huge"), null);
@@ -66,7 +67,8 @@ test("stacks give spacers only the leftover space", () => {
   assert.equal(stack.children[1].frame.width, 80);
   const tight = new StackNode("h", [new FixedNode(150, 10), new TextNode("abcdefghij", style, fakeMeasurer)], { alignment: "center", spacing: () => 8 });
   tight.place(0, 0, 200, 20);
-  assert.equal(tight.children[1].frame.width, 42);
+  // Truncated text reports the width it draws ("abc…"), as SwiftUI does.
+  assert.equal(tight.children[1].frame.width, 40);
   assert.equal(new FlexibleNode().size(null, null)[0], 10);
 });
 
@@ -78,7 +80,7 @@ test("the macOS profile uses macOS 26 SwiftUI metrics", () => {
     // Measured by Tools/ScriptWidgetPreview with NSHostingController at 2x.
     const measured = { 10: 13, 13: 16, 15: 19, 16: 19, 17: 20, 20: 24, 30: 35, 60: 71, 16.5: 20, 20.5: 25 };
     for (const [size, height] of Object.entries(measured)) assert.equal(lineHeight(Number(size)), height, `font size ${size}`);
-    assert.deepEqual(parseFont("body"), { size: 13, natural: 16, lineHeight: 16, weight: 400, gap: 1, design: "default" });
+    assert.deepEqual(parseFont("body"), { size: 13, natural: 16, lineHeight: 16, weight: 400, gap: 1, design: "default", textStyle: "body" });
     assert.equal(parseFont("headline").weight, 700);
     assert.deepEqual(parseColor("primary"), [0, 0, 0, 0.847]);
     assert.deepEqual(parseColor("gray", "dark"), [152, 152, 157, 1]);
@@ -100,16 +102,33 @@ test("text pushes out orphans like TextKit; macOS breaks long words without hyph
   assert.equal(new TextNode("ab cdefgh ij", mac, measurer).displayText(90), "ab cdefgh ij");
   assert.equal(new TextNode("aaa bbb ccc ddd eee f", mac, measurer).displayText(70), "aaa bbb ccc ddd eee f");
   assert.equal(new TextNode("Rain · 58° today", mac, measurer).displayText(100), "Rain ·\n58° today");
-  assert.equal(new TextNode("Wideness Size : small", mac, measurer).displayText(150), "Wideness\nSize : small");
+  assert.equal(new TextNode("Wideness Size : small", mac, measurer).displayText(150), "Wideness\nSize\u00a0: small");
   assert.equal(new TextNode("SYSTEM", mac, measurer).displayText(30), "SYSTEM");
   assert.equal(new TextNode("TUE", mac, measurer).wrapsCharacters(10), true);
   const ios = { ...mac, hyphenate: true };
-  assert.match(new TextNode("SYSTEM", ios, measurer).displayText(30), /^SY-\n/);
+  // iOS text styles hyphenate at dictionary breaks; other fonts break
+  // between characters.
+  assert.equal(new TextNode("SYSTEM", ios, measurer).displayText(40), "SYS-\nTEM");
+  assert.equal(new TextNode("Departure gate", ios, measurer).displayText(70), "Depar-\nture gate");
+  assert.equal(new TextNode("Departure gate", mac, measurer).displayText(70), "Departure gate");
   assert.equal(new TextNode("SYSTEM", ios, measurer).displayText(20), "SYSTEM");
   assert.equal(new TextNode("把今天过得有意义", ios, measurer).displayText(30), "把今天过得有意义");
+  // CJK characters are break units for push-out too: "今年还 / 剩" -> "今年 / 还剩".
+  assert.equal(new TextNode("今年还剩", ios, measurer).displayText(30), "今年\n还剩");
 });
 
 test("SF Symbol metrics come from SwiftUI", () => {
   assert.deepEqual(symbolMetrics.hourglass, [0.825, 1.07]);
   assert.deepEqual(symbolMetrics.globe, [1.17, 1.17]);
+});
+
+test("hyphenation follows the TeX patterns Apple uses", () => {
+  const hyphenated = (word) => { let out = ""; let last = 0; for (const point of hyphenationPoints(word)) { out += `${word.slice(last, point)}-`; last = point; } return out + word.slice(last); };
+  // Matched against CFStringGetHyphenationLocationBeforeIndex.
+  assert.equal(hyphenated("Information"), "In-for-ma-tion");
+  assert.equal(hyphenated("Departure"), "De-par-ture");
+  assert.equal(hyphenated("ScriptWidget"), "Script-Wid-get");
+  assert.equal(hyphenated("achiever"), "achiev-er");
+  assert.equal(hyphenated("PROGRESS"), "PROGRESS");
+  assert.deepEqual(hyphenationPoints("365"), []);
 });

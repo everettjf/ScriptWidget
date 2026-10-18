@@ -38,7 +38,7 @@ export function lucideIconFor(systemName) {
 }
 import {
   AspectNode, DecorationNode, FixedNode, FlexibleNode, FrameNode, GridNode, Node, PaddingNode, SpacerNode, StackNode, TextNode,
-  ZStackNode, createTextMeasurer,
+  ZStackNode, createTextMeasurer, fillText,
 } from "./layout.js";
 
 /// Overlay: the first child fills the frame; the second is aligned to the
@@ -72,13 +72,23 @@ export function lineHeight(size) {
   return Math.ceil(size * naturalLineRatio * 2) / 2;
 }
 
+// macOS 26 first-baseline offsets of .system(size:) for sizes 1...160,
+// measured from rendered glyphs at 8x (whole points from size 2).
+const macBaselines = [0.75,2,3,4,5,6,7,8,9,10,11,12,13,14,15,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155];
+
+/// Native first baseline below the top of a Text frame (SF Pro).
+function nativeBaseline(size) {
+  if (platform() === "macos") return macBaselines[Math.ceil(size) - 1] ?? size * 0.9521;
+  return size * 0.9521;
+}
+
 function textStyleFor(font) {
   const natural = font.natural ?? lineHeight(font.size);
-  // iOS adds Dynamic Type leading between lines; macOS lines advance by the
-  // style's line height (the natural height for sized fonts).
-  const leading = platform() === "macos" ? Math.max(natural, font.lineHeight ?? natural) : Math.max(natural, font.lineHeight ?? font.size * 1.29);
+  // Lines advance by the text style's line height; sized fonts advance by
+  // their natural height (iOS: size x 1.1934, measured at 8x).
+  const leading = platform() === "macos" ? Math.max(natural, font.lineHeight ?? natural) : font.lineHeight ?? font.size * naturalLineRatio;
   const family = fontFamily(font);
-  return { ...font, natural, leading, family, hyphenate: platform() !== "macos", key: `${family}|${font.size}|${font.weight}|${leading}` };
+  return { ...font, natural, leading, family, custom: Boolean(font.family), hyphenate: platform() !== "macos" && Boolean(font.textStyle), key: `${family}|${font.size}|${font.weight}|${leading}` };
 }
 
 // MARK: - Tree decoding
@@ -148,7 +158,10 @@ async function naturalSizes(urls, doc) {
 /// Must run in a document with layout (text is measured by the browser).
 export async function renderWidget(treeJSON, {
   family = "medium", profile = "iphone-393", appearance = "light", renderingMode = "fullColor", lockScreen = true, resources = {}, document: doc = globalThis.document,
+  now = null, animations = "live",
 } = {}) {
+  // Milliseconds since 1970 for a fixed clock (snapshot tests), or null.
+  const fixedNow = typeof now === "number" && Number.isFinite(now) ? now : null;
   const size = widgetSize(profile, family);
   const diagnostics = [];
   const reported = new Set();
@@ -165,6 +178,30 @@ export async function renderWidget(treeJSON, {
   for (const [path, url] of Object.entries(resources)) if (path.startsWith("image/")) urls.add(url);
   collectImageURLs(root, urls);
   const imageSizes = await naturalSizes(urls, doc);
+  // "firstFrame" draws the GIF frame ImageRenderer captures (see below).
+  const stillGifs = new Map();
+  if (animations === "firstFrame") {
+    await Promise.all(Object.entries(resources).filter(([path]) => /\.gif$/i.test(path)).map(async ([, url]) => {
+      try {
+        const blob = await (await fetch(url)).blob();
+        let bitmap;
+        if (typeof ImageDecoder === "function") {
+          const decoder = new ImageDecoder({ data: blob.stream(), type: blob.type || "image/gif" });
+          await decoder.tracks.ready;
+          // The iOS GIF view masks frame i to the arc (i-1..i) x 360/n and spins
+          // the masks; at rest the top of the circle (270°) shows the frame
+          // just before that boundary.
+          const count = decoder.tracks.selectedTrack?.frameCount ?? 1;
+          bitmap = (await decoder.decode({ frameIndex: Math.max(0, Math.ceil(0.75 * count) - 1) })).image;
+        } else bitmap = await createImageBitmap(blob);
+        const canvas = doc.createElement("canvas");
+        canvas.width = bitmap.displayWidth ?? bitmap.width; canvas.height = bitmap.displayHeight ?? bitmap.height;
+        canvas.getContext("2d").drawImage(bitmap, 0, 0);
+        bitmap.close?.();
+        stillGifs.set(url, canvas.toDataURL("image/png"));
+      } catch { /* keep the animated GIF */ }
+    }));
+  }
   const measurer = createTextMeasurer(doc);
 
   // Leaves carry a draw(node, element) callback.
@@ -192,30 +229,23 @@ export async function renderWidget(treeJSON, {
         whiteSpace: "pre-wrap", overflowWrap: "break-word", textAlign: alignment,
       });
       const content = element.ownerDocument.createElement("div");
-      content.textContent = node.lines && node.lines.lines === 1 && node.lines.total > 1
-        ? truncatedLine(node.text, style, node.frame.width)
-        : node.displayText(node.frame.width);
-      const trim = (style.leading - style.natural) / 2;
+      // Truncated text draws exactly the lines the layout measured.
+      const truncated = node.lines?.text ?? (node.lines && node.lines.lines < node.lines.total ? node.ellipsize(node.text, node.frame.width) : null);
+      fillText(content, truncated ?? node.displayText(node.frame.width), measurer.emojiSize(style));
+      // SF text puts its first baseline at the ascent (iOS: 0.9521 x size;
+      // macOS: whole points, measured); align the browser's baseline there.
+      // Other faces keep CSS half-leading.
+      const trim = style.design === "default" && !style.custom
+        ? measurer.baseline(style) - nativeBaseline(style.size)
+        : (style.leading - style.natural) / 2;
       // A half-point allowance absorbs sub-pixel rounding without fitting an
       // extra glyph that the layout did not measure.
       Object.assign(content.style, { marginTop: `${-trim}px`, width: `${node.frame.width + 0.5}px` });
       if (alignment !== "left") content.style.width = `${node.frame.width}px`;
-      if (node.lines && node.lines.lines < node.lines.total) {
-        Object.assign(content.style, { display: "-webkit-box", webkitBoxOrient: "vertical", webkitLineClamp: String(node.lines.lines), overflow: "hidden" });
-      }
+      if (truncated !== null) Object.assign(content.style, { whiteSpace: "pre", overflow: "hidden" });
       applyTextPaint(content, paint, node.frame.width, node.frame.height);
       element.appendChild(content);
     });
-  }
-
-  /// SwiftUI tail truncation: the longest prefix that fits with "…", cut
-  /// mid-word, with trailing spaces dropped ("Hello fr…", "Travel…").
-  function truncatedLine(value, style, width) {
-    const characters = [...value.replace(/\s+/g, " ")];
-    let low = 0; let high = characters.length;
-    const fits = (count) => measurer.measure(`${characters.slice(0, count).join("").trimEnd()}…`, style, null).width <= width + 0.01;
-    while (low < high) { const middle = Math.ceil((low + high) / 2); if (fits(middle)) low = middle; else high = middle - 1; }
-    return `${characters.slice(0, low).join("").trimEnd()}…`;
   }
 
   function applyTextPaint(element, paint, width, height) {
@@ -360,7 +390,11 @@ export async function renderWidget(treeJSON, {
     const ratio = symbolMetrics[systemName];
     const half = (value) => Math.round(value * 2) / 2;
     const box = ratio ? [half(style.size * ratio[0]), half(style.size * ratio[1])] : [Math.ceil(style.size * 1.2 * 2) / 2, style.natural];
-    const node = leaf(new FixedNode(box[0], box[1]), (target, element) => {
+    const fixed = new FixedNode(box[0], box[1]);
+    // SF Symbols take part in text spacing (see defaultSpacing).
+    const symbolEdge = { symbol: true, size: style.size };
+    fixed.edge = () => symbolEdge;
+    const node = leaf(fixed, (target, element) => {
       const { width, height } = target.frame;
       const colorValue = cssColor(paint.color ?? paint.gradient?.colors[0] ?? primary());
       if (!icon) {
@@ -415,9 +449,9 @@ export async function renderWidget(treeJSON, {
   // MARK: Stacks
 
   // Measured on iOS 27: HStack children are 8 apart. In a VStack, text to
-  // text uses the style's leading minus its natural height, and text to
-  // other views 8 + 0.18 x the font size. Spacers add no spacing.
-  // On macOS 26 text to text adds only the upper font's leading, text above
+  // text adds the lower text's leading; between text and other views see
+  // below. Spacers add no spacing.
+  // On macOS 26 text to text adds only the lower font's leading, text above
   // another view 0.4729 x size and a view above text 0.2109 x size, both
   // plus a half-point step of about 0.118 x size.
   function defaultSpacing(axis) {
@@ -426,16 +460,29 @@ export async function renderWidget(treeJSON, {
       if (axis === "h") return 8;
       const above = previous.edge("bottom"); const below = next.edge("top");
       const half = (value) => Math.round(value * 2) / 2;
+      // SF Symbols sit flush against text and other symbols; next to other
+      // views they leave 0.135 x size (+1 below the symbol), measured on iOS.
+      if (above?.symbol || below?.symbol) {
+        if (above && below) return 0;
+        if (above) return half(0.135 * above.size + 1);
+        return Math.ceil(0.1354 * below.size * 2) / 2;
+      }
       if (platform() === "macos") {
         const step = (size) => Math.ceil(0.118 * size * 2) / 2;
-        if (above && below) return above.gap ?? 0;
+        if (above && below) return below.gap ?? 0;
         if (above) return half(0.4729 * above.size + step(above.size));
         if (below) return half(0.2109 * below.size + step(below.size));
         return 8;
       }
-      if (above && below) return Math.max(0, half(above.leading - above.natural));
-      if (above) return half(8 + 0.18 * above.size);
-      if (below) return half(8 + 0.18 * below.size);
+      // Text to text: the lower text's Dynamic Type leading (its style line
+      // height minus the natural height, up to the half point); sized fonts
+      // have none.
+      if (above && below) return below.textStyle ? Math.max(0, Math.ceil((below.lineHeight - below.size * naturalLineRatio) * 2) / 2) : 0;
+      // Text above another view leaves 0.6094 x its size, a view above text
+      // 0.3625 x the text's size (measured at 8x for sizes 1...80), which
+      // snaps up to the half point.
+      if (above) return half(0.6094 * above.size);
+      if (below) return Math.ceil(0.3625 * below.size * 2) / 2;
       return 8;
     };
   }
@@ -481,7 +528,10 @@ export async function renderWidget(treeJSON, {
     if (clipShape !== null) decoration.clip = clipShape;
     const opacity = reader.double("opacity");
     if (opacity !== null) decoration.opacity = Math.max(0, Math.min(1, opacity));
-    const animation = parseAnimation(reader.string("animation"));
+    // The macOS widget compiles ScriptWidgetAttributeAnimationModifier to a
+    // no-op, so animations (and their JSON errors) do not apply there.
+    const animation = platform() === "macos" ? null : parseAnimation(reader.string("animation"));
+    if (platform() === "macos" && reader.string("animation") !== null) report("info", "animation.macos", "Animations do not run in macOS widgets");
     if (animation?.type === "error") return text("animation json error", defaultFont(), null);
     if (animation) {
       // The animation modifier sits between opacity and rotation, so it
@@ -606,7 +656,7 @@ export async function renderWidget(treeJSON, {
       case "image": content = imageNode(reader); break;
       case "gif": {
         const url = packageGif(reader.string("file") ?? "");
-        if (url) { report("info", "tag.approximated", "<gif> animates with the browser's GIF player"); content = leaf(new FlexibleNode(), drawPicture(url, "contain")); }
+        if (url) { report("info", "tag.approximated", "<gif> animates with the browser's GIF player"); content = leaf(new FlexibleNode(), drawPicture(stillGifs.get(url) ?? url, "contain")); }
         else content = text("GIF unavailable", defaultFont(), null);
         break;
       }
@@ -712,10 +762,13 @@ export async function renderWidget(treeJSON, {
   }
 
   // ScriptWidgetElementTagDate: Swift's Date() is the real clock, so the
-  // web preview uses the real clock too. Formats follow Text(date, style:)
-  // in English.
+  // web preview uses the real clock too; `now` (like ScriptWidgetRenderClock
+  // in tests) fixes it for the absolute styles. Formats follow
+  // Text(date, style:) in English.
   function formatDate(reader) {
-    const now = new Date();
+    const style = { time: "time", date: "date", relative: "relative", offset: "offset", timer: "timer" }[reader.string("style") ?? "timer"] ?? "time";
+    const real = new Date();
+    const now = fixedNow !== null && (style === "time" || style === "date") ? new Date(fixedNow) : real;
     let date = now;
     const name = reader.string("date");
     if (name !== null) {
@@ -729,8 +782,7 @@ export async function renderWidget(treeJSON, {
         date = new Date(now.getTime() + step * (Number.isFinite(middle) && /^[+-]?\d+$/.test(name.slice(1, -1)) ? middle : 0));
       }
     } else if (reader.double("date") !== null) date = new Date(reader.double("date"));
-    const style = { time: "time", date: "date", relative: "relative", offset: "offset", timer: "timer" }[reader.string("style") ?? "timer"] ?? "time";
-    const seconds = Math.round((date.getTime() - now.getTime()) / 1000);
+    const seconds = Math.round((date.getTime() - real.getTime()) / 1000);
     const parts = (value) => {
       const total = Math.abs(value);
       const days = Math.floor(total / 86400); const hours = Math.floor((total % 86400) / 3600); const minutes = Math.floor((total % 3600) / 60); const secs = total % 60;
@@ -1052,7 +1104,12 @@ export async function renderWidget(treeJSON, {
 
   function applyDecoration(element, decoration, width, height) {
     const style = element.style;
-    if (decoration.animation) {
+    if (decoration.animation && animations === "firstFrame") {
+      // What ImageRenderer captures: clock hands at rest and the swing layout
+      // at angle 0, which shifts the content by half the distance.
+      const animation = decoration.animation;
+      if (animation.type === "swing") style.transform = animation.direction === "horizontal" ? `translateX(${animation.distance / 2}px)` : `translateY(${animation.distance / 2}px)`;
+    } else if (decoration.animation) {
       const animation = decoration.animation;
       if (animation.type === "swing") {
         const axis = animation.direction === "horizontal" ? "X" : "Y";

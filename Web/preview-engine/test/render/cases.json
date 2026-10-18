@@ -199,5 +199,50 @@
   "name": "weight-props",
   "size": "medium",
   "source": "$render(<vstack><text weight=\"bold\">weight bold</text><text fontWeight=\"heavy\" font=\"title3\">fontWeight heavy</text><text fontDesign=\"serif\">fontDesign serif</text><text fontDesign=\"monospaced\" fontWeight=\"light\">mono light 012</text></vstack>)"
+ },
+ {
+  "name": "hstack-split-text-columns",
+  "size": "small",
+  "source": "$render(\n  <hstack frame=\"max\" spacing=\"18\" padding=\"16\" background=\"#0f172a\">\n    <vstack alignment=\"leading\" spacing=\"6\">\n      <text font=\"12\" color=\"#93c5fd\">SYSTEM STATUS</text>\n      <text font=\"22\" color=\"white\">IOS</text>\n      <text font=\"11\" color=\"#94a3b8\">Version 26.0</text>\n    </vstack>\n    <spacer/>\n    <vstack alignment=\"leading\" spacing=\"7\">\n      <text font=\"22\" color=\"#38bdf8\">6 / 6</text>\n      <text font=\"12\" color=\"#94a3b8\">active cores</text>\n      <text font=\"12\" color=\"#94a3b8\">MEMORY</text>\n    </vstack>\n  </hstack>\n);\n"
+ },
+ {
+  "name": "hstack-split-icon-text",
+  "size": "small",
+  "source": "$render(\n  <hstack frame=\"max\" spacing=\"16\" padding=\"14\" background=\"#9f1239\">\n    <vstack alignment=\"leading\" spacing=\"3\">\n      <text font=\"12\" color=\"#fda4af\">DAYS LEFT THIS YEAR</text>\n      <text font=\"34\" color=\"white\">365 days</text>\n      <text font=\"12\" color=\"#fecdd3\">Make today count</text>\n    </vstack>\n    <spacer/>\n    <rect frame=\"44,52\" color=\"#fb7185\" corner=\"8\"/>\n  </hstack>\n);\n"
+ },
+ {
+  "name": "hstack-split-no-spacer",
+  "size": "small",
+  "source": "$render(\n  <hstack frame=\"max\" spacing=\"10\" padding=\"12\">\n    <text font=\"15\">Departure gate closes soon</text>\n    <text font=\"15\">B12 boarding now</text>\n  </hstack>\n);\n"
+ },
+ {
+  "name": "hstack-split-fixed-flex",
+  "size": "medium",
+  "source": "$render(\n  <hstack frame=\"max\" spacing=\"12\" padding=\"16\">\n    <rect frame=\"60,60\" color=\"#0ea5e9\" corner=\"12\"/>\n    <vstack alignment=\"leading\" spacing=\"4\">\n      <text font=\"20\">A long headline that wraps in the middle column</text>\n      <text font=\"12\" color=\"gray\">Secondary detail text that is also fairly long</text>\n    </vstack>\n    <rect frame=\"40,40\" color=\"#f97316\" corner=\"20\"/>\n  </hstack>\n);\n"
+ },
+ {
+  "name": "calib-text-baselines",
+  "size": "large",
+  "source": "$render(\n  <vstack spacing=\"6\" background=\"#ffffff\" frame=\"max\">\n    <text font=\"11\" color=\"black\" background=\"#ffd0d0\">Hxg 11</text>\n    <text font=\"13\" color=\"black\" background=\"#ffd0d0\">Hxg 13</text>\n    <text font=\"15\" color=\"black\" background=\"#ffd0d0\">Hxg 15</text>\n    <text font=\"17\" color=\"black\" background=\"#ffd0d0\">Hxg 17</text>\n    <text font=\"20\" color=\"black\" background=\"#ffd0d0\">Hxg 20</text>\n    <text font=\"22\" color=\"black\" background=\"#ffd0d0\">Hxg 22</text>\n    <text font=\"28\" color=\"black\" background=\"#ffd0d0\">Hxg 28</text>\n    <text font=\"34\" color=\"black\" background=\"#ffd0d0\">Hxg 34</text>\n  </vstack>\n);\n"
+ },
+ {
+  "name": "calib-text-baselines-styles",
+  "size": "large",
+  "source": "$render(\n  <vstack spacing=\"6\" background=\"#ffffff\" frame=\"max\">\n    <text font=\"caption2\" color=\"black\" background=\"#ffd0d0\">Hxg caption2</text>\n    <text font=\"caption\" color=\"black\" background=\"#ffd0d0\">Hxg caption</text>\n    <text font=\"footnote\" color=\"black\" background=\"#ffd0d0\">Hxg footnote</text>\n    <text font=\"subheadline\" color=\"black\" background=\"#ffd0d0\">Hxg subheadline</text>\n    <text font=\"body\" color=\"black\" background=\"#ffd0d0\">Hxg body</text>\n    <text font=\"headline\" color=\"black\" background=\"#ffd0d0\">Hxg headline</text>\n    <text font=\"title3\" color=\"black\" background=\"#ffd0d0\">Hxg title3</text>\n    <text font=\"title2\" color=\"black\" background=\"#ffd0d0\">Hxg title2</text>\n    <text font=\"title\" color=\"black\" background=\"#ffd0d0\">Hxg title</text>\n    <text font=\"largeTitle\" color=\"black\" background=\"#ffd0d0\">Hxg largeTitle</text>\n  </vstack>\n);\n"
+ },
+ {
+  "name": "calib-text-style-spacing",
+  "size": "large",
+  "source": "$render(\n  <vstack background=\"#ffffff\" frame=\"max\">\n    <text font=\"largeTitle\" color=\"black\" background=\"#ffd0d0\">Hxg largeTitle</text>\n    <text font=\"title\" color=\"black\" background=\"#d0ffd0\">Hxg title</text>\n    <text font=\"title2\" color=\"black\" background=\"#ffd0d0\">Hxg title2</text>\n    <text font=\"title3\" color=\"black\" background=\"#d0ffd0\">Hxg title3</text>\n    <text font=\"headline\" color=\"black\" background=\"#ffd0d0\">Hxg headline</text>\n    <text font=\"body\" color=\"black\" background=\"#d0ffd0\">Hxg body</text>\n    <text font=\"callout\" color=\"black\" background=\"#ffd0d0\">Hxg callout</text>\n    <text font=\"subheadline\" color=\"black\" background=\"#d0ffd0\">Hxg subheadline</text>\n    <text font=\"footnote\" color=\"black\" background=\"#ffd0d0\">Hxg footnote</text>\n    <text font=\"caption\" color=\"black\" background=\"#d0ffd0\">Hxg caption</text>\n    <text font=\"caption2\" color=\"black\" background=\"#ffd0d0\">Hxg caption2</text>\n  </vstack>\n);\n"
+ },
+ {
+  "name": "calib-text-size-spacing",
+  "size": "large",
+  "source": "$render(\n  <vstack background=\"#ffffff\" frame=\"max\">\n    <text font=\"11\" color=\"black\" background=\"#ffd0d0\">Hxg 11</text>\n    <text font=\"13\" color=\"black\" background=\"#d0ffd0\">Hxg 13</text>\n    <text font=\"15\" color=\"black\" background=\"#ffd0d0\">Hxg 15</text>\n    <text font=\"17\" color=\"black\" background=\"#d0ffd0\">Hxg 17</text>\n    <text font=\"20\" color=\"black\" background=\"#ffd0d0\">Hxg 20</text>\n    <text font=\"22\" color=\"black\" background=\"#d0ffd0\">Hxg 22</text>\n    <text font=\"28\" color=\"black\" background=\"#ffd0d0\">Hxg 28</text>\n    <text font=\"34\" color=\"black\" background=\"#d0ffd0\">Hxg 34</text>\n  </vstack>\n);\n"
+ },
+ {
+  "name": "calib-text-rect-spacing",
+  "size": "large",
+  "source": "$render(\n  <vstack background=\"#ffffff\" frame=\"max\">\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n    <text font=\"body\" color=\"black\" background=\"#ffd0d0\">Hxg body</text>\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n    <text font=\"17\" color=\"black\" background=\"#d0ffd0\">Hxg 17</text>\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n    <text font=\"caption\" color=\"black\" background=\"#ffd0d0\">Hxg caption</text>\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n    <text font=\"12\" color=\"black\" background=\"#d0ffd0\">Hxg 12</text>\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n    <text font=\"title\" color=\"black\" background=\"#ffd0d0\">Hxg title</text>\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n    <text font=\"28\" color=\"black\" background=\"#d0ffd0\">Hxg 28</text>\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n  </vstack>\n);\n"
  }
 ]

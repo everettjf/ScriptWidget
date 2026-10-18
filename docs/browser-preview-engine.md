@@ -404,6 +404,100 @@ time-based templates, controls that `ImageRenderer` draws as placeholders
 (`toggle`), and how an HStack splits width between two text columns in narrow
 small widgets.
 
+## Coverage across every iOS size
+
+The comparison now covers every widget size the iOS app offers, not just
+the 393-point iPhone:
+
+| Profile | Families compared |
+| --- | --- |
+| iPhone 393 pt | small, medium, large, accessoryCircular, accessoryRectangular, accessoryInline |
+| iPhone 430 pt | small, medium, large |
+| iPhone 375 pt | small, medium, large |
+| iPad 1024 pt | medium, large, extraLarge, extraLargePortrait (its small equals the 430-pt small) |
+
+That is 16 sizes × 100 corpus widgets plus the calibration cases (1,649
+renders). The native export reads the sizes from `src/render/profiles.js`,
+so both sides always agree:
+
+```bash
+TEST_RUNNER_SCRIPTWIDGET_EXPORT_SNAPSHOTS=1 TEST_RUNNER_SCRIPTWIDGET_EXPORT_PROFILES=all xcodebuild -project iOS/ScriptWidget.xcodeproj -scheme ScriptWidgetRuntimeTests -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:ScriptWidgetRuntimeTests/BrowserPreviewParityTests/testExportNativeSnapshots
+```
+
+```bash
+cd Web/preview-engine && npm run build && npm run compare
+```
+
+`npm run compare` prints a table per size and writes
+`dist/compare-summary.json` with the same statistics per size and per
+component tag (every tag the renderer supports is compared at several
+sizes). To keep runs deterministic, absolute `<date>` styles use the
+parity prelude's clock on both sides (`ScriptWidgetRenderClock`, test-only),
+and snapshot runs draw animations and GIFs the way `ImageRenderer` captures
+them (clock hands at rest, swing layout at angle 0, the GIF frame its arc
+masks expose). Relative timers still follow the real clock.
+
+### Rules measured for this pass
+
+Each rule was measured on the iOS 27 simulator with
+`testPrintTextBaselines`, `testPrintTextSpacing` (8× rendering), or the
+calibration cases, and applied in the renderer:
+
+- First baseline at the SF ascent (0.9521 × size on iOS; a measured
+  whole-point table on macOS), corrected for each browser's rounding.
+- Line pitch: a sized font advances by its natural height (size × 1.1934);
+  a text style by its style line height.
+- VStack spacing: text to text adds the lower text's Dynamic Type leading
+  (none for sized fonts); a view above text 0.3625 × size (rounded up); text
+  above a view 0.6094 × size; SF Symbols sit flush against text and other
+  symbols and leave 0.135 × size next to other views. HStack spacing is 8.
+- Truncation reports the width it draws, cuts mid-word, and never
+  hyphenates a single line. Text offered no width draws nothing.
+- Hyphenation applies only to text styles and only to words wider than the
+  line, at TeX/Apple dictionary breaks (99.4% agreement with
+  `CFStringGetHyphenationLocationBeforeIndex`); other fonts break between
+  characters. No break before closing punctuation.
+- Emoji take CoreText's advance and glyph size where a browser draws them at
+  1 em (Chrome).
+- Stacks place children with the offers they were sized with; a rigid child
+  wider than the proposal does not widen the other rows.
+
+### Results
+
+| Size (iOS 27 simulator, Chrome) | Mean matching pixels | Renders ≥ 99% identical |
+| --- | --- | --- |
+| small (375 / 393 / 430 pt) | 97.24% / 97.25% / 97.62% | 33% / 36% / 37% |
+| medium (375 / 393 / 430 pt, iPad) | 98.48% / 98.67% / 98.84% / 98.89% | 43–48% |
+| large (375 / 393 / 430 pt, iPad) | 99.25% / 99.35% / 99.45% / 99.46% | 76–89% |
+| extraLarge, extraLargePortrait (iPad) | 99.73% / 99.73% | 98% / 98% |
+| accessory circular / rectangular / inline | 94.93% / 96.14% / 95.52% | 20% / 21% / 24% |
+| **All 1,649 renders** | **98.18%** (was 96.94% when this pass started) | **55.7%** (was 40.6%) |
+
+By content, over the 1,600 corpus renders:
+
+| Content | small | medium | large | extraLarge | accessory |
+| --- | --- | --- | --- | --- | --- |
+| Text, shapes, images only | 98.79% | 99.47% | 99.74% | 99.88% | 97.30% |
+| Uses SF Symbols | 96.09% | 98.04% | 99.05% | 99.59% | 93.55% |
+| Other approximated features | 96.90% | 98.49% | 99.25% | 99.69% | 95.81% |
+
+macOS (ScriptWidget Preview, `WKWebView`): corpus mean 99.06% matching
+pixels, median difference 0.40%, 216 of 300 renders at least 99% identical.
+
+### What still differs
+
+- **SF Symbols.** They cannot be redistributed, so the web draws Lucide
+  look-alikes at the measured symbol sizes. No widget that shows a symbol
+  at small size reaches 99%; this is the largest remaining gap.
+- **Accessory sizes.** Most corpus widgets were designed for Home Screen
+  sizes and overflow a 72-point frame; clipping and centering of overflowing
+  content still differ by a point or two.
+- **ImageRenderer artifacts.** `toggle` renders as a placeholder in native
+  snapshots, and relative timers depend on the real clock, so those renders
+  are not meaningful comparisons.
+- **Swing animations.** The swing modifier's oversized overlay frames change
+  how the surrounding rows wrap (Animation Aquarium).
+
 ## Verification matrix
 
 | Check | Result |
@@ -412,8 +506,8 @@ small widgets.
 | Tree parity, iOS 27.0 simulator JavaScriptCore | identical to the reference |
 | Tree parity, Node 24 / Chromium (headless and Claude pane) | 100/100 byte-identical |
 | Tree parity, iOS 27 Safari (WebKit) in the simulator | 100/100 byte-identical; all isolation probes blocked; CSP control reached |
-| Pixel comparison vs iOS 27 snapshots, Chrome on macOS | corpus median 1.71% (262/300 within 5%, 298/300 within 20%); calibration cases median 0.84% |
-| Pixel comparison vs macOS 27 native, `WKWebView` (ScriptWidget Preview) | corpus median 0.94% (280/300 within 5%, 300/300 within 20%); calibration cases median 0.24% |
+| Pixel comparison vs iOS 27 snapshots, Chrome on macOS | every iOS size: 1,649 renders, 98.18% matching pixels, 55.7% at least 99% identical (see Coverage across every iOS size) |
+| Pixel comparison vs macOS 27 native, `WKWebView` (ScriptWidget Preview) | corpus 99.06% matching pixels, median 0.40%, 216/300 at least 99% identical |
 | Web Studio, headless Chrome smoke test | starter, 71 templates, image template, `.swt` import all render |
 | Web Studio, iOS 27 Safari | renders with the strict page CSP and URL-loaded sandbox |
 | Web-exported `.swt` imported by native code | passes preflight, extraction, validation, execution |

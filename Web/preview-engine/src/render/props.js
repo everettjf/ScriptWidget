@@ -278,10 +278,10 @@ const macTextStyles = {
 export function styleFont(name) {
   if (currentPlatform === "macos") {
     const [size, natural, lineHeight, weight, gap] = macTextStyles[name];
-    return { size, natural, lineHeight, weight, gap, design: "default" };
+    return { size, natural, lineHeight, weight, gap, design: "default", textStyle: name };
   }
   const [size, lineHeight, weight] = textStyles[name];
-  return { size, lineHeight, weight, design: "default" };
+  return { size, lineHeight, weight, design: "default", textStyle: name };
 }
 
 const weights = { ultraLight: 100, thin: 200, light: 300, regular: 400, medium: 500, semibold: 600, bold: 700, heavy: 800, black: 900 };

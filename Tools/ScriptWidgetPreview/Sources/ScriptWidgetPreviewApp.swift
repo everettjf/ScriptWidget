@@ -15,6 +15,12 @@ struct ScriptWidgetPreviewApp: App {
     @NSApplicationDelegateAdaptor private var delegate: PreviewAppDelegate
     @StateObject private var model = CompareModel()
 
+    init() {
+        // Absolute <date> styles use the parity prelude's fixed clock so both
+        // renderers show the same time.
+        ScriptWidgetRenderClock.fixedNow = Date(timeIntervalSince1970: 1_767_268_800)
+    }
+
     var body: some Scene {
         WindowGroup("ScriptWidget Preview") {
             ContentView()

@@ -8,6 +8,12 @@
 import Foundation
 import SwiftUI
 
+/// The clock `<date>` uses for absolute styles (`time`, `date`). Tests that
+/// compare snapshots set `fixedNow`; the app always leaves it nil. Relative
+/// styles keep the real clock because SwiftUI measures them against it.
+enum ScriptWidgetRenderClock {
+    nonisolated(unsafe) static var fixedNow: Date?
+}
 
 class ScriptWidgetElementTagDate {
     static func buildView(_ element: ScriptWidgetRuntimeElement, _ context: ScriptWidgetElementContext) -> AnyView {
@@ -17,9 +23,11 @@ class ScriptWidgetElementTagDate {
             dateStyle = ScriptWidgetElementTagDate.getStyle(styleName: style)
         }
         
-        var date: Date = Date()
+        let absolute = dateStyle == .time || dateStyle == .date
+        let now = (absolute ? ScriptWidgetRenderClock.fixedNow : nil) ?? Date()
+        var date: Date = now
         if let dateName = element.getPropString("date") {
-            date = ScriptWidgetElementTagDate.getDate(dateName: dateName)
+            date = ScriptWidgetElementTagDate.getDate(dateName: dateName, now: now)
         } else if let dateTimestamp = element.getPropDouble("date") {
             date = Date(timeIntervalSince1970: dateTimestamp / 1000.0)
         }
@@ -31,15 +39,15 @@ class ScriptWidgetElementTagDate {
         )
     }
     
-    static func getDate(dateName: String) -> Date {
+    static func getDate(dateName: String, now: Date = Date()) -> Date {
         if (dateName == "now") {
-            return Date()
+            return now
         } else if (dateName == "tomorrow") {
-            return Date().advanced(by: 1*24*60*60)
+            return now.advanced(by: 1*24*60*60)
         } else if (dateName == "yesterday") {
-            return Date().advanced(by: -1*24*60*60)
+            return now.advanced(by: -1*24*60*60)
         } else if (dateName == "start of today") {
-            return Calendar.current.startOfDay(for: Date())
+            return Calendar.current.startOfDay(for: now)
         } else if (dateName.hasPrefix("+") || dateName.hasPrefix("-")) {
             var advancedValue:TimeInterval = 60*60;
             if (dateName.hasPrefix("+")) {
@@ -61,9 +69,9 @@ class ScriptWidgetElementTagDate {
                 middleValue = Int(middleString) ?? 0
             }
             
-            return Date().advanced(by: advancedValue * Double(middleValue))
+            return now.advanced(by: advancedValue * Double(middleValue))
         }
-        return Date()
+        return now
     }
     
     static func getStyle(styleName: String) -> Text.DateStyle {

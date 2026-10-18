@@ -1,6 +1,6 @@
 // Renders every corpus entry and calibration case in headless Chrome, then
 // compares each against the native iOS PNG in dist/native-snapshots.
-// Usage: node scripts/compare-snapshots.mjs [name-prefix]
+// Usage: node scripts/compare-snapshots.mjs [name-prefix[,name-prefix...]]
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import http from "node:http";
@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { decodePNG, encodePNG } from "./png.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const prefix = process.argv[2] ?? "";
+const prefixes = (process.argv[2] ?? "").split(",");
 const nativeDirectory = path.join(root, "dist/native-snapshots");
 const webDirectory = path.join(root, "dist/web-snapshots");
 const compareDirectory = path.join(root, "dist/compare");
@@ -67,7 +67,7 @@ const names = await evaluate("window.__items");
 
 const report = [];
 for (let index = 0; index < names.length; index += 1) {
-  if (!names[index].startsWith(prefix)) continue;
+  if (!prefixes.some((prefix) => names[index].startsWith(prefix))) continue;
   const nativeFile = path.join(nativeDirectory, fileName(names[index]));
   if (!fs.existsSync(nativeFile)) continue;
   const box = await evaluate(`window.__render(${index})`);
@@ -98,6 +98,48 @@ const scored = report.filter((item) => item.diffPercent !== undefined);
 const median = scored.length ? scored.map((item) => item.diffPercent).sort((a, b) => a - b)[Math.floor(scored.length / 2)] : null;
 console.log(`compared ${scored.length}, errors ${report.length - scored.length}, median diff ${median}%`);
 for (const item of report.slice(0, 15)) console.log(String(item.diffPercent ?? item.error).padStart(7), item.name);
+
+// Coverage by size: one row per family and device profile ("small",
+// "medium~iphone-430", ...). "Same" is the share of matching pixels.
+const groups = new Map();
+for (const item of scored) {
+  const key = item.name.startsWith("case/") ? "calibration cases" : item.name.slice(item.name.lastIndexOf("@") + 1);
+  if (!groups.has(key)) groups.set(key, []);
+  groups.get(key).push(item.diffPercent);
+}
+const summarize = (values) => {
+  const sorted = [...values].sort((a, b) => a - b);
+  const share = (limit) => +(100 * sorted.filter((value) => value <= limit).length / sorted.length).toFixed(1);
+  return {
+    renders: sorted.length, medianDiff: sorted[Math.floor(sorted.length / 2)],
+    meanSame: +(100 - sorted.reduce((sum, value) => sum + value, 0) / sorted.length).toFixed(2),
+    within1: share(1), within3: share(3), within5: share(5),
+  };
+};
+// Coverage by component: every compared render counts for each tag its
+// package source uses.
+const corpusSources = JSON.parse(fs.readFileSync(path.join(root, "dist/parity-corpus.json"), "utf8")).corpus
+  .map((item) => [item.name, Object.values(item.files).filter((value) => typeof value === "string").join("\n")]);
+const caseSources = JSON.parse(fs.readFileSync(path.join(root, "test/render/cases.json"), "utf8")).map((item) => [`case/${item.name}`, item.source]);
+const sources = Object.fromEntries([...corpusSources, ...caseSources]);
+const tags = new Map();
+for (const item of scored) {
+  const source = sources[item.name.slice(0, item.name.lastIndexOf("@"))] ?? "";
+  for (const tag of new Set([...source.matchAll(/<([a-z][a-zA-Z0-9]*)[\s>/]/g)].map((match) => match[1]))) {
+    if (!tags.has(tag)) tags.set(tag, []);
+    tags.get(tag).push(item.diffPercent);
+  }
+}
+const summary = {
+  all: summarize(scored.map((item) => item.diffPercent)),
+  sizes: Object.fromEntries([...groups].sort(([a], [b]) => a.localeCompare(b)).map(([key, values]) => [key, summarize(values)])),
+  tags: Object.fromEntries([...tags].sort(([a], [b]) => a.localeCompare(b)).map(([key, values]) => [key, summarize(values)])),
+};
+fs.writeFileSync(path.join(root, "dist/compare-summary.json"), JSON.stringify(summary, null, 1));
+console.log("\n| Size | Renders | Median diff | Mean same | ≥99% same | ≤3% diff | ≤5% diff |\n| --- | --- | --- | --- | --- | --- | --- |");
+for (const [key, row] of [...Object.entries(summary.sizes), ["all", summary.all]]) {
+  console.log(`| ${key} | ${row.renders} | ${row.medianDiff}% | ${row.meanSame}% | ${row.within1}% | ${row.within3}% | ${row.within5}% |`);
+}
 browser.close(); server.close();
 await new Promise((resolve) => { chrome.once("exit", resolve); chrome.kill(); });
 fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });

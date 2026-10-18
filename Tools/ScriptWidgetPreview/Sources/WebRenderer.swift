@@ -69,7 +69,8 @@ final class WebRenderer: NSObject, WKNavigationDelegate {
                     "environments": ["widget-size": family.rawValue, "widget-param": "", "widget-rendering-mode": "fullColor"],
                     "preview": ["appearance": dark ? "dark" : "light"], "fixtures": [String: Any](),
                 ],
-                "render": ["family": family.rawValue, "profile": "macos", "appearance": dark ? "dark" : "light", "resources": resources],
+                // The parity prelude's fixed clock, as on the native side.
+                "render": ["family": family.rawValue, "profile": "macos", "appearance": dark ? "dark" : "light", "resources": resources, "now": 1_767_268_800_000],
             ]
             let value = try await webView.callAsyncJavaScript("return await window.__render(job)", arguments: ["job": job], contentWorld: .page)
             guard let output = value as? [String: Any] else { throw NSError(domain: "ScriptWidgetPreview", code: 3) }
