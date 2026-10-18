@@ -10,25 +10,25 @@ States: **supported** renders like iPhone within measured tolerances; **approxim
 | `vstack` | supported |  |
 | `hstack` | supported |  |
 | `zstack` | supported |  |
-| `hgrid` | unsupported | Shown as a placeholder |
-| `vgrid` | unsupported | Shown as a placeholder |
+| `hgrid` | approximated | Lazy grid tracks; cells are centered |
+| `vgrid` | approximated | Lazy grid tracks; cells are centered |
 | `text` | supported |  |
-| `date` | approximated | Fixed clock, English formatting |
-| `image` | approximated | Package images render; SF Symbols and remote URLs show placeholders |
+| `date` | approximated | Real clock like iPhone; English formats |
+| `image` | approximated | Package images render; SF Symbols use look-alike icons; remote URLs show placeholders |
 | `gif` | approximated | Browser GIF playback; the widget's frame sequencing differs |
 | `spacer` | supported |  |
 | `rect` | supported |  |
 | `capsule` | supported |  |
 | `ellipse` | supported |  |
 | `circle` | supported |  |
-| `gauge` | unsupported | Shown as a placeholder |
-| `chart` | unsupported | Shown as a placeholder |
+| `gauge` | approximated | Original gauge drawn like MineGaugeView; system gauge styles approximated |
+| `chart` | approximated | SVG approximation of Swift Charts marks, axes, and legend |
 | `link` | approximated | Children laid out vertically; not interactive |
 | `divider` | supported |  |
 | `line` | supported |  |
 | `roundedrect` | supported |  |
-| `icon` | approximated | SF Symbols are shown as placeholder glyphs |
-| `label` | approximated | Icon is a placeholder glyph |
+| `icon` | approximated | SF Symbols are drawn with look-alike Lucide icons (ISC); unmapped names show a placeholder |
+| `label` | approximated | Icon is a look-alike Lucide icon |
 | `progress` | supported |  |
 | `ring` | supported |  |
 | `badge` | supported |  |
@@ -65,12 +65,12 @@ Applied by every tag except `spacer` (frame only) and `Fragment`, in this order:
 | `vstack` | `spacing` | supported | Default spacing measured on iOS 27 |
 | `hstack` | `alignment` | supported |  |
 | `hstack` | `spacing` | supported |  |
-| `hgrid` | `columns` | unsupported | Grid tracks |
-| `hgrid` | `alignment` | unsupported |  |
-| `hgrid` | `spacing` | unsupported |  |
-| `vgrid` | `columns` | unsupported | Grid tracks |
-| `vgrid` | `alignment` | unsupported |  |
-| `vgrid` | `spacing` | unsupported |  |
+| `hgrid` | `columns` | supported | fixed, flexible, adaptive |
+| `hgrid` | `alignment` | approximated | Cells are centered |
+| `hgrid` | `spacing` | supported |  |
+| `vgrid` | `columns` | supported | fixed, flexible, adaptive |
+| `vgrid` | `alignment` | approximated | Cells are centered |
+| `vgrid` | `spacing` | supported |  |
 | `text` | `fontWeight` | supported | Overrides the weight in font |
 | `text` | `weight` | supported | Older alias of fontWeight |
 | `text` | `fontDesign` | supported | default, rounded, serif, monospaced |
@@ -80,12 +80,12 @@ Applied by every tag except `spacer` (frame only) and `Fragment`, in this order:
 | `date` | `fontWeight` | supported | Overrides the weight in font |
 | `date` | `weight` | supported | Older alias of fontWeight |
 | `date` | `fontDesign` | supported | default, rounded, serif, monospaced |
-| `date` | `date` | approximated | Fixed clock |
-| `date` | `style` | approximated | time/date/timer formats approximated |
+| `date` | `date` | supported | now, tomorrow, yesterday, start of today, +Nh, -Nd, or milliseconds |
+| `date` | `style` | approximated | English formats; timers do not tick |
 | `date` | `font` | supported |  |
 | `date` | `color` | supported |  |
 | `date` | `alignment` | supported |  |
-| `image` | `systemName` | approximated | Placeholder glyph |
+| `image` | `systemName` | approximated | Look-alike Lucide icon |
 | `image` | `name` | supported | Needs the package image file |
 | `image` | `id` | supported | Alias of name |
 | `image` | `url` | approximated | data: PNG/JPEG only; remote URLs are not loaded |
@@ -115,27 +115,30 @@ Applied by every tag except `spacer` (frame only) and `Fragment`, in this order:
 | `circle` | `trim` | approximated | Trim applies to strokes only |
 | `circle` | `stroke` | supported |  |
 | `circle` | `color` | supported |  |
-| `gauge` | `value` | unsupported |  |
-| `gauge` | `angle` | unsupported |  |
-| `gauge` | `current` | unsupported |  |
-| `gauge` | `label` | unsupported |  |
-| `gauge` | `max` | unsupported |  |
-| `gauge` | `min` | unsupported |  |
-| `gauge` | `needleColor` | unsupported |  |
-| `gauge` | `sections` | unsupported |  |
-| `gauge` | `style` | unsupported |  |
-| `gauge` | `text` | unsupported |  |
-| `gauge` | `thickness` | unsupported |  |
-| `gauge` | `title` | unsupported |  |
-| `gauge` | `type` | unsupported |  |
-| `gauge` | `titleFont` | unsupported |  |
-| `gauge` | `labelFont` | unsupported |  |
-| `chart` | `category` | unsupported |  |
-| `chart` | `hideLegend` | unsupported |  |
-| `chart` | `hideXAxis` | unsupported |  |
-| `chart` | `hideYAxis` | unsupported |  |
-| `chart` | `data` | unsupported |  |
-| `chart` | `type` | unsupported |  |
+| `gauge` | `value` | supported |  |
+| `gauge` | `angle` | supported |  |
+| `gauge` | `label` | supported |  |
+| `gauge` | `needleColor` | supported |  |
+| `gauge` | `sections` | supported |  |
+| `gauge` | `thickness` | supported |  |
+| `gauge` | `title` | supported |  |
+| `gauge` | `labelFont` | supported |  |
+| `gauge` | `labelColor` | supported |  |
+| `gauge` | `titleColor` | supported |  |
+| `gauge` | `current` | approximated | System gauge styles are approximated |
+| `gauge` | `max` | approximated | System gauge styles are approximated |
+| `gauge` | `min` | approximated | System gauge styles are approximated |
+| `gauge` | `style` | approximated | System gauge styles are approximated |
+| `gauge` | `text` | approximated | System gauge styles are approximated |
+| `gauge` | `type` | approximated | System gauge styles are approximated |
+| `gauge` | `titleFont` | supported | Not read natively; the title uses labelFont |
+| `chart` | `category` | approximated | Swift Charts styling differs |
+| `chart` | `hideLegend` | approximated | Swift Charts styling differs |
+| `chart` | `hideXAxis` | approximated | Swift Charts styling differs |
+| `chart` | `hideYAxis` | approximated | Swift Charts styling differs |
+| `chart` | `data` | approximated | Swift Charts styling differs |
+| `chart` | `type` | approximated | Swift Charts styling differs |
+| `chart` | `color` | approximated | Swift Charts styling differs |
 | `link` | `url` | supported |  |
 | `divider` | `thickness` | supported |  |
 | `divider` | `axis` | supported |  |
@@ -149,7 +152,7 @@ Applied by every tag except `spacer` (frame only) and `Fragment`, in this order:
 | `icon` | `fontWeight` | supported | Overrides the weight in font |
 | `icon` | `weight` | supported | Older alias of fontWeight |
 | `icon` | `fontDesign` | supported | default, rounded, serif, monospaced |
-| `icon` | `systemName` | approximated | Placeholder glyph |
+| `icon` | `systemName` | approximated | Look-alike Lucide icon |
 | `icon` | `size` | supported |  |
 | `icon` | `color` | supported |  |
 | `icon` | `font` | supported |  |
@@ -157,7 +160,7 @@ Applied by every tag except `spacer` (frame only) and `Fragment`, in this order:
 | `label` | `weight` | supported | Older alias of fontWeight |
 | `label` | `fontDesign` | supported | default, rounded, serif, monospaced |
 | `label` | `title` | supported |  |
-| `label` | `systemName` | approximated | Placeholder glyph |
+| `label` | `systemName` | approximated | Look-alike Lucide icon |
 | `label` | `color` | supported |  |
 | `label` | `font` | supported |  |
 | `progress` | `value` | supported |  |

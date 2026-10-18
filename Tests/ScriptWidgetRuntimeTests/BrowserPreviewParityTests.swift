@@ -105,6 +105,9 @@ enum BrowserPreviewSnapshotProfile {
         switch family {
         case "small": return CGSize(width: 158, height: 158)
         case "large": return CGSize(width: 338, height: 354)
+        case "accessoryCircular": return CGSize(width: 72, height: 72)
+        case "accessoryRectangular": return CGSize(width: 170, height: 72)
+        case "accessoryInline": return CGSize(width: 250, height: 30)
         default: return CGSize(width: 338, height: 158)
         }
     }
@@ -141,18 +144,18 @@ final class BrowserPreviewParityTests: XCTestCase {
         let output = Self.repositoryRoot.appendingPathComponent("Web/preview-engine/dist/native-snapshots")
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         let prelude = try String(contentsOf: Self.parityDirectory.appendingPathComponent("prelude.js"), encoding: .utf8)
-        var jobs: [(name: String, family: String, source: String, package: ScriptWidgetPackage)] = []
+        var jobs: [(name: String, family: String, source: String, package: ScriptWidgetPackage, dark: Bool)] = []
         for (name, directory) in try Self.corpusPackages() {
             let package = ScriptWidgetPackage(path: directory, readonly: true)
             guard let source = package.readMainFile().0, !Self.usesLiveData(source) else { continue }
-            for family in ["small", "medium", "large"] { jobs.append(("\(name)@\(family)", family, prelude + source, package)) }
+            for family in ["small", "medium", "large"] { jobs.append(("\(name)@\(family)", family, prelude + source, package, false)) }
         }
         let casesURL = Self.repositoryRoot.appendingPathComponent("Web/preview-engine/test/render/cases.json")
-        let cases = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: casesURL)) as? [[String: String]])
+        let cases = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: casesURL)) as? [[String: Any]])
         let scratch = ScriptWidgetPackage(path: FileManager.default.temporaryDirectory, readonly: true)
         for item in cases {
-            let family = item["size"] ?? "medium"
-            jobs.append(("case/\(item["name"] ?? "")@\(family)", family, prelude + (item["source"] ?? ""), scratch))
+            let family = item["size"] as? String ?? "medium"
+            jobs.append(("case/\(item["name"] as? String ?? "")@\(family)", family, prelude + (item["source"] as? String ?? ""), scratch, item["dark"] as? Bool ?? false))
         }
         let filter = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_FILTER"] ?? ""
         for job in jobs where filter.isEmpty || job.name.hasPrefix(filter) {
@@ -163,7 +166,7 @@ final class BrowserPreviewParityTests: XCTestCase {
                                                      package: job.package, containerBackgroundElement: element)
             let renderer = ImageRenderer(content: BrowserPreviewSnapshotView(element: element, context: context,
                                                                              size: BrowserPreviewSnapshotProfile.size(job.family))
-                .environment(\.colorScheme, .light))
+                .environment(\.colorScheme, job.dark ? .dark : .light))
             renderer.scale = 2
             guard let data = renderer.uiImage?.pngData() else { continue }
             let fileName = job.name.replacingOccurrences(of: "/", with: "__").replacingOccurrences(of: " ", with: "_") + ".png"

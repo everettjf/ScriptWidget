@@ -9,10 +9,38 @@ import {
 } from "./props.js";
 import { coverage, generalProps, ignoredProp } from "./coverage.js";
 import { widgetSize } from "./profiles.js";
+import { lucideIcons, sfSymbolToLucide } from "./icons.generated.js";
+
+/// Closest open icon for an SF Symbol name: exact, then without style
+/// suffixes (.fill, .circle, .square, ...), then shorter prefixes.
+export function lucideIconFor(systemName) {
+  const variants = new Set();
+  let name = systemName;
+  variants.add(name);
+  const stripped = name.replace(/\.(fill|circle|square|rectangle|slash|badge|inverse)(?=\.|$)/g, "");
+  variants.add(stripped);
+  const parts = stripped.split(".");
+  for (let length = parts.length - 1; length > 0; length -= 1) variants.add(parts.slice(0, length).join("."));
+  for (const variant of variants) if (sfSymbolToLucide[variant]) return lucideIcons[sfSymbolToLucide[variant]];
+  return null;
+}
 import {
-  AspectNode, DecorationNode, FixedNode, FlexibleNode, FrameNode, PaddingNode, SpacerNode, StackNode, TextNode,
+  AspectNode, DecorationNode, FixedNode, FlexibleNode, FrameNode, GridNode, Node, PaddingNode, SpacerNode, StackNode, TextNode,
   ZStackNode, createTextMeasurer,
 } from "./layout.js";
+
+/// Overlay: the first child fills the frame; the second is aligned to the
+/// bottom (MineGaugeView's `.overlay(label(), alignment: .bottom)`).
+class BottomOverlayNode extends Node {
+  constructor(base, overlay) { super(); this.base = base; this.overlay = overlay; this.children = [base, overlay]; }
+  size(pw, ph) { return this.base.size(pw, ph); }
+  place(x, y, width, height) {
+    super.place(x, y, width, height);
+    this.base.place(0, 0, width, height);
+    const [w, h] = this.overlay.size(width, height);
+    this.overlay.place((width - w) / 2, height - h, w, h);
+  }
+}
 
 const naturalLineRatio = 1.1934;
 
@@ -92,7 +120,7 @@ async function naturalSizes(urls, doc) {
 /// Renders a canonical tree JSON string into a widget-sized element.
 /// Must run in a document with layout (text is measured by the browser).
 export async function renderWidget(treeJSON, {
-  family = "medium", profile = "iphone-393", appearance = "light", resources = {}, document: doc = globalThis.document,
+  family = "medium", profile = "iphone-393", appearance = "light", renderingMode = "fullColor", lockScreen = true, resources = {}, document: doc = globalThis.document,
 } = {}) {
   const size = widgetSize(profile, family);
   const diagnostics = [];
@@ -139,7 +167,7 @@ export async function renderWidget(treeJSON, {
       const content = element.ownerDocument.createElement("div");
       content.textContent = value;
       const trim = (style.leading - style.natural) / 2;
-      Object.assign(content.style, { marginTop: `${-trim}px`, width: `${node.frame.width + 1}px` });
+      Object.assign(content.style, { marginTop: `${-trim}px`, width: `${node.frame.width + 2}px` });
       if (alignment !== "left") content.style.width = `${node.frame.width}px`;
       if (node.lines && node.lines.lines < node.lines.total) {
         Object.assign(content.style, { display: "-webkit-box", webkitBoxOrient: "vertical", webkitLineClamp: String(node.lines.lines), overflow: "hidden" });
@@ -280,15 +308,34 @@ export async function renderWidget(treeJSON, {
     };
   }
 
-  // SF Symbols are fixed-size images: about 1.2 em wide, one line tall.
+  // SF Symbols are fixed-size images about 1.2 em wide and one line tall.
+  // They are drawn with the closest Lucide icon (ISC license).
   function glyph(systemName, font, inputPaint) {
     const paint = inputPaint ?? { color: primary() };
-    report("info", "icon.approximated", `SF Symbol "${systemName}" is shown as a placeholder glyph`);
     const style = textStyleFor(font);
+    const icon = lucideIconFor(systemName);
+    if (icon) report("info", "icon.approximated", `SF Symbol "${systemName}" is drawn with an open-source look-alike icon`);
+    else report("warning", "icon.unmapped", `SF Symbol "${systemName}" has no web icon yet; a placeholder is shown`);
     const node = leaf(new FixedNode(Math.ceil(style.size * 1.2 * 2) / 2, style.natural), (target, element) => {
-      Object.assign(element.style, { fontFamily: style.family, fontSize: `${style.size * 0.9}px`, lineHeight: `${style.natural}px`, textAlign: "center" });
-      element.textContent = "◉";
-      applyTextPaint(element, paint, target.frame.width, target.frame.height);
+      const { width, height } = target.frame;
+      const colorValue = cssColor(paint.color ?? paint.gradient?.colors[0] ?? primary());
+      if (!icon) {
+        Object.assign(element.style, { fontFamily: style.family, fontSize: `${style.size * 0.9}px`, lineHeight: `${height}px`, textAlign: "center", color: colorValue });
+        element.textContent = "◉";
+        return;
+      }
+      const svgNS = "http://www.w3.org/2000/svg";
+      const side = style.size * 1.08;
+      const svg = element.ownerDocument.createElementNS(svgNS, "svg");
+      for (const [key, value] of Object.entries({ width: side, height: side, viewBox: "0 0 24 24", fill: "none", stroke: colorValue,
+        "stroke-width": String(Math.max(1.5, Math.min(3, 1.4 + (style.weight - 100) / 400))), "stroke-linecap": "round", "stroke-linejoin": "round" })) svg.setAttribute(key, String(value));
+      Object.assign(svg.style, { position: "absolute", left: `${(width - side) / 2}px`, top: `${(height - side) / 2}px` });
+      for (const [tag, attributes] of icon) {
+        const item = element.ownerDocument.createElementNS(svgNS, tag);
+        for (const [key, value] of Object.entries(attributes)) item.setAttribute(key, String(value));
+        svg.appendChild(item);
+      }
+      element.appendChild(svg);
     });
     node.title = systemName;
     return node;
@@ -400,6 +447,7 @@ export async function renderWidget(treeJSON, {
       }
       if (shadowColor) decoration.filter = `drop-shadow(${x}px ${y}px ${radius / 2}px ${cssColor(shadowColor)})`;
     }
+    if (reader.bool("widgetAccentable") === true) decoration.accentable = true;
     if (Object.keys(decoration).length) {
       // Backgrounds and effects keep the content's spacing preferences;
       // padding and frames replace them.
@@ -517,11 +565,9 @@ export async function renderWidget(treeJSON, {
         }
         break;
       }
-      case "gauge": case "chart": case "hgrid": case "vgrid": {
-        report("warning", "tag.unsupported", `<${tag}> is not rendered by the web preview yet`);
-        content = new DecorationNode(new PaddingNode(text(`<${tag}>`, styleFont("caption2"), { color: color("secondary") }), [4, 6, 4, 6]), { dashed: true, cornerRadius: 6 });
-        break;
-      }
+      case "hgrid": case "vgrid": content = gridNode(element, reader, tag === "vgrid" ? "v" : "h"); break;
+      case "gauge": content = gaugeNode(reader); break;
+      case "chart": content = chartNode(reader); break;
       case "Fragment": {
         const children = buildChildren(element, axis);
         return children.length === 1 ? children[0] : new StackNode("v", children, { alignment: "center", spacing: defaultSpacing("v") });
@@ -559,26 +605,325 @@ export async function renderWidget(treeJSON, {
     return new StackNode("v", children, { alignment: "start", spacing: () => (label ? 4 : 0) });
   }
 
+  // ScriptWidgetElementTagDate: Swift's Date() is the real clock, so the
+  // web preview uses the real clock too. Formats follow Text(date, style:)
+  // in English.
   function formatDate(reader) {
-    const now = new Date(Date.UTC(2026, 0, 1, 12, 0, 0));
-    const style = reader.string("style") ?? "timer";
-    if (style === "time") return now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-    if (style === "date") return now.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
-    if (style === "relative" || style === "offset") return "0 min";
-    return "0:00";
+    const now = new Date();
+    let date = now;
+    const name = reader.string("date");
+    if (name !== null) {
+      if (name === "tomorrow") date = new Date(now.getTime() + 86400000);
+      else if (name === "yesterday") date = new Date(now.getTime() - 86400000);
+      else if (name === "start of today") date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      else if (name.startsWith("+") || name.startsWith("-")) {
+        let step = 3600000 * (name.startsWith("+") ? 1 : -1);
+        if (name.endsWith("d")) step *= 24;
+        const middle = name.length >= 3 ? Number.parseInt(name.slice(1, -1), 10) : 0;
+        date = new Date(now.getTime() + step * (Number.isFinite(middle) && /^[+-]?\d+$/.test(name.slice(1, -1)) ? middle : 0));
+      }
+    } else if (reader.double("date") !== null) date = new Date(reader.double("date"));
+    const style = { time: "time", date: "date", relative: "relative", offset: "offset", timer: "timer" }[reader.string("style") ?? "timer"] ?? "time";
+    const seconds = Math.round((date.getTime() - now.getTime()) / 1000);
+    const parts = (value) => {
+      const total = Math.abs(value);
+      const days = Math.floor(total / 86400); const hours = Math.floor((total % 86400) / 3600); const minutes = Math.floor((total % 3600) / 60); const secs = total % 60;
+      if (days) return hours ? `${days} day${days === 1 ? "" : "s"}, ${hours} hr` : `${days} day${days === 1 ? "" : "s"}`;
+      if (hours) return minutes ? `${hours} hr, ${minutes} min` : `${hours} hr`;
+      if (minutes) return secs ? `${minutes} min, ${secs} sec` : `${minutes} min`;
+      return `${secs} sec`;
+    };
+    if (style === "time") return date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    if (style === "date") return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    if (style === "relative") return parts(seconds);
+    if (style === "offset") return `${seconds >= 0 ? "+" : "-"}${parts(seconds)}`;
+    const total = Math.abs(seconds);
+    const hours = Math.floor(total / 3600); const minutes = Math.floor((total % 3600) / 60); const secs = total % 60;
+    return hours ? `${hours}:${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}` : `${minutes}:${String(secs).padStart(2, "0")}`;
+  }
+
+  // MARK: Grids (ScriptWidgetElementTagGrid)
+
+  function gridNode(element, reader, axis) {
+    let items = [{ type: "adaptive", min: 30, max: null }];
+    const columns = reader.string("columns");
+    if (columns !== null) {
+      try {
+        const parsed = JSON.parse(columns);
+        const stringValue = (value) => (typeof value === "string" ? value : typeof value === "number" ? String(value) : "");
+        if (Array.isArray(parsed)) {
+          items = parsed.map((item) => {
+            const type = stringValue(item?.type);
+            if (type === "fixed") return { type, value: Number.parseFloat(stringValue(item.value)) || 10 };
+            if (type === "adaptive") {
+              const min = swiftDouble(stringValue(item.min)) ?? 10;
+              const max = swiftDouble(stringValue(item.max)) ?? 10;
+              return { type, min, max: Math.max(min, max) };
+            }
+            return { type: "flexible" };
+          });
+        }
+      } catch { /* native falls back to the default columns */ }
+    }
+    if (items.length === 0) items = [{ type: "flexible" }];
+    return new GridNode(axis, buildChildren(element, axis), { items, spacing: reader.double("spacing") ?? 8, alignment: reader.string("alignment") });
+  }
+
+  // MARK: Gauges (ScriptWidgetElementTagGauge, MineGaugeView)
+
+  function arcPath(cx, cy, r, from, to) {
+    const point = (angle) => [cx + r * Math.cos((angle * Math.PI) / 180), cy + r * Math.sin((angle * Math.PI) / 180)];
+    const [x0, y0] = point(from); const [x1, y1] = point(to);
+    const large = Math.abs(to - from) > 180 ? 1 : 0;
+    return `M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1}`;
+  }
+
+  function svgElement(parent, tag, attributes) {
+    const item = parent.ownerDocument.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (const [key, value] of Object.entries(attributes)) item.setAttribute(key, String(value));
+    parent.appendChild(item);
+    return item;
+  }
+
+  function svgCanvas(element, width, height) {
+    const svg = svgElement(element, "svg", { width, height, viewBox: `0 0 ${width} ${height}` });
+    Object.assign(svg.style, { position: "absolute", left: "0", top: "0", overflow: "visible" });
+    return svg;
+  }
+
+  function gaugeNode(reader) {
+    const type = reader.string("type") ?? "original";
+    if (type !== "original") return systemGauge(reader);
+    let value = reader.string("value") !== null ? (swiftDouble(reader.string("value")) ?? 0.6) : 0.6;
+    if (reader.double("value") !== null) value = reader.double("value");
+    value = Math.min(value, 1);
+    const angle = Math.min(reader.string("angle") !== null ? (swiftDouble(reader.string("angle")) ?? 260) : 260, 360);
+    const thicknessText = reader.string("thickness");
+    const thickness = thicknessText !== null && /^[+-]?\d+$/.test(thicknessText) ? Number(thicknessText) : 10;
+    const fallback = primary();
+    const needle = reader.string("needleColor") !== null ? (color(reader.string("needleColor")) ?? fallback) : fallback;
+    let sections = [["green", 0.1], ["yellow", 0.1], ["orange", 0.1], ["red", 0.1], ["purple", 0.2], ["blue", 0.4]].map(([name, size]) => ({ color: color(name), value: size }));
+    if (reader.string("sections") !== null) {
+      try {
+        const parsed = JSON.parse(reader.string("sections"));
+        if (Array.isArray(parsed)) {
+          let left = 100;
+          sections = parsed.map((item) => {
+            const stringValue = (raw) => (typeof raw === "string" ? raw : typeof raw === "number" ? String(raw) : "");
+            let size = swiftDouble(stringValue(item?.value)) ?? 0;
+            if (Math.trunc(size * 100) > left) size = 0;
+            left -= Math.trunc(size * 100);
+            return { color: color(stringValue(item?.color)) ?? fallback, value: size };
+          });
+        }
+      } catch { /* keep defaults, as natively */ }
+    }
+    const start = 90 + (360 - angle) / 2;
+    const arcs = leaf(new FlexibleNode(), (node, element) => {
+      const { width, height } = node.frame;
+      if (width <= 0 || height <= 0) return;
+      const lineWidth = height / thickness;
+      const radius = (Math.min(width, height) - lineWidth) / 2;
+      const cx = width / 2; const cy = height / 2;
+      const svg = svgCanvas(element, width, height);
+      let covered = 0;
+      sections.forEach((section, index) => {
+        const from = start + covered * angle;
+        const to = from + section.value * angle;
+        if (section.value > 0) svgElement(svg, "path", { d: arcPath(cx, cy, radius, from, to), fill: "none", stroke: cssColor(section.color), "stroke-width": lineWidth });
+        const capAngle = index === 0 ? from : index === sections.length - 1 ? start + angle : null;
+        if (capAngle !== null) {
+          const rad = (capAngle * Math.PI) / 180;
+          svgElement(svg, "circle", { cx: cx + radius * Math.cos(rad), cy: cy + radius * Math.sin(rad), r: lineWidth / 2, fill: cssColor(section.color) });
+        }
+        covered += section.value;
+      });
+      const needleAngle = start + value * angle;
+      const group = svgElement(svg, "g", { transform: `rotate(${needleAngle} ${cx} ${cy})` });
+      const rectWidth = height / 2; const rectHeight = height / 20;
+      svgElement(group, "rect", { x: cx, y: cy - rectHeight / 2, width: rectWidth, height: rectHeight, rx: Math.min(lineWidth / 2, rectHeight / 2), fill: cssColor([needle[0], needle[1], needle[2], needle[3] * 0.8]) });
+      svgElement(svg, "circle", { cx, cy, r: lineWidth / 2, fill: cssColor(needle) });
+    });
+    const labelFont = parseFont(reader.string("labelFont")) ?? defaultFont;
+    // Native quirk: the default label is computed before `value` is read.
+    const label = text(reader.string("label") ?? "60%", labelFont, paintOf(reader, "labelColor"));
+    const title = text(reader.string("title") ?? "", labelFont, paintOf(reader, "titleColor"));
+    return new BottomOverlayNode(arcs, new StackNode("v", [label, title], { alignment: "center", spacing: defaultSpacing("v") }));
+  }
+
+  function systemGauge(reader) {
+    report("info", "tag.approximated", "<gauge type> system styles are approximated");
+    const value = Math.max(0, Math.min(1, swiftDouble(reader.string("value") ?? "0.6") ?? 0.6));
+    const style = reader.string("style") ?? "circular";
+    const label = reader.string("text") ?? ""; const current = reader.string("current") ?? "";
+    const min = reader.string("min") ?? ""; const max = reader.string("max") ?? "";
+    const tintColor = cssColor(primary());
+    const background = cssColor(systemBackground[appearance]);
+    if (style === "linear") {
+      // accessoryLinear: a solid capsule with a ring marker; min/max labels
+      // at the ends; the title label is not shown.
+      const bar = leaf(new FlexibleNode([100, 8]), (node, element) => {
+        const { width, height } = node.frame;
+        const svg = svgCanvas(element, width, height);
+        svgElement(svg, "line", { x1: 4, x2: width - 4, y1: height / 2, y2: height / 2, stroke: tintColor, "stroke-width": 6, "stroke-linecap": "round" });
+        const x = 4 + value * Math.max(0, width - 8);
+        svgElement(svg, "circle", { cx: x, cy: height / 2, r: 5, fill: tintColor, stroke: background, "stroke-width": 2 });
+      });
+      const row = [];
+      if (min) row.push(text(min, styleFont("body"), null));
+      row.push(new FrameNode(bar, { mode: "height", height: 12, alignment: alignments.center }));
+      if (max) row.push(text(max, styleFont("body"), null));
+      return new StackNode("h", row, { alignment: "center", spacing: () => 6 });
+    }
+    const ringLeaf = leaf(new FixedNode(58, 58), (node, element) => {
+      const svg = svgCanvas(element, 58, 58);
+      const radius = 25; const start = 135; const sweep = 270;
+      svgElement(svg, "path", { d: arcPath(29, 29, radius, start, start + sweep), fill: "none", stroke: tintColor, "stroke-width": 5, "stroke-linecap": "round" });
+      const angle = ((start + sweep * value) * Math.PI) / 180;
+      svgElement(svg, "circle", { cx: 29 + radius * Math.cos(angle), cy: 29 + radius * Math.sin(angle), r: 3.5, fill: background, stroke: tintColor, "stroke-width": 1.5 });
+    });
+    const centerLabel = text(current, { size: 22, lineHeight: null, weight: 500, design: "default" }, null);
+    const overlay = new ZStackNode([ringLeaf, centerLabel]);
+    if (!label) return overlay;
+    return new BottomOverlayNode(new FrameNode(overlay, { mode: "size", width: 58, height: 58, alignment: alignments.center }), text(label, styleFont("caption2"), null));
+  }
+
+  // MARK: Charts (ScriptWidgetElementTagChart, Swift Charts approximation)
+
+  const chartPalette = ["blue", "green", "orange", "purple", "red", "cyan", "yellow", "brown"];
+
+  function chartNode(reader) {
+    report("info", "tag.approximated", "<chart> is drawn with an SVG approximation of Swift Charts");
+    const type = reader.string("type") ?? "bar";
+    const data = reader.string("data") ?? "";
+    if (data === "") return text("#chart no data#", defaultFont, null);
+    let items;
+    try { items = JSON.parse(data); } catch { return text("#chart data json invalid#", defaultFont, null); }
+    const gantt = type === "bar-gantt"; const rule = type === "rule-x";
+    const valid = Array.isArray(items) && items.every((item) => item && typeof item === "object" && (gantt
+      ? typeof item.job === "string" && typeof item.start === "number" && typeof item.end === "number"
+      : rule ? typeof item.xstart === "number" && typeof item.xend === "number" && typeof item.y === "number"
+        : typeof item.label === "string" && typeof item.value === "number"));
+    if (!["bar", "bar-x", "bar-y", "bar-gantt", "line", "point", "line-point", "area", "rect", "rule-x"].includes(type)) return text("#unknown chart type#", defaultFont, null);
+    if (!valid) return text("#chart data json invalid#", defaultFont, null);
+    const categoryEnabled = reader.bool("category") ?? false;
+    const hideLegend = reader.bool("hideLegend") ?? false;
+    const hideX = reader.bool("hideXAxis") ?? false; const hideY = reader.bool("hideYAxis") ?? false;
+    const foreground = paintOf(reader, "color")?.color ?? color("blue");
+    const categories = categoryEnabled ? [...new Set(items.map((item) => item.category ?? "null"))] : [];
+    const colorFor = (item) => (categoryEnabled ? color(chartPalette[categories.indexOf(item.category ?? "null") % chartPalette.length]) : foreground);
+    const axisColor = cssColor(color("secondary"));
+    return leaf(new FlexibleNode([200, 120]), (node, element) => {
+      const { width, height } = node.frame;
+      const svg = svgCanvas(element, width, height);
+      const legendHeight = categoryEnabled && !hideLegend ? 14 : 0;
+      const xLabelHeight = hideX ? 0 : 18;
+      const yLabelWidth = hideY ? 0 : 26;
+      const plot = { x: 0, y: 4, width: Math.max(1, width - yLabelWidth - 4), height: Math.max(1, height - xLabelHeight - legendHeight - 6) };
+      const textAt = (x, y, value, anchor = "middle") => {
+        const label = svgElement(svg, "text", { x, y, "text-anchor": anchor, fill: axisColor, "font-size": 10, "font-family": fontFamily(defaultFont) });
+        label.textContent = value;
+      };
+      const values = gantt ? items.flatMap((item) => [item.start, item.end]) : rule ? items.flatMap((item) => [item.xstart, item.xend]) : items.map((item) => item.value);
+      const stacked = type === "bar" ? Object.values(items.reduce((sums, item) => { sums[item.label] = (sums[item.label] ?? 0) + Math.max(0, item.value); return sums; }, {})) : [];
+      const maxValue = Math.max(1e-9, ...values, ...stacked, 0);
+      // Swift Charts picks 1/2/5 x 10^k steps with about five ticks.
+      const magnitude = 10 ** Math.floor(Math.log10(maxValue));
+      const tickStep = [0.1, 0.2, 0.5, 1, 2, 5, 10].map((factor) => factor * magnitude).find((candidate) => maxValue / candidate <= 5) ?? magnitude * 10;
+      const niceMax = Math.ceil(maxValue / tickStep - 1e-9) * tickStep;
+      const ticks = Array.from({ length: Math.round(niceMax / tickStep) + 1 }, (_, index) => index * tickStep);
+      if (type === "bar" || type === "line" || type === "point" || type === "line-point" || type === "area" || type === "rect") {
+        if (!hideY) for (const tick of ticks) {
+          const y = plot.y + plot.height - (tick / niceMax) * plot.height;
+          svgElement(svg, "line", { x1: plot.x, x2: plot.x + plot.width, y1: y, y2: y, stroke: axisColor, "stroke-opacity": 0.35 });
+          textAt(plot.x + plot.width + 4, y + 3, Number(tick.toPrecision(3)).toString(), "start");
+        }
+        const labels = [...new Set(items.map((item) => item.label))];
+        const band = plot.width / Math.max(1, labels.length);
+        const xOf = (label) => plot.x + band * labels.indexOf(label) + band / 2;
+        const yOf = (value) => plot.y + plot.height - (Math.max(0, value) / niceMax) * plot.height;
+        if (!hideX) {
+          labels.forEach((label) => textAt(xOf(label), plot.y + plot.height + 14, label));
+          for (let index = 0; index <= labels.length; index += 1) {
+            const x = plot.x + band * index;
+            svgElement(svg, "line", { x1: x, x2: x, y1: plot.y, y2: plot.y + plot.height + 16, stroke: axisColor, "stroke-opacity": 0.35, "stroke-dasharray": "2 2" });
+          }
+        }
+        if (type === "bar" || type === "rect") {
+          const offsets = {};
+          for (const item of items) {
+            const base = offsets[item.label] ?? 0;
+            const top = base + Math.max(0, item.value);
+            offsets[item.label] = top;
+            svgElement(svg, "rect", { x: xOf(item.label) - band * 0.35, width: band * 0.7, y: yOf(top), height: Math.max(0, yOf(base) - yOf(top)), rx: 2, fill: cssColor(colorFor(item)) });
+          }
+        } else {
+          const groups = categoryEnabled ? categories.map((category) => items.filter((item) => (item.category ?? "null") === category)) : [items];
+          for (const group of groups) {
+            if (!group.length) continue;
+            const points = group.map((item) => [xOf(item.label), yOf(item.value)]);
+            const stroke = cssColor(colorFor(group[0]));
+            if (type === "area") svgElement(svg, "path", { d: `M ${points[0][0]} ${plot.y + plot.height} ${points.map(([x, y]) => `L ${x} ${y}`).join(" ")} L ${points.at(-1)[0]} ${plot.y + plot.height} Z`, fill: stroke, "fill-opacity": 0.5 });
+            if (type !== "point") svgElement(svg, "polyline", { points: points.map((point) => point.join(",")).join(" "), fill: "none", stroke, "stroke-width": 2, "stroke-linejoin": "round" });
+            if (type === "point" || type === "line-point") for (const [x, y] of points) svgElement(svg, "circle", { cx: x, cy: y, r: 3, fill: stroke });
+          }
+        }
+      } else {
+        const rows = gantt ? [...new Set(items.map((item) => item.job))] : rule ? [...new Set(items.map((item) => item.y))] : [null];
+        const band = plot.height / Math.max(1, rows.length);
+        const xOf = (value) => plot.x + (Math.max(0, value) / niceMax) * plot.width;
+        if (!hideX) for (const tick of ticks) textAt(xOf(tick), plot.y + plot.height + 11, Number(tick.toPrecision(3)).toString());
+        if (type === "bar-x" || type === "bar-y") {
+          let offset = 0;
+          for (const item of items) {
+            const size = Math.max(0, item.value) / Math.max(1e-9, items.reduce((sum, entry) => sum + Math.max(0, entry.value), 0));
+            if (type === "bar-x") svgElement(svg, "rect", { x: plot.x + offset * plot.width, y: plot.y, width: size * plot.width, height: plot.height, fill: cssColor(colorFor(item)) });
+            else svgElement(svg, "rect", { x: plot.x, y: plot.y + plot.height - (offset + size) * plot.height, width: plot.width, height: size * plot.height, fill: cssColor(colorFor(item)) });
+            offset += size;
+          }
+        } else {
+          items.forEach((item) => {
+            const row = rows.indexOf(gantt ? item.job : item.y);
+            const y = plot.y + band * row;
+            if (gantt) svgElement(svg, "rect", { x: xOf(item.start), width: Math.max(1, xOf(item.end) - xOf(item.start)), y: y + band * 0.15, height: band * 0.7, fill: cssColor(colorFor(item)) });
+            else svgElement(svg, "line", { x1: xOf(item.xstart), x2: xOf(item.xend), y1: y + band / 2, y2: y + band / 2, stroke: cssColor(colorFor(item)), "stroke-width": 2 });
+          });
+        }
+      }
+      if (legendHeight) categories.forEach((category, index) => {
+        const x = index * 60;
+        svgElement(svg, "circle", { cx: x + 4, cy: height - 5, r: 3.5, fill: cssColor(color(chartPalette[index % chartPalette.length])) });
+        textAt(x + 11, height - 1.5, category, "start");
+      });
+    });
   }
 
   // MARK: Drawing
 
-  function draw(node, parent) {
+  // Accented and vibrant modes (WidgetKit tinting) are approximated per
+  // drawn leaf: content is desaturated; widgetAccentable content is tinted.
+  const modeFilters = {
+    accented: { plain: "grayscale(1) brightness(1.15)", accent: "grayscale(1) sepia(1) saturate(4) hue-rotate(175deg) brightness(1.1)" },
+    vibrant: { plain: "grayscale(1) brightness(1.25)", accent: "grayscale(1) brightness(1.25)" },
+  };
+
+  function draw(node, parent, accented = false) {
     const element = doc.createElement("div");
     const { x, y, width, height } = node.frame;
     Object.assign(element.style, { position: "absolute", left: `${x}px`, top: `${y}px`, width: `${width}px`, height: `${height}px` });
-    if (node instanceof DecorationNode) applyDecoration(element, node.decoration, width, height);
+    let accent = accented;
+    if (node instanceof DecorationNode) {
+      accent ||= node.decoration.accentable === true;
+      applyDecoration(element, node.decoration, width, height);
+      if (modeFilters[renderingMode] && (node.decoration.background)) element.style.filter = [element.style.filter, modeFilters[renderingMode][accent ? "accent" : "plain"]].filter(Boolean).join(" ");
+    }
     if (node.title) element.title = node.title;
     parent.appendChild(element);
-    if (node.draw) node.draw(node, element);
-    for (const child of node.children ?? (node.child ? [node.child] : [])) draw(child, element);
+    if (node.draw) {
+      node.draw(node, element);
+      if (modeFilters[renderingMode]) element.style.filter = modeFilters[renderingMode][accent ? "accent" : "plain"];
+    }
+    for (const child of node.children ?? (node.child ? [node.child] : [])) draw(child, element, accent);
   }
 
   function applyDecoration(element, decoration, width, height) {
@@ -609,8 +954,16 @@ export async function renderWidget(treeJSON, {
     widget.setAttribute("aria-label", "Widget preview");
     Object.assign(widget.style, { position: "relative", width: `${size.width}px`, height: `${size.height}px`, overflow: "hidden", backgroundColor: cssColor(systemBackground[appearance]), colorScheme: appearance });
     const rootPaint = parsePaint(propReader(root.props).string("background"), appearance);
-    if (rootPaint?.color) widget.style.backgroundColor = cssColor(rootPaint.color);
-    else if (rootPaint?.gradient) widget.style.backgroundImage = gradientCSS(rootPaint.gradient, size.width, size.height);
+    if (renderingMode === "fullColor" && !(lockScreen && family.startsWith("accessory"))) {
+      if (rootPaint?.color) widget.style.backgroundColor = cssColor(rootPaint.color);
+      else if (rootPaint?.gradient) widget.style.backgroundImage = gradientCSS(rootPaint.gradient, size.width, size.height);
+    } else {
+      // WidgetKit removes the container background on the Lock Screen and in
+      // tinted Home Screen modes; show a neutral wallpaper stand-in.
+      widget.style.backgroundColor = renderingMode === "accented" ? "rgba(58, 64, 84, 1)" : "rgba(40, 40, 46, 1)";
+      widget.style.colorScheme = "dark";
+      if (renderingMode !== "fullColor") report("info", "mode.approximated", `${renderingMode} rendering mode is approximated`);
+    }
     draw(rootNode, widget);
     return { element: widget, size, diagnostics };
   } finally {

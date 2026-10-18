@@ -148,5 +148,56 @@
   "name": "calib-shadow-radius",
   "size": "medium",
   "source": "$render(<hstack spacing=\"40\"><rect frame=\"40,40\" color=\"white\" shadow=\"black,0,0,0\"/><rect frame=\"40,40\" color=\"white\" shadow=\"black,4,0,0\"/><rect frame=\"40,40\" color=\"white\" shadow=\"black,10,0,0\"/></hstack>)"
+ },
+ {
+  "name": "gauge-original",
+  "size": "medium",
+  "source": "$render(<hstack><gauge value={0.35} frame=\"120,120\" title=\"Speed\"/><gauge value=\"0.8\" angle=\"200\" thickness=\"6\" needleColor=\"red\" sections='[{\"color\":\"green\",\"value\":0.5},{\"color\":\"red\",\"value\":0.5}]' label=\"80\" frame=\"120,120\"/></hstack>)"
+ },
+ {
+  "name": "gauge-system",
+  "size": "medium",
+  "source": "$render(<hstack spacing=\"20\"><gauge type=\"system\" value=\"0.4\" current=\"40\" text=\"CPU\"/><gauge type=\"system\" style=\"linear\" value=\"0.7\" text=\"Disk\" min=\"0\" max=\"100\" frame=\"120,40\"/></hstack>)"
+ },
+ {
+  "name": "chart-bar",
+  "size": "medium",
+  "source": "$render(<chart type=\"bar\" frame=\"300,130\" data='[{\"label\":\"Mon\",\"value\":3},{\"label\":\"Tue\",\"value\":5},{\"label\":\"Wed\",\"value\":2},{\"label\":\"Thu\",\"value\":7}]'/>)"
+ },
+ {
+  "name": "chart-line",
+  "size": "medium",
+  "source": "$render(<chart type=\"line-point\" frame=\"300,130\" data='[{\"label\":\"A\",\"value\":10},{\"label\":\"B\",\"value\":30},{\"label\":\"C\",\"value\":20},{\"label\":\"D\",\"value\":40}]'/>)"
+ },
+ {
+  "name": "grid-default",
+  "size": "medium",
+  "source": "$render(<vgrid padding=\"10\">{Array.from({length:12},(_, i)=><text background=\"#bfdbfe\">{i}</text>)}</vgrid>)"
+ },
+ {
+  "name": "grid-flexible",
+  "size": "large",
+  "source": "$render(<vgrid spacing=\"6\" columns='[{\"type\":\"flexible\"},{\"type\":\"flexible\"},{\"type\":\"fixed\",\"value\":\"60\"}]'>{Array.from({length:6},(_, i)=><rect frame=\"max,40\" color=\"orange\"/>)}</vgrid>)"
+ },
+ {
+  "name": "dark-basics",
+  "size": "medium",
+  "dark": true,
+  "source": "$render(<vstack spacing=\"6\"><text>Primary</text><text color=\"secondary\">Secondary</text><hstack spacing=\"4\">{['red','green','blue','orange','yellow','pink','purple','gray'].map(c => <circle frame=\"20,20\" color={c}/>)}</hstack><rect frame=\"80,20\"/></vstack>)"
+ },
+ {
+  "name": "accessory-circular",
+  "size": "accessoryCircular",
+  "source": "$render(<zstack><circle stroke=\"4\" color=\"white\"/><text font=\"title3\">42</text></zstack>)"
+ },
+ {
+  "name": "accessory-rectangular",
+  "size": "accessoryRectangular",
+  "source": "$render(<vstack alignment=\"leading\"><text font=\"headline\">Next</text><text font=\"caption\">Standup 10:00</text></vstack>)"
+ },
+ {
+  "name": "weight-props",
+  "size": "medium",
+  "source": "$render(<vstack><text weight=\"bold\">weight bold</text><text fontWeight=\"heavy\" font=\"title3\">fontWeight heavy</text><text fontDesign=\"serif\">fontDesign serif</text><text fontDesign=\"monospaced\" fontWeight=\"light\">mono light 012</text></vstack>)"
  }
 ]

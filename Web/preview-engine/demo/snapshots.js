@@ -10,17 +10,17 @@ const cases = await (await fetch("../test/render/cases.json")).json();
 
 const items = [];
 for (const item of corpus.corpus) for (const family of ["small", "medium", "large"]) items.push({ name: `${item.name}@${family}`, family, files: item.files, resources: item.resources });
-for (const item of cases) items.push({ name: `case/${item.name}@${item.size}`, family: item.size, files: { "main.jsx": item.source } });
+for (const item of cases) items.push({ name: `case/${item.name}@${item.size}`, family: item.size, appearance: item.dark ? "dark" : "light", files: { "main.jsx": item.source } });
 
 window.__items = items.map((item) => item.name);
 window.__render = async (index) => {
   const item = items[index];
   const manifest = item.files["widget.json"] ? JSON.parse(item.files["widget.json"]) : null;
-  const result = await sandbox.execute({ files: item.files, manifest, prelude: corpus.prelude, environments: { "widget-size": item.family, "widget-param": "" } });
+  const result = await sandbox.execute({ files: item.files, manifest, prelude: corpus.prelude, environments: { "widget-size": item.family, "widget-param": "" }, preview: { appearance: item.appearance ?? "light" } });
   stage.replaceChildren();
   if (!result.tree) return { name: item.name, error: result.error };
   await document.fonts.ready;
-  const rendered = await renderWidget(result.tree, { family: item.family, resources: item.resources ?? {} });
+  const rendered = await renderWidget(result.tree, { family: item.family, appearance: item.appearance ?? "light", lockScreen: false, resources: item.resources ?? {} });
   stage.appendChild(rendered.element);
   await Promise.all([...rendered.element.querySelectorAll("img")].map((image) => image.decode().catch(() => {})));
   const box = rendered.element.getBoundingClientRect();

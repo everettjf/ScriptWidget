@@ -28,7 +28,14 @@ export class TextNode extends Node {
     let width; let lines;
     if (pw === null || pw === Infinity) { const m = this.metrics(null); width = m.width; lines = m.lines; }
     else if (pw < this.measurer.ellipsisWidth(this.style)) { width = this.measurer.ellipsisWidth(this.style); lines = 1; }
-    else { const m = this.metrics(pw); width = Math.min(pw, m.width); lines = m.lines; }
+    else {
+      // Offered at least the natural width: keep the unwrapped layout rather
+      // than re-measuring at an explicit width, which can wrap on sub-pixel
+      // differences.
+      const free = this.metrics(null);
+      if (pw >= free.width - 0.01) { width = free.width; lines = free.lines; }
+      else { const m = this.metrics(pw); width = Math.min(pw, m.width); lines = m.lines; }
+    }
     const total = lines;
     if (ph !== null && ph !== Infinity) lines = Math.min(lines, Math.max(1, Math.floor((ph - natural) / leading + 1e-6) + 1));
     // Truncated text reports the whole offered width.
@@ -211,6 +218,68 @@ export class ZStackNode extends Node {
       const [w, h] = child.size(width, height);
       child.place((width - w) / 2, (height - h) / 2, w, h);
     }
+  }
+}
+
+/// LazyVGrid / LazyHGrid: columns (or rows) from fixed, flexible, and
+/// adaptive items; cells are centered and lines take their tallest cell.
+export class GridNode extends Node {
+  constructor(axis, children, { items, spacing, alignment }) {
+    super();
+    this.axis = axis; this.children = children; this.items = items; this.spacing = spacing; this.alignment = alignment;
+  }
+  tracks(available) {
+    const spacing = this.spacing;
+    const fixed = this.items.filter((item) => item.type === "fixed").reduce((sum, item) => sum + item.value, 0);
+    const flexibleCount = this.items.filter((item) => item.type !== "fixed").length;
+    const free = Math.max(0, available - fixed - spacing * Math.max(0, this.items.length - 1));
+    const tracks = [];
+    for (const item of this.items) {
+      if (item.type === "fixed") tracks.push(item.value);
+      else if (item.type === "adaptive") {
+        const share = flexibleCount ? free / flexibleCount : free;
+        const count = Math.max(1, Math.floor((share + spacing) / (item.min + spacing)));
+        const size = Math.min(item.max ?? Infinity, (share - spacing * (count - 1)) / count);
+        for (let index = 0; index < count; index += 1) tracks.push(Math.max(item.min, size));
+      } else tracks.push(flexibleCount ? free / flexibleCount : free);
+    }
+    return tracks;
+  }
+  arrange(pAlong) {
+    const available = pAlong === null || pAlong === Infinity ? this.items.length * 60 : pAlong;
+    const tracks = this.tracks(available);
+    const lines = [];
+    this.children.forEach((child, index) => {
+      const line = Math.floor(index / tracks.length);
+      const track = index % tracks.length;
+      const size = this.axis === "v" ? child.size(tracks[track], null) : child.size(null, tracks[track]);
+      (lines[line] ??= []).push({ child, track, size });
+    });
+    const extents = lines.map((line) => Math.max(...line.map(({ size }) => (this.axis === "v" ? size[1] : size[0]))));
+    return { tracks, lines, extents };
+  }
+  size(pw, ph) {
+    const { tracks, extents } = this.arrange(this.axis === "v" ? pw : ph);
+    const along = tracks.reduce((sum, value) => sum + value, 0) + this.spacing * Math.max(0, tracks.length - 1);
+    const cross = extents.reduce((sum, value) => sum + value, 0) + this.spacing * Math.max(0, extents.length - 1);
+    const width = this.axis === "v" ? (pw === null || pw === Infinity ? along : pw) : cross;
+    const height = this.axis === "v" ? cross : (ph === null || ph === Infinity ? along : ph);
+    return [width, height];
+  }
+  place(x, y, width, height) {
+    super.place(x, y, width, height);
+    const { tracks, lines, extents } = this.arrange(this.axis === "v" ? width : height);
+    const total = tracks.reduce((sum, value) => sum + value, 0) + this.spacing * Math.max(0, tracks.length - 1);
+    const start = ((this.axis === "v" ? width : height) - total) / 2;
+    let lineOffset = 0;
+    lines.forEach((line, lineIndex) => {
+      for (const { child, track, size } of line) {
+        const trackOffset = start + tracks.slice(0, track).reduce((sum, value) => sum + value, 0) + this.spacing * track;
+        if (this.axis === "v") child.place(trackOffset + (tracks[track] - size[0]) / 2, lineOffset + (extents[lineIndex] - size[1]) / 2, size[0], size[1]);
+        else child.place(lineOffset + (extents[lineIndex] - size[0]) / 2, trackOffset + (tracks[track] - size[1]) / 2, size[0], size[1]);
+      }
+      lineOffset += extents[lineIndex] + this.spacing;
+    });
   }
 }
 
