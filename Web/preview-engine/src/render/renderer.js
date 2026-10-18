@@ -178,6 +178,30 @@ export async function renderWidget(treeJSON, {
   for (const [path, url] of Object.entries(resources)) if (path.startsWith("image/")) urls.add(url);
   collectImageURLs(root, urls);
   const imageSizes = await naturalSizes(urls, doc);
+  // "firstFrame" draws the GIF frame ImageRenderer captures (see below).
+  const stillGifs = new Map();
+  if (animations === "firstFrame") {
+    await Promise.all(Object.entries(resources).filter(([path]) => /\.gif$/i.test(path)).map(async ([, url]) => {
+      try {
+        const blob = await (await fetch(url)).blob();
+        let bitmap;
+        if (typeof ImageDecoder === "function") {
+          const decoder = new ImageDecoder({ data: blob.stream(), type: blob.type || "image/gif" });
+          await decoder.tracks.ready;
+          // The iOS GIF view masks frame i to the arc (i-1..i) x 360/n and spins
+          // the masks; at rest the top of the circle (270°) shows the frame
+          // just before that boundary.
+          const count = decoder.tracks.selectedTrack?.frameCount ?? 1;
+          bitmap = (await decoder.decode({ frameIndex: Math.max(0, Math.ceil(0.75 * count) - 1) })).image;
+        } else bitmap = await createImageBitmap(blob);
+        const canvas = doc.createElement("canvas");
+        canvas.width = bitmap.displayWidth ?? bitmap.width; canvas.height = bitmap.displayHeight ?? bitmap.height;
+        canvas.getContext("2d").drawImage(bitmap, 0, 0);
+        bitmap.close?.();
+        stillGifs.set(url, canvas.toDataURL("image/png"));
+      } catch { /* keep the animated GIF */ }
+    }));
+  }
   const measurer = createTextMeasurer(doc);
 
   // Leaves carry a draw(node, element) callback.
@@ -632,7 +656,7 @@ export async function renderWidget(treeJSON, {
       case "image": content = imageNode(reader); break;
       case "gif": {
         const url = packageGif(reader.string("file") ?? "");
-        if (url) { report("info", "tag.approximated", "<gif> animates with the browser's GIF player"); content = leaf(new FlexibleNode(), drawPicture(url, "contain")); }
+        if (url) { report("info", "tag.approximated", "<gif> animates with the browser's GIF player"); content = leaf(new FlexibleNode(), drawPicture(stillGifs.get(url) ?? url, "contain")); }
         else content = text("GIF unavailable", defaultFont(), null);
         break;
       }

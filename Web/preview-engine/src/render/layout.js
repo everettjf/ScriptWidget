@@ -154,8 +154,16 @@ export class TextNode extends Node {
     const lines = this.breakLines(width);
     if (lines.length <= count) return null;
     const kept = lines.slice(0, count - 1);
-    // A single truncated line cuts the original text: no hyphen ("REM…").
-    const rest = count === 1 ? this.text : lines.slice(count - 1).reduce((all, line) => (all === "" ? line : cjk.test(all.at(-1)) && cjk.test(line[0]) ? all + line : `${all} ${line}`), "");
+    // The truncated line cuts the original text after the kept lines, so it
+    // carries no inserted hyphen ("REM…", "An- / gula…").
+    let position = 0;
+    for (const line of kept) {
+      for (const character of line.replace(/-$/, "")) {
+        while (position < this.text.length && /\s/.test(this.text[position]) && !/\s/.test(character)) position += 1;
+        if (this.text[position] === character || (character === "\u00a0" && this.text[position] === " ")) position += 1;
+      }
+    }
+    const rest = this.text.slice(position).trimStart();
     const last = this.ellipsize(rest, width);
     const drawn = [...kept, last];
     return { text: drawn.join("\n"), width: Math.max(...drawn.map((line) => this.measurer.measure(line, this.style, null).width)) };
@@ -317,6 +325,8 @@ export class StackNode extends Node {
     return sizes;
   }
   size(pw, ph) {
+    // Remembered for place(): the parent's last call is the real offer.
+    this.proposal = [pw, ph];
     const pAlong = this.axis === "h" ? pw : ph; const pCross = this.axis === "h" ? ph : pw;
     const sizes = this.allocate(pAlong, pCross);
     const along = sizes.reduce((sum, size) => sum + this.along(size), 0) + this.spacing.reduce((sum, value) => sum + value, 0);
@@ -325,13 +335,24 @@ export class StackNode extends Node {
   }
   place(x, y, width, height) {
     super.place(x, y, width, height);
-    const pAlong = this.axis === "h" ? width : height; const pCross = this.axis === "h" ? height : width;
+    // SwiftUI places subviews with the proposal the stack was sized with:
+    // along the axis children get the same offers as when sizing (an HStack
+    // narrower than its proposal does not squeeze them), and across it a
+    // stack that grew past its proposal because a child cannot shrink (a
+    // 120-point line in a 72-point widget) lays out the others within it.
+    const [pw, ph] = this.proposal ?? [width, height];
+    const proposedAlong = this.axis === "h" ? pw : ph;
+    const proposedCross = this.axis === "h" ? ph : pw;
+    const finalCross = this.axis === "h" ? height : width;
+    const rigid = (limit) => this.children.some((child) => this.cross(this.propose(child, null, 0)) > limit + 0.01);
+    const pAlong = proposedAlong;
+    const pCross = proposedCross !== null && proposedCross !== Infinity && finalCross > proposedCross + 0.01 && rigid(proposedCross) ? proposedCross : finalCross;
     const sizes = this.allocate(pAlong, pCross);
     let cursor = 0;
     this.children.forEach((child, index) => {
       cursor += this.spacing[index];
       const size = sizes[index];
-      const offset = alignOffset(pCross, this.cross(size), this.alignment);
+      const offset = alignOffset(this.axis === "h" ? height : width, this.cross(size), this.alignment);
       if (this.axis === "h") child.place(cursor, offset, size[0], size[1]);
       else child.place(offset, cursor, size[0], size[1]);
       cursor += this.along(size);
