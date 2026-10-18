@@ -787,6 +787,7 @@ Interactive widget toggle. A declared actionID requires a package-relative stora
 - `fetch`: Perform a network request.
 - `importJS`: Import a package-relative JavaScript file.
 - `$dataSource.request`: Call a declared Data Source Plugin operation. Requires Package 2.0 plugins, network permission, and networkDomains declarations.
+- `$xml.parse`: Parse up to 256 KiB of XML into {name, attributes, text, children}. DTDs and external entities are rejected; depth and node limits apply.
 
 ## Environment values
 
