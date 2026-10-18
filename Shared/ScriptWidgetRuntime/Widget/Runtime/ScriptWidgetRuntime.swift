@@ -117,6 +117,11 @@ enum ScriptWidgetRuntimeContract {
     static let maximumSourceBytes = 512 * 1_024
     static let maximumTranspiledBytes = 2 * 1_024 * 1_024
     static let executionTimeout: DispatchTimeInterval = .seconds(5)
+    /// Babel runs untrusted source too; generous so slow devices still compile.
+    static let compileTimeout: TimeInterval = 10
+    /// How often JavaScriptCore's watchdog re-checks whether a still-running
+    /// script must be terminated; bounds overrun past the execution limit.
+    static let watchdogSlice: TimeInterval = 0.25
     static let maximumElementNodes = 1_000
     static let maximumElementDepth = 64
     static let maximumPropsPerElement = 128
@@ -363,10 +368,19 @@ enum ScriptWidgetCompiler {
         return result
     }
 
-    static func compile(_ source: String, babelContent: String) -> Result<String, ScriptWidgetError> {
+    static func compile(
+        _ source: String,
+        babelContent: String,
+        timeLimit: TimeInterval = ScriptWidgetRuntimeContract.compileTimeout
+    ) -> Result<String, ScriptWidgetError> {
         guard let context = JSContext() else {
             return .failure(.internalError("Unable to create compiler context"))
         }
+        let deadline = Date().addingTimeInterval(timeLimit)
+        let watchdog = ScriptWidgetJavaScriptWatchdog.install(
+            on: context,
+            slice: min(ScriptWidgetRuntimeContract.watchdogSlice, timeLimit)
+        ) { Date() >= deadline }
         var exceptionInfo: String?
         context.exceptionHandler = { _, exception in
             exceptionInfo = ScriptWidgetRuntime.describeException(exception)
@@ -377,8 +391,12 @@ enum ScriptWidgetCompiler {
                 return Babel.transform(input, { presets: ['scriptwidget'] }).code
             }
             """)
-        guard let output = context.objectForKeyedSubscript("ScriptWidgetTransform")?
-            .call(withArguments: [source])?.toString() else {
+        let transformed = context.objectForKeyedSubscript("ScriptWidgetTransform")?
+            .call(withArguments: [source])
+        if watchdog?.didTerminate == true {
+            return .failure(.resourceLimit("Compilation exceeded the \(Int(timeLimit))-second time limit"))
+        }
+        guard let output = transformed?.toString() else {
             return .failure(.transformError(exceptionInfo ?? "Transform result is nil"))
         }
         if let exceptionInfo { return .failure(.scriptException(exceptionInfo)) }
@@ -439,9 +457,16 @@ class ScriptWidgetRuntime {
         // APIs like $file/$console read per-execution state from the
         // owning JSContext.
         // Capture appearance before JavaScript moves to a worker queue.
-        runtimeContext.scriptWidgetRunningState = ScriptWidgetRunningState(
+        let runningState = ScriptWidgetRunningState(
             package: package, isDarkMode: ScriptWidgetRuntimeDevice.systemIsDarkMode
         )
+        runtimeContext.scriptWidgetRunningState = runningState
+        // The sync executors cancel the session at the execution limit; the
+        // watchdog turns that into termination of any still-running script.
+        let session = runningState.executionSession
+        ScriptWidgetJavaScriptWatchdog.install(
+            on: runtimeContext, slice: ScriptWidgetRuntimeContract.watchdogSlice
+        ) { !session.isActive }
         ScriptWidgetMemoryPressure.install()
         ScriptWidgetPrecompiler.install()
     }

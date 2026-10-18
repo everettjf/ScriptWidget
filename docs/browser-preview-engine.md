@@ -143,9 +143,9 @@ matrix). Firefox and the deployed GitHub Pages site are not yet verified.
 - Error message text differs between engines (`ReferenceError: x is not
   defined` versus `Can't find variable: x`). Compare error kinds and categories,
   not messages.
-- The native 5-second limit returns an error but does not stop a synchronous
-  JavaScript loop. The browser terminates the Worker. The native fix is tracked
-  separately.
+- Both hosts now stop runaway synchronous JavaScript: the browser terminates
+  the Worker at the deadline, and the native runtime terminates the script
+  through JavaScriptCore's execution-time watchdog within about 0.25 seconds.
 - Built-ins differ by OS: iOS versions ship different JavaScriptCore releases,
   and the browser may offer newer `Array`/`Object` methods. The parity reference
   is macOS 27 and matches the iOS 27.0 simulator; older iOS releases and

@@ -28,7 +28,7 @@ XML input is limited to 256 KiB, 2,048 elements, 32 levels, and 256 KiB of decod
 
 - Source text: 512 KiB per execution.
 - Transpiled JavaScript: 2 MiB per execution.
-- Execution: 5 seconds, including unresolved asynchronous work.
+- Execution: 5 seconds, including unresolved asynchronous work. Synchronous code still running at the limit (for example `while (true) {}`) is terminated; `try`/`catch` cannot intercept the termination.
 
 Limits are available under `$runtime.limits`. Exceeding one produces a visible resource-limit error instead of a blank widget. Widget extensions remain subject to stricter operating-system CPU and memory budgets.
 
