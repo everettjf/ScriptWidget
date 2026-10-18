@@ -8,6 +8,7 @@ cd "$ROOT"
 node Scripts/validate-release.mjs
 node Scripts/validate-doc-links.mjs
 (cd Editor/editorfe && npm test && npm run release)
+(cd Web/preview-engine && npm test)
 git diff --exit-code -- \
   iOS/ScriptWidget/View/CodeEditor/MirrorEditor/StudioEditor.bundle \
   macOS/ScriptWidgetMac/StudioEditor.bundle

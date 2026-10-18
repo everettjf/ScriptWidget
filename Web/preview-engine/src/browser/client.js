@@ -1,0 +1,84 @@
+import { runtimeContract } from "../contract.js";
+
+/// Parent-page API for the sandboxed preview runtime. User code runs only in
+/// Workers owned by an `<iframe sandbox="allow-scripts">` (opaque origin,
+/// `connect-src 'none'`), never in the editor page.
+export function createPreviewSandbox({ sandboxDocument, assetBaseURL, container = document.body }) {
+  const iframe = document.createElement("iframe");
+  iframe.setAttribute("sandbox", "allow-scripts");
+  iframe.setAttribute("aria-hidden", "true");
+  iframe.setAttribute("tabindex", "-1");
+  iframe.style.cssText = "position:absolute;width:0;height:0;border:0;visibility:hidden";
+  iframe.srcdoc = sandboxDocument;
+
+  const pending = new Map();
+  let sequence = 0;
+  let resolveReady;
+  let rejectReady;
+  const ready = new Promise((resolve, reject) => { resolveReady = resolve; rejectReady = reject; });
+
+  const loadText = async (name) => {
+    const response = await fetch(new URL(name, assetBaseURL));
+    if (!response.ok) throw new Error(`Unable to load ${name}`);
+    return response.text();
+  };
+  const assets = Promise.all(["core.js", "util.js", "moment.min.js"].map(loadText))
+    .then(([babel, util, moment]) => ({ babel, supportScripts: { "util.js": util, "moment.min.js": moment } }));
+
+  const onMessage = (event) => {
+    if (event.source !== iframe.contentWindow || event.origin !== "null") return;
+    const message = event.data;
+    if (!message || typeof message !== "object") return;
+    if (message.type === "ready") resolveReady();
+    else if (message.type === "failed") rejectReady(new Error(message.message));
+    else if (message.type === "result" && pending.has(message.id)) {
+      pending.get(message.id)(message.result);
+      pending.delete(message.id);
+    }
+  };
+  window.addEventListener("message", onMessage);
+
+  iframe.addEventListener("load", async () => {
+    try {
+      const { babel } = await assets;
+      iframe.contentWindow.postMessage({ type: "init", babel }, "*");
+    } catch (error) { rejectReady(error); }
+  }, { once: true });
+  container.appendChild(iframe);
+
+  return {
+    ready,
+    async execute({
+      files,
+      entry = "main.jsx",
+      manifest = null,
+      environments = { "widget-size": "medium", "widget-param": "" },
+      preview = { appearance: "light" },
+      fixtures = {},
+      prelude = "",
+      timeoutMilliseconds = runtimeContract.executionTimeoutMilliseconds,
+    }) {
+      await ready;
+      const { supportScripts } = await assets;
+      const id = `run-${++sequence}`;
+      const config = JSON.stringify({
+        contract: runtimeContract, environments, preview, fixtures,
+        manifest: manifest ?? null, hasManifest: manifest !== null && manifest !== undefined,
+      });
+      return new Promise((resolve) => {
+        pending.set(id, resolve);
+        // Messages to an opaque-origin frame cannot name a target origin.
+        iframe.contentWindow.postMessage({
+          type: "execute", id,
+          job: { files, entry, prelude, config, supportScripts, timeoutMilliseconds },
+        }, "*");
+      });
+    },
+    destroy() {
+      window.removeEventListener("message", onMessage);
+      iframe.remove();
+      for (const resolve of pending.values()) resolve({ tree: null, error: { kind: "internalError", message: "Preview sandbox closed" }, logs: [], diagnostics: [] });
+      pending.clear();
+    },
+  };
+}

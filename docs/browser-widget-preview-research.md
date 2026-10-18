@@ -1,10 +1,10 @@
 # Browser-first Widget preview: technical research and implementation plan
 
 Status: research proposal, 2026-10-17; code references re-verified against the
-runtime on the same day. This document records a recommended direction and a
-validation plan. It does not change the runtime, package format, or Studio
-behavior. The go/no-go decision belongs after the Stage 0 contract spike below,
-not before it.
+runtime on the same day. The Stage 0 contract spike is complete: see
+[browser preview engine](browser-preview-engine.md) for the implementation,
+measured parity (100/100 byte-identical trees), isolation results, and the
+decisions taken on the open questions below.
 
 ## Recommendation
 
@@ -123,7 +123,8 @@ reproduced, or explicitly listed as known differences, before Stage 0 can pass:
 - **Entry wrapper.** `ScriptWidgetCompiler.wrappedSource` emits
   `async function $main() { try { <source> } catch(e) { console.error(e);
   $error(`${e}`) } }`. The host then calls `$main()` and requires `$render` to
-  be called exactly once; a missing call maps to the `undefinedRender` error.
+  be called. `undefinedRender` means `$main` itself is missing; a script whose
+  text never contains `$render` renders a `#UI Not Found#` text element.
 - **`$import` is synchronous and global.** The native block reads a
   package-relative file, transpiles it **without** the `$main` wrapper, and
   evaluates it in the same global context. There is no module scope and no

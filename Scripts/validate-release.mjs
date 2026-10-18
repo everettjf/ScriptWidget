@@ -136,7 +136,7 @@ for (const command of ["./Scripts/release-readiness.sh", "./Scripts/device-matri
 async function walk(directory) {
   const result = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {
-    if (["node_modules", ".git", "build", "dist", "StudioEditor.bundle"].includes(entry.name)) continue;
+    if (["node_modules", ".git", ".claude", "build", "dist", "StudioEditor.bundle"].includes(entry.name)) continue;
     const path = join(directory, entry.name);
     if (entry.isDirectory()) result.push(...await walk(path)); else result.push(path);
   }
