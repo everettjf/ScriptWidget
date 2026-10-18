@@ -11,9 +11,10 @@ const line = (text, ok) => {
   out.append(span);
 };
 
-const sandbox = createPreviewSandbox({ sandboxDocument, assetBaseURL: new URL("../dist/assets/", import.meta.url) });
+const sandbox = createPreviewSandbox({ sandboxDocument, assetBaseURL: new URL("../dist/assets/", import.meta.url), onLog: (text) => line(`[frame] ${text}`) });
 const started = performance.now();
-await sandbox.ready;
+window.addEventListener("error", (event) => line(`page error: ${event.message}`, false));
+try { await sandbox.ready; } catch (error) { status.textContent = `Sandbox failed: ${error.message}`; throw error; }
 report.timing.readyMilliseconds = Math.round(performance.now() - started);
 status.textContent = `Sandbox ready in ${report.timing.readyMilliseconds} ms`;
 

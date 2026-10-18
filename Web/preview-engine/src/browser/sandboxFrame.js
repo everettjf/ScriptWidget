@@ -11,12 +11,18 @@ export function sandboxFrame(compilerWorkerSource, executorWorkerSource) {
   const executorURL = URL.createObjectURL(new Blob([executorWorkerSource], { type: "text/javascript" }));
 
   const reply = (message) => window.parent.postMessage(message, parentOrigin);
+  // Startup progress and uncaught errors, before the parent origin is known.
+  const report = (text) => window.parent.postMessage({ type: "log", message: String(text).slice(0, 500) }, "*");
+  window.addEventListener("error", (event) => report(`frame error: ${event.message}`));
+  window.addEventListener("unhandledrejection", (event) => report(`frame rejection: ${event.reason?.message ?? event.reason}`));
   const errorResult = (kind, message) => JSON.stringify({ tree: null, error: { kind, message }, logs: [], diagnostics: [] });
 
   function startCompiler(babel) {
     const url = URL.createObjectURL(new Blob([compilerWorkerSource], { type: "text/javascript" }));
+    // Keep the blob URL alive: WebKit fetches Worker scripts asynchronously
+    // and fails to start the Worker if the URL is revoked right away.
     compiler = new Worker(url);
-    URL.revokeObjectURL(url);
+    report("compiler worker created");
     compilerReady = new Promise((resolve, reject) => {
       compiler.onmessage = (event) => {
         const message = event.data;
@@ -26,7 +32,7 @@ export function sandboxFrame(compilerWorkerSource, executorWorkerSource) {
           pending.delete(message.id);
         }
       };
-      compiler.onerror = (event) => reject(new Error(event.message || "Compiler failed to start"));
+      compiler.onerror = (event) => { report(`compiler error: ${event.message}`); reject(new Error(event.message || "Compiler failed to start")); };
     });
     compiler.postMessage({ type: "init", babel });
   }
@@ -74,14 +80,20 @@ export function sandboxFrame(compilerWorkerSource, executorWorkerSource) {
     } catch { return null; }
   }
 
+  report("frame ready");
   window.addEventListener("message", async (event) => {
     if (event.source !== window.parent) return;
     const message = event.data;
     if (!message || typeof message !== "object" || typeof message.type !== "string") return;
     if (message.type === "init" && parentOrigin === null && typeof message.babel === "string") {
       parentOrigin = event.origin === "null" ? "*" : event.origin;
-      startCompiler(message.babel);
-      try { await compilerReady; reply({ type: "ready" }); } catch (error) { reply({ type: "failed", message: String(error) }); }
+      try {
+        startCompiler(message.babel);
+        await compilerReady;
+        reply({ type: "ready" });
+      } catch (error) {
+        reply({ type: "failed", message: `${error?.name ?? "Error"}: ${error?.message ?? error}` });
+      }
       return;
     }
     if (message.type !== "execute" || parentOrigin === null || typeof message.id !== "string") return;

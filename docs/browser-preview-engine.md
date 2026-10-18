@@ -1,14 +1,15 @@
 # Browser preview engine
 
-Status: Stage 0 (contract spike) and the Stage 1 core renderer complete,
-2026-10-17. This page records what was built, what was measured, and the
-known differences. The proposal and
-staged plan live in [browser widget preview research](browser-widget-preview-research.md).
+Status: all stages of the [research plan](browser-widget-preview-research.md)
+are implemented as of 2026-10-17: the JavaScriptCore-compatible engine
+(Stage 0), the SwiftUI-calibrated renderer (Stage 1), the
+[Web Studio](web-studio-browser.md) website (Stage 2), the preview CLI and MCP
+server (Stage 3), and broader parity for icons, gauges, charts, grids, dates,
+animations, Lock Screen and iPad families, and rendering modes (Stage 4). This
+page records what was built, what was measured, and the known differences.
 
-The engine lives in [`Web/preview-engine`](../Web/preview-engine). It compiles
-and executes ScriptWidget packages outside Apple platforms and produces the
-same resolved element tree as the native JavaScriptCore runtime. Rendering
-that tree (Stage 1) and the public Studio website (Stage 2) build on it.
+The engine lives in [`Web/preview-engine`](../Web/preview-engine); the website
+lives in [`Web/studio`](../Web/studio).
 
 ## Decisions
 
@@ -20,8 +21,19 @@ that tree (Stage 1) and the public Studio website (Stage 2) build on it.
   `Promise` or call `.catch`, `.finally`, or `Promise.all`. `fetch`, `$http`,
   `$health`, and `$location` still return the native then-only object, so
   `fetch(url).catch(...)` fails in the browser exactly as it does on iPhone.
-- **Icons:** map SF Symbol names to an open-source icon set and show a
-  missing-icon diagnostic for unmapped names. Stage 1 draws a placeholder glyph.
+- **Icons:** 283 SF Symbol names map to 252 look-alike [Lucide](https://lucide.dev)
+  icons (ISC license, generated subset with the license in
+  `src/render/icons.generated.js`). Unmapped names show a placeholder and an
+  `icon.unmapped` warning. No Apple symbol artwork is distributed.
+- **Install flow:** the website exports a validated `.swt`. On iPhone, the Web
+  Share sheet hands it to the existing ScriptWidget share extension; elsewhere
+  the file is downloaded and sent with AirDrop, iCloud Drive, or email.
+- **Hosting:** GitHub Pages serves the Studio at `/studio/` next to the
+  existing `site/`; the workflow builds it from source on every relevant push
+  to `main`.
+- **Font weight properties:** `fontWeight`, `fontDesign`, and the older
+  `weight` were documented but ignored natively; the native font modifier now
+  applies them (see below).
 - **Tree JSON:** the canonical serialization is a test artifact
   (`BrowserPreviewParityTests.swift` and `kernel.js`), not part of the runtime
   contract.
@@ -29,11 +41,15 @@ that tree (Stage 1) and the public Studio website (Stage 2) build on it.
 ## Architecture
 
 ```text
-editor page (GitHub Pages origin)
-  └─ <iframe sandbox="allow-scripts" srcdoc>   opaque origin, CSP connect-src 'none'
+Studio page (GitHub Pages, CSP script-src 'self')
+  └─ <iframe sandbox="allow-scripts" src="sandbox.html">  opaque origin, own CSP, connect-src 'none'
        ├─ compiler Worker (blob:)               bundled Babel, prepares the package
        └─ executor Worker (blob:), one per run  kernel + user code, terminated at the deadline
 ```
+
+Pages without a CSP (the demo and the CLI's render page) may pass the same
+document as `srcdoc`. A `srcdoc` frame inherits the parent's policy, so the
+Studio loads `sandbox.html` by URL to keep its own policy strict.
 
 | File | Role |
 | --- | --- |
@@ -119,9 +135,8 @@ Probes run as user code in the sandboxed executor (Chromium):
 | `eval("1 + 1")` | `2` (`'unsafe-eval'` is allowed inside the opaque frame for JavaScriptCore parity) |
 
 The CSP, not the global scrubbing, is the security boundary; scrubbing exists
-for parity. **Not yet verified:** Safari and Firefox, a GitHub Pages deployment
-with its own response headers, and a parent-page CSP (a `srcdoc` frame inherits
-the parent's policy, so the editor page must allow `blob:` Workers).
+for parity. The same probes pass in iOS 27 Safari (see the verification
+matrix). Firefox and the deployed GitHub Pages site are not yet verified.
 
 ## Known differences
 
@@ -191,13 +206,24 @@ Measured from those snapshots and encoded in the renderer:
 | Corpus (100 packages × 3 sizes) | 300 | 1.79% | 105 | 192 | 242 | 283 | 296 |
 | Calibration cases | 30 | 0.63% | 20 | 26 | 28 | 30 | 30 |
 
-The remaining large differences are expected and labelled in diagnostics:
-`gauge`, `chart`, and grids render as placeholders; SF Symbols are placeholder
-glyphs until an open icon set is mapped; animations show their first frame;
-`date` uses a fixed clock. Smaller differences come from line-breaking choices
+At Stage 1, `gauge`, `chart`, and grids were placeholders and SF Symbols were
+placeholder glyphs; Stage 4 below replaced them. Smaller differences come from line-breaking choices
 in large text (iOS sometimes hyphenates or breaks one word earlier) and
 sub-pixel text positioning. On Windows and Linux, fonts fall back from SF Pro,
 so widths and wrapping can differ more than these numbers.
+
+### Results after Stage 4
+
+The latest `npm run compare` (after icons, gauges, charts, grids, animations,
+and the native font weight fix, with snapshots re-exported):
+
+| Set | Count | Median | ≤1% | ≤3% | ≤5% | ≤10% | ≤20% |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Corpus (100 packages × 3 sizes) | 300 | 1.87% | 102 | 193 | 244 | 288 | 298 |
+| Calibration cases (incl. dark, gauges, charts, grids, accessories) | 40 | 0.84% | 22 | 32 | 36 | 39 | 40 |
+
+The largest remaining differences are animated templates (see Stage 4) and
+Swift Charts styling.
 
 ### Native behaviors worth knowing
 
@@ -212,6 +238,89 @@ The renderer reproduces these because they are what users see on iPhone:
   applied by `ScriptWidgetAttributeFontModifier` (`fontWeight` wins over the
   older `weight`), on iPhone and in the web preview.
 - An invalid color falls back to the shape's default fill (black in light mode).
+
+## Stage 2: Web Studio
+
+See the user guide, [Web Studio in the browser](web-studio-browser.md).
+
+| File | Role |
+| --- | --- |
+| `Web/studio/src/main.js` | Projects, files, preview controls, Problems/Console/Package/Fixtures panels, templates, import, export, install. |
+| `Web/studio/src/editor.js` | CodeMirror 6 with the Studio completions, diagnostics, and hover from `Editor/editorfe`. |
+| `Web/studio/src/store.js` | IndexedDB drafts with an in-memory fallback and a visible warning when storage is unavailable. |
+| `Web/studio/vite.config.js` | Generates `sandbox.html`, copies the runtime scripts, and builds `templates.json` from the 70 bundled templates and the Gallery. |
+| `src/package/manifest.js` | Ports of `ScriptWidgetPackage.readManifest` (strict keys, Codable types) and `WidgetPackageManifestValidator`. |
+| `src/package/archive.js` | Port of `ScriptPackageArchivePreflight`, extraction with the native root detection, and stored-ZIP export under the package directory. |
+
+A present but malformed `widget.json` fails closed in the browser. Package
+export is checked natively: `BrowserPreviewParityTests.testWebExportedPackageImportsNatively`
+imports `test/fixtures/web-export.swt` (written by the web export code) with the
+native preflight, SSZipArchive extraction, manifest validator, image lookup,
+and execution.
+
+## Stage 3: CLI and MCP
+
+```bash
+node Web/preview-engine/bin/scriptwidget-preview.mjs path/to/MyWidget --family small --output preview.png --diagnostics preview.json
+```
+
+- Runs the package in headless Chrome's sandboxed runtime frame (not in the Node
+  process) and writes a PNG plus diagnostics: `sourceHash` (SHA-256 of every
+  package file), size, fixtures hash, `engineVersion`, `compilerFingerprint`,
+  timings, logs, validation issues, and the resolved tree.
+- A failed render deletes the previous PNG so a stale image is never mistaken
+  for the current edit. `--watch` re-renders on change.
+- `--device http://<ip>:<port> --pair-code 123456` also pushes the text files to
+  an iPhone or iPad running Web Studio (HTTP API v1, entry file last, revision
+  checked) and saves the device's native SwiftUI preview as
+  `preview.native.png`. Binary resources are not part of that API and are
+  reported as skipped.
+- `bin/scriptwidget-mcp.mjs` is a stdio MCP server with
+  `render_widget_preview` (image plus diagnostics), `validate_widget_package`,
+  and `export_widget_package`. Package paths are confined to the working
+  directory (or `SCRIPTWIDGET_MCP_ROOTS`).
+
+```bash
+claude mcp add scriptwidget -- node Web/preview-engine/bin/scriptwidget-mcp.mjs
+```
+
+## Stage 4: broader parity
+
+- Gauges follow `MineGaugeView`: segment arcs, round end caps, needle, and the
+  native quirk that the default label is always `60%`. System gauge styles are
+  approximated.
+- Charts draw Swift Charts marks (bar, stacked bar, line, point, area, rule,
+  Gantt) with 1/2/5 tick steps, grid lines, and a category legend.
+- Lazy grids implement fixed, flexible, and adaptive tracks.
+- Clock-hand animations rotate at the current time (hour, minute, second,
+  custom period, time zone, anchor) and swing animations move with CSS.
+  The native in-app snapshots are static because the animation modifier only
+  runs in the widget target, so animated templates differ from them by design.
+- Lock Screen families (circular, rectangular, inline) and an iPad profile
+  (extra large, extra large portrait) are available; accented and vibrant
+  rendering modes are approximated, honoring `widgetAccentable`.
+- Dates use the real clock like the widget and the native `date` names
+  (`now`, `tomorrow`, `start of today`, `+3h`, `-2d`, or milliseconds).
+
+## Verification matrix
+
+| Check | Result |
+| --- | --- |
+| Tree parity, macOS 27 JavaScriptCore reference | 100/100 corpus trees |
+| Tree parity, iOS 27.0 simulator JavaScriptCore | identical to the reference |
+| Tree parity, Node 24 / Chromium (headless and Claude pane) | 100/100 byte-identical |
+| Tree parity, iOS 27 Safari (WebKit) in the simulator | 100/100 byte-identical; all isolation probes blocked; CSP control reached |
+| Pixel comparison vs iOS 27 snapshots, Chrome on macOS | corpus median 1.87% (244/300 within 5%, 298/300 within 20%); calibration cases median 0.84% |
+| Web Studio, headless Chrome smoke test | starter, 71 templates, image template, `.swt` import all render |
+| Web Studio, iOS 27 Safari | renders with the strict page CSP and URL-loaded sandbox |
+| Web-exported `.swt` imported by native code | passes preflight, extraction, validation, execution |
+| Device sync | tested against a mock implementing Web Studio HTTP API v1 |
+| **Not verified** | Firefox; Windows and Linux font fallback; a physical iPhone for device sync and share-sheet install; the deployed GitHub Pages site |
+
+WebKit note: revoking a blob URL immediately after `new Worker(url)` prevents
+WebKit from starting the Worker because it fetches the script asynchronously.
+The sandbox frame keeps the URL alive; this was found and fixed in the
+simulator check above.
 
 ## Corrections to the research proposal
 

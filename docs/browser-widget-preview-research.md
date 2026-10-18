@@ -1,11 +1,12 @@
 # Browser-first Widget preview: technical research and implementation plan
 
 Status: research proposal, 2026-10-17; code references re-verified against the
-runtime on the same day. The Stage 0 contract spike and the Stage 1 core
-renderer are complete: see [browser preview engine](browser-preview-engine.md)
-for the implementation, measured parity (100/100 byte-identical trees),
-isolation results, native snapshot comparison, and the decisions taken on the
-open questions below.
+runtime on the same day. Stages 0–4 are implemented: see
+[browser preview engine](browser-preview-engine.md) for the implementation,
+measured parity (100/100 byte-identical trees in Chromium and WebKit),
+isolation results, native snapshot comparison, the verification matrix, and
+the decisions taken on the open questions below; the user guide is
+[Web Studio in the browser](web-studio-browser.md).
 
 ## Recommendation
 

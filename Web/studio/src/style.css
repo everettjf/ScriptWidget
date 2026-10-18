@@ -92,6 +92,9 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.35); }
 @media (max-width: 720px) {
   .topbar { padding: 8px 16px; }
   .workspace { grid-template-columns: minmax(0, 1fr); }
-  .sidebar { border-right: 0; border-bottom: 1px solid var(--line); max-height: 40vh; }
+  /* On phones, show the widget first, then the code, then project files. */
+  .preview-pane { order: 1; border-top: 0; }
+  .editor-pane { order: 2; min-height: 50vh; border-top: 1px solid var(--line); }
+  .sidebar { order: 3; border-right: 0; border-top: 1px solid var(--line); }
   .stage { padding: 16px; justify-items: start; }
 }

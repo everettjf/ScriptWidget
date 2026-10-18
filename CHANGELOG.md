@@ -12,6 +12,8 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 - GitHub-backed Widget & Skills Gallery with verified files, offline cache, install/update UI on macOS and iOS/iPadOS, seed content, and contributor workflow.
 - Runtime XCTest targets, golden/template validation, release-readiness CI, and iPad/iCloud device scripts.
 - Browser preview engine (`Web/preview-engine`): JavaScriptCore-compatible execution in a sandboxed browser worker and a SwiftUI-calibrated web renderer.
+- Web Studio in the browser (`Web/studio`, published at `/studio/`): edit, preview, import, and export widgets on any desktop OS and install them on iPhone through the share sheet.
+- `scriptwidget-preview` CLI and `scriptwidget-mcp` server for agent workflows, with optional sync to Web Studio on iPhone for native previews.
 
 ### Changed
 
