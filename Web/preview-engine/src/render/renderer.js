@@ -192,11 +192,13 @@ export async function renderWidget(treeJSON, {
         whiteSpace: "pre-wrap", overflowWrap: "break-word", textAlign: alignment,
       });
       const content = element.ownerDocument.createElement("div");
-      content.textContent = node.lines && node.lines.lines === 1 && node.lines.total > 1 && platform() === "macos"
+      content.textContent = node.lines && node.lines.lines === 1 && node.lines.total > 1
         ? truncatedLine(node.text, style, node.frame.width)
         : node.displayText(node.frame.width);
       const trim = (style.leading - style.natural) / 2;
-      Object.assign(content.style, { marginTop: `${-trim}px`, width: `${node.frame.width + 2}px` });
+      // A half-point allowance absorbs sub-pixel rounding without fitting an
+      // extra glyph that the layout did not measure.
+      Object.assign(content.style, { marginTop: `${-trim}px`, width: `${node.frame.width + 0.5}px` });
       if (alignment !== "left") content.style.width = `${node.frame.width}px`;
       if (node.lines && node.lines.lines < node.lines.total) {
         Object.assign(content.style, { display: "-webkit-box", webkitBoxOrient: "vertical", webkitLineClamp: String(node.lines.lines), overflow: "hidden" });
@@ -206,8 +208,8 @@ export async function renderWidget(treeJSON, {
     });
   }
 
-  /// AppKit tail truncation: the longest prefix that fits with "…", with
-  /// trailing spaces dropped ("Travel…", not "Travel …").
+  /// SwiftUI tail truncation: the longest prefix that fits with "…", cut
+  /// mid-word, with trailing spaces dropped ("Hello fr…", "Travel…").
   function truncatedLine(value, style, width) {
     const characters = [...value.replace(/\s+/g, " ")];
     let low = 0; let high = characters.length;
@@ -657,7 +659,9 @@ export async function renderWidget(treeJSON, {
           content = new StackNode("h", [new StackNode("v", children, { alignment: "start", spacing: defaultSpacing("v") }), new SpacerNode("h"), knob], { alignment: "center", spacing: () => 8 });
         } else {
           if (tag === "button") report("info", "tag.approximated", "<button> renders its label; taps run only on iPhone");
-          content = new StackNode("v", children, { alignment: "center", spacing: defaultSpacing("v") });
+          // The label views sit side by side, as SwiftUI lays out a Button's
+          // label content.
+          content = new StackNode(tag === "button" ? "h" : "v", children, { alignment: "center", spacing: defaultSpacing(tag === "button" ? "h" : "v") });
           // macOS draws the automatic (bordered) style: a 5-point rounded
           // bezel of 7.45% primary around 4 x 12 points of padding.
           if (macButton) {
@@ -919,10 +923,13 @@ export async function renderWidget(treeJSON, {
       const { width, height } = node.frame;
       const svg = svgCanvas(element, width, height);
       const legendHeight = categoryEnabled && !hideLegend ? 14 : 0;
-      // Swift Charts on macOS starts the plot at the top edge, keeps 20 points
-      // for x labels and 20.5 for y labels, and draws slightly larger labels.
+      // Swift Charts starts the plot at the top edge and reserves a strip for
+      // each axis (measured from iOS 27 and macOS 27 snapshots). iOS labels
+      // use caption2 (11 pt) and may fill their whole band before truncating.
       const mac = platform() === "macos";
-      const metrics = mac ? { top: 0, bottom: 0, xLabels: 20, yLabels: 20.5, yGap: 5, baseline: 16, tick: 17.5, font: 10.5 } : { top: 4, bottom: 6, xLabels: 18, yLabels: 30, yGap: 4, baseline: 14, tick: 16, font: 10 };
+      const metrics = mac
+        ? { top: 0, bottom: 0, xLabels: 20, yLabels: 20.5, yGap: 5, baseline: 16, tick: 17.5, font: 10.5, labelBand: 0.9 }
+        : { top: 0, bottom: 0, xLabels: 18, yLabels: 19, yGap: 6, baseline: 14, tick: 16, font: 11, labelBand: 1 };
       const xLabelHeight = hideX ? 0 : metrics.xLabels;
       const yLabelWidth = hideY ? 0 : metrics.yLabels;
       const plot = { x: 0, y: metrics.top, width: Math.max(1, width - yLabelWidth), height: Math.max(1, height - xLabelHeight - legendHeight - metrics.top - metrics.bottom) };
@@ -956,7 +963,7 @@ export async function renderWidget(treeJSON, {
           const labelStyle = textStyleFor({ size: metrics.font, lineHeight: null, weight: 400, design: "default" });
           const labelWidth = (value) => measurer.measure(value, labelStyle, null).width;
           labels.forEach((label) => {
-            const limit = band * 0.9;
+            const limit = band * metrics.labelBand;
             let shown = label;
             for (let length = label.length; length > 1 && labelWidth(shown) > limit; length -= 1) shown = `${label.slice(0, length - 1)}…`;
             textAt(xOf(label), plot.y + plot.height + metrics.baseline, shown);

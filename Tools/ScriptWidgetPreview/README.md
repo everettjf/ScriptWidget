@@ -59,6 +59,12 @@ swiftc -parse-as-library -o /tmp/symbol-metrics Tools/ScriptWidgetPreview/Script
 /tmp/symbol-metrics "$PWD"
 ```
 
+## Line breaking reference
+
+`Scripts/line-break-sweep.swift` compares the web engine's push-out rule
+with TextKit's `.standard` line break strategy across texts, sizes, weights,
+and widths and prints the number of mismatches.
+
 ## Notes
 
 - The app is a local developer tool: ad-hoc signed, not sandboxed, and not

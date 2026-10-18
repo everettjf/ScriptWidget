@@ -90,14 +90,23 @@ test("the macOS profile uses macOS 26 SwiftUI metrics", () => {
   assert.deepEqual(parseColor("primary"), [0, 0, 0, 1]);
 });
 
-test("macOS text breaks words without hyphens and pushes out short orphans", () => {
+test("text pushes out orphans like TextKit; macOS breaks long words without hyphens", () => {
   const measurer = { measure: (text, style, width) => ({ width: Math.max(...text.split("\n").map((line) => line.length * 10)), lines: text.split("\n").length }), ellipsisWidth: () => 10 };
   const mac = { natural: 16, leading: 16, size: 13, hyphenate: false };
-  assert.equal(new TextNode("Widget Size : small", mac, measurer).displayText(140), "Widget\nSize : small");
+  // Push-out (TextKit .standard): two lines, the moved line fits, and the
+  // first line stays at least 55% as wide as the new last line.
+  assert.equal(new TextNode("October 18, 2026", mac, measurer).displayText(110), "October\n18, 2026");
   assert.equal(new TextNode("Hello from GitHubbb", mac, measurer).displayText(110), "Hello from GitHubbb");
+  assert.equal(new TextNode("ab cdefgh ij", mac, measurer).displayText(90), "ab cdefgh ij");
+  assert.equal(new TextNode("aaa bbb ccc ddd eee f", mac, measurer).displayText(70), "aaa bbb ccc ddd eee f");
+  assert.equal(new TextNode("Rain · 58° today", mac, measurer).displayText(100), "Rain ·\n58° today");
+  assert.equal(new TextNode("Wideness Size : small", mac, measurer).displayText(150), "Wideness\nSize : small");
   assert.equal(new TextNode("SYSTEM", mac, measurer).displayText(30), "SYSTEM");
   assert.equal(new TextNode("TUE", mac, measurer).wrapsCharacters(10), true);
-  assert.match(new TextNode("SYSTEM", { ...mac, hyphenate: true }, measurer).displayText(30), /^SY-\n/);
+  const ios = { ...mac, hyphenate: true };
+  assert.match(new TextNode("SYSTEM", ios, measurer).displayText(30), /^SY-\n/);
+  assert.equal(new TextNode("SYSTEM", ios, measurer).displayText(20), "SYSTEM");
+  assert.equal(new TextNode("把今天过得有意义", ios, measurer).displayText(30), "把今天过得有意义");
 });
 
 test("SF Symbol metrics come from SwiftUI", () => {

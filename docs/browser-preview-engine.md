@@ -369,6 +369,41 @@ median 1.80% (247/300 within 5%, 299/300 within 20%), cases unchanged at
 templates (native clock hands are not captured by `ImageRenderer`), a few
 narrow multi-column layouts, and icon artwork.
 
+## iOS recalibration with TextKit as the reference
+
+After the macOS work, the iOS snapshots were re-exported on the iOS 27
+simulator (`testExportNativeSnapshots`) and compared again. To pin down line
+breaking exactly, TextKit's `.standard` line break strategy served as a
+reference: a sweep of 24,441 width, size, and weight combinations
+(`Tools/ScriptWidgetPreview/Scripts/line-break-sweep.swift`) showed that
+both platforms push a word down only when a two-line paragraph would end in a
+single word, the moved line fits, and the first line stays at least 55% as wide
+as the new last line ("October / 18, 2026" but "Hello from / GitHub"). The web
+rule matches TextKit in 24,420 of those cases. Other fixes from this pass:
+
+- Swift Charts on iOS: the plot starts at the top edge, x labels take 18 pt
+  and y labels 19 pt (6 pt after the plot), labels use `caption2` (11 pt) and
+  may fill their band (chart renders 16% → about 4%).
+- Truncation cuts mid-word and drops the space before "…" ("Hello fr…") on
+  both platforms; narrow columns break one character per line.
+- Hyphenation skips CJK text and gives up when two letters and a hyphen do
+  not fit.
+- `<button>` lays out its label views side by side.
+- Text is drawn with a 0.5 pt allowance instead of 2 pt, so a 12 pt Chinese
+  line no longer fits one more character than the layout measured.
+
+| Set (iOS 27 simulator, Chrome) | Count | Median | ≤1% | ≤3% | ≤5% | ≤10% | ≤20% |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Corpus before | 300 | 1.78% | 104 | 202 | 249 | 291 | 298 |
+| Corpus after | 300 | 1.71% | 106 | 207 | 262 | 293 | 298 |
+| Calibration cases after | 40 | 0.84% | 22 | 33 | 36 | 40 | 40 |
+
+macOS improved with the shared changes: corpus median 0.94% (280/300 within
+5%, 300/300 within 20%). The largest remaining iOS differences are animated or
+time-based templates, controls that `ImageRenderer` draws as placeholders
+(`toggle`), and how an HStack splits width between two text columns in narrow
+small widgets.
+
 ## Verification matrix
 
 | Check | Result |
@@ -377,8 +412,8 @@ narrow multi-column layouts, and icon artwork.
 | Tree parity, iOS 27.0 simulator JavaScriptCore | identical to the reference |
 | Tree parity, Node 24 / Chromium (headless and Claude pane) | 100/100 byte-identical |
 | Tree parity, iOS 27 Safari (WebKit) in the simulator | 100/100 byte-identical; all isolation probes blocked; CSP control reached |
-| Pixel comparison vs iOS 27 snapshots, Chrome on macOS | corpus median 1.80% (247/300 within 5%, 299/300 within 20%); calibration cases median 0.84% |
-| Pixel comparison vs macOS 27 native, `WKWebView` (ScriptWidget Preview) | corpus median 0.97% (280/300 within 5%, 299/300 within 20%); calibration cases median 0.24% |
+| Pixel comparison vs iOS 27 snapshots, Chrome on macOS | corpus median 1.71% (262/300 within 5%, 298/300 within 20%); calibration cases median 0.84% |
+| Pixel comparison vs macOS 27 native, `WKWebView` (ScriptWidget Preview) | corpus median 0.94% (280/300 within 5%, 300/300 within 20%); calibration cases median 0.24% |
 | Web Studio, headless Chrome smoke test | starter, 71 templates, image template, `.swt` import all render |
 | Web Studio, iOS 27 Safari | renders with the strict page CSP and URL-loaded sandbox |
 | Web-exported `.swt` imported by native code | passes preflight, extraction, validation, execution |
