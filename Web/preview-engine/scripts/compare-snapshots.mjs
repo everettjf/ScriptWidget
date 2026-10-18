@@ -116,7 +116,25 @@ const summarize = (values) => {
     within1: share(1), within3: share(3), within5: share(5),
   };
 };
-const summary = { all: summarize(scored.map((item) => item.diffPercent)), sizes: Object.fromEntries([...groups].sort(([a], [b]) => a.localeCompare(b)).map(([key, values]) => [key, summarize(values)])) };
+// Coverage by component: every compared render counts for each tag its
+// package source uses.
+const corpusSources = JSON.parse(fs.readFileSync(path.join(root, "dist/parity-corpus.json"), "utf8")).corpus
+  .map((item) => [item.name, Object.values(item.files).filter((value) => typeof value === "string").join("\n")]);
+const caseSources = JSON.parse(fs.readFileSync(path.join(root, "test/render/cases.json"), "utf8")).map((item) => [`case/${item.name}`, item.source]);
+const sources = Object.fromEntries([...corpusSources, ...caseSources]);
+const tags = new Map();
+for (const item of scored) {
+  const source = sources[item.name.slice(0, item.name.lastIndexOf("@"))] ?? "";
+  for (const tag of new Set([...source.matchAll(/<([a-z][a-zA-Z0-9]*)[\s>/]/g)].map((match) => match[1]))) {
+    if (!tags.has(tag)) tags.set(tag, []);
+    tags.get(tag).push(item.diffPercent);
+  }
+}
+const summary = {
+  all: summarize(scored.map((item) => item.diffPercent)),
+  sizes: Object.fromEntries([...groups].sort(([a], [b]) => a.localeCompare(b)).map(([key, values]) => [key, summarize(values)])),
+  tags: Object.fromEntries([...tags].sort(([a], [b]) => a.localeCompare(b)).map(([key, values]) => [key, summarize(values)])),
+};
 fs.writeFileSync(path.join(root, "dist/compare-summary.json"), JSON.stringify(summary, null, 1));
 console.log("\n| Size | Renders | Median diff | Mean same | ≥99% same | ≤3% diff | ≤5% diff |\n| --- | --- | --- | --- | --- | --- | --- |");
 for (const [key, row] of [...Object.entries(summary.sizes), ["all", summary.all]]) {

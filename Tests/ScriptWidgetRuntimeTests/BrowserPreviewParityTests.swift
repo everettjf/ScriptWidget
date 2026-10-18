@@ -217,6 +217,7 @@ final class BrowserPreviewParityTests: XCTestCase {
     #endif
 
 
+    #if os(iOS)
     /// Prints SwiftUI's first text baseline for sizes and text styles when
     /// TEST_RUNNER_SCRIPTWIDGET_PRINT_BASELINES=1 (renderer calibration).
     @MainActor
@@ -303,6 +304,7 @@ final class BrowserPreviewParityTests: XCTestCase {
         let data = try JSONSerialization.data(withJSONObject: json, options: [.sortedKeys])
         try data.write(to: Self.repositoryRoot.appendingPathComponent("Web/preview-engine/dist/native-spacing.json"))
     }
+    #endif
 
     private static let repositoryRoot = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
