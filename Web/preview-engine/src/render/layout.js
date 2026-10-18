@@ -21,30 +21,35 @@ export class TextNode extends Node {
     super();
     this.text = text; this.style = style; this.measurer = measurer;
   }
-  /// Like UIKit, a word wider than the line is hyphenated: it is split into
-  /// the longest prefixes that fit with a trailing "-" instead of breaking
-  /// at an arbitrary character. AppKit (style.hyphenate false) breaks such
-  /// words between characters without a hyphen, as the browser does.
+  /// When every word fits, the standard line break strategy may push a word
+  /// down (see pushOut). Otherwise, like UIKit, a word wider than the line
+  /// is hyphenated: it is split into the longest prefixes that fit with a
+  /// trailing "-". AppKit (style.hyphenate false) breaks such words between
+  /// characters without a hyphen, as the browser does.
   displayText(width) {
     if (width === null || width === Infinity || width <= 0) return this.text;
     const key = `${width}`;
     this.hyphenated ??= new Map();
     if (this.hyphenated.has(key)) return this.hyphenated.get(key);
-    if (this.style.hyphenate === false) {
-      const result = this.text.split("\n").map((paragraph) => this.pushOut(paragraph, width)).join("\n");
-      this.hyphenated.set(key, result);
-      return result;
+    const pushed = this.text.split("\n").map((paragraph) => this.pushOut(paragraph, width)).join("\n");
+    if (this.style.hyphenate === false || pushed !== this.text) {
+      this.hyphenated.set(key, pushed);
+      return pushed;
     }
     const fits = (piece) => this.measurer.measure(piece, this.style, null).width <= width + 0.01;
     const result = this.text.replace(/\S+/g, (word) => {
-      if (fits(word) || [...word].length < 4) return word;
+      // CJK text breaks between any two characters without a hyphen.
+      if (fits(word) || [...word].length < 4 || /[\u2e80-\u9fff\uac00-\ud7af\uf900-\ufaff\uff00-\uffef]/.test(word)) return word;
       const characters = [...word];
       const pieces = [];
       let start = 0;
       while (start < characters.length) {
         const rest = characters.slice(start).join("");
         if (fits(rest)) { pieces.push(rest); break; }
-        let end = start + 1;
+        // A column too narrow for two letters and a hyphen breaks the word
+        // one character per line instead ("S / Y / S").
+        if (!fits(`${characters.slice(start, start + 2).join("")}-`)) return word;
+        let end = start + 2;
         while (end < characters.length && fits(`${characters.slice(start, end + 1).join("")}-`)) end += 1;
         // Like iOS, carry at least three letters to the next line.
         if (characters.length - end < 3) end = Math.max(start + 1, characters.length - 3);
@@ -56,37 +61,38 @@ export class TextNode extends Node {
     this.hyphenated.set(key, result);
     return result;
   }
-  /// AppKit's standard line break strategy pushes a word down so that the
-  /// last line of a paragraph is not a single short word ("October /
-  /// 18, 2026").
-  /// Breaks before punctuation are not allowed (UAX #14), so "Size :" stays
-  /// together. Paragraphs with a word wider than the line are left alone.
+  /// The standard line break strategy (UIKit and AppKit) pushes a word down
+  /// when a two-line paragraph would end in a single word ("October /
+  /// 18, 2026"), unless that leaves the first line under 55% as wide as the
+  /// new last line ("Hello from / GitHub" stays). Breaks before punctuation
+  /// are not allowed (UAX #14), so "Size :" stays together. This matches
+  /// TextKit's .standard strategy in 24,420 of 24,441 width/size/weight
+  /// cases (Tools/ScriptWidgetPreview/Scripts/line-break-sweep.swift).
   pushOut(paragraph, width) {
-    const words = paragraph.split(/ +/).filter(Boolean).reduce((tokens, word) => {
-      if (tokens.length && /^[:;,.!?)\]}%]/.test(word)) tokens[tokens.length - 1] += ` ${word}`;
-      else tokens.push(word);
-      return tokens;
-    }, []);
-    const fits = (line) => this.measurer.measure(line.join(" "), this.style, null).width <= width + 0.01;
+    const words = [];
+    for (const word of paragraph.split(/ +/).filter(Boolean)) {
+      if (words.length && /^[:;,.!?)\]}%]/.test(word)) words[words.length - 1] += ` ${word}`;
+      else words.push(word);
+    }
+    const measure = (line) => this.measurer.measure(line.join(" "), this.style, null).width;
+    const fits = (line) => measure(line) <= width + 0.01;
     if (words.length < 3 || fits(words) || !words.every((word) => fits([word]))) return paragraph;
     const lines = [[]];
     for (const word of words) {
       const line = lines.at(-1);
       if (!line.length || fits([...line, word])) line.push(word); else lines.push([word]);
     }
-    const last = lines.at(-1); const previous = lines.at(-2);
-    if (lines.length < 2 || last.length !== 1 || previous.length < 2) return paragraph;
-    // Only a short orphan is pushed out: "Hello from / GitHub" stays.
-    if (this.measurer.measure(last[0], this.style, null).width >= width * 0.5) return paragraph;
-    const moved = [previous.at(-1), ...last];
-    if (!fits(moved)) return paragraph;
-    lines.splice(-2, 2, previous.slice(0, -1), moved);
-    return lines.map((line) => line.join(" ")).join("\n");
+    if (lines.length !== 2) return paragraph;
+    const [first, last] = lines;
+    if (last.length !== 1 || last[0].includes(" ") || first.length < 2) return paragraph;
+    const moved = [first.at(-1), ...last];
+    const rest = first.slice(0, -1);
+    if (!fits(moved) || measure(rest) < measure(moved) * 0.55) return paragraph;
+    return `${rest.join(" ")}\n${moved.join(" ")}`;
   }
-  /// AppKit keeps breaking a word one character per line in a column
+  /// SwiftUI keeps breaking a word one character per line in a column
   /// narrower than "…" as long as its first character fits.
   wrapsCharacters(width) {
-    if (this.style.hyphenate !== false) return false;
     const first = [...this.text.trim()][0];
     return first !== undefined && this.measurer.measure(first, this.style, null).width <= width + 0.01;
   }
