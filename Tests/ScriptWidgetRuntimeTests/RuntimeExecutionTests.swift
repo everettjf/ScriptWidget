@@ -325,6 +325,83 @@ final class RuntimeExecutionTests: XCTestCase {
         }
     }
 
+    /// CPU seconds this process consumes over `interval`.
+    private func processCPUSeconds(over interval: TimeInterval) -> Double {
+        func cpuSeconds() -> Double {
+            var usage = rusage()
+            getrusage(RUSAGE_SELF, &usage)
+            func seconds(_ time: timeval) -> Double { Double(time.tv_sec) + Double(time.tv_usec) / 1_000_000 }
+            return seconds(usage.ru_utime) + seconds(usage.ru_stime)
+        }
+        let before = cpuSeconds()
+        Thread.sleep(forTimeInterval: interval)
+        return cpuSeconds() - before
+    }
+
+    /// Asserts the runaway script released its thread and its VM.
+    /// JavaScriptCore serialises entry into a VM, so while a loop spins a
+    /// follow-up execution on the same runtime blocks until it, too, hits the
+    /// execution limit. Runtimes are single-use, so the follow-up fails on
+    /// redeclaring util.js globals; reaching that error promptly proves the
+    /// VM accepted new work.
+    private func assertRuntimeStopped(_ runtime: ScriptWidgetRuntime, file: StaticString = #filePath, line: UInt = #line) {
+        let idleCPU = processCPUSeconds(over: 1)
+        XCTAssertLessThan(idleCPU, 0.5, "a runaway script is still burning CPU", file: file, line: line)
+
+        let start = Date()
+        let (_, error) = runtime.executeJSXSyncForWidget("$render(<text>after</text>);")
+        XCTAssertLessThan(Date().timeIntervalSince(start), 3, "runtime VM still locked", file: file, line: line)
+        if case .resourceLimit = error {
+            XCTFail("runtime VM still busy: \(String(describing: error))", file: file, line: line)
+        }
+    }
+
+    func testRunawaySynchronousLoopIsTerminatedAtTimeLimit() {
+        let runtime = makeRuntime()
+        let start = Date()
+        let (element, error) = runtime.executeJSXSyncForWidget(
+            "while (true) {} $render(<text>never</text>);"
+        )
+        XCTAssertNil(element)
+        XCTAssertLessThan(Date().timeIntervalSince(start), 7)
+        guard case .resourceLimit = error else {
+            return XCTFail("expected resource-limit timeout, got \(String(describing: error))")
+        }
+        assertRuntimeStopped(runtime)
+    }
+
+    func testRunawayFunctionLoopIsTerminatedAtTimeLimit() {
+        let runtime = makeRuntime()
+        let (_, error) = runtime.executeJSXSyncForFunction(
+            "async function onTap() { while (true) {} }", "onTap"
+        )
+        guard case .resourceLimit = error else {
+            return XCTFail("expected resource-limit timeout, got \(String(describing: error))")
+        }
+        assertRuntimeStopped(runtime)
+    }
+
+    func testRunawayCompilerContextIsTerminatedAtTimeLimit() {
+        XCTAssertTrue(ScriptWidgetJavaScriptWatchdog.isSupported)
+        let start = Date()
+        let result = ScriptWidgetCompiler.compile("x", babelContent: "while (true) {}", timeLimit: 0.5)
+        XCTAssertLessThan(Date().timeIntervalSince(start), 3)
+        guard case .failure(.resourceLimit) = result else {
+            return XCTFail("expected resource-limit failure, got \(result)")
+        }
+    }
+
+    func testBusyButFiniteScriptIsNotInterruptedBeforeTimeLimit() {
+        // Longer than a watchdog slice but well inside the execution limit.
+        let (element, error) = makeRuntime().executeJSXSyncForWidget("""
+            const start = Date.now();
+            while (Date.now() - start < 800) {}
+            $render(<text>finished</text>);
+            """)
+        XCTAssertNil(error)
+        XCTAssertTrue(element.map(collectText)?.contains("finished") ?? false)
+    }
+
     // MARK: - Error surfacing (PR #12: visible script errors)
 
     func testThrownErrorIsSurfaced() {
