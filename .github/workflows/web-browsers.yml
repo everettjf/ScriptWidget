@@ -17,6 +17,9 @@ on:
       - '.github/workflows/web-browsers.yml'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: web-browsers-${{ github.ref }}
   cancel-in-progress: true
