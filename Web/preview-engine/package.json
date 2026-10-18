@@ -13,7 +13,7 @@
     "./node": "./src/node.js"
   },
   "scripts": {
-    "test": "node --test test/*.test.js",
+    "test": "node --test --test-timeout=180000 test/*.test.js",
     "build": "node scripts/build-browser.mjs",
     "coverage": "node scripts/coverage-report.mjs",
     "compare": "node scripts/compare-snapshots.mjs"

@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node --test test/*.test.js"
+    "test": "node --test --test-timeout=60000 test/*.test.js"
   },
   "dependencies": {
     "@codemirror/autocomplete": "6.20.3",

@@ -36,19 +36,69 @@ export async function serveDirectory(directory, routes = {}) {
   return { origin: `http://127.0.0.1:${server.address().port}`, close: () => server.close() };
 }
 
-export async function launchChrome({ width = 800, height = 800, scale = 2 } = {}) {
+/// Chrome starts helper processes; kill the whole process group so none of
+/// them keeps pipes (and this Node process) alive.
+function killTree(chrome, signal = "SIGKILL") {
+  if (process.platform !== "win32" && chrome.pid) {
+    try { process.kill(-chrome.pid, signal); return; } catch { /* group already gone */ }
+  }
+  chrome.kill(signal);
+}
+
+function startChrome(chromePath, args, timeoutMilliseconds) {
+  const profile = fs.mkdtempSync(path.join(os.tmpdir(), "sw-chrome-"));
+  const chrome = spawn(chromePath, [...args, `--user-data-dir=${profile}`, "about:blank"], { stdio: ["ignore", "ignore", "pipe"], detached: process.platform !== "win32" });
+  return new Promise((resolve, reject) => {
+    let buffer = "";
+    let settled = false;
+    const fail = (message) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      killTree(chrome);
+      chrome.stderr.destroy();
+      fs.rmSync(profile, { recursive: true, force: true });
+      reject(new Error(`${message}\n${buffer.trim().split("\n").slice(-5).join("\n")}`));
+    };
+    // Never wait forever: a Chrome that cannot start its sandbox may neither
+    // exit nor print the DevTools endpoint.
+    const timer = setTimeout(() => fail(`Chrome did not start within ${timeoutMilliseconds} ms`), timeoutMilliseconds);
+    chrome.stderr.on("data", (chunk) => {
+      buffer = (buffer + chunk).slice(-8000);
+      const match = /DevTools listening on (ws:\S+)/.exec(buffer);
+      if (match && !settled) { settled = true; clearTimeout(timer); resolve({ chrome, profile, wsURL: match[1] }); }
+    });
+    chrome.on("exit", (code) => fail(`Chrome exited (${code}) before DevTools was ready`));
+    chrome.on("error", (error) => fail(`Chrome could not be launched: ${error.message}`));
+  });
+}
+
+export async function launchChrome({ width = 800, height = 800, scale = 2, startupTimeoutMilliseconds = 30000, callTimeoutMilliseconds = 120000 } = {}) {
   const chromePath = findChrome();
   if (!chromePath) throw new Error("Chrome was not found. Set CHROME_PATH.");
-  const profile = fs.mkdtempSync(path.join(os.tmpdir(), "sw-chrome-"));
-  const chrome = spawn(chromePath, ["--headless=new", "--remote-debugging-port=0", `--user-data-dir=${profile}`, `--force-device-scale-factor=${scale}`,
-    `--window-size=${width},${height}`, "--hide-scrollbars", "--font-render-hinting=none", "--no-first-run", "--no-default-browser-check", "about:blank"], { stdio: ["ignore", "ignore", "pipe"] });
-  const wsURL = await new Promise((resolve, reject) => {
-    let buffer = "";
-    chrome.stderr.on("data", (chunk) => { buffer += chunk; const match = /DevTools listening on (ws:\S+)/.exec(buffer); if (match) resolve(match[1]); });
-    chrome.on("exit", () => reject(new Error("Chrome exited before DevTools was ready")));
-  });
+  const args = ["--headless=new", "--remote-debugging-port=0", `--force-device-scale-factor=${scale}`, `--window-size=${width},${height}`,
+    "--hide-scrollbars", "--font-render-hinting=none", "--no-first-run", "--no-default-browser-check", "--disable-dev-shm-usage"];
+  // Chrome's OS sandbox needs unprivileged user namespaces, which recent
+  // Ubuntu releases (including GitHub's runners) restrict with AppArmor.
+  // Widget code is isolated by the sandboxed frame and its CSP, not by this
+  // OS sandbox, so on Linux the launch falls back to --no-sandbox.
+  let started;
+  if (process.env.SCRIPTWIDGET_CHROME_NO_SANDBOX === "1") started = await startChrome(chromePath, [...args, "--no-sandbox"], startupTimeoutMilliseconds);
+  else {
+    try { started = await startChrome(chromePath, args, startupTimeoutMilliseconds); }
+    catch (error) {
+      if (process.platform !== "linux") throw error;
+      console.error(`Chrome failed to start with its sandbox; retrying with --no-sandbox. ${error.message.split("\n")[0]}`);
+      started = await startChrome(chromePath, [...args, "--no-sandbox"], startupTimeoutMilliseconds);
+    }
+  }
+  const { chrome, profile, wsURL } = started;
   const socket = new WebSocket(wsURL);
-  await new Promise((resolve) => socket.addEventListener("open", resolve, { once: true }));
+  await new Promise((resolve, reject) => {
+    const timer = setTimeout(() => { killTree(chrome); reject(new Error("Could not connect to Chrome DevTools")); }, startupTimeoutMilliseconds);
+    socket.addEventListener("open", () => { clearTimeout(timer); resolve(); }, { once: true });
+    socket.addEventListener("error", () => { clearTimeout(timer); killTree(chrome); reject(new Error("Could not connect to Chrome DevTools")); }, { once: true });
+  });
   let sequence = 0;
   const waiting = new Map();
   const listeners = new Set();
@@ -59,7 +109,8 @@ export async function launchChrome({ width = 800, height = 800, scale = 2 } = {}
   });
   const send = (method, params = {}, sessionId) => new Promise((resolve, reject) => {
     const id = ++sequence;
-    waiting.set(id, (message) => (message.error ? reject(new Error(`${method}: ${message.error.message}`)) : resolve(message.result)));
+    const timer = setTimeout(() => { waiting.delete(id); reject(new Error(`${method} timed out after ${callTimeoutMilliseconds} ms`)); }, callTimeoutMilliseconds);
+    waiting.set(id, (message) => { clearTimeout(timer); if (message.error) reject(new Error(`${method}: ${message.error.message}`)); else resolve(message.result); });
     socket.send(JSON.stringify({ id, method, params, sessionId }));
   });
   return {
@@ -97,7 +148,12 @@ export async function launchChrome({ width = 800, height = 800, scale = 2 } = {}
     },
     async close() {
       socket.close();
-      await new Promise((resolve) => { chrome.once("exit", resolve); chrome.kill(); });
+      await new Promise((resolve) => {
+        if (chrome.exitCode !== null) { resolve(); return; }
+        chrome.once("exit", resolve);
+        killTree(chrome, "SIGTERM");
+        setTimeout(() => killTree(chrome), 3000).unref();
+      });
       fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     },
   };
