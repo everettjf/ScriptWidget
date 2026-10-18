@@ -268,6 +268,17 @@ export function parseFont(value) {
 
 export const defaultFont = { size: 17, lineHeight: 22, weight: 400, design: "default" };
 
+/// ScriptWidgetAttributeFontModifier: `font`, refined by `fontWeight` (or
+/// the older `weight`) and `fontDesign`.
+export function elementFont(reader, fallback = defaultFont) {
+  const font = { ...(parseFont(reader.string("font")) ?? fallback) };
+  const weight = weights[reader.string("fontWeight") ?? reader.string("weight") ?? ""];
+  if (weight !== undefined) font.weight = weight;
+  const design = designs[reader.string("fontDesign") ?? ""];
+  if (design !== undefined && !font.family) font.design = design;
+  return font;
+}
+
 export function fontFamily(font) {
   if (font.family) return `"${font.family.replace(/"/g, "")}", -apple-system, system-ui, sans-serif`;
   switch (font.design) {

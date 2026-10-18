@@ -206,11 +206,11 @@ The renderer reproduces these because they are what users see on iPhone:
 - `padding={10}` (a number) is ignored; only strings like `"10"` apply.
 - `frame="max,20"` sets only the height; the width is not expanded.
 - `#fff` (3-digit hex) is nearly transparent black; 8-digit hex is ARGB.
-- `weight`, `fontWeight`, and `fontDesign` are not read by any native builder.
-  The bundled templates use `weight` 76 times and the Gallery Hello Card uses
-  `fontWeight`, with no effect; Studio completions in `scriptWidgetAPI.js`
-  still advertise `fontWeight` and `fontDesign`. Use `font="title,bold"` or
-  `font="20,bold,rounded"`. The web preview reports these as ignored.
+- Until 2026-10-17, `weight`, `fontWeight`, and `fontDesign` were not read by
+  any native builder even though Studio completions advertised them; the
+  bundled templates used `weight` 76 times with no effect. They are now
+  applied by `ScriptWidgetAttributeFontModifier` (`fontWeight` wins over the
+  older `weight`), on iPhone and in the web preview.
 - An invalid color falls back to the shape's default fill (black in light mode).
 
 ## Corrections to the research proposal

@@ -71,9 +71,15 @@ Applied by every tag except `spacer` (frame only) and `Fragment`, in this order:
 | `vgrid` | `columns` | unsupported | Grid tracks |
 | `vgrid` | `alignment` | unsupported |  |
 | `vgrid` | `spacing` | unsupported |  |
+| `text` | `fontWeight` | supported | Overrides the weight in font |
+| `text` | `weight` | supported | Older alias of fontWeight |
+| `text` | `fontDesign` | supported | default, rounded, serif, monospaced |
 | `text` | `font` | supported | SF metrics on Apple systems; fallback fonts elsewhere |
 | `text` | `color` | supported |  |
 | `text` | `alignment` | supported |  |
+| `date` | `fontWeight` | supported | Overrides the weight in font |
+| `date` | `weight` | supported | Older alias of fontWeight |
+| `date` | `fontDesign` | supported | default, rounded, serif, monospaced |
 | `date` | `date` | approximated | Fixed clock |
 | `date` | `style` | approximated | time/date/timer formats approximated |
 | `date` | `font` | supported |  |
@@ -84,11 +90,18 @@ Applied by every tag except `spacer` (frame only) and `Fragment`, in this order:
 | `image` | `id` | supported | Alias of name |
 | `image` | `url` | approximated | data: PNG/JPEG only; remote URLs are not loaded |
 | `image` | `src` | approximated | Alias of url |
-| `image` | `ratio` | unsupported | Aspect ratio is not applied yet |
+| `image` | `ratio` | supported | With mode fit or fill |
 | `image` | `mode` | supported |  |
 | `image` | `font` | supported |  |
+| `image` | `fontWeight` | supported | Overrides the weight in font |
+| `image` | `weight` | supported | Older alias of fontWeight |
+| `image` | `fontDesign` | supported | default, rounded, serif, monospaced |
 | `image` | `accentedRenderingMode` | approximated | Accented mode is not emulated |
 | `gif` | `file` | supported | Resolved like ScriptWidgetPackage.getGifFile |
+| `gif` | `font` | supported |  |
+| `gif` | `fontWeight` | supported | Overrides the weight in font |
+| `gif` | `weight` | supported | Older alias of fontWeight |
+| `gif` | `fontDesign` | supported | default, rounded, serif, monospaced |
 | `rect` | `corner` | supported |  |
 | `rect` | `trim` | approximated | Trim applies to strokes only |
 | `rect` | `stroke` | supported |  |
@@ -133,10 +146,16 @@ Applied by every tag except `spacer` (frame only) and `Fragment`, in this order:
 | `line` | `color` | supported |  |
 | `roundedrect` | `radius` | supported |  |
 | `roundedrect` | `color` | supported |  |
+| `icon` | `fontWeight` | supported | Overrides the weight in font |
+| `icon` | `weight` | supported | Older alias of fontWeight |
+| `icon` | `fontDesign` | supported | default, rounded, serif, monospaced |
 | `icon` | `systemName` | approximated | Placeholder glyph |
 | `icon` | `size` | supported |  |
 | `icon` | `color` | supported |  |
 | `icon` | `font` | supported |  |
+| `label` | `fontWeight` | supported | Overrides the weight in font |
+| `label` | `weight` | supported | Older alias of fontWeight |
+| `label` | `fontDesign` | supported | default, rounded, serif, monospaced |
 | `label` | `title` | supported |  |
 | `label` | `systemName` | approximated | Placeholder glyph |
 | `label` | `color` | supported |  |

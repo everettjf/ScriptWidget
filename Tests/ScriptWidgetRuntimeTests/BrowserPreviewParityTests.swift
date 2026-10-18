@@ -214,6 +214,17 @@ final class BrowserPreviewParityTests: XCTestCase {
         }
     }
 
+    func testFontWeightAndDesignPropertiesAreRead() {
+        let legacy = ScriptWidgetRuntimeElement(tagString: "text", props: ["font": "title", "weight": "bold", "fontDesign": "rounded"], children: ["x"])
+        XCTAssertEqual(ScriptWidgetAttributeFontModifier(legacy).weight, .bold)
+        XCTAssertEqual(ScriptWidgetAttributeFontModifier(legacy).design, .rounded)
+        let both = ScriptWidgetRuntimeElement(tagString: "text", props: ["weight": "bold", "fontWeight": "light"], children: ["x"])
+        XCTAssertEqual(ScriptWidgetAttributeFontModifier(both).weight, .light)
+        let gaugeLabel = ScriptWidgetRuntimeElement(tagString: "gauge", props: ["fontWeight": "bold"], children: [])
+        XCTAssertNil(ScriptWidgetAttributeFontModifier(gaugeLabel, fontField: "labelFont").weight)
+        XCTAssertNil(ScriptWidgetAttributeFontModifier(ScriptWidgetRuntimeElement(tagString: "text", props: ["fontWeight": "huge"], children: [])).weight)
+    }
+
     func testCanonicalEncodingMatchesJavaScriptSemantics() {
         XCTAssertEqual(ScriptWidgetElementTreeJSON.number(1), "1")
         XCTAssertEqual(ScriptWidgetElementTreeJSON.number(0.1 + 0.2), "0.30000000000000004")

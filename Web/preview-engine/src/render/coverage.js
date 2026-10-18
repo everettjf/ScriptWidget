@@ -5,6 +5,7 @@
 // (with the known difference), unsupported.
 
 const s = (note = "") => ({ state: "supported", note });
+const fontProps = () => ({ fontWeight: { state: "supported", note: "Overrides the weight in font" }, weight: { state: "supported", note: "Older alias of fontWeight" }, fontDesign: { state: "supported", note: "default, rounded, serif, monospaced" } });
 const a = (note) => ({ state: "approximated", note });
 const u = (note) => ({ state: "unsupported", note });
 
@@ -31,13 +32,13 @@ export const coverage = Object.freeze({
     zstack: { state: "supported", props: {} },
     hgrid: { state: "unsupported", note: "Shown as a placeholder", props: { columns: u("Grid tracks"), alignment: u(""), spacing: u("") } },
     vgrid: { state: "unsupported", note: "Shown as a placeholder", props: { columns: u("Grid tracks"), alignment: u(""), spacing: u("") } },
-    text: { state: "supported", props: { font: s("SF metrics on Apple systems; fallback fonts elsewhere"), color: s(), alignment: s() } },
-    date: { state: "approximated", note: "Fixed clock, English formatting", props: { date: a("Fixed clock"), style: a("time/date/timer formats approximated"), font: s(), color: s(), alignment: s() } },
+    text: { state: "supported", props: { ...fontProps(), font: s("SF metrics on Apple systems; fallback fonts elsewhere"), color: s(), alignment: s() } },
+    date: { state: "approximated", note: "Fixed clock, English formatting", props: { ...fontProps(), date: a("Fixed clock"), style: a("time/date/timer formats approximated"), font: s(), color: s(), alignment: s() } },
     image: { state: "approximated", note: "Package images render; SF Symbols and remote URLs show placeholders", props: {
       systemName: a("Placeholder glyph"), name: s("Needs the package image file"), id: s("Alias of name"), url: a("data: PNG/JPEG only; remote URLs are not loaded"),
-      src: a("Alias of url"), ratio: u("Aspect ratio is not applied yet"), mode: s(), font: s(), accentedRenderingMode: a("Accented mode is not emulated"),
+      src: a("Alias of url"), ratio: s("With mode fit or fill"), mode: s(), font: s(), ...fontProps(), accentedRenderingMode: a("Accented mode is not emulated"),
     } },
-    gif: { state: "approximated", note: "Browser GIF playback; the widget's frame sequencing differs", props: { file: s("Resolved like ScriptWidgetPackage.getGifFile") } },
+    gif: { state: "approximated", note: "Browser GIF playback; the widget's frame sequencing differs", props: { file: s("Resolved like ScriptWidgetPackage.getGifFile"), font: s(), ...fontProps() } },
     spacer: { state: "supported", props: {} },
     rect: { state: "supported", props: { corner: s(), trim: a("Trim applies to strokes only"), stroke: s(), color: s() } },
     capsule: { state: "supported", props: { trim: a("Trim applies to strokes only"), stroke: s(), color: s() } },
@@ -49,8 +50,8 @@ export const coverage = Object.freeze({
     divider: { state: "supported", props: { thickness: s(), axis: s(), color: s() } },
     line: { state: "supported", props: { thickness: s(), length: s(), axis: s(), color: s() } },
     roundedrect: { state: "supported", props: { radius: s(), color: s() } },
-    icon: { state: "approximated", note: "SF Symbols are shown as placeholder glyphs", props: { systemName: a("Placeholder glyph"), size: s(), color: s(), font: s() } },
-    label: { state: "approximated", note: "Icon is a placeholder glyph", props: { title: s(), systemName: a("Placeholder glyph"), color: s(), font: s() } },
+    icon: { state: "approximated", note: "SF Symbols are shown as placeholder glyphs", props: { ...fontProps(), systemName: a("Placeholder glyph"), size: s(), color: s(), font: s() } },
+    label: { state: "approximated", note: "Icon is a placeholder glyph", props: { ...fontProps(), title: s(), systemName: a("Placeholder glyph"), color: s(), font: s() } },
     progress: { state: "supported", props: { value: s(), total: s(), label: s(), style: s(), color: s(), trackColor: s(), thickness: s(), frame: s("Circular size") } },
     ring: { state: "supported", props: { value: s(), thickness: s(), color: s(), trackColor: s() } },
     badge: { state: "supported", props: { text: s(), radius: s(), background: s(), color: s() } },

@@ -11,6 +11,7 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 - Package 2.0 manifests, JSON schemas, migration compatibility, secure imports, and authoring documentation.
 - GitHub-backed Widget & Skills Gallery with verified files, offline cache, install/update UI on macOS and iOS/iPadOS, seed content, and contributor workflow.
 - Runtime XCTest targets, golden/template validation, release-readiness CI, and iPad/iCloud device scripts.
+- Browser preview engine (`Web/preview-engine`): JavaScriptCore-compatible execution in a sandboxed browser worker and a SwiftUI-calibrated web renderer.
 
 ### Changed
 
@@ -18,5 +19,7 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 - Reworked documentation around a five-minute path, versioned Runtime API, Studio, AI, Skills, packages, Gallery, release readiness, and bilingual onboarding.
 
 ### Fixed
+
+- `fontWeight`, `fontDesign`, and the older `weight` property are now applied to text, dates, icons, labels, and images. They were documented and used by templates but previously ignored.
 
 - Added local build-cache fallback and proactive package caching for scripts evicted by iCloud. GitHub issue #6 remains open until the physical-iPhone offline acceptance matrix is complete.

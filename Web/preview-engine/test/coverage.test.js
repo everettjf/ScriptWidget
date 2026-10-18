@@ -12,7 +12,7 @@ const read = (relative) => fs.readFileSync(path.join(component, relative), "utf8
 const propKeys = (source) => new Set([...source.matchAll(/getProp(?:String|Double|Int|Bool)\("([^"]+)"(?:, or: "([^"]+)")?/g)].flatMap((match) => [match[1], match[2]].filter(Boolean)));
 
 // Properties documented in scriptWidgetAPI.js that no native builder reads.
-const documentedButIgnored = ["fontWeight", "fontDesign"];
+const documentedButIgnored = [];
 
 test("every tag in the native element switch has a coverage entry", () => {
   const tags = [...read("ScriptWidgetElementView.swift").matchAll(/case "([A-Za-z]+)":/g)].map((match) => match[1]);
@@ -66,7 +66,8 @@ test("Studio completion metadata matches the coverage matrix", () => {
 });
 
 test("properties the native runtime never reads are reported as ignored", () => {
-  assert.match(ignoredProp("text", "weight"), /ignored/);
+  assert.equal(ignoredProp("text", "weight"), null);
+  assert.match(ignoredProp("text", "fontSize"), /ignored/);
   assert.match(ignoredProp("spacer", "background"), /Spacer reads only frame/);
   assert.equal(ignoredProp("text", "padding"), null);
   assert.equal(ignoredProp("vstack", "spacing"), null);

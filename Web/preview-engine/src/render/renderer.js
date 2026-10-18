@@ -4,7 +4,7 @@
 // absolutely positioned elements. User text is inserted with textContent.
 
 import {
-  alignments, cssColor, defaultFont, fontFamily, gradientCSS, parseColor, parseFont, parseFrame,
+  alignments, cssColor, defaultFont, elementFont, fontFamily, gradientCSS, parseColor, parseFont, parseFrame,
   parsePadding, parsePaint, propReader, swiftDouble, systemBackground, textStyles,
 } from "./props.js";
 import { coverage, generalProps, ignoredProp } from "./coverage.js";
@@ -314,7 +314,7 @@ export async function renderWidget(treeJSON, {
       return leaf(new FixedNode(...natural), drawPicture(url, "fill"));
     }
     if (systemName === null && url !== null) report("warning", "image.remote", `Remote image ${url.slice(0, 80)} is not loaded by the web preview`);
-    return glyph(systemName ?? "questionmark.circle", parseFont(reader.string("font")) ?? defaultFont, null);
+    return glyph(systemName ?? "questionmark.circle", elementFont(reader), null);
   }
 
   // MARK: Stacks
@@ -421,7 +421,7 @@ export async function renderWidget(treeJSON, {
       case "hstack": content = stack("h", buildChildren(element, "h"), reader); break;
       case "zstack": content = new ZStackNode(buildChildren(element, "z")); break;
       case "text": case "date": {
-        const font = parseFont(reader.string("font")) ?? defaultFont;
+        const font = elementFont(reader);
         const align = { leading: "left", center: "center", trailing: "right" }[reader.string("alignment")] ?? "left";
         if (tag === "date") report("info", "tag.approximated", "<date> shows a fixed-clock value");
         content = text(tag === "date" ? formatDate(reader) : textFromChildren(element), font, paintOf(reader, "color"), align);
@@ -455,7 +455,7 @@ export async function renderWidget(treeJSON, {
       }
       case "icon": {
         const base = reader.double("size") !== null ? { ...defaultFont, lineHeight: null, size: reader.double("size") } : defaultFont;
-        content = glyph(reader.string("systemName") ?? "questionmark.circle", parseFont(reader.string("font")) ?? base, paintOf(reader, "color"));
+        content = glyph(reader.string("systemName") ?? "questionmark.circle", elementFont(reader, base), paintOf(reader, "color"));
         break;
       }
       case "image": content = imageNode(reader); break;
@@ -466,7 +466,7 @@ export async function renderWidget(treeJSON, {
         break;
       }
       case "label": {
-        const font = parseFont(reader.string("font")) ?? defaultFont;
+        const font = elementFont(reader);
         const paint = paintOf(reader, "color");
         content = new StackNode("h", [glyph(reader.string("systemName") ?? "circle.fill", font, paint), text(reader.string("title") ?? textFromChildren(element), font, paint)], { alignment: "center", spacing: () => 8 });
         break;

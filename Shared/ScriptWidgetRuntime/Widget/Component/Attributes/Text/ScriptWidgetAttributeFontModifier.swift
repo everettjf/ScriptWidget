@@ -12,6 +12,11 @@ import SwiftUI
 struct ScriptWidgetAttributeFontModifier: ViewModifier {
     
     let font: Font?
+    /// `fontWeight` (or the older `weight`) and `fontDesign` refine `font`.
+    /// They apply only to the primary `font` field, not to fields such as a
+    /// gauge's `labelFont`.
+    let weight: Font.Weight?
+    let design: Font.Design?
     
     init(_ element: ScriptWidgetRuntimeElement, fontField: String) {
         var font: Font? = nil
@@ -19,19 +24,45 @@ struct ScriptWidgetAttributeFontModifier: ViewModifier {
             font = ScriptWidgetAttributeFontModifier.getFontFromCustomString(fontValue);
         }
         self.font = font
+        if fontField == "font" {
+            let weightName = element.getPropString("fontWeight") ?? element.getPropString("weight")
+            self.weight = weightName.flatMap(Self.getFontWeightFromStringName)
+            self.design = element.getPropString("fontDesign").flatMap(Self.getFontDesignFromStringName)
+        } else {
+            self.weight = nil
+            self.design = nil
+        }
     }
     
     init(_ element: ScriptWidgetRuntimeElement) {
         self.init(element, fontField: "font")
     }
     
-    @ViewBuilder
     func body(content: Content) -> some View {
-        if let font = self.font {
-            content
-                .font(font)
-        } else {
-            content
+        content
+            .modifier(OptionalFont(font: font))
+            .modifier(OptionalFontWeight(weight: weight))
+            .modifier(OptionalFontDesign(design: design))
+    }
+
+    private struct OptionalFont: ViewModifier {
+        let font: Font?
+        @ViewBuilder func body(content: Content) -> some View {
+            if let font { content.font(font) } else { content }
+        }
+    }
+
+    private struct OptionalFontWeight: ViewModifier {
+        let weight: Font.Weight?
+        @ViewBuilder func body(content: Content) -> some View {
+            if let weight { content.fontWeight(weight) } else { content }
+        }
+    }
+
+    private struct OptionalFontDesign: ViewModifier {
+        let design: Font.Design?
+        @ViewBuilder func body(content: Content) -> some View {
+            if let design, #available(iOS 16.1, macOS 13.0, *) { content.fontDesign(design) } else { content }
         }
     }
     
