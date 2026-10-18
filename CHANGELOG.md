@@ -19,6 +19,7 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 
 ### Changed
 
+- Web Studio is rebuilt with React, strict TypeScript, Tailwind CSS, and shadcn/ui: accessible selects, dialogs, and tabs replace browser prompts and alerts, deletions ask in an in-page dialog, messages appear as toasts, and images open as previews instead of text.
 - Expanded the template catalog to 70 validated examples and generated preview fixtures.
 - Reworked documentation around a five-minute path, versioned Runtime API, Studio, AI, Skills, packages, Gallery, release readiness, and bilingual onboarding.
 
