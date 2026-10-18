@@ -54,7 +54,7 @@ function scriptWidgetRuntime() {
     // Third-party assets bundled into the site: Inter (OFL 1.1) and the
     // generated Lucide icon subset (ISC).
     "licenses/inter-OFL.txt": { type: "text/plain", body: fs.readFileSync(path.join(root, "node_modules/@fontsource-variable/inter/LICENSE"), "utf8") },
-    "licenses/lucide-ISC.txt": { type: "text/plain", body: /\/\*\n([\s\S]*?)\n\*\//.exec(fs.readFileSync(path.join(root, "../preview-engine/src/render/icons.generated.js"), "utf8"))[1] },
+    "licenses/lucide-ISC.txt": { type: "text/plain", body: /\/\*\r?\n([\s\S]*?)\r?\n\*\//.exec(fs.readFileSync(path.join(root, "../preview-engine/src/render/icons.generated.js"), "utf8"))[1] },
   });
   return {
     name: "scriptwidget-runtime",
