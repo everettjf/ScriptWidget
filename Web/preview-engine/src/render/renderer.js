@@ -84,9 +84,9 @@ function nativeBaseline(size) {
 
 function textStyleFor(font) {
   const natural = font.natural ?? lineHeight(font.size);
-  // iOS adds Dynamic Type leading between lines; macOS lines advance by the
-  // style's line height (the natural height for sized fonts).
-  const leading = platform() === "macos" ? Math.max(natural, font.lineHeight ?? natural) : Math.max(natural, font.lineHeight ?? font.size * 1.29);
+  // Lines advance by the text style's line height; sized fonts advance by
+  // their natural height (iOS: size x 1.1934, measured at 8x).
+  const leading = platform() === "macos" ? Math.max(natural, font.lineHeight ?? natural) : font.lineHeight ?? font.size * naturalLineRatio;
   const family = fontFamily(font);
   return { ...font, natural, leading, family, custom: Boolean(font.family), hyphenate: platform() !== "macos" && Boolean(font.textStyle), key: `${family}|${font.size}|${font.weight}|${leading}` };
 }

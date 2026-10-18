@@ -296,7 +296,10 @@ final class BrowserPreviewParityTests: XCTestCase {
                           height(VStack { shape; image }) - ih - 4,
                           height(VStack { image; image }) - 2 * ih])
         }
-        let json: [String: Any] = ["sizes": sizes, "pairs": pairs, "styles": Dictionary(uniqueKeysWithValues: styles.map { ($0.0, gaps($0.1)) })]
+        // Line pitch: the height a second line adds, for sizes and styles.
+        func pitch(_ font: Font) -> Double { height(Text("Hxg\nHxg").font(font)) - height(Text("Hxg").font(font)) }
+        let pitches: [String: Any] = ["sizes": (1...80).map { pitch(.system(size: CGFloat($0))) }, "styles": Dictionary(uniqueKeysWithValues: styles.map { ($0.0, pitch($0.1)) })]
+        let json: [String: Any] = ["sizes": sizes, "pairs": pairs, "pitches": pitches, "styles": Dictionary(uniqueKeysWithValues: styles.map { ($0.0, gaps($0.1)) })]
         let data = try JSONSerialization.data(withJSONObject: json, options: [.sortedKeys])
         try data.write(to: Self.repositoryRoot.appendingPathComponent("Web/preview-engine/dist/native-spacing.json"))
     }

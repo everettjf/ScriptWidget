@@ -102,7 +102,7 @@ test("text pushes out orphans like TextKit; macOS breaks long words without hyph
   assert.equal(new TextNode("ab cdefgh ij", mac, measurer).displayText(90), "ab cdefgh ij");
   assert.equal(new TextNode("aaa bbb ccc ddd eee f", mac, measurer).displayText(70), "aaa bbb ccc ddd eee f");
   assert.equal(new TextNode("Rain · 58° today", mac, measurer).displayText(100), "Rain ·\n58° today");
-  assert.equal(new TextNode("Wideness Size : small", mac, measurer).displayText(150), "Wideness\nSize : small");
+  assert.equal(new TextNode("Wideness Size : small", mac, measurer).displayText(150), "Wideness\nSize\u00a0: small");
   assert.equal(new TextNode("SYSTEM", mac, measurer).displayText(30), "SYSTEM");
   assert.equal(new TextNode("TUE", mac, measurer).wrapsCharacters(10), true);
   const ios = { ...mac, hyphenate: true };

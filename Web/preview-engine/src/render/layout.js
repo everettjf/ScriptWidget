@@ -52,13 +52,16 @@ export class TextNode extends Node {
     const key = `${width}`;
     this.hyphenated ??= new Map();
     if (this.hyphenated.has(key)) return this.hyphenated.get(key);
-    const pushed = this.text.split("\n").map((paragraph) => this.pushOut(paragraph, width)).join("\n");
-    if (this.style.hyphenate === false || pushed !== this.text) {
+    // No break before closing punctuation (UAX #14), which browsers allow
+    // after a space: a no-break space keeps "Size :" together.
+    const broken = this.text.split("\n").map((paragraph) => this.pushOut(paragraph, width)).join("\n");
+    const pushed = broken.replace(/ (?=[:;!?%)\]}，。！？、：；）」』])/g, "\u00a0");
+    if (this.style.hyphenate === false || broken !== this.text) {
       this.hyphenated.set(key, pushed);
       return pushed;
     }
     const fits = (piece) => this.measurer.measure(piece, this.style, null).width <= width + 0.01;
-    const result = this.text.replace(/\S+/g, (word) => {
+    const result = pushed.replace(/[^\s]+/g, (word) => {
       if (fits(word)) return word;
       // Only the letters of a word hyphenate; punctuation stays attached.
       const [, lead, core, tail] = /^([^A-Za-z]*)([A-Za-z]*)(.*)$/s.exec(word);
@@ -162,6 +165,8 @@ export class TextNode extends Node {
     const { natural, leading } = this.style;
     if (this.text === "") return { width: 0, height: 0, lines: 0, total: 0 };
     let width; let lines;
+    // Offered no width at all, SwiftUI draws nothing.
+    if (pw !== null && pw <= 0.01) return { width: 0, height: natural, lines: 1, total: 1, text: "" };
     if (pw === null || pw === Infinity) { const m = this.metrics(null); width = m.width; lines = m.lines; }
     else if (pw < this.measurer.ellipsisWidth(this.style) && !this.wrapsCharacters(pw)) { width = this.measurer.ellipsisWidth(this.style); lines = 1; }
     else {
