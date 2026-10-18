@@ -1,0 +1,69 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { hexColor, parseColor, parseFont, parseFrame, parsePadding, parseGradient, propReader, swiftDouble } from "../src/render/props.js";
+import { FixedNode, FlexibleNode, SpacerNode, StackNode, TextNode } from "../src/render/layout.js";
+import { lineHeight } from "../src/render/renderer.js";
+
+const frame = (value) => parseFrame(propReader({ frame: value }));
+
+test("frame parsing keeps the native quirks", () => {
+  assert.deepEqual(frame("max"), { mode: "max", alignment: "center", width: 0, height: 0 });
+  assert.deepEqual(frame("max,topLeading"), { mode: "max", alignment: "topLeading", width: 0, height: 0 });
+  assert.deepEqual(frame("10,20,bottom"), { mode: "size", alignment: "bottom", width: 10, height: 20 });
+  assert.equal(frame("max,20").mode, "height");
+  assert.equal(frame("10,max").mode, "width");
+  assert.equal(frame(30).mode, "size");
+  assert.equal(frame("10, 20").mode, "none");
+  assert.equal(frame(true).mode, "none");
+});
+
+test("padding accepts strings only", () => {
+  assert.deepEqual(parsePadding(propReader({ padding: "12" })), [12, 12, 12, 12]);
+  assert.deepEqual(parsePadding(propReader({ padding: "horizontal,20" })), [0, 20, 0, 20]);
+  assert.deepEqual(parsePadding(propReader({ padding: "4,8,12,16" })), [4, 8, 12, 16]);
+  assert.equal(parsePadding(propReader({ padding: 30 })), null);
+  assert.equal(parsePadding(propReader({ padding: "1,2,3" })), null);
+});
+
+test("colors follow Color(hex:) and the iOS 26 system palette", () => {
+  assert.deepEqual(hexColor("#ff0000"), [255, 0, 0, 1]);
+  assert.deepEqual(hexColor("#80ff0000"), [255, 0, 0, 128 / 255]);
+  assert.deepEqual(hexColor("#fff"), [1, 1, 1, 1 / 255]);
+  assert.deepEqual(parseColor("blue"), [0, 136, 255, 1]);
+  assert.deepEqual(parseColor("red,0.5"), [255, 56, 60, 0.5]);
+  assert.equal(parseColor("nonsense"), null);
+  assert.equal(parseColor("a,b,c"), null);
+  assert.equal(parseGradient("gradient:{bad").type, "linear");
+});
+
+test("fonts and numbers parse like Swift", () => {
+  assert.deepEqual(parseFont("title,bold"), { size: 28, lineHeight: 34, weight: 700, design: "default" });
+  assert.deepEqual(parseFont("20,bold,rounded"), { size: 20, lineHeight: null, weight: 700, design: "rounded" });
+  assert.equal(parseFont("custom,Menlo,15").family, "Menlo");
+  assert.equal(parseFont("huge"), null);
+  assert.equal(swiftDouble(" 1"), null);
+  assert.equal(swiftDouble("1e3"), 1000);
+  assert.equal(propReader({ a: 1 }).bool("a"), true);
+  assert.equal(propReader({ a: 1.5 }).int("a"), null);
+  assert.equal(propReader({ a: "yes" }).bool("a"), true);
+});
+
+test("single-line text heights match iOS measurements", () => {
+  // Measured with BrowserPreviewParityTests snapshots on the iOS 27 simulator.
+  const measured = { 34: 41, 28: 33.5, 22: 26.5, 20: 24, 17: 20.5, 16: 19.5, 15: 18, 13: 16, 12: 14.5, 11: 13.5, 10: 12, 14: 17, 24: 29, 30: 36, 40: 48, 50: 60, 60: 72 };
+  for (const [size, height] of Object.entries(measured)) assert.equal(lineHeight(Number(size)), height, `font size ${size}`);
+});
+
+test("stacks give spacers only the leftover space", () => {
+  const fakeMeasurer = { measure: (text, style, width) => ({ width: Math.min(width ?? Infinity, text.length * 10), lines: width === null ? 1 : Math.ceil((text.length * 10) / Math.max(width, 1)) }), ellipsisWidth: () => 10 };
+  const style = { natural: 20, leading: 22, size: 17 };
+  const label = new TextNode("abcdefghij", style, fakeMeasurer);
+  const stack = new StackNode("h", [label, new SpacerNode("h"), new FixedNode(20, 20)], { alignment: "center", spacing: () => 0 });
+  stack.place(0, 0, 200, 40);
+  assert.equal(label.frame.width, 100);
+  assert.equal(stack.children[1].frame.width, 80);
+  const tight = new StackNode("h", [new FixedNode(150, 10), new TextNode("abcdefghij", style, fakeMeasurer)], { alignment: "center", spacing: () => 8 });
+  tight.place(0, 0, 200, 20);
+  assert.equal(tight.children[1].frame.width, 42);
+  assert.equal(new FlexibleNode().size(null, null)[0], 10);
+});

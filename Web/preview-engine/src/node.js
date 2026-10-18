@@ -111,6 +111,24 @@ export async function executePackageInNode({
   return { ...JSON.parse(resultJSON), compiled: prepared.code };
 }
 
+const resourceTypes = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", gif: "image/gif", heic: "image/heic" };
+
+/// Binary package resources as data URLs, keyed by package-relative path.
+export function readPackageResources(directory) {
+  const resources = {};
+  const visit = (relative) => {
+    for (const entry of fs.readdirSync(path.join(directory, relative), { withFileTypes: true })) {
+      if (entry.name.startsWith(".") || entry.name === "__Build") continue;
+      const childRelative = relative ? `${relative}/${entry.name}` : entry.name;
+      const type = resourceTypes[path.extname(entry.name).slice(1).toLowerCase()];
+      if (entry.isDirectory()) visit(childRelative);
+      else if (type) resources[childRelative] = `data:${type};base64,${fs.readFileSync(path.join(directory, childRelative)).toString("base64")}`;
+    }
+  };
+  visit("");
+  return resources;
+}
+
 export function readPackageDirectory(directory) {
   const files = {};
   const visit = (relative) => {

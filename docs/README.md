@@ -22,7 +22,8 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 - [Runtime API contract](scriptwidget-runtime-api.md) — versioning and compatibility policy.
 - [Studio architecture](scriptwidget-studio-plan.md) — editor and bridge design.
 - [Browser widget preview research](browser-widget-preview-research.md) — browser-first fast preview proposal, fidelity model, and staged validation plan.
-- [Browser preview engine](browser-preview-engine.md) — Stage 0 engine, measured JavaScriptCore parity, sandbox isolation, and known differences.
+- [Browser preview engine](browser-preview-engine.md) — engine, renderer, measured JavaScriptCore and SwiftUI parity, sandbox isolation, and known differences.
+- [Browser preview coverage](browser-preview-coverage.md) — generated per-tag and per-property support matrix.
 - [Release readiness](release-readiness.md) — platform and quality checklist.
 - [Contributing](../CONTRIBUTING.md) — repository workflow and contribution guide.
 - [Roadmap](../ROADMAP.md), [governance](../GOVERNANCE.md), and [changelog](../CHANGELOG.md) — direction, decisions, and shipped work.

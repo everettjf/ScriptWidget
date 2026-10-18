@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Widget Preview</title>
+  <style>
+    :root { --bg: #f5f5f7; --panel: #ffffff; --text: #1d1d1f; --muted: #6e6e73; --line: #d2d2d7; color-scheme: light; }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #000000; --panel: #1c1c1e; --text: #f5f5f7; --muted: #98989d; --line: #38383a; color-scheme: dark; } }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; }
+    main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; padding: 16px; max-width: 1200px; margin: 0 auto; }
+    @media (max-width: 760px) { main { grid-template-columns: minmax(0, 1fr); } }
+    textarea { width: 100%; box-sizing: border-box; min-height: 420px; font: 13px/1.5 ui-monospace, Menlo, monospace; background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    select { font: inherit; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--text); }
+    #stage { display: grid; place-items: center; min-height: 420px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; box-sizing: border-box; overflow: auto; }
+    #stage .sw-widget { border-radius: 22px; box-shadow: 0 6px 24px rgba(0,0,0,0.18); }
+    #status, #diagnostics { color: var(--muted); font-size: 12px; }
+    #diagnostics li { margin: 2px 0; }
+  </style>
+</head>
+<body>
+  <main>
+    <section>
+      <div class="controls">
+        <label>Family <select id="family"><option>small</option><option selected>medium</option><option>large</option></select></label>
+        <label>Appearance <select id="appearance"><option>light</option><option>dark</option></select></label>
+      </div>
+      <textarea id="source" spellcheck="false" aria-label="main.jsx">$render(
+  <vstack background="#17213A" padding="16" frame="max" alignment="leading">
+    <text font="caption" color="#9CB4FF">SCRIPTWIDGET</text>
+    <text font="title,bold" color="white">Hello from the web</text>
+    <spacer />
+    <hstack>
+      <text font="caption" color="#BEC8E5">{$getenv("widget-size")}</text>
+      <spacer />
+      <circle frame="10,10" color="green" />
+    </hstack>
+  </vstack>
+);</textarea>
+    </section>
+    <section>
+      <div id="stage" aria-live="polite"></div>
+      <p id="status">Starting sandbox…</p>
+      <ul id="diagnostics"></ul>
+    </section>
+  </main>
+  <script type="module" src="./preview.js"></script>
+</body>
+</html>

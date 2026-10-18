@@ -1,7 +1,8 @@
 # Browser preview engine
 
-Status: Stage 0 (contract spike) complete, 2026-10-17. This page records what
-was built, what was measured, and the known differences. The proposal and
+Status: Stage 0 (contract spike) and the Stage 1 core renderer complete,
+2026-10-17. This page records what was built, what was measured, and the
+known differences. The proposal and
 staged plan live in [browser widget preview research](browser-widget-preview-research.md).
 
 The engine lives in [`Web/preview-engine`](../Web/preview-engine). It compiles
@@ -20,7 +21,7 @@ that tree (Stage 1) and the public Studio website (Stage 2) build on it.
   `$health`, and `$location` still return the native then-only object, so
   `fetch(url).catch(...)` fails in the browser exactly as it does on iPhone.
 - **Icons:** map SF Symbol names to an open-source icon set and show a
-  missing-icon diagnostic for unmapped names (Stage 1).
+  missing-icon diagnostic for unmapped names. Stage 1 draws a placeholder glyph.
 - **Tree JSON:** the canonical serialization is a test artifact
   (`BrowserPreviewParityTests.swift` and `kernel.js`), not part of the runtime
   contract.
@@ -139,6 +140,78 @@ the parent's policy, so the editor page must allow `blob:` Workers).
   pending.
 - Props with object cycles fail with a bounded-depth error in the browser.
 - `Intl` output depends on the host locale; the reference recorded `en-US`.
+
+## Stage 1: visual renderer
+
+Status: core renderer complete, 2026-10-17. `src/render/` turns the canonical
+tree JSON into a widget-sized DOM element. Try it with `npm run build`, then
+serve `Web/preview-engine` and open `/demo/preview.html`.
+
+| File | Role |
+| --- | --- |
+| `src/render/props.js` | Ports of the native property readers and parsers: string-only `padding`, ARGB 8-digit hex, `frame` modes, fonts, points, gradients. |
+| `src/render/layout.js` | SwiftUI-style propose/size/place layout: stacks give space to the least flexible child first and spacers only the leftover; text wraps with the browser's line breaker and truncates by available height. |
+| `src/render/renderer.js` | Element builders in native modifier order (padding, frame, background, corner, clip, opacity, rotation, shadow), the widget container, and drawing with absolutely positioned elements. |
+| `src/render/coverage.js` | Coverage matrix; published as [browser preview coverage](browser-preview-coverage.md). |
+| `scripts/compare-snapshots.mjs` | Renders every package in headless Chrome and compares it with native iOS snapshots. |
+
+### Calibration
+
+`BrowserPreviewParityTests.testExportNativeSnapshots` renders the corpus and
+the cases in `test/render/cases.json` on the iOS 27 simulator the way the
+widget composes its root (root `background` as container background, root
+view centered) at the 393-point iPhone sizes: small 158×158, medium 338×158,
+large 338×354.
+
+```bash
+TEST_RUNNER_SCRIPTWIDGET_EXPORT_SNAPSHOTS=1 xcodebuild -project iOS/ScriptWidget.xcodeproj -scheme ScriptWidgetRuntimeTests -destination 'platform=iOS Simulator,name=iPhone 17' test -only-testing:ScriptWidgetRuntimeTests/BrowserPreviewParityTests/testExportNativeSnapshots
+```
+
+Measured from those snapshots and encoded in the renderer:
+
+- Single-line `Text` height is `ceil(size × 1.1934 × 2) / 2`: 20.5 for body, 41 for
+  largeTitle. Additional lines advance by the Dynamic Type leading (22 for body).
+- HStack default spacing is 8. In a VStack, text to text is the leading minus
+  the natural height (2 for body, 1 for title); text to other views is about
+  `8 + 0.18 × font size`; other views are 8 apart. Backgrounds keep a view's
+  spacing behavior; padding and frames reset it. An HStack takes the largest
+  text edge of its children.
+- Spacers reserve their 8-point minimum and only take leftover space.
+- Truncated text reports the whole offered width.
+- Named colors are the iOS 26 system palette (blue `#0088FF`, red `#FF383C`, …);
+  `secondary` is `rgba(60,60,67,0.6)`. Button labels default to the accent blue.
+
+### Results
+
+`npm run compare` against the native snapshots (pixels differing by more than
+48 of 255 in any channel, Chrome on macOS with SF fonts):
+
+| Set | Count | Median | ≤1% | ≤3% | ≤5% | ≤10% | ≤20% |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Corpus (100 packages × 3 sizes) | 300 | 1.79% | 105 | 192 | 242 | 283 | 296 |
+| Calibration cases | 30 | 0.63% | 20 | 26 | 28 | 30 | 30 |
+
+The remaining large differences are expected and labelled in diagnostics:
+`gauge`, `chart`, and grids render as placeholders; SF Symbols are placeholder
+glyphs until an open icon set is mapped; animations show their first frame;
+`date` uses a fixed clock. Smaller differences come from line-breaking choices
+in large text (iOS sometimes hyphenates or breaks one word earlier) and
+sub-pixel text positioning. On Windows and Linux, fonts fall back from SF Pro,
+so widths and wrapping can differ more than these numbers.
+
+### Native behaviors worth knowing
+
+The renderer reproduces these because they are what users see on iPhone:
+
+- `padding={10}` (a number) is ignored; only strings like `"10"` apply.
+- `frame="max,20"` sets only the height; the width is not expanded.
+- `#fff` (3-digit hex) is nearly transparent black; 8-digit hex is ARGB.
+- `weight`, `fontWeight`, and `fontDesign` are not read by any native builder.
+  The bundled templates use `weight` 76 times and the Gallery Hello Card uses
+  `fontWeight`, with no effect; Studio completions in `scriptWidgetAPI.js`
+  still advertise `fontWeight` and `fontDesign`. Use `font="title,bold"` or
+  `font="20,bold,rounded"`. The web preview reports these as ignored.
+- An invalid color falls back to the shape's default fill (black in light mode).
 
 ## Corrections to the research proposal
 

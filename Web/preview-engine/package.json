@@ -1,6 +1,6 @@
 {
   "name": "@scriptwidget/preview-engine",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Browser and Node execution of ScriptWidget JSX packages that mirrors the native JavaScriptCore runtime contract.",
@@ -10,6 +10,8 @@
   },
   "scripts": {
     "test": "node --test test/*.test.js",
-    "parity": "node scripts/parity-report.mjs"
+    "build": "node scripts/build-browser.mjs",
+    "coverage": "node scripts/coverage-report.mjs",
+    "compare": "node scripts/compare-snapshots.mjs"
   }
 }

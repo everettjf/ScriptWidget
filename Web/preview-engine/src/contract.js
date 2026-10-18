@@ -19,7 +19,7 @@ export const runtimeContract = Object.freeze({
 });
 
 /// Bumped whenever the web host changes observable execution semantics.
-export const engineVersion = "0.1.0";
+export const engineVersion = "0.2.0";
 
 export const errorCategories = Object.freeze({
   undefinedRender: Object.freeze({ category: "Render", recovery: "Call $render(...) once from the main script." }),

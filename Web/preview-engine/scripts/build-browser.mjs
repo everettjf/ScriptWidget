@@ -51,9 +51,9 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     fs.copyFileSync(path.join(supportDirectory, name), path.join(output, "assets", name));
   }
   const { corpusPackages, readNativeTrees, usesLiveData } = await import("../test/parity/corpus.js");
-  const { readPackageDirectory } = await import("../src/node.js");
+  const { readPackageDirectory, readPackageResources } = await import("../src/node.js");
   const native = readNativeTrees();
-  const corpus = corpusPackages().map(({ name, directory }) => ({ name, files: readPackageDirectory(directory), expected: native.entries[name] }))
+  const corpus = corpusPackages().map(({ name, directory }) => ({ name, files: readPackageDirectory(directory), resources: readPackageResources(directory), expected: native.entries[name] }))
     .filter((item) => !usesLiveData(item.files["main.jsx"]));
   const prelude = fs.readFileSync(path.join(root, "test/parity/prelude.js"), "utf8");
   fs.writeFileSync(path.join(output, "parity-corpus.json"), JSON.stringify({ timeZone: native.timeZone, prelude, corpus }));

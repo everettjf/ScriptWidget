@@ -94,7 +94,85 @@ enum ScriptWidgetElementTreeJSON {
     }
 }
 
+#if os(iOS)
+import SwiftUI
+import UIKit
+
+/// Widget family sizes for the 393-point iPhone class (Apple HIG), shared with
+/// Web/preview-engine/src/render/profiles.js.
+enum BrowserPreviewSnapshotProfile {
+    static func size(_ family: String) -> CGSize {
+        switch family {
+        case "small": return CGSize(width: 158, height: 158)
+        case "large": return CGSize(width: 338, height: 354)
+        default: return CGSize(width: 338, height: 158)
+        }
+    }
+}
+
+/// Mirrors ScriptWidgetWidgetElementRootView: the root element's background
+/// becomes the widget container background and the root view is centered.
+struct BrowserPreviewSnapshotView: View {
+    let element: ScriptWidgetRuntimeElement
+    let context: ScriptWidgetElementContext
+    let size: CGSize
+
+    var body: some View {
+        let background = element.getPropString("background").map(ScriptWidgetAttributeColor.init) ?? ScriptWidgetAttributeColor()
+        ZStack {
+            if let color = background.color { color } else if let gradient = background.gradient { gradient } else { Color(uiColor: .systemBackground) }
+            ScriptWidgetElementView(element: element, context: context)
+        }
+        .frame(width: size.width, height: size.height)
+    }
+}
+#endif
+
 final class BrowserPreviewParityTests: XCTestCase {
+    #if os(iOS)
+    /// Writes native PNGs for the corpus and Web/preview-engine/test/render/cases.json
+    /// to Web/preview-engine/dist/native-snapshots when
+    /// TEST_RUNNER_SCRIPTWIDGET_EXPORT_SNAPSHOTS=1.
+    @MainActor
+    func testExportNativeSnapshots() async throws {
+        guard ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_SNAPSHOTS"] == "1" else {
+            throw XCTSkip("Set TEST_RUNNER_SCRIPTWIDGET_EXPORT_SNAPSHOTS=1 to export native snapshots")
+        }
+        let output = Self.repositoryRoot.appendingPathComponent("Web/preview-engine/dist/native-snapshots")
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        let prelude = try String(contentsOf: Self.parityDirectory.appendingPathComponent("prelude.js"), encoding: .utf8)
+        var jobs: [(name: String, family: String, source: String, package: ScriptWidgetPackage)] = []
+        for (name, directory) in try Self.corpusPackages() {
+            let package = ScriptWidgetPackage(path: directory, readonly: true)
+            guard let source = package.readMainFile().0, !Self.usesLiveData(source) else { continue }
+            for family in ["small", "medium", "large"] { jobs.append(("\(name)@\(family)", family, prelude + source, package)) }
+        }
+        let casesURL = Self.repositoryRoot.appendingPathComponent("Web/preview-engine/test/render/cases.json")
+        let cases = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: casesURL)) as? [[String: String]])
+        let scratch = ScriptWidgetPackage(path: FileManager.default.temporaryDirectory, readonly: true)
+        for item in cases {
+            let family = item["size"] ?? "medium"
+            jobs.append(("case/\(item["name"] ?? "")@\(family)", family, prelude + (item["source"] ?? ""), scratch))
+        }
+        let filter = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_FILTER"] ?? ""
+        for job in jobs where filter.isEmpty || job.name.hasPrefix(filter) {
+            let runtime = ScriptWidgetRuntime(package: job.package, environments: ["widget-size": job.family, "widget-param": ""])
+            let result = await Task.detached { runtime.executeJSXSyncForWidget(job.source) }.value
+            guard let element = result.0 else { continue }
+            let context = ScriptWidgetElementContext(runtime: runtime, debugMode: false, scriptName: job.name, scriptParameter: "",
+                                                     package: job.package, containerBackgroundElement: element)
+            let renderer = ImageRenderer(content: BrowserPreviewSnapshotView(element: element, context: context,
+                                                                             size: BrowserPreviewSnapshotProfile.size(job.family))
+                .environment(\.colorScheme, .light))
+            renderer.scale = 2
+            guard let data = renderer.uiImage?.pngData() else { continue }
+            let fileName = job.name.replacingOccurrences(of: "/", with: "__").replacingOccurrences(of: " ", with: "_") + ".png"
+            try data.write(to: output.appendingPathComponent(fileName), options: .atomic)
+        }
+    }
+    #endif
+
+
     private static let repositoryRoot = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
     private static let parityDirectory = repositoryRoot.appendingPathComponent("Web/preview-engine/test/parity")
