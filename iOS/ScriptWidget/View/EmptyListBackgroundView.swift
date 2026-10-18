@@ -24,6 +24,7 @@ class OnboardingFeaturedDataObject: ObservableObject {
 struct EmptyListBackgroundView: View {
     @StateObject private var data = OnboardingFeaturedDataObject()
     @State private var showCreate = false
+    @State private var createTemplatePath: [String] = []
     @State private var selectedFeatured: ScriptModel?
 
     var body: some View {
@@ -47,7 +48,7 @@ struct EmptyListBackgroundView: View {
         }
         .background(StudioDesign.groupedBackground)
         .fullScreenCover(isPresented: $showCreate) {
-            CreateGuideView()
+            CreateGuideView(templatePath: $createTemplatePath)
         }
         .sheet(item: $selectedFeatured) { item in
             NavigationStack {
@@ -136,6 +137,7 @@ struct EmptyListBackgroundView: View {
     private var browseAll: some View {
         VStack(alignment: .leading, spacing: 10) {
             Button {
+                createTemplatePath.removeAll()
                 showCreate = true
             } label: {
                 HStack {

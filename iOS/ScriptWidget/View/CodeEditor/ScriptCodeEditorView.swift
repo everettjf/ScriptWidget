@@ -59,7 +59,6 @@ class ScriptCodeEditorViewDataObject : ObservableObject {
 }
 
 struct ScriptCodeEditorView: View {
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @StateObject private var dataObject: ScriptCodeEditorViewDataObject
     let mode: ScriptCodeEditorViewMode
     let actionCreate: (() -> Void)?
@@ -72,6 +71,10 @@ struct ScriptCodeEditorView: View {
     @State private var alertMessage = ""
     @State private var didSave = false
     @State private var isSaving = false
+
+    // The detail column can be much narrower than a regular size class suggests,
+    // especially when an unfolded display keeps the widget list visible.
+    private let minimumInlinePanelWidth: CGFloat = 800
 
     
     init(mode: ScriptCodeEditorViewMode, scriptModel: ScriptModel) {
@@ -99,48 +102,46 @@ struct ScriptCodeEditorView: View {
     }
     
     var body: some View {
-        Group {
-            if horizontalSizeClass == .regular {
-                GeometryReader { proxy in
-                    HStack(spacing: 0) {
-                        codeeditor
-                            .frame(width: max(420, proxy.size.width * 0.56))
-                        Divider()
-                        ScriptCodeStudioPanelView(
-                            scriptModel: dataObject.scriptModel,
-                            filePath: $dataObject.filePath
-                        )
-                    }
-                }
-            } else {
+        GeometryReader { proxy in
+            let showsInlinePanel = proxy.size.width >= minimumInlinePanelWidth
+
+            HStack(spacing: 0) {
                 codeeditor
-            }
-        }
-                .navigationTitle(self.dataObject.scriptModel.name)
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarLeading) {
-                        leadingButtons
-                    }
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        trailingButtons
-                    }
+                    .frame(width: showsInlinePanel ? proxy.size.width * 0.58 : proxy.size.width)
+                if showsInlinePanel {
+                    Divider()
+                    ScriptCodeStudioPanelView(
+                        scriptModel: dataObject.scriptModel,
+                        filePath: $dataObject.filePath
+                    )
                 }
-        .ignoresSafeArea(.all, edges: .bottom)
-        .alert("Notification", isPresented: $showingAlert) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(alertMessage)
-        }
-        .sheet(isPresented: $showCopilotView) {
-            NavigationStack {
-                ScriptCodeCopilotView(scriptModel: dataObject.scriptModel)
-                    .navigationTitle("AI Copilot")
-                    .toolbar {
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Done") { showCopilotView = false }
+            }
+            .navigationTitle(self.dataObject.scriptModel.name)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    leadingButtons
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    trailingButtons(showsInlinePanel: showsInlinePanel)
+                }
+            }
+            .ignoresSafeArea(.all, edges: .bottom)
+            .alert("Notification", isPresented: $showingAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(alertMessage)
+            }
+            .sheet(isPresented: $showCopilotView) {
+                NavigationStack {
+                    ScriptCodeCopilotView(scriptModel: dataObject.scriptModel)
+                        .navigationTitle("AI Copilot")
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Done") { showCopilotView = false }
+                            }
                         }
-                    }
+                }
             }
         }
     }
@@ -162,9 +163,9 @@ struct ScriptCodeEditorView: View {
         ScriptCodePreviewView(model: dataObject.scriptModel, filePath: $dataObject.filePath)
     }
     
-    var trailingButtons: some View {
+    func trailingButtons(showsInlinePanel: Bool) -> some View {
         HStack {
-            if #available(iOS 16.2, *) {
+            if mode == .editor, #available(iOS 16.2, *) {
                 ScriptCodeEditorNavButtonView(title: "Start Live Activity", systemImage: "lock.rectangle") {
                     saveEditor {
                         let package = dataObject.scriptModel.package
@@ -194,23 +195,25 @@ struct ScriptCodeEditorView: View {
                 previewView
             })
 
-            if horizontalSizeClass != .regular {
+            if mode == .editor && !showsInlinePanel {
                 ScriptCodeEditorNavButtonView(title: "AI Copilot", systemImage: "sparkles") {
                     showCopilotView = true
                 }
                 .keyboardShortcut("k", modifiers: [.command, .shift])
             }
 
-            Button {
-                saveEditor {}
-            } label: {
-                Label(didSave ? "Saved" : "Save", systemImage: didSave ? "checkmark.circle.fill" : "square.and.arrow.down")
-                    .labelStyle(.iconOnly)
+            if mode == .editor {
+                Button {
+                    saveEditor {}
+                } label: {
+                    Label(didSave ? "Saved" : "Save", systemImage: didSave ? "checkmark.circle.fill" : "square.and.arrow.down")
+                        .labelStyle(.iconOnly)
+                }
+                .disabled(isSaving)
+                .keyboardShortcut("s", modifiers: .command)
+                .accessibilityLabel(didSave ? "Widget saved" : "Save widget")
+                .foregroundStyle(didSave ? Color.green : Color.accentColor)
             }
-            .disabled(isSaving)
-            .keyboardShortcut("s", modifiers: .command)
-            .accessibilityLabel(didSave ? "Widget saved" : "Save widget")
-            .foregroundStyle(didSave ? Color.green : Color.accentColor)
             
             if self.mode == .creator {
                 ScriptCodeEditorNavButtonView(title: "Create Widget", systemImage: "plus.square.fill") {

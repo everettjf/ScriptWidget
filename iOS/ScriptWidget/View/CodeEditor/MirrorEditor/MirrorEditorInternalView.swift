@@ -365,28 +365,46 @@ extension MirrorEditorInternalView {
     
     func createAccessoryView() -> UIView {
         let accessoryHeight:CGFloat = 44
-        let doneButtonWidth: CGFloat = 50
-        let screen = UIScreen.main.bounds.size
-        let containerView = UIView(frame: CGRect(x: 0, y: 0, width: screen.width, height: accessoryHeight))
+        let actionButtonWidth: CGFloat = 50
+        let containerView = UIView(frame: CGRect(x: 0, y: 0, width: bounds.width, height: accessoryHeight))
+        containerView.autoresizingMask = .flexibleWidth
         containerView.backgroundColor = UIColor.systemBackground
         
         
         // format button view
-        let formatButton = UIButton(frame: CGRect(x: screen.width - doneButtonWidth * 2, y: 0, width: doneButtonWidth, height: accessoryHeight))
+        let formatButton = UIButton(type: .system)
         formatButton.setImage(UIImage(systemName: "paintbrush"), for: .normal)
         formatButton.addTarget(self, action: #selector(onButtonFormatTapped(sender:)), for: .touchUpInside)
         containerView.addSubview(formatButton)
         
         // done button view
-        let doneButton = UIButton(frame: CGRect(x: screen.width - doneButtonWidth, y: 0, width: doneButtonWidth, height: accessoryHeight))
+        let doneButton = UIButton(type: .system)
         doneButton.setImage(UIImage(systemName: "keyboard"), for: .normal)
         doneButton.addTarget(self, action: #selector(onButtonDoneTapped(sender:)), for: .touchUpInside)
         containerView.addSubview(doneButton)
         
         // scroll view
-        let scrollView = UIScrollView(frame: CGRect(x: 0, y: 0, width: screen.width - doneButtonWidth*2, height: accessoryHeight))
+        let scrollView = UIScrollView()
         scrollView.showsHorizontalScrollIndicator = false
         containerView.addSubview(scrollView)
+
+        for view in [formatButton, doneButton, scrollView] {
+            view.translatesAutoresizingMaskIntoConstraints = false
+        }
+        NSLayoutConstraint.activate([
+            scrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            scrollView.topAnchor.constraint(equalTo: containerView.topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: formatButton.leadingAnchor),
+            formatButton.widthAnchor.constraint(equalToConstant: actionButtonWidth),
+            formatButton.topAnchor.constraint(equalTo: containerView.topAnchor),
+            formatButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+            formatButton.trailingAnchor.constraint(equalTo: doneButton.leadingAnchor),
+            doneButton.widthAnchor.constraint(equalToConstant: actionButtonWidth),
+            doneButton.topAnchor.constraint(equalTo: containerView.topAnchor),
+            doneButton.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+            doneButton.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+        ])
         
         let buttonItemWidth = 40
         let buttonItemTitles = [
