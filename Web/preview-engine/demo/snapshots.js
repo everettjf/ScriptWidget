@@ -4,6 +4,12 @@ import { renderWidget } from "../src/render/renderer.js";
 import { sandboxDocument } from "../dist/sandbox-sources.js";
 
 const stage = document.getElementById("stage");
+const fontMode = new URLSearchParams(location.search).get("fonts");
+if (fontMode) globalThis.__scriptWidgetFontStack = fontMode;
+if (fontMode === "inter") {
+  const face = new FontFace("ScriptWidget Inter", `url(${new URL("../dist/assets/inter.woff2", import.meta.url)})`, { weight: "100 900" });
+  document.fonts.add(await face.load());
+}
 const sandbox = createPreviewSandbox({ sandboxDocument, assetBaseURL: new URL("../dist/assets/", import.meta.url) });
 const corpus = await (await fetch("../dist/parity-corpus.json")).json();
 const cases = await (await fetch("../test/render/cases.json")).json();

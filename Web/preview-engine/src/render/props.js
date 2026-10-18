@@ -279,12 +279,21 @@ export function elementFont(reader, fallback = defaultFont) {
   return font;
 }
 
+/// Off Apple platforms SF Pro is unavailable; pages that load the bundled
+/// "ScriptWidget Inter" face (OFL) get consistent metrics on every OS.
+/// Test hooks for measuring that: globalThis.__scriptWidgetFontStack =
+/// "fallback" (generic fonts) or "inter" (Inter only).
+const fallbackOnly = () => globalThis.__scriptWidgetFontStack === "fallback";
+const interOnly = () => globalThis.__scriptWidgetFontStack === "inter";
+
 export function fontFamily(font) {
-  if (font.family) return `"${font.family.replace(/"/g, "")}", -apple-system, system-ui, sans-serif`;
+  if (interOnly() && font.design !== "monospaced" && font.design !== "serif") return "\"ScriptWidget Inter\", Arial, sans-serif";
+  if (fallbackOnly()) return font.design === "monospaced" ? "Consolas, \"Courier New\", monospace" : "\"Segoe UI\", Roboto, Arial, Helvetica, sans-serif";
+  if (font.family) return `"${font.family.replace(/"/g, "")}", -apple-system, "ScriptWidget Inter", system-ui, sans-serif`;
   switch (font.design) {
-    case "rounded": return `"SF Pro Rounded", ui-rounded, -apple-system, system-ui, sans-serif`;
+    case "rounded": return `"SF Pro Rounded", ui-rounded, -apple-system, "ScriptWidget Inter", system-ui, sans-serif`;
     case "monospaced": return `ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace`;
     case "serif": return `"New York", ui-serif, Georgia, "Times New Roman", serif`;
-    default: return `-apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
+    default: return `-apple-system, BlinkMacSystemFont, "SF Pro Text", "ScriptWidget Inter", system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
   }
 }

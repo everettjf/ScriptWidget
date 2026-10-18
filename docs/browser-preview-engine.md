@@ -273,8 +273,12 @@ node Web/preview-engine/bin/scriptwidget-preview.mjs path/to/MyWidget --family s
 - `--device http://<ip>:<port> --pair-code 123456` also pushes the text files to
   an iPhone or iPad running Web Studio (HTTP API v1, entry file last, revision
   checked) and saves the device's native SwiftUI preview as
-  `preview.native.png`. Binary resources are not part of that API and are
-  reported as skipped.
+  `preview.native.png`, rendered at the size selected in the app's preview.
+  Binary resources are not part of that API and are reported as skipped.
+- Debug builds launched with `-WebStudioAutoStart` open Web Studio and log
+  `Web Studio QA pairing: port … code …`, so the loop can run unattended in the
+  simulator: `xcrun simctl launch booted com.everettjf.scriptwidget -WebStudioAutoStart`,
+  then read the code with `xcrun simctl spawn booted log show --last 1m --predicate 'eventMessage CONTAINS "Web Studio QA pairing"'`.
 - `bin/scriptwidget-mcp.mjs` is a stdio MCP server with
   `render_widget_preview` (image plus diagnostics), `validate_widget_package`,
   and `export_widget_package`. Package paths are confined to the working
@@ -314,13 +318,38 @@ claude mcp add scriptwidget -- node Web/preview-engine/bin/scriptwidget-mcp.mjs
 | Web Studio, headless Chrome smoke test | starter, 71 templates, image template, `.swt` import all render |
 | Web Studio, iOS 27 Safari | renders with the strict page CSP and URL-loaded sandbox |
 | Web-exported `.swt` imported by native code | passes preflight, extraction, validation, execution |
-| Device sync | tested against a mock implementing Web Studio HTTP API v1 |
-| **Not verified** | Firefox; Windows and Linux font fallback; a physical iPhone for device sync and share-sheet install; the deployed GitHub Pages site |
+| Device sync, end to end | CLI → ScriptWidget app (Debug, iOS 27 simulator) over Web Studio API v1: paired, uploaded the changed entry, received the native PNG of the same source |
+| Non-Apple fonts | corpus median 2.58% with the bundled Inter fallback (222/300 within 5%, 299/300 within 20%); 2.67% with generic fallback fonts |
+| Pages layout | `site/` + Studio at `/studio/` assembled like the workflow passes the smoke test; both workflows parse |
+| **Not verified** | Firefox; real Windows/Linux machines (measured on macOS with Apple fonts excluded); a physical iPhone; share-sheet install (needs taps); the live site, which publishes after merging into `main` |
 
 WebKit note: revoking a blob URL immediately after `new Worker(url)` prevents
 WebKit from starting the Worker because it fetches the script asynchronously.
 The sandbox frame keeps the URL alive; this was found and fixed in the
 simulator check above.
+
+## Native fixes found by this work
+
+- **Web Studio snapshot was blank.** The capture view lived in a `.background`,
+  so it captured only the background host, and the preview was usually
+  scrolled off-screen. Web Studio now renders the widget itself with
+  `ImageRenderer`, composed like the real widget.
+- **Package names with spaces failed in Web Studio.** Browsers encode query
+  spaces as `+`, which `URLComponents` does not decode; opening or deleting a
+  file in a package such as "My Widget" returned "Document not found". The
+  server now decodes form spaces (`WebStudioServerTests.testDecodesFormEncodedQuerySpaces`).
+- **Malformed manifests were reinterpreted on import.** A present but invalid
+  `widget.json` was replaced by a legacy manifest; import now fails closed
+  (`ScriptManagerLifecycleTests.testMalformedPresentManifestFailsClosedOnImport`).
+- **Font weight properties were ignored** (see Stage 1 notes above).
+
+## Fonts outside Apple platforms
+
+SF Pro is not distributed with the site. The renderer's font stack falls back
+to "ScriptWidget Inter", which the Studio bundles (Inter, SIL Open Font
+License 1.1; license published at `/studio/licenses/`), so Windows and Linux
+previews share one set of metrics. Measured on the corpus by excluding Apple
+fonts (`SW_FONTS=inter npm run compare`): median 2.58% versus 1.87% with SF.
 
 ## Corrections to the research proposal
 

@@ -56,7 +56,7 @@ const page = (method, params) => send(method, params, sessionId);
 await page("Page.enable");
 await page("Emulation.setDeviceMetricsOverride", { width: 800, height: 800, deviceScaleFactor: 2, mobile: false });
 await page("Emulation.setTimezoneOverride", { timezoneId: JSON.parse(fs.readFileSync(path.join(root, "test/parity/native-trees.json"), "utf8")).timeZone });
-await page("Page.navigate", { url: `http://127.0.0.1:${port}/demo/snapshots.html` });
+await page("Page.navigate", { url: `http://127.0.0.1:${port}/demo/snapshots.html${process.env.SW_FONTS ? `?fonts=${process.env.SW_FONTS}` : ""}` });
 const evaluate = async (expression) => {
   const result = await page("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true });
   if (result.exceptionDetails) throw new Error(result.exceptionDetails.exception?.description ?? "evaluation failed");
@@ -93,7 +93,7 @@ for (let index = 0; index < names.length; index += 1) {
   report.push({ name: box.name, diffPercent: +(100 * different / (width * height)).toFixed(2), sizeMatch: native.width === web.width && native.height === web.height, diagnostics: box.diagnostics.map((item) => item.code) });
 }
 report.sort((a, b) => (b.diffPercent ?? 100) - (a.diffPercent ?? 100));
-fs.writeFileSync(path.join(root, "dist/compare-report.json"), JSON.stringify(report, null, 1));
+fs.writeFileSync(path.join(root, process.env.SW_FONTS ? `dist/compare-report-${process.env.SW_FONTS}-fonts.json` : "dist/compare-report.json"), JSON.stringify(report, null, 1));
 const scored = report.filter((item) => item.diffPercent !== undefined);
 const median = scored.length ? scored.map((item) => item.diffPercent).sort((a, b) => a - b)[Math.floor(scored.length / 2)] : null;
 console.log(`compared ${scored.length}, errors ${report.length - scored.length}, median diff ${median}%`);

@@ -377,6 +377,9 @@ $("#new-project").addEventListener("click", async () => {
 
 // MARK: - Start
 
+// Text is measured during layout, so the fallback face must be ready first.
+try { await document.fonts.load('17px "ScriptWidget Inter"'); } catch { /* the system fallback still renders */ }
+
 window.addEventListener("beforeunload", () => { if (state.project) storage.save(state.project); });
 await loadProjects();
 try {

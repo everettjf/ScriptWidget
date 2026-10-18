@@ -150,6 +150,15 @@ struct ScriptWidgetHomeView: View {
                 .sheet(isPresented: $isShowingWidgetGuide) {
                     WidgetSetupGuideView()
                 }
+#if DEBUG
+                .onAppear {
+                    // QA: the native preview snapshot is captured only while the
+                    // Web Studio screen is visible.
+                    if ProcessInfo.processInfo.arguments.contains("-WebStudioAutoStart") {
+                        isShowingWebStudio = true
+                    }
+                }
+#endif
                 .fullScreenCover(isPresented: $isShowingWebStudio, onDismiss: {
                     WebStudioServer.shared.stop()
                 }) {

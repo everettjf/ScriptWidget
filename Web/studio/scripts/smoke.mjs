@@ -1,6 +1,7 @@
 // Loads the built Studio in headless Chrome and checks that the sandboxed
 // runtime renders the starter widget, a template, and that export works.
 // Usage: npm run build && node scripts/smoke.mjs [screenshot.png]
+//        SITE_ROOT=<assembled _site> node scripts/smoke.mjs   (tests /studio/ like GitHub Pages)
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,12 +9,14 @@ import { launchChrome, serveDirectory } from "../../preview-engine/scripts/lib/c
 
 const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../dist");
 const fixture = fs.readFileSync(path.resolve(dist, "../../preview-engine/test/fixtures/web-export.swt"));
-const server = await serveDirectory(dist, { "/__fixture.swt": { type: "application/zip", body: fixture } });
+const siteRoot = process.env.SITE_ROOT ? path.resolve(process.env.SITE_ROOT) : null;
+const server = await serveDirectory(siteRoot ?? dist, { "/__fixture.swt": { type: "application/zip", body: fixture } });
+const studioPath = siteRoot ? "/studio/index.html" : "/index.html";
 const chrome = await launchChrome({ width: 1400, height: 900, scale: 1 });
 let failed = false;
 try {
   const page = await chrome.newPage();
-  await page.goto(`${server.origin}/index.html`);
+  await page.goto(`${server.origin}${studioPath}`);
   await page.waitFor("!!document.querySelector('.sw-widget')", 20000);
   const status = await page.evaluate("document.getElementById('preview-status').textContent");
   console.log("starter:", status);

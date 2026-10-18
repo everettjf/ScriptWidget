@@ -1,3 +1,11 @@
+@font-face {
+  /* Inter (SIL Open Font License 1.1) stands in for SF Pro where Apple fonts
+     are unavailable, so Windows and Linux previews share one set of metrics. */
+  font-family: "ScriptWidget Inter";
+  src: url("@fontsource-variable/inter/files/inter-latin-wght-normal.woff2") format("woff2-variations");
+  font-weight: 100 900;
+  font-display: block;
+}
 :root {
   --bg: #f5f5f7; --panel: #ffffff; --panel-2: #fbfbfd; --text: #1d1d1f; --muted: #6e6e73; --line: #d2d2d7;
   --accent: #0071e3; --accent-text: #ffffff; --error: #c9001d; --warning: #9a5b00; --ok: #1a7f37; --stage: #e8e8ed;

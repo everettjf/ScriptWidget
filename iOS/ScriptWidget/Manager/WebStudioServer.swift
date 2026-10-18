@@ -88,6 +88,12 @@ final class WebStudioServer: ObservableObject {
                         }
 #if DEBUG
                         NSLog("Web Studio QA ready: %@", self.displayURLs.joined(separator: ", "))
+                        // Automated QA (scriptwidget-preview --device) cannot read the
+                        // on-screen code; only debug builds launched with the QA
+                        // argument log it.
+                        if ProcessInfo.processInfo.arguments.contains("-WebStudioAutoStart") {
+                            NSLog("Web Studio QA pairing: port %d code %@", Int(self.port), self.pairingCode)
+                        }
 #endif
                     case .waiting(let error):
                         self.lastError = error.localizedDescription
@@ -484,6 +490,11 @@ final class WebStudioServer: ObservableObject {
             self.connectedClientCount = 0
             self.pairingCode = nextCode
         }
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-WebStudioAutoStart") {
+            NSLog("Web Studio QA pairing: port %d code %@", Int(port), nextCode)
+        }
+#endif
         log("info", reason)
     }
 
@@ -568,6 +579,11 @@ struct HTTPRequest {
         try? JSONSerialization.jsonObject(with: body) as? [String: Any]
     }
 
+    static func decodingFormSpaces(_ target: String) -> String {
+        guard let mark = target.firstIndex(of: "?") else { return target }
+        return String(target[..<mark]) + target[mark...].replacingOccurrences(of: "+", with: "%20")
+    }
+
     static func parse(_ data: Data) -> HTTPRequest? {
         let separator = Data("\r\n\r\n".utf8)
         guard let headerRange = data.range(of: separator),
@@ -586,7 +602,9 @@ struct HTTPRequest {
         let bodyStart = headerRange.upperBound
         guard data.count >= bodyStart + contentLength else { return nil }
         let target = String(parts[1])
-        let components = URLComponents(string: target)
+        // Browsers send URLSearchParams form encoding, where "+" means a space
+        // (a literal "+" arrives as %2B). URLComponents only decodes %XX.
+        let components = URLComponents(string: Self.decodingFormSpaces(target))
         var query = [String: String]()
         for item in components?.queryItems ?? [] where query[item.name] == nil {
             query[item.name] = item.value

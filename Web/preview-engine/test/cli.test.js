@@ -63,7 +63,11 @@ test("device sync pairs, uploads changed files entry last, and fetches the nativ
       if (url.pathname === "/api/v1/session" && request.method === "GET") return json({ device: { name: "Test iPhone" }, preview: { snapshotSequence } });
       if (url.pathname === "/api/v1/session") return json({ disconnected: true });
       if (url.pathname === "/api/v1/packages") return json({ packages: [{ id: "CLI Test", name: "CLI Test", entry: "main.jsx", files: Object.keys(documents) }] });
-      if (url.pathname === "/api/v1/document" && request.method === "GET") { const name = url.searchParams.get("path"); return json({ content: documents[name], revision: `r-${documents[name]}`, readOnly: false }); }
+      if (url.pathname === "/api/v1/document" && request.method === "GET") {
+        // Mirror older device servers, which read "+" literally.
+        if (request.url.includes("+")) return json({ message: "Document not found" }, 404);
+        const name = url.searchParams.get("path"); return json({ content: documents[name], revision: `r-${documents[name]}`, readOnly: false });
+      }
       if (url.pathname === "/api/v1/document" && request.method === "POST") { documents[JSON.parse(body).path] = ""; return json({}, 201); }
       if (url.pathname === "/api/v1/document" && request.method === "PUT") {
         const update = JSON.parse(body);

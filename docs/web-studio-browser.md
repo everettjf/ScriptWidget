@@ -42,7 +42,8 @@ the browser and previews them itself.
   the browser and are not exported.
 
 The browser preview is fast feedback, not a pixel-perfect WidgetKit render.
-Fonts on Windows and Linux differ from SF Pro, and WidgetKit controls the final
+On Windows and Linux the Studio uses the bundled Inter font in place of SF
+Pro, so text can wrap slightly differently, and WidgetKit controls the final
 look, refresh, and interactions. Always check the widget on iPhone before
 sharing it. See [browser preview coverage](browser-preview-coverage.md) for
 what is supported, approximated, or not yet rendered.

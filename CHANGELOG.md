@@ -22,6 +22,8 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 
 ### Fixed
 
+- Web Studio on iPhone: the native preview image is no longer blank, and packages whose names contain spaces open and save correctly from the browser.
+- Importing a package with a malformed `widget.json` now fails instead of replacing the manifest with a legacy one.
 - `fontWeight`, `fontDesign`, and the older `weight` property are now applied to text, dates, icons, labels, and images. They were documented and used by templates but previously ignored.
 
 - Added local build-cache fallback and proactive package caching for scripts evicted by iCloud. GitHub issue #6 remains open until the physical-iPhone offline acceptance matrix is complete.

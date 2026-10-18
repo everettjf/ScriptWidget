@@ -189,6 +189,8 @@ private struct WebStudioPreview: View {
     let model: ScriptModel
     let revision: Int
     @State private var fileURL: URL
+    @SceneStorage("preview-size-type") private var widgetSizeType = 0
+    @Environment(\.colorScheme) private var colorScheme
 
     init(model: ScriptModel, fileURL: URL, revision: Int) {
         self.model = model
@@ -199,32 +201,37 @@ private struct WebStudioPreview: View {
     var body: some View {
         ScriptCodePreviewView(model: model, filePath: $fileURL, showsCloseButton: false)
             .id(revision)
-            .background(WebStudioPreviewSnapshotCapture(revision: revision))
-    }
-}
-
-private struct WebStudioPreviewSnapshotCapture: UIViewRepresentable {
-    let revision: Int
-
-    func makeUIView(context: Context) -> UIView {
-        let view = UIView(frame: .zero)
-        view.isUserInteractionEnabled = false
-        view.backgroundColor = .clear
-        return view
+            .task(id: revision) { await publishSnapshot() }
     }
 
-    func updateUIView(_ view: UIView, context: Context) {
-        let revision = revision
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { [weak view] in
-            guard let target = view?.superview, target.bounds.width > 1, target.bounds.height > 1 else { return }
-            let format = UIGraphicsImageRendererFormat()
-            format.scale = min(UIScreen.main.scale, 2)
-            let renderer = UIGraphicsImageRenderer(bounds: target.bounds, format: format)
-            let image = renderer.image { context in
-                target.layer.render(in: context.cgContext)
-            }
-            guard let data = image.pngData() else { return }
-            WebStudioServer.shared.updatePreviewSnapshot(data, revision: revision)
+    /// Renders the widget itself for GET /api/v1/preview, composed like the
+    /// real widget (root background as container background). Capturing the
+    /// on-screen preview returned blank images: the capture view's host only
+    /// contains the background, and the preview is often scrolled off-screen.
+    @MainActor private func publishSnapshot() async {
+        let sizeType = widgetSizeType == 7 ? 0 : widgetSizeType
+        let sizeNames = [0: "small", 1: "medium", 2: "large", 3: "extraLarge", 4: "accessoryInline", 5: "accessoryCircular", 6: "accessoryRectangular", 8: "extraLargePortrait"]
+        guard let source = model.package.readFile(fullPath: fileURL).0 else { return }
+        let runtime = ScriptWidgetRuntime(package: model.package, environments: [
+            "widget-size": sizeNames[sizeType] ?? "small",
+            "widget-param": "",
+            "widget-rendering-mode": "fullColor",
+        ])
+        let result = await Task.detached { runtime.executeJSXSyncForWidget(source) }.value
+        guard let element = result.0 else { return }
+        let size = WidgetSizeHelper.size(Int32(sizeType))
+        let context = ScriptWidgetElementContext(runtime: runtime, debugMode: false, scriptName: model.package.name,
+                                                 scriptParameter: "", package: model.package, containerBackgroundElement: element)
+        let background = element.getPropString("background").map(ScriptWidgetAttributeColor.init) ?? ScriptWidgetAttributeColor()
+        let content = ZStack {
+            if let color = background.color { color } else if let gradient = background.gradient { gradient } else { Color(.systemBackground) }
+            ScriptWidgetElementView(element: element, context: context)
         }
+        .frame(width: size.width, height: size.height)
+        .environment(\.colorScheme, colorScheme)
+        let renderer = ImageRenderer(content: content)
+        renderer.scale = 2
+        guard let data = renderer.uiImage?.pngData() else { return }
+        WebStudioServer.shared.updatePreviewSnapshot(data, revision: revision)
     }
 }

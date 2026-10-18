@@ -44,7 +44,9 @@ export class DeviceSession {
       const content = files[path];
       if (typeof content !== "string") { skipped.push({ path, reason: "binary resources are not part of the Web Studio API" }); continue; }
       if (!remote.has(path)) await this.request("/api/v1/document", { method: "POST", body: { package: target.id, path } });
-      const query = new URLSearchParams({ package: target.id, path });
+      // %20, not URLSearchParams' "+": app versions before the query fix
+      // read "+" literally, which breaks package names with spaces.
+      const query = `package=${encodeURIComponent(target.id)}&path=${encodeURIComponent(path)}`;
       const current = await this.request(`/api/v1/document?${query}`);
       if (current.readOnly) { skipped.push({ path, reason: "read-only on the device" }); continue; }
       if (current.content === content && path !== entry) continue;
