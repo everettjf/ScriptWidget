@@ -11,6 +11,17 @@ import { coverage, generalProps, ignoredProp } from "./coverage.js";
 import { widgetSize } from "./profiles.js";
 import { lucideIcons, sfSymbolToLucide } from "./icons.generated.js";
 
+/// A path is closed when it uses Z or its final absolute point returns to
+/// the starting move (Lucide draws some outlines that way).
+function closedPath(d) {
+  if (/z/i.test(d)) return true;
+  const start = /^\s*M\s*(-?[\d.]+)[\s,]*(-?[\d.]+)/.exec(d);
+  const lastCommand = /([A-Za-z])[^A-Za-z]*$/.exec(d);
+  if (!start || !lastCommand || lastCommand[1] !== lastCommand[1].toUpperCase()) return false;
+  const numbers = d.match(/-?\d*\.?\d+/g) ?? [];
+  return numbers.length >= 2 && Number(numbers.at(-2)) === Number(start[1]) && Number(numbers.at(-1)) === Number(start[2]);
+}
+
 /// Closest open icon for an SF Symbol name: exact, then without style
 /// suffixes (.fill, .circle, .square, ...), then shorter prefixes.
 export function lucideIconFor(systemName) {
@@ -165,7 +176,7 @@ export async function renderWidget(treeJSON, {
         whiteSpace: "pre-wrap", overflowWrap: "break-word", textAlign: alignment,
       });
       const content = element.ownerDocument.createElement("div");
-      content.textContent = value;
+      content.textContent = node.displayText(node.frame.width);
       const trim = (style.leading - style.natural) / 2;
       Object.assign(content.style, { marginTop: `${-trim}px`, width: `${node.frame.width + 2}px` });
       if (alignment !== "left") content.style.width = `${node.frame.width}px`;
@@ -330,9 +341,13 @@ export async function renderWidget(treeJSON, {
       for (const [key, value] of Object.entries({ width: side, height: side, viewBox: "0 0 24 24", fill: "none", stroke: colorValue,
         "stroke-width": String(Math.max(1.5, Math.min(3, 1.4 + (style.weight - 100) / 400))), "stroke-linecap": "round", "stroke-linejoin": "round" })) svg.setAttribute(key, String(value));
       Object.assign(svg.style, { position: "absolute", left: `${(width - side) / 2}px`, top: `${(height - side) / 2}px` });
+      // SF ".fill" variants are solid: fill the icon's closed shapes.
+      const filled = /\.fill(\.|$)/.test(systemName);
       for (const [tag, attributes] of icon) {
         const item = element.ownerDocument.createElementNS(svgNS, tag);
         for (const [key, value] of Object.entries(attributes)) item.setAttribute(key, String(value));
+        const closed = tag === "circle" || tag === "rect" || tag === "ellipse" || tag === "polygon" || (tag === "path" && closedPath(attributes.d ?? ""));
+        if (filled && closed) item.setAttribute("fill", colorValue);
         svg.appendChild(item);
       }
       element.appendChild(svg);
@@ -862,6 +877,7 @@ export async function renderWidget(treeJSON, {
       const textAt = (x, y, value, anchor = "middle") => {
         const label = svgElement(svg, "text", { x, y, "text-anchor": anchor, fill: axisColor, "font-size": 10, "font-family": fontFamily(defaultFont) });
         label.textContent = value;
+        return label;
       };
       const values = gantt ? items.flatMap((item) => [item.start, item.end]) : rule ? items.flatMap((item) => [item.xstart, item.xend]) : items.map((item) => item.value);
       const stacked = type === "bar" ? Object.values(items.reduce((sums, item) => { sums[item.label] = (sums[item.label] ?? 0) + Math.max(0, item.value); return sums; }, {})) : [];
@@ -882,7 +898,17 @@ export async function renderWidget(treeJSON, {
         const xOf = (label) => plot.x + band * labels.indexOf(label) + band / 2;
         const yOf = (value) => plot.y + plot.height - (Math.max(0, value) / niceMax) * plot.height;
         if (!hideX) {
-          labels.forEach((label) => textAt(xOf(label), plot.y + plot.height + 14, label));
+          // Swift Charts truncates category labels that do not fit their band.
+          // Measured with the in-document measurer: the chart is drawn before
+          // the widget is attached, so SVG text metrics are not available yet.
+          const labelStyle = textStyleFor({ size: 10, lineHeight: null, weight: 400, design: "default" });
+          const labelWidth = (value) => measurer.measure(value, labelStyle, null).width;
+          labels.forEach((label) => {
+            const limit = band * 0.9;
+            let shown = label;
+            for (let length = label.length; length > 1 && labelWidth(shown) > limit; length -= 1) shown = `${label.slice(0, length - 1)}…`;
+            textAt(xOf(label), plot.y + plot.height + 14, shown);
+          });
           for (let index = 0; index <= labels.length; index += 1) {
             const x = plot.x + band * index;
             svgElement(svg, "line", { x1: x, x2: x, y1: plot.y, y2: plot.y + plot.height + 16, stroke: axisColor, "stroke-opacity": 0.35, "stroke-dasharray": "2 2" });

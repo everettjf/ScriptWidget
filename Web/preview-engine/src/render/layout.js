@@ -21,7 +21,36 @@ export class TextNode extends Node {
     super();
     this.text = text; this.style = style; this.measurer = measurer;
   }
-  metrics(width) { return this.measurer.measure(this.text, this.style, width); }
+  /// Like UIKit, a word wider than the line is hyphenated: it is split into
+  /// the longest prefixes that fit with a trailing "-" instead of breaking
+  /// at an arbitrary character.
+  displayText(width) {
+    if (width === null || width === Infinity || width <= 0) return this.text;
+    const key = `${width}`;
+    this.hyphenated ??= new Map();
+    if (this.hyphenated.has(key)) return this.hyphenated.get(key);
+    const fits = (piece) => this.measurer.measure(piece, this.style, null).width <= width + 0.01;
+    const result = this.text.replace(/\S+/g, (word) => {
+      if (fits(word) || [...word].length < 4) return word;
+      const characters = [...word];
+      const pieces = [];
+      let start = 0;
+      while (start < characters.length) {
+        const rest = characters.slice(start).join("");
+        if (fits(rest)) { pieces.push(rest); break; }
+        let end = start + 1;
+        while (end < characters.length && fits(`${characters.slice(start, end + 1).join("")}-`)) end += 1;
+        // Like iOS, carry at least three letters to the next line.
+        if (characters.length - end < 3) end = Math.max(start + 1, characters.length - 3);
+        pieces.push(`${characters.slice(start, end).join("")}-`);
+        start = end;
+      }
+      return pieces.join("\n");
+    });
+    this.hyphenated.set(key, result);
+    return result;
+  }
+  metrics(width) { return this.measurer.measure(width === null ? this.text : this.displayText(width), this.style, width); }
   layout(pw, ph) {
     const { natural, leading } = this.style;
     if (this.text === "") return { width: 0, height: 0, lines: 0, total: 0 };

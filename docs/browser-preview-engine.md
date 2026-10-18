@@ -305,6 +305,10 @@ claude mcp add scriptwidget -- node Web/preview-engine/bin/scriptwidget-mcp.mjs
   rendering modes are approximated, honoring `widgetAccentable`.
 - Dates use the real clock like the widget and the native `date` names
   (`now`, `tomorrow`, `start of today`, `+3h`, `-2d`, or milliseconds).
+- SF Symbols ending in `.fill` draw their look-alike icon solid; long words that
+  do not fit a line are hyphenated like UIKit, carrying at least three letters
+  to the next line (`ScriptWid-get`); chart category labels that do not fit
+  their band are truncated with "…".
 
 ## Verification matrix
 
@@ -314,7 +318,7 @@ claude mcp add scriptwidget -- node Web/preview-engine/bin/scriptwidget-mcp.mjs
 | Tree parity, iOS 27.0 simulator JavaScriptCore | identical to the reference |
 | Tree parity, Node 24 / Chromium (headless and Claude pane) | 100/100 byte-identical |
 | Tree parity, iOS 27 Safari (WebKit) in the simulator | 100/100 byte-identical; all isolation probes blocked; CSP control reached |
-| Pixel comparison vs iOS 27 snapshots, Chrome on macOS | corpus median 1.87% (244/300 within 5%, 298/300 within 20%); calibration cases median 0.84% |
+| Pixel comparison vs iOS 27 snapshots, Chrome on macOS | corpus median 1.83% (243/300 within 5%, 298/300 within 20%); 1.51% over the 234 renders that do not depend on the current time; calibration cases median 0.84% |
 | Web Studio, headless Chrome smoke test | starter, 71 templates, image template, `.swt` import all render |
 | Web Studio, iOS 27 Safari | renders with the strict page CSP and URL-loaded sandbox |
 | Web-exported `.swt` imported by native code | passes preflight, extraction, validation, execution |
