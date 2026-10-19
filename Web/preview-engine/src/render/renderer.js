@@ -82,13 +82,16 @@ function nativeBaseline(size) {
   return size * 0.9521;
 }
 
+/// New York draws lining figures in SwiftUI; browsers default to old-style.
+const numericVariant = (style) => (style.design === "serif" && !style.custom ? "lining-nums" : "");
+
 function textStyleFor(font) {
   const natural = font.natural ?? lineHeight(font.size);
   // Lines advance by the text style's line height; sized fonts advance by
   // their natural height (iOS: size x 1.1934, measured at 8x).
   const leading = platform() === "macos" ? Math.max(natural, font.lineHeight ?? natural) : font.lineHeight ?? font.size * naturalLineRatio;
   const family = fontFamily(font);
-  return { ...font, natural, leading, family, custom: Boolean(font.family), hyphenate: platform() !== "macos" && Boolean(font.textStyle), key: `${family}|${font.size}|${font.weight}|${leading}` };
+  return { ...font, natural, leading, family, custom: Boolean(font.family), hyphenate: Boolean(font.textStyle), key: `${family}|${font.size}|${font.weight}|${leading}` };
 }
 
 // MARK: - Tree decoding
@@ -226,12 +229,12 @@ export async function renderWidget(treeJSON, {
     return leaf(new TextNode(value, style, measurer), (node, element) => {
       Object.assign(element.style, {
         fontFamily: style.family, fontSize: `${style.size}px`, fontWeight: String(style.weight), lineHeight: `${style.leading}px`,
-        whiteSpace: "pre-wrap", overflowWrap: "break-word", textAlign: alignment,
+        whiteSpace: "pre-wrap", overflowWrap: "break-word", textAlign: alignment, fontVariantNumeric: numericVariant(style),
       });
       const content = element.ownerDocument.createElement("div");
       // Truncated text draws exactly the lines the layout measured.
       const truncated = node.lines?.text ?? (node.lines && node.lines.lines < node.lines.total ? node.ellipsize(node.text, node.frame.width) : null);
-      fillText(content, truncated ?? node.displayText(node.frame.width), measurer.emojiSize(style));
+      fillText(content, truncated ?? node.displayText(node.frame.width), measurer.textAdjustments(style));
       // SF text puts its first baseline at the ascent (iOS: 0.9521 x size;
       // macOS: whole points, measured); align the browser's baseline there.
       // Other faces keep CSS half-leading.
@@ -387,7 +390,7 @@ export async function renderWidget(treeJSON, {
     if (icon) report("info", "icon.approximated", `SF Symbol "${systemName}" is drawn with an open-source look-alike icon`);
     else report("warning", "icon.unmapped", `SF Symbol "${systemName}" has no web icon yet; a placeholder is shown`);
     // Real SF Symbol proportions when known (symbolMetrics.generated.js).
-    const ratio = symbolMetrics[systemName];
+    const ratio = symbolMetrics[systemName] ?? symbolMetrics[systemName.replace(/\.fill(?=\.|$)/g, "")];
     const half = (value) => Math.round(value * 2) / 2;
     const box = ratio ? [half(style.size * ratio[0]), half(style.size * ratio[1])] : [Math.ceil(style.size * 1.2 * 2) / 2, style.natural];
     const fixed = new FixedNode(box[0], box[1]);
@@ -695,9 +698,25 @@ export async function renderWidget(treeJSON, {
         const outerTint = tint;
         const macButton = tag === "button" && platform() === "macos";
         if (tag === "button" && !macButton) tint = color("blue");
-        const children = buildChildren(element, "v");
+        const macToggle = tag === "toggle" && platform() === "macos";
+        // macOS styles a toggle's label like a checkbox title and subtitle:
+        // the first view in label color (85% primary), the rest secondary.
+        const labelColor = appearance === "dark" ? [255, 255, 255, 0.85] : [0, 0, 0, 0.85];
+        const children = macToggle
+          ? childrenAsElements(element).map((child, index) => { tint = index === 0 ? labelColor : color("secondary"); return build(child, "v"); })
+          : buildChildren(element, "v");
         tint = outerTint;
-        if (tag === "toggle") {
+        if (macToggle) {
+          // A 16-point checkbox (measured on macOS 27) 6 points before the label.
+          const on = reader.bool("on") ?? false;
+          report("info", "tag.approximated", "<toggle> is drawn as a static checkbox");
+          const box = leaf(new FixedNode(16, 16), (node, target) => {
+            Object.assign(target.style, { borderRadius: "4px", backgroundColor: cssColor(on ? [0, 133, 249, 1] : appearance === "dark" ? [255, 255, 255, 0.1] : [230, 230, 230, 1]) });
+            if (!on) return;
+            target.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" style="position:absolute;left:0;top:0"><path d="M4.4 8.4 L7 11 L11.8 5" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+          });
+          content = new StackNode("h", [box, new StackNode("v", children, { alignment: "start", spacing: defaultSpacing("v") })], { alignment: "center", spacing: () => 6 });
+        } else if (tag === "toggle") {
           const on = reader.bool("on") ?? false;
           report("info", "tag.approximated", "<toggle> is drawn as a static switch");
           const knob = leaf(new FixedNode(51, 31), (node, target) => {
@@ -980,8 +999,8 @@ export async function renderWidget(treeJSON, {
       // use caption2 (11 pt) and may fill their whole band before truncating.
       const mac = platform() === "macos";
       const metrics = mac
-        ? { top: 0, bottom: 0, xLabels: 20, yLabels: 20.5, yGap: 5, baseline: 16, tick: 17.5, font: 10.5, labelBand: 0.9 }
-        : { top: 0, bottom: 0, xLabels: 18, yLabels: 19, yGap: 6, baseline: 14, tick: 16, font: 11, labelBand: 1 };
+        ? { top: 0, bottom: 0, xLabels: 18, yLabels: 20.5, yGap: 5, baseline: 14.5, yBaseline: 3.5, tick: 17.5, font: 10.5, labelBand: 0.9 }
+        : { top: 0, bottom: 0, xLabels: 18, yLabels: 19, yGap: 6, baseline: 14, yBaseline: 3, tick: 16, font: 11, labelBand: 1 };
       const xLabelHeight = hideX ? 0 : metrics.xLabels;
       const yLabelWidth = hideY ? 0 : metrics.yLabels;
       const plot = { x: 0, y: metrics.top, width: Math.max(1, width - yLabelWidth), height: Math.max(1, height - xLabelHeight - legendHeight - metrics.top - metrics.bottom) };
@@ -993,16 +1012,19 @@ export async function renderWidget(treeJSON, {
       const values = gantt ? items.flatMap((item) => [item.start, item.end]) : rule ? items.flatMap((item) => [item.xstart, item.xend]) : items.map((item) => item.value);
       const stacked = type === "bar" ? Object.values(items.reduce((sums, item) => { sums[item.label] = (sums[item.label] ?? 0) + Math.max(0, item.value); return sums; }, {})) : [];
       const maxValue = Math.max(1e-9, ...values, ...stacked, 0);
-      // Swift Charts picks 1/2/5 x 10^k steps with about five ticks.
+      // Swift Charts picks 1/2/5 x 10^k steps with at most four intervals
+      // (9 -> 0, 5, 10; 12 -> 0, 5, 10, 15; 40 -> 0, 10, ... 40). With the
+      // value axis hidden the domain ends at the largest value.
       const magnitude = 10 ** Math.floor(Math.log10(maxValue));
-      const tickStep = [0.1, 0.2, 0.5, 1, 2, 5, 10].map((factor) => factor * magnitude).find((candidate) => maxValue / candidate <= 5) ?? magnitude * 10;
-      const niceMax = Math.ceil(maxValue / tickStep - 1e-9) * tickStep;
+      const tickStep = [0.1, 0.2, 0.5, 1, 2, 5, 10].map((factor) => factor * magnitude).find((candidate) => Math.ceil(maxValue / candidate - 1e-9) <= 4) ?? magnitude * 10;
+      const valueAxisHidden = ["bar-x", "bar-y", "bar-gantt", "rule-x"].includes(type) ? hideX : hideY;
+      const niceMax = valueAxisHidden ? maxValue : Math.ceil(maxValue / tickStep - 1e-9) * tickStep;
       const ticks = Array.from({ length: Math.round(niceMax / tickStep) + 1 }, (_, index) => index * tickStep);
       if (type === "bar" || type === "line" || type === "point" || type === "line-point" || type === "area" || type === "rect") {
         if (!hideY) for (const tick of ticks) {
           const y = plot.y + plot.height - (tick / niceMax) * plot.height;
           svgElement(svg, "line", { x1: plot.x, x2: plot.x + plot.width, y1: y, y2: y, stroke: axisColor, "stroke-opacity": 0.35 });
-          textAt(plot.x + plot.width + metrics.yGap, y + 3, Number(tick.toPrecision(3)).toString(), "start");
+          textAt(plot.x + plot.width + metrics.yGap, y + metrics.yBaseline, Number(tick.toPrecision(3)).toString(), "start");
         }
         const labels = [...new Set(items.map((item) => item.label))];
         const band = plot.width / Math.max(1, labels.length);
@@ -1039,8 +1061,9 @@ export async function renderWidget(treeJSON, {
             if (!group.length) continue;
             const points = group.map((item) => [xOf(item.label), yOf(item.value)]);
             const stroke = cssColor(colorFor(group[0]));
-            if (type === "area") svgElement(svg, "path", { d: `M ${points[0][0]} ${plot.y + plot.height} ${points.map(([x, y]) => `L ${x} ${y}`).join(" ")} L ${points.at(-1)[0]} ${plot.y + plot.height} Z`, fill: stroke, "fill-opacity": 0.5 });
-            if (type !== "point") svgElement(svg, "polyline", { points: points.map((point) => point.join(",")).join(" "), fill: "none", stroke, "stroke-width": 2, "stroke-linejoin": "round" });
+            // AreaMark fills opaque and draws no line.
+            if (type === "area") svgElement(svg, "path", { d: `M ${points[0][0]} ${plot.y + plot.height} ${points.map(([x, y]) => `L ${x} ${y}`).join(" ")} L ${points.at(-1)[0]} ${plot.y + plot.height} Z`, fill: stroke });
+            else if (type !== "point") svgElement(svg, "polyline", { points: points.map((point) => point.join(",")).join(" "), fill: "none", stroke, "stroke-width": 2, "stroke-linejoin": "round" });
             if (type === "point" || type === "line-point") for (const [x, y] of points) svgElement(svg, "circle", { cx: x, cy: y, r: 3, fill: stroke });
           }
         }

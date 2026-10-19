@@ -62,7 +62,7 @@ export const coverage = Object.freeze({
     chip: { state: "supported", props: { text: s(), radius: s(), background: s(), borderColor: s(), color: s() } },
     stat: { state: "supported", props: { title: s(), value: s(), subtitle: s(), color: s(), mutedColor: s() } },
     button: { state: "approximated", note: "Label only; taps run on iPhone", props: { action: s(), actionID: s(), onClick: s() } },
-    toggle: { state: "approximated", note: "Static switch", props: { on: s(), actionID: s(), onClick: s(), stateKey: s() } },
+    toggle: { state: "approximated", note: "Static switch on iOS, static checkbox on macOS", props: { on: s(), actionID: s(), onClick: s(), stateKey: s() } },
     Fragment: { state: "supported", props: {} },
   },
 });
