@@ -145,6 +145,28 @@ final class PackageCacheTests: XCTestCase {
         XCTAssertTrue(fallbackRead.1.contains("build cache"), "status was: \(fallbackRead.1)")
     }
 
+    /// On devices, app and iCloud containers are reached through the
+    /// `/var` -> `/private/var` symlink. An evicted file's path must still map
+    /// to its build-cache copy (regression: the fallback served nothing there).
+    func testReadFallsBackToBuildCacheThroughSymlinkedContainer() throws {
+        let name = "PkgCacheTests-\(UUID().uuidString)"
+        let base = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true).appendingPathComponent("PkgCacheSymlink-\(UUID().uuidString)")
+        let real = base.appendingPathComponent("real", isDirectory: true)
+        let alias = base.appendingPathComponent("alias", isDirectory: true)
+        try FileManager.default.createDirectory(at: real.appendingPathComponent(name), withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(at: alias, withDestinationURL: real)
+        defer { try? FileManager.default.removeItem(at: base) }
+        createdPackageNames.append(name)
+        let pkg = ScriptWidgetPackage(path: alias.appendingPathComponent(name, isDirectory: true), readonly: false)
+
+        XCTAssertTrue(pkg.writeMainFile(content: "THROUGH_SYMLINK").0)
+        XCTAssertEqual(pkg.readMainFile().0, "THROUGH_SYMLINK")
+        evict(pkg.jsxPath)
+        let fallback = pkg.readMainFile()
+        XCTAssertEqual(fallback.0, "THROUGH_SYMLINK", "status was: \(fallback.1)")
+        XCTAssertTrue(fallback.1.contains("build cache"), "status was: \(fallback.1)")
+    }
+
     func testReadReturnsNilWhenNeverCachedAndMissing() {
         // A file that was never successfully read has no cache to fall back to.
         let pkg = makeTempPackage()

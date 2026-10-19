@@ -42,4 +42,5 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 - The share extension imports `.swt` and `.jsx` files shared from a web page (Web Share in Safari), which arrive as files rather than URLs.
 - Importing a package with a malformed `widget.json` now fails instead of replacing the manifest with a legacy one.
 - `fontWeight`, `fontDesign`, and the older `weight` property are now applied to text, dates, icons, labels, and images. They were documented and used by templates but previously ignored.
+- Widgets keep rendering on iPhone and iPad after iCloud evicts their script: the build-cache fallback found no cached copy on devices, where package paths go through the `/var` → `/private/var` symlink and an evicted file's path no longer matched its package root. Found by running the runtime tests on a physical iPad Air.
 - Added local build-cache fallback and proactive package caching for scripts evicted by iCloud. GitHub issue #6 remains open until the physical-iPhone offline acceptance matrix is complete.

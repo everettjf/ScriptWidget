@@ -673,12 +673,29 @@ struct ScriptWidgetPackage {
         return requestICloudDownloadState(for: self.jsxPath)
     }
 
+    /// The path of `url` with symlinks resolved through its deepest existing
+    /// ancestor. `resolvingSymlinksInPath()` leaves a missing file's path
+    /// unresolved, so on devices an iCloud-evicted file under `/private/var/...`
+    /// would no longer share a prefix with its package root, which resolves to
+    /// `/var/...`, and the build-cache fallback would find nothing (issue #6).
+    static func canonicalPath(_ url: URL) -> String {
+        var existing = url.standardizedFileURL
+        var missing: [String] = []
+        while !FileManager.default.fileExists(atPath: existing.path), existing.pathComponents.count > 1 {
+            missing.insert(existing.lastPathComponent, at: 0)
+            existing.deleteLastPathComponent()
+        }
+        var resolved = existing.resolvingSymlinksInPath()
+        for component in missing { resolved.appendPathComponent(component) }
+        return resolved.path
+    }
+
     private func buildCachePath(for fullPath: URL) -> URL? {
         guard let buildDirectory = ScriptManager.getSandboxBuildDirectoryURL() else {
             return nil
         }
-        let packageRootPath = self.path.standardizedFileURL.resolvingSymlinksInPath().path
-        let fullPathValue = fullPath.standardizedFileURL.resolvingSymlinksInPath().path
+        let packageRootPath = Self.canonicalPath(self.path)
+        let fullPathValue = Self.canonicalPath(fullPath)
         let packageRootPrefix = packageRootPath.hasSuffix("/") ? packageRootPath : packageRootPath + "/"
         guard fullPathValue == packageRootPath || fullPathValue.hasPrefix(packageRootPrefix) else {
             return nil

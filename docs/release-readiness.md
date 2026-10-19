@@ -35,7 +35,7 @@ Record OS/build, hardware, commit, pass/fail, peak memory and links to screensho
 
 `ipad-icloud-tests.sh` always runs deterministic iPad tests for Extra Large families, package caching, eviction fallback, placeholder mapping, and every user-visible iCloud state. Supply `SCRIPTWIDGET_IPAD_UDID` to additionally invoke Simulator's `icloud_sync` command.
 
-For real iCloud I/O, connect and trust a signed-in iPad, then set `SCRIPTWIDGET_ICLOUD_DEVICE_DESTINATION` to its xcodebuild destination. For cross-device convergence, connect two signed-in devices using the same iCloud account and set both `SCRIPTWIDGET_ICLOUD_WRITER_DESTINATION` and `SCRIPTWIDGET_ICLOUD_READER_DESTINATION`. The test writes on one device and requires the other to observe the same token within 60 seconds. Real-container tests deliberately fail—not skip—when explicitly enabled but the entitlement/account/container is unavailable.
+The runtime tests also run on a connected device (the test target signs automatically with the app's team); tests that read the repository checkout skip there, since a device cannot see the Mac's disk. For real iCloud I/O, connect and trust a signed-in iPad, then set `SCRIPTWIDGET_ICLOUD_DEVICE_DESTINATION` to its xcodebuild destination. For cross-device convergence, connect two signed-in devices using the same iCloud account and set both `SCRIPTWIDGET_ICLOUD_WRITER_DESTINATION` and `SCRIPTWIDGET_ICLOUD_READER_DESTINATION`. The test writes on one device and requires the other to observe the same token within 60 seconds. Real-container tests deliberately fail—not skip—when explicitly enabled but the entitlement/account/container is unavailable.
 
 ## Performance budgets
 
