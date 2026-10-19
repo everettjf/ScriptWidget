@@ -11,6 +11,9 @@ import { decodePNG, encodePNG } from "./png.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const prefixes = (process.argv[2] ?? "").split(",");
+// SW_SIZES=accessory,small~iphone-375 limits the run to renders whose size
+// ("small", "medium~ipad-1024", ...) starts with one of the values.
+const sizes = process.env.SW_SIZES ? process.env.SW_SIZES.split(",") : null;
 const nativeDirectory = path.join(root, "dist/native-snapshots");
 const webDirectory = path.join(root, "dist/web-snapshots");
 const compareDirectory = path.join(root, "dist/compare");
@@ -68,6 +71,7 @@ const names = await evaluate("window.__items");
 const report = [];
 for (let index = 0; index < names.length; index += 1) {
   if (!prefixes.some((prefix) => names[index].startsWith(prefix))) continue;
+  if (sizes && !sizes.some((size) => names[index].slice(names[index].lastIndexOf("@") + 1).startsWith(size))) continue;
   const nativeFile = path.join(nativeDirectory, fileName(names[index]));
   if (!fs.existsSync(nativeFile)) continue;
   const box = await evaluate(`window.__render(${index})`);

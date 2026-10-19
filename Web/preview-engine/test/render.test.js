@@ -72,6 +72,18 @@ test("stacks give spacers only the leftover space", () => {
   assert.equal(new FlexibleNode().size(null, null)[0], 10);
 });
 
+test("text narrower than an ellipsis draws itself clipped when one line fits", () => {
+  // Measured with case/narrow-text-* on the iOS 27 simulator: BEIJING in a
+  // 9-point, one-line frame draws "Bl" cut at the edge, not a clipped "…".
+  const measurer = { measure: (text) => ({ width: [...text].length * 6, lines: 1 }), ellipsisWidth: () => 10 };
+  const style = { natural: 14, leading: 16, size: 12 };
+  const oneLine = new TextNode("BEIJING", style, measurer).layout(9, 16);
+  assert.deepEqual([oneLine.text, oneLine.clip, oneLine.width], ["BEIJING", true, 9]);
+  // With room for more lines and not even the first character fitting, a
+  // clipped "…" as before.
+  assert.equal(new TextNode("BEIJING", style, measurer).layout(4, 100).text, "…");
+});
+
 test("the macOS profile uses macOS 26 SwiftUI metrics", () => {
   assert.equal(deviceProfiles.macos.platform, "macos");
   assert.deepEqual(deviceProfiles.macos.medium, [329, 170]);

@@ -248,6 +248,8 @@ export async function renderWidget(treeJSON, {
       // A half-point allowance absorbs sub-pixel rounding without fitting an
       // extra glyph that the layout did not measure.
       Object.assign(content.style, { marginTop: `${-trim}px`, width: `${node.frame.width + 0.5}px` });
+      // Clipped narrow text stays on one line and is cut at the frame.
+      if (node.lines?.clip) { content.style.whiteSpace = "pre"; element.style.overflow = "hidden"; }
       if (alignment !== "left") content.style.width = `${node.frame.width}px`;
       if (truncated !== null) Object.assign(content.style, { whiteSpace: "pre", overflow: "hidden" });
       applyTextPaint(content, paint, node.frame.width, node.frame.height);

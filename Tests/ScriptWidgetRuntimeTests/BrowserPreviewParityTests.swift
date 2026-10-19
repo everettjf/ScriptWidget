@@ -228,6 +228,30 @@ final class BrowserPreviewParityTests: XCTestCase {
 
 
     #if os(iOS)
+    /// Prints Label row sizes next to HStacks of the same icon and title
+    /// aligned at center and at the first text baseline, when
+    /// TEST_RUNNER_SCRIPTWIDGET_PRINT_LABELS=1 (renderer calibration).
+    @MainActor
+    func testPrintLabelMetrics() throws {
+        guard ProcessInfo.processInfo.environment["SCRIPTWIDGET_PRINT_LABELS"] == "1" else {
+            throw XCTSkip("Set TEST_RUNNER_SCRIPTWIDGET_PRINT_LABELS=1 to print label metrics")
+        }
+        func size(_ view: some View) -> CGSize {
+            UIHostingController(rootView: view.fixedSize()).sizeThatFits(in: CGSize(width: 10_000, height: 10_000))
+        }
+        for font in [("body", Font.body), ("caption", Font.caption), ("headline", Font.headline), ("size17", Font.system(size: 17))] {
+            for name in ["sunrise.fill", "battery.100", "star.fill", "calendar", "heart.fill", "alarm", "clock", "bolt.fill"] {
+                let label = size(Label("Battery", systemImage: name).font(font.1))
+                let centered = size(HStack(alignment: .center) { Image(systemName: name); Text("Battery") }.font(font.1))
+                let baseline = size(HStack(alignment: .firstTextBaseline) { Image(systemName: name); Text("Battery") }.font(font.1))
+                let icon = size(Image(systemName: name).font(font.1))
+                print("LABEL \(font.0) \(name) label \(label.width)x\(label.height) centered \(centered.width)x\(centered.height) baseline \(baseline.width)x\(baseline.height) icon \(icon.width)x\(icon.height)")
+            }
+        }
+    }
+    #endif
+
+    #if os(iOS)
     /// Prints SwiftUI's first text baseline for sizes and text styles when
     /// TEST_RUNNER_SCRIPTWIDGET_PRINT_BASELINES=1 (renderer calibration).
     @MainActor
