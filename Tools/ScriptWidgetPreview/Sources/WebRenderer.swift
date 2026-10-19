@@ -15,6 +15,7 @@ final class WebRenderer: NSObject, WKNavigationDelegate {
         let image: CGImage?
         let error: String?
         let diagnostics: [String]
+        let missingFetches: [String]
         let milliseconds: Double
     }
 
@@ -55,7 +56,31 @@ final class WebRenderer: NSObject, WKNavigationDelegate {
         Task { @MainActor in loaded?.resume(throwing: error); loaded = nil }
     }
 
+    /// GET responses for URLs scripts asked for, fetched once per run. The web
+    /// engine has no network; giving it the same bodies the native runtime
+    /// loads keeps live-data widgets comparable.
+    private var responses: [String: String] = [:]
+
     func render(files: [String: String], resources: [String: String], family: PreviewFamily, dark: Bool, prelude: String) async -> Result {
+        var result = await renderOnce(files: files, resources: resources, family: family, dark: dark, prelude: prelude)
+        for _ in 0..<3 {
+            let missing = result.missingFetches.filter { responses[$0] == nil }
+            if missing.isEmpty { break }
+            for url in missing { responses[url] = await Self.download(url) ?? "" }
+            result = await renderOnce(files: files, resources: resources, family: family, dark: dark, prelude: prelude)
+        }
+        return result
+    }
+
+    private static func download(_ string: String) async -> String? {
+        guard let url = URL(string: string), ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return nil }
+        var request = URLRequest(url: url, timeoutInterval: 10)
+        request.httpMethod = "GET"
+        guard let (data, _) = try? await URLSession.shared.data(for: request) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
+    private func renderOnce(files: [String: String], resources: [String: String], family: PreviewFamily, dark: Bool, prelude: String) async -> Result {
         let started = Date()
         do {
             try await prepare()
@@ -67,17 +92,22 @@ final class WebRenderer: NSObject, WKNavigationDelegate {
                 "execute": [
                     "files": files, "entry": entry, "manifest": manifest, "prelude": prelude,
                     "environments": ["widget-size": family.rawValue, "widget-param": "", "widget-rendering-mode": "fullColor"],
-                    "preview": ["appearance": dark ? "dark" : "light"], "fixtures": [String: Any](),
+                    "preview": ["appearance": dark ? "dark" : "light"], "fixtures": ["fetch": responses.map { ["url": $0.key, "body": $0.value] }],
                 ],
                 // The parity prelude's fixed clock, as on the native side.
                 "render": ["family": family.rawValue, "profile": "macos", "appearance": dark ? "dark" : "light", "resources": resources, "now": 1_767_268_800_000],
             ]
             let value = try await webView.callAsyncJavaScript("return await window.__render(job)", arguments: ["job": job], contentWorld: .page)
             guard let output = value as? [String: Any] else { throw NSError(domain: "ScriptWidgetPreview", code: 3) }
-            let diagnostics = ((output["diagnostics"] as? [[String: Any]] ?? []) + (output["renderDiagnostics"] as? [[String: Any]] ?? []))
-                .compactMap { $0["message"] as? String }
+            let all = (output["diagnostics"] as? [[String: Any]] ?? []) + (output["renderDiagnostics"] as? [[String: Any]] ?? [])
+            let diagnostics = all.compactMap { $0["message"] as? String }
+            // "No fetch fixture for GET <url>; ..."
+            let missing = all.filter { $0["code"] as? String == "fixture.fetch.missing" }.compactMap { item -> String? in
+                guard let message = item["message"] as? String, let start = message.range(of: "for GET ") else { return nil }
+                return message[start.upperBound...].components(separatedBy: "; ").first
+            }
             if let error = output["error"] as? [String: Any] {
-                return Result(image: nil, error: "\(error["kind"] ?? "error"): \(error["message"] ?? "")", diagnostics: diagnostics, milliseconds: Date().timeIntervalSince(started) * 1000)
+                return Result(image: nil, error: "\(error["kind"] ?? "error"): \(error["message"] ?? "")", diagnostics: diagnostics, missingFetches: missing, milliseconds: Date().timeIntervalSince(started) * 1000)
             }
             guard let box = output["box"] as? [String: Double] else { throw NSError(domain: "ScriptWidgetPreview", code: 4) }
             let configuration = WKSnapshotConfiguration()
@@ -85,9 +115,9 @@ final class WebRenderer: NSObject, WKNavigationDelegate {
             configuration.afterScreenUpdates = true
             let snapshot = try await webView.takeSnapshot(configuration: configuration)
             let image = Self.bitmap(snapshot, width: Int((box["width"] ?? 0) * 2), height: Int((box["height"] ?? 0) * 2))
-            return Result(image: image, error: nil, diagnostics: diagnostics, milliseconds: Date().timeIntervalSince(started) * 1000)
+            return Result(image: image, error: nil, diagnostics: diagnostics, missingFetches: missing, milliseconds: Date().timeIntervalSince(started) * 1000)
         } catch {
-            return Result(image: nil, error: error.localizedDescription, diagnostics: [], milliseconds: Date().timeIntervalSince(started) * 1000)
+            return Result(image: nil, error: error.localizedDescription, diagnostics: [], missingFetches: [], milliseconds: Date().timeIntervalSince(started) * 1000)
         }
     }
 

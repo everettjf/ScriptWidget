@@ -34,8 +34,13 @@ export function executorBootstrap(kernel) {
     "GPU", "WorkerGlobalScope", "DedicatedWorkerGlobalScope", "WorkerNavigator", "WorkerLocation",
   ];
 
+  // The worker's own values, read before the kernel installs its APIs:
+  // scrub() removes these and keeps the kernel's replacements (fetch).
+  const workerValues = new Map(hidden.map((name) => [name, scope[name]]));
+
   function scrub() {
     for (const name of hidden) {
+      if (scope[name] !== workerValues.get(name)) continue;
       try {
         Object.defineProperty(scope, name, { value: undefined, writable: false, configurable: false, enumerable: false });
       } catch {
