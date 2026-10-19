@@ -65,10 +65,7 @@ function TemplateCard({ template, onOpen }: { template: Template; onOpen(): void
     <button type="button" onClick={onOpen}
       className="template-card group flex h-full w-full flex-col gap-2 rounded-xl border bg-sidebar p-3 text-left outline-none hover:border-primary/50 hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50">
       <LivePreview template={template} family="small" maxWidth={150} maxHeight={150} />
-      <span className="flex items-center gap-1.5">
-        <span className="truncate font-semibold">{template.name}</span>
-        {template.featured && <span className="rounded-full bg-primary/10 px-1.5 text-[10px] font-medium text-primary">Featured</span>}
-      </span>
+      <span className="truncate font-semibold">{template.name}</span>
       <span className="text-[11px] text-primary">{template.source === "gallery" ? "Gallery" : categoryLabel(template.category)}</span>
       <span className="line-clamp-2 text-xs text-muted-foreground">{template.description}</span>
     </button>
@@ -106,9 +103,9 @@ function TemplateDetail({ template, onBack, onCopy }: { template: Template; onBa
               <p className="mt-1.5 flex flex-wrap gap-1">{template.tags.map((tag) => <span key={tag} className="rounded-full border px-2 text-[11px] text-muted-foreground">{tag}</span>)}</p>
             )}
           </div>
-          <div role="tablist" aria-label="Widget size" className="flex flex-wrap gap-1">
+          <div role="group" aria-label="Widget size" className="flex flex-wrap gap-1">
             {families.map((item) => (
-              <button key={item} role="tab" type="button" aria-selected={item === family} onClick={() => setFamily(item)}
+              <button key={item} type="button" aria-pressed={item === family} onClick={() => setFamily(item)}
                 className={cn("rounded-full border px-2.5 py-0.5 text-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50", item === family ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-accent")}>
                 {familyLabels[item]}
               </button>
@@ -121,9 +118,9 @@ function TemplateDetail({ template, onBack, onCopy }: { template: Template; onBa
         </div>
         <div className="flex min-w-0 flex-col gap-2">
           <div className="flex items-center gap-1">
-            <div role="tablist" aria-label="Files" className="flex min-w-0 flex-1 flex-wrap gap-1">
+            <div role="group" aria-label="Files" className="flex min-w-0 flex-1 flex-wrap gap-1">
               {paths.map((item) => (
-                <button key={item} role="tab" type="button" aria-selected={item === path} onClick={() => setPath(item)}
+                <button key={item} type="button" aria-pressed={item === path} onClick={() => setPath(item)}
                   className={cn("rounded-md px-2 py-0.5 font-mono text-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50", item === path ? "bg-accent font-semibold" : "text-muted-foreground hover:bg-accent")}>
                   {item}
                 </button>
@@ -175,9 +172,9 @@ export function TemplatesDialog({ open, onOpenChange, onChoose }: { open: boolea
                 <Input id="template-search" type="search" placeholder="Search templates" aria-label="Search templates" className="pl-8"
                   value={query} onChange={(event) => setQuery(event.target.value)} />
               </div>
-              <div role="tablist" aria-label="Category" className="flex flex-wrap gap-1">
+              <div role="group" aria-label="Category" className="flex flex-wrap gap-1">
                 {["all", "featured", ...categories].map((item) => (
-                  <button key={item} role="tab" type="button" aria-selected={item === category} onClick={() => setCategory(item)}
+                  <button key={item} type="button" aria-pressed={item === category} onClick={() => setCategory(item)}
                     className={cn("rounded-full border px-2.5 py-0.5 text-xs outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50", item === category ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:bg-accent")}>
                     {item === "all" ? "All" : item === "featured" ? "Featured" : categoryLabel(item)}
                   </button>

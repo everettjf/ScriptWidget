@@ -28,7 +28,8 @@ test("legacy templates gain a manifest", () => {
   assert.equal(report.manifest?.description, "A clock");
   assert.ok(project.files["image/a.png"] instanceof Uint8Array);
   assert.match(resourceURLs(project.files)["image/a.png"] ?? "", /^data:image\/png;base64,iVBORw0K/);
-  assert.deepEqual(Object.keys(textFiles(project.files)).sort(), ["main.jsx", "meta.json", "widget.json"]);
+  // meta.json's fields move into widget.json, so the copy carries one manifest.
+  assert.deepEqual(Object.keys(textFiles(project.files)).sort(), ["main.jsx", "widget.json"]);
 });
 
 test("template copies declare the sizes their script handles", () => {

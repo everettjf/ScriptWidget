@@ -13,6 +13,8 @@ export function sandboxFrame(compilerWorkerSource, executorWorkerSource) {
   const reply = (message) => window.parent.postMessage(message, parentOrigin);
   // Startup progress and uncaught errors, before the parent origin is known.
   const report = (text) => window.parent.postMessage({ type: "log", message: String(text).slice(0, 500) }, "*");
+  // Lets the parent tell a running sandbox from a blocked one.
+  window.parent.postMessage({ type: "booted" }, "*");
   window.addEventListener("error", (event) => report(`frame error: ${event.message}`));
   window.addEventListener("unhandledrejection", (event) => report(`frame rejection: ${event.reason?.message ?? event.reason}`));
   const errorResult = (kind, message) => JSON.stringify({ tree: null, error: { kind, message }, logs: [], diagnostics: [] });

@@ -16,13 +16,16 @@ the browser and previews them itself.
 
 ## Create and edit
 
-- **New** starts a blank Package 2.0 project. **Import** opens a `.swt` or `.zip`.
+- **New** starts a blank Package 2.0 project. **Import** opens a `.swt` or `.zip`;
+  you can also drop a package anywhere on the page. Dropping a PNG, JPEG, WebP,
+  or GIF adds it to the open project as an image.
 - **Gallery** lists the 78 bundled templates and the Gallery widgets with live
   previews. Filter by category or **Featured**, or search. Open one to preview
   it at every size it handles, read its files, copy code, and **Create a copy**:
   the copy becomes a new project saved in this browser, and the template stays
-  unchanged. A copy of a template whose script handles Lock Screen or
-  extra-large sizes declares them in its `widget.json`.
+  unchanged. The copy's `widget.json` carries the template's description,
+  category, and tags, and declares the Lock Screen or extra-large sizes its
+  script handles.
 - The file list shows `widget.json`, the entry file, extra scripts for
   `$import`, and images under `image/`. **Add image…** uploads PNG, JPEG, WebP,
   or GIF files (up to 8 MB) for `<image id="name" />` and `<gif file="name" />`.
@@ -42,6 +45,9 @@ the browser and previews them itself.
   (for example, an SF Symbol drawn with a look-alike icon, or a property the
   iPhone runtime ignores). **Console** shows `console.log` output. **Package**
   summarizes the manifest. **Fixtures** maps URLs to responses.
+- If a content blocker or browser setting blocks the preview sandbox
+  (`sandbox.html`), the preview says so within a few seconds. Allow the site or
+  use another browser; editing, export, and Install on iPhone keep working.
 - The web preview never uses the network. `fetch` and `$http` read the
   **Fixtures** JSON; location and health need fixtures too. Fixtures stay in
   the browser and are not exported.

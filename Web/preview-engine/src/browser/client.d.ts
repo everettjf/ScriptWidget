@@ -24,4 +24,6 @@ export function createPreviewSandbox(options: {
   container?: HTMLElement;
   onLog?: (level: string, message: string) => void;
   startupTimeoutMilliseconds?: number;
+  /// How long a loaded frame may stay silent before it counts as blocked.
+  blockedFrameMilliseconds?: number;
 }): PreviewSandbox;

@@ -96,6 +96,8 @@ export function projectFromTemplate(template: Template): Project {
       .filter(([family, size]) => family.startsWith("system") ? manifest.supportedFamilies.includes(family) || source.includes(`"${size}"`) : source.includes(`"${size}"`))
       .map(([family]) => family);
     manifest.supportedFamilies = [...new Set([...manifest.supportedFamilies, ...handled])];
+    // widget.json now carries meta.json's description, category, and tags.
+    delete files["meta.json"];
     files["widget.json"] = `${JSON.stringify(manifest, null, 2)}\n`;
   }
   return createProject(template.name, files);

@@ -1,5 +1,6 @@
 import { EditorView } from "@codemirror/view";
-import { defaultHighlightStyle, syntaxHighlighting } from "@codemirror/language";
+import { HighlightStyle, defaultHighlightStyle, syntaxHighlighting } from "@codemirror/language";
+import { tags } from "@lezer/highlight";
 
 const palette = {
   light: {
@@ -83,10 +84,25 @@ function editorTheme(colors, dark) {
   );
 }
 
+// The default highlight style is tuned for light backgrounds: its blue
+// variable and property names are unreadable on the dark editor.
+const darkHighlightStyle = HighlightStyle.define([
+  { tag: [tags.keyword, tags.controlKeyword, tags.moduleKeyword, tags.operatorKeyword, tags.bool, tags.null], color: "#FF7AB2" },
+  { tag: [tags.string, tags.special(tags.string)], color: "#FF8170" },
+  { tag: [tags.number, tags.regexp], color: "#D9C97C" },
+  { tag: [tags.comment, tags.lineComment, tags.blockComment], color: "#7F8C98", fontStyle: "italic" },
+  { tag: [tags.tagName, tags.typeName, tags.className], color: "#5DD8FF" },
+  { tag: tags.attributeName, color: "#B281EB" },
+  { tag: [tags.propertyName, tags.function(tags.variableName), tags.function(tags.propertyName)], color: "#67B7A4" },
+  { tag: tags.definition(tags.variableName), color: "#4EB0CC" },
+  { tag: [tags.variableName, tags.operator, tags.punctuation, tags.bracket], color: "#E8E8ED" },
+  { tag: tags.invalid, color: "#FF453A" },
+]);
+
 export function studioTheme(mode) {
   const isDark = mode === "dark";
   return [
     editorTheme(isDark ? palette.dark : palette.light, isDark),
-    syntaxHighlighting(defaultHighlightStyle),
+    syntaxHighlighting(isDark ? darkHighlightStyle : defaultHighlightStyle),
   ];
 }
