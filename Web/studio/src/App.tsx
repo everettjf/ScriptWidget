@@ -140,7 +140,10 @@ export function App() {
         />
       </main>
       <TemplatesDialog open={templatesOpen} onOpenChange={setTemplatesOpen}
-        onChoose={(template: Template) => { setTemplatesOpen(false); void model.addProject(projectFromTemplate(template)); }} />
+        onChoose={(template: Template) => {
+          setTemplatesOpen(false);
+          void model.addProject(projectFromTemplate(template)).then(() => toast.success(`Created a copy of ${template.name}`, { description: "It's saved in this browser. Export a .swt to keep it elsewhere." }));
+        }} />
       <NewFileDialog open={newFileOpen} onOpenChange={setNewFileOpen} files={project.files}
         onCreate={(file) => { model.updateFiles({ [file]: /\.json$/i.test(file) ? "{}\n" : "" }); model.openFile(file); }} />
       <InstallDialog fileName={installedFile} onOpenChange={(open) => { if (!open) setInstalledFile(null); }} />

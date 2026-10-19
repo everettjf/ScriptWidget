@@ -16,8 +16,13 @@ the browser and previews them itself.
 
 ## Create and edit
 
-- **New** starts a blank Package 2.0 project. **Templates** starts from any of
-  the 70 bundled templates or the Gallery. **Import** opens a `.swt` or `.zip`.
+- **New** starts a blank Package 2.0 project. **Import** opens a `.swt` or `.zip`.
+- **Gallery** lists the 78 bundled templates and the Gallery widgets with live
+  previews. Filter by category or **Featured**, or search. Open one to preview
+  it at every size it handles, read its files, copy code, and **Create a copy**:
+  the copy becomes a new project saved in this browser, and the template stays
+  unchanged. A copy of a template whose script handles Lock Screen or
+  extra-large sizes declares them in its `widget.json`.
 - The file list shows `widget.json`, the entry file, extra scripts for
   `$import`, and images under `image/`. **Add image…** uploads PNG, JPEG, WebP,
   or GIF files (up to 8 MB) for `<image id="name" />` and `<gif file="name" />`.

@@ -51,7 +51,12 @@ struct ContentView: View {
         .onChange(of: model.selection) { model.refresh() }
         .onChange(of: model.family) { model.refresh() }
         .onChange(of: model.dark) { model.refresh() }
-        .onAppear { if model.selection == nil { model.selection = model.entries.first?.id } }
+        .onAppear {
+            // `--select <id>` opens a corpus entry, for example template/Plant Care.
+            let arguments = ProcessInfo.processInfo.arguments
+            let requested = arguments.firstIndex(of: "--select").flatMap { $0 + 1 < arguments.count ? arguments[$0 + 1] : nil }
+            if model.selection == nil { model.selection = model.entries.first { $0.id == requested }?.id ?? model.entries.first?.id }
+        }
     }
 
     private func pane(_ title: String, image: CGImage?, error: String?, milliseconds: Double?) -> some View {

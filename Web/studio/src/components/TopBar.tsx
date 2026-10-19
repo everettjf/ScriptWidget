@@ -37,7 +37,7 @@ export function TopBar({ projectName, projectID, onRename, onNew, onTemplates, o
       </label>
       <nav className="flex flex-wrap gap-1.5" aria-label="Project actions">
         <Button id="new-project" variant="outline" size="sm" onClick={onNew}><Plus />New</Button>
-        <Button id="open-templates" variant="outline" size="sm" onClick={onTemplates}><LayoutGrid />Templates</Button>
+        <Button id="open-templates" variant="outline" size="sm" onClick={onTemplates}><LayoutGrid />Gallery</Button>
         <Button id="import-package" variant="outline" size="sm" onClick={onImport}><Upload />Import</Button>
         <Button id="export-package" variant="outline" size="sm" onClick={onExport}><Download />Export .swt</Button>
         <Button id="install-package" size="sm" onClick={onInstall}><Smartphone />Install on iPhone</Button>

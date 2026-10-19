@@ -35,7 +35,7 @@ States: **supported** renders like iPhone within measured tolerances; **approxim
 | `chip` | supported |  |
 | `stat` | supported |  |
 | `button` | approximated | Label only; taps run on iPhone |
-| `toggle` | approximated | Static switch |
+| `toggle` | approximated | Static switch on iOS, static checkbox on macOS |
 | `Fragment` | supported |  |
 
 ## General modifier properties

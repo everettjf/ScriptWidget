@@ -20,6 +20,10 @@ export interface Template {
   name: string;
   description: string;
   category: string;
+  /// Curated: Gallery widgets and templates whose meta.json sets featured.
+  featured?: boolean;
+  tags?: string[];
+  icon?: string | null;
   files: Record<string, string | { base64: string }>;
 }
 
@@ -85,6 +89,13 @@ export function projectFromTemplate(template: Template): Project {
     try { metadata = typeof meta === "string" ? JSON.parse(meta) : {}; } catch { metadata = {}; }
     const manifest = legacyManifest(template.name, metadata);
     manifest.id = `local.${projectID().toLowerCase()}`;
+    // iPhone runs legacy scripts at every size; declare the sizes the script
+    // handles so the copy previews and exports them.
+    const source = typeof files["main.jsx"] === "string" ? files["main.jsx"] : "";
+    const handled = (Object.entries(familyEnvironment) as Array<[WidgetFamilyName, WidgetSize]>)
+      .filter(([family, size]) => family.startsWith("system") ? manifest.supportedFamilies.includes(family) || source.includes(`"${size}"`) : source.includes(`"${size}"`))
+      .map(([family]) => family);
+    manifest.supportedFamilies = [...new Set([...manifest.supportedFamilies, ...handled])];
     files["widget.json"] = `${JSON.stringify(manifest, null, 2)}\n`;
   }
   return createProject(template.name, files);

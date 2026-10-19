@@ -165,7 +165,8 @@ struct BrowserPreviewSnapshotView: View {
 
 final class BrowserPreviewParityTests: XCTestCase {
     #if os(iOS)
-    /// Writes native PNGs for the corpus and Web/preview-engine/test/render/cases.json
+    /// Writes native PNGs for the corpus, Web/preview-engine/test/render/cases.json,
+    /// and test/catalog/catalog.json
     /// to Web/preview-engine/dist/native-snapshots when
     /// TEST_RUNNER_SCRIPTWIDGET_EXPORT_SNAPSHOTS=1.
     @MainActor
@@ -193,8 +194,17 @@ final class BrowserPreviewParityTests: XCTestCase {
         let scratch = ScriptWidgetPackage(path: FileManager.default.temporaryDirectory, readonly: true)
         for item in cases {
             let family = item["size"] as? String ?? "medium"
-            guard let render = allRenders.first(where: { $0.profile == BrowserPreviewSnapshotProfile.defaultProfile && $0.family == family }) else { continue }
+            let profile = item["profile"] as? String ?? BrowserPreviewSnapshotProfile.defaultProfile
+            guard let render = allRenders.first(where: { $0.profile == profile && $0.family == family }) else { continue }
             jobs.append(("case/\(item["name"] as? String ?? "")\(render.suffix)", render, prelude + (item["source"] as? String ?? ""), scratch, item["dark"] as? Bool ?? false))
+        }
+        // The component catalog (test/catalog/catalog.json), one size per item.
+        let catalogURL = Self.repositoryRoot.appendingPathComponent("Web/preview-engine/test/catalog/catalog.json")
+        let catalog = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: catalogURL)) as? [[String: Any]])
+        for item in catalog {
+            let family = item["size"] as? String ?? "medium"
+            guard let render = allRenders.first(where: { $0.profile == BrowserPreviewSnapshotProfile.defaultProfile && $0.family == family }) else { continue }
+            jobs.append(("catalog/\(item["id"] as? String ?? "")\(render.suffix)", render, prelude + (item["source"] as? String ?? ""), scratch, item["dark"] as? Bool ?? false))
         }
         // Absolute <date> styles use the parity prelude's fixed clock.
         ScriptWidgetRenderClock.fixedNow = Date(timeIntervalSince1970: 1_767_268_800)

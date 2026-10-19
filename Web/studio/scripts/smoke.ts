@@ -30,7 +30,10 @@ async function desktop(): Promise<void> {
     await page.waitFor("document.querySelectorAll('.template-card').length > 50");
     const count = await page.evaluate<number>("document.querySelectorAll('.template-card').length");
     await page.evaluate("[...document.querySelectorAll('.template-card')].find((card) => card.textContent.includes('Image Basic Usage') || card.textContent.includes('Image')).click()");
-    await page.waitFor("document.getElementById('preview-status').textContent.startsWith('Web fast preview') && !!document.querySelector('.sw-widget img')", 20000);
+    // The detail view shows the source and a live preview; copy it into a project.
+    await page.waitFor("!!document.getElementById('template-copy') && document.getElementById('template-source').textContent.includes('$render')");
+    await page.evaluate("document.getElementById('template-copy').click()");
+    await page.waitFor("!document.getElementById('template-detail') && document.getElementById('preview-status').textContent.startsWith('Web fast preview') && !!document.querySelector('.sw-widget img')", 20000);
     console.log(`templates: ${count}; image template rendered`);
     // Import a .swt through the file input, as a user would.
     await page.evaluate(`(async () => {

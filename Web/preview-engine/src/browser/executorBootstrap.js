@@ -34,8 +34,17 @@ export function executorBootstrap(kernel) {
     "GPU", "WorkerGlobalScope", "DedicatedWorkerGlobalScope", "WorkerNavigator", "WorkerLocation",
   ];
 
+  // The worker's own values, read before the kernel installs its APIs:
+  // scrub() removes these and keeps the kernel's replacements (fetch).
+  // Some getters throw instead of returning (Firefox: storage APIs such as
+  // caches in an opaque-origin worker throw NS_ERROR_FAILURE).
+  const unreadable = {};
+  const read = (name) => { try { return scope[name]; } catch { return unreadable; } };
+  const workerValues = new Map(hidden.map((name) => [name, read(name)]));
+
   function scrub() {
     for (const name of hidden) {
+      if (read(name) !== workerValues.get(name)) continue;
       try {
         Object.defineProperty(scope, name, { value: undefined, writable: false, configurable: false, enumerable: false });
       } catch {

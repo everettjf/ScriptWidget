@@ -16,6 +16,7 @@ if (fontMode === "inter") {
 const sandbox = createPreviewSandbox({ sandboxDocument, assetBaseURL: new URL("../dist/assets/", import.meta.url) });
 const corpus = await (await fetch("../dist/parity-corpus.json")).json();
 const cases = await (await fetch("../test/render/cases.json")).json();
+const catalog = await (await fetch("../test/catalog/catalog.json")).json();
 
 // Every iOS profile and family, deduplicated by size like
 // BrowserPreviewSnapshotProfile.renders in the native tests. Names without a
@@ -35,7 +36,10 @@ for (const [profile, sizes] of Object.entries(deviceProfiles)) {
 }
 const items = [];
 for (const item of corpus.corpus) for (const render of renders) items.push({ name: `${item.name}${render.suffix}`, ...render, files: item.files, resources: item.resources });
-for (const item of cases) items.push({ name: `case/${item.name}@${item.size}`, profile: caseProfile, family: item.size, appearance: item.dark ? "dark" : "light", files: { "main.jsx": item.source } });
+// A case may name an iOS profile ("profile": "iphone-375"); its name then
+// carries the "~profile" suffix like the native export.
+for (const item of cases) items.push({ name: `case/${item.name}@${item.size}${item.profile && item.profile !== defaultProfile ? `~${item.profile}` : ""}`, profile: caseProfile === defaultProfile ? item.profile ?? caseProfile : caseProfile, family: item.size, appearance: item.dark ? "dark" : "light", files: { "main.jsx": item.source } });
+for (const item of catalog) items.push({ name: `catalog/${item.id}@${item.size}`, profile: caseProfile, family: item.size, appearance: item.dark ? "dark" : "light", files: { "main.jsx": item.source } });
 
 window.__items = items.map((item) => item.name);
 window.__render = async (index) => {

@@ -1,0 +1,164 @@
+<title>ScriptWidget 组件三端对比</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a calibration sheet. Summary strip, filter bar, then one row per
+   catalog item with the iOS pair and the macOS pair side by side. */
+:root {
+  --bg: #f4f5f7; --panel: #ffffff; --fg: #17191d; --muted: #5d6470; --line: #dde0e6;
+  --accent: #2357c6; --good: #1d7a46; --warn: #a76a00; --bad: #c0362c; --checker: #eceef2;
+  --sans: "IBM Plex Sans", -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121418; --panel: #1b1e24; --fg: #e8eaee; --muted: #9aa1ad; --line: #2c3039;
+  --accent: #7ea2f0; --good: #4cc27f; --warn: #e2a63a; --bad: #f0746a; --checker: #252931; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121418; --panel: #1b1e24; --fg: #e8eaee; --muted: #9aa1ad; --line: #2c3039;
+  --accent: #7ea2f0; --good: #4cc27f; --warn: #e2a63a; --bad: #f0746a; --checker: #252931; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 14px; line-height: 1.5; }
+.wrap { max-width: 1480px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1 { font-size: 26px; font-weight: 600; margin: 0 0 6px; text-wrap: balance; }
+.lede { color: var(--muted); max-width: 72ch; margin: 0 0 22px; }
+.lede code { font-family: var(--mono); font-size: 12.5px; }
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin-bottom: 22px; }
+.metric { background: var(--panel); padding: 14px 16px; }
+.metric .label { font-size: 12px; color: var(--muted); letter-spacing: .02em; }
+.metric .value { font-family: var(--mono); font-size: 24px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.metric .sub { font-size: 12px; color: var(--muted); }
+h2 { font-size: 16px; font-weight: 600; margin: 28px 0 10px; }
+.tablebox { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+th, td { padding: 7px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th { font-size: 12px; color: var(--muted); font-weight: 500; }
+td.num, th.num { text-align: right; font-family: var(--mono); }
+tr:last-child td { border-bottom: 0; }
+.bar { display: inline-block; height: 6px; border-radius: 3px; background: var(--accent); vertical-align: middle; margin-left: 8px; opacity: .7; }
+.controls { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; background: var(--bg); display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); margin: 28px 0 16px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--panel); color: var(--fg); padding: 3px 10px; border-radius: 999px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+.chip:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+select, input[type="search"] { font: inherit; font-size: 13px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); }
+input[type="search"] { width: 180px; }
+label.inline { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--muted); }
+.count { font-size: 13px; color: var(--muted); margin-left: auto; }
+.items { display: flex; flex-direction: column; gap: 14px; }
+.item { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; margin-bottom: 10px; }
+.head .id { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.head .title { font-weight: 600; font-size: 15px; }
+.tag { font-family: var(--mono); font-size: 11.5px; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 0 5px; }
+.note { font-size: 13px; color: var(--warn); margin: -4px 0 10px; }
+.platforms { display: flex; flex-wrap: wrap; gap: 18px 28px; }
+.platform { min-width: 0; }
+.platform h3 { display: flex; gap: 10px; align-items: baseline; font-size: 12.5px; font-weight: 500; margin: 0 0 6px; color: var(--muted); }
+.score { font-family: var(--mono); font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
+.score.good { color: var(--good); } .score.warn { color: var(--warn); } .score.bad { color: var(--bad); }
+.shots { display: flex; flex-wrap: wrap; gap: 10px; }
+figure { margin: 0; min-width: 0; }
+figure img { display: block; max-width: 100%; height: auto; border-radius: 6px; background: repeating-conic-gradient(var(--checker) 0 25%, transparent 0 50%) 0 0 / 12px 12px; }
+figcaption { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+details { margin-top: 10px; }
+summary { cursor: pointer; font-size: 12.5px; color: var(--accent); }
+pre { font-family: var(--mono); font-size: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; margin: 8px 0 0; }
+.hide-diff figure.delta { display: none; }
+@media (max-width: 560px) { .count { margin-left: 0; } input[type="search"] { width: 100%; } }
+</style>
+
+<div class="wrap">
+  <h1>ScriptWidget 组件三端对比</h1>
+  <p class="lede">100 个脚本，每个脚本分别在 iOS 原生、网页引擎（iOS 配置）、macOS 原生、网页引擎（macOS 配置）上渲染。百分比是原生与网页逐像素相同的比例：任一颜色通道差超过 48 即算不同。iOS 原生来自 iOS 27 模拟器的 <code>ImageRenderer</code>，macOS 原生来自 ScriptWidget Preview，网页来自 Chrome（iOS）和 WKWebView（macOS）。iOS 与 macOS 的小组件尺寸不同（例如小号 158 pt 对 170 pt），所以两个原生之间只并排展示，不做像素比较。<span id="generated"></span></p>
+
+  <div class="summary" id="summary"></div>
+
+  <h2>按组件分组</h2>
+  <div class="tablebox"><table id="groups"></table></div>
+
+  <h2>按标签统计</h2>
+  <p class="lede" style="margin-bottom:10px">每个用到该标签的条目都计入一次。</p>
+  <div class="tablebox"><table id="tags"></table></div>
+
+  <div class="controls">
+    <div class="chips" id="chips" role="group" aria-label="按分组筛选"></div>
+    <label class="inline" for="sort">排序
+      <select id="sort">
+        <option value="id">按编号</option>
+        <option value="ios">iOS 差异从大到小</option>
+        <option value="mac">macOS 差异从大到小</option>
+      </select>
+    </label>
+    <input type="search" id="search" placeholder="搜索标题或标签" aria-label="搜索标题或标签">
+    <label class="inline" for="showDiff"><input type="checkbox" id="showDiff" checked> 显示差异图</label>
+    <span class="count" id="count"></span>
+  </div>
+  <div class="items" id="items"></div>
+</div>
+
+<script>
+const data = /*__DATA__*/null;
+const items = data.items;
+const $ = (id) => document.getElementById(id);
+const same = (diff) => diff === null ? null : 100 - diff;
+const fmt = (value) => value === null ? "—" : value.toFixed(2) + "%";
+const grade = (diff) => diff === null ? "" : diff <= 1 ? "good" : diff <= 5 ? "warn" : "bad";
+const meanSame = (list) => { const values = list.filter((v) => v !== null); return values.length ? 100 - values.reduce((a, b) => a + b, 0) / values.length : null; };
+const share = (list, limit) => { const values = list.filter((v) => v !== null); return values.length ? 100 * values.filter((v) => v <= limit).length / values.length : null; };
+const median = (list) => { const values = list.filter((v) => v !== null).sort((a, b) => a - b); return values.length ? values[Math.floor(values.length / 2)] : null; };
+const esc = (text) => String(text).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+$("generated").textContent = ` 生成于 ${data.generated}。`;
+const iosDiffs = items.map((i) => i.ios.diff), macDiffs = items.map((i) => i.mac.diff);
+$("summary").innerHTML = [
+  ["iOS 原生 vs 网页", fmt(meanSame(iosDiffs)), `平均相同像素 · 中位差异 ${fmt(median(iosDiffs))}`],
+  ["iOS ≥ 99% 相同", `${share(iosDiffs, 1).toFixed(0)}%`, `≤ 5% 差异：${share(iosDiffs, 5).toFixed(0)}%`],
+  ["macOS 原生 vs 网页", fmt(meanSame(macDiffs)), `平均相同像素 · 中位差异 ${fmt(median(macDiffs))}`],
+  ["macOS ≥ 99% 相同", `${share(macDiffs, 1).toFixed(0)}%`, `≤ 5% 差异：${share(macDiffs, 5).toFixed(0)}%`],
+  ["条目", String(items.length), `${new Set(items.flatMap((i) => i.tags)).size} 种标签 · ${new Set(items.map((i) => i.group)).size} 个分组`],
+].map(([label, value, sub]) => `<div class="metric"><div class="label">${label}</div><div class="value">${value}</div><div class="sub">${sub}</div></div>`).join("");
+
+function table(element, rows, first) {
+  element.innerHTML = `<thead><tr><th>${first}</th><th class="num">条目</th><th class="num">iOS 平均相同</th><th class="num">iOS ≥99%</th><th class="num">macOS 平均相同</th><th class="num">macOS ≥99%</th></tr></thead><tbody>` +
+    rows.map(([name, list]) => {
+      const ios = meanSame(list.map((i) => i.ios.diff)), mac = meanSame(list.map((i) => i.mac.diff));
+      const bar = (value) => value === null ? "" : `<span class="bar" style="width:${Math.max(2, (value - 90) * 6)}px"></span>`;
+      return `<tr><td>${esc(name)}</td><td class="num">${list.length}</td><td class="num">${fmt(ios)}${bar(ios)}</td><td class="num">${share(list.map((i) => i.ios.diff), 1).toFixed(0)}%</td><td class="num">${fmt(mac)}${bar(mac)}</td><td class="num">${share(list.map((i) => i.mac.diff), 1).toFixed(0)}%</td></tr>`;
+    }).join("") + "</tbody>";
+}
+const groups = [...new Set(items.map((i) => i.group))];
+table($("groups"), groups.map((g) => [g, items.filter((i) => i.group === g)]), "分组");
+const tags = [...new Set(items.flatMap((i) => i.tags))].sort();
+table($("tags"), tags.map((t) => [`<${t}>`, items.filter((i) => i.tags.includes(t))]).sort((a, b) => meanSame(a[1].map((i) => i.ios.diff)) - meanSame(b[1].map((i) => i.ios.diff))), "标签");
+
+let activeGroup = "全部";
+$("chips").innerHTML = ["全部", ...groups].map((g) => `<button class="chip" type="button" data-group="${esc(g)}" aria-pressed="${g === activeGroup}">${esc(g)}</button>`).join("");
+$("chips").addEventListener("click", (event) => {
+  const button = event.target.closest("button"); if (!button) return;
+  activeGroup = button.dataset.group;
+  for (const chip of $("chips").children) chip.setAttribute("aria-pressed", String(chip.dataset.group === activeGroup));
+  render();
+});
+
+const shot = (src, caption, cls = "") => src ? `<figure class="${cls}"><img src="${src}" alt="${esc(caption)}" loading="lazy" onload="this.width=this.naturalWidth/2"><figcaption>${caption}</figcaption></figure>` : `<figure><figcaption>${caption}：没有渲染结果</figcaption></figure>`;
+const platform = (name, result) => `<div class="platform"><h3>${name}<span class="score ${grade(result.diff)}">${fmt(same(result.diff))} 相同</span></h3><div class="shots">${shot(result.native, "原生")}${shot(result.web, "网页")}${shot(result.delta, "差异（红色为不同）", "delta")}</div></div>`;
+
+function render() {
+  const query = $("search").value.trim().toLowerCase();
+  const sort = $("sort").value;
+  let list = items.filter((i) => (activeGroup === "全部" || i.group === activeGroup) && (!query || (i.title + " " + i.id + " " + i.tags.join(" ")).toLowerCase().includes(query)));
+  if (sort === "ios") list = [...list].sort((a, b) => (b.ios.diff ?? -1) - (a.ios.diff ?? -1));
+  if (sort === "mac") list = [...list].sort((a, b) => (b.mac.diff ?? -1) - (a.mac.diff ?? -1));
+  $("count").textContent = `显示 ${list.length} / ${items.length}`;
+  $("items").innerHTML = list.map((i) => `<article class="item" id="${i.id}">
+    <div class="head"><span class="id">${i.id}</span><span class="title">${esc(i.title)}</span><span class="tag">${i.group}</span><span class="tag">${i.size}${i.dark ? " · 深色" : ""}</span>${i.tags.map((t) => `<span class="tag">&lt;${t}&gt;</span>`).join("")}</div>
+    ${i.note ? `<p class="note">${esc(i.note)}</p>` : ""}
+    <div class="platforms">${platform("iOS", i.ios)}${platform("macOS", i.mac)}</div>
+    <details><summary>脚本</summary><pre>${esc(i.source)}</pre></details>
+  </article>`).join("");
+}
+$("sort").addEventListener("change", render);
+$("search").addEventListener("input", render);
+$("showDiff").addEventListener("change", () => $("items").classList.toggle("hide-diff", !$("showDiff").checked));
+render();
+</script>

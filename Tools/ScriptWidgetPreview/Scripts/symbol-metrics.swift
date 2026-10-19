@@ -12,9 +12,23 @@ struct SymbolMetrics {
     @MainActor static func main() throws {
         let root = URL(fileURLWithPath: CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : FileManager.default.currentDirectoryPath)
         let mapURL = root.appendingPathComponent("Web/preview-engine/scripts/icons/sf-to-lucide.json")
-        let names = try (JSONSerialization.jsonObject(with: Data(contentsOf: mapURL)) as? [String: String] ?? [:]).keys.sorted()
+        let mapped = try (JSONSerialization.jsonObject(with: Data(contentsOf: mapURL)) as? [String: String] ?? [:]).keys
+        // Mapped names, their .fill variants, and every dotted string literal
+        // in the bundled scripts, Gallery, and test sources that is a symbol.
+        var candidates = Set(mapped).union(mapped.map { "\($0).fill" }).union(["questionmark.circle"])
+        let sources = ["Shared/ScriptWidgetRuntime/Resource/Script.bundle", "Gallery/widgets", "Web/preview-engine/test/catalog", "Web/preview-engine/test/render"]
+        let literal = try NSRegularExpression(pattern: "[\"']([a-z0-9]+(?:\\.[a-z0-9]+)+)[\"']")
+        for folder in sources {
+            let enumerator = FileManager.default.enumerator(at: root.appendingPathComponent(folder), includingPropertiesForKeys: nil)
+            while let url = enumerator?.nextObject() as? URL {
+                guard ["jsx", "js", "json"].contains(url.pathExtension), let text = try? String(contentsOf: url, encoding: .utf8) else { continue }
+                for match in literal.matches(in: text, range: NSRange(text.startIndex..., in: text)) {
+                    if let range = Range(match.range(at: 1), in: text) { candidates.insert(String(text[range])) }
+                }
+            }
+        }
         var lines: [String] = []
-        for name in names + ["questionmark.circle"] where !lines.contains(where: { $0.hasPrefix("  \"\(name)\":") }) {
+        for name in candidates.sorted() where NSImage(systemSymbolName: name, accessibilityDescription: nil) != nil {
             let size = NSHostingController(rootView: Image(systemName: name).font(.system(size: 100)).fixedSize().environment(\.displayScale, 2))
                 .sizeThatFits(in: CGSize(width: 100_000, height: 100_000))
             guard size.width > 0 else { continue }

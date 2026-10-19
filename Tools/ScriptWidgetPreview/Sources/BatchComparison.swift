@@ -18,7 +18,9 @@ enum BatchComparison {
         for entry in Repository.corpus() where filter.isEmpty || entry.id.hasPrefix(filter) {
             if let directory = entry.directory,
                let source = try? String(contentsOf: directory.appendingPathComponent("main.jsx"), encoding: .utf8),
-               ["fetch(", "$http.", "$location.", "$health.", "$dataSource."].contains(where: source.contains) { continue }
+               // Network responses are shared with the web engine (WebRenderer);
+               // location, health, and data-source values are not.
+               ["$location.", "$health.", "$dataSource."].contains(where: source.contains) { continue }
             let entryFamilies = entry.preferredFamily.map { [$0] } ?? families
             for name in entryFamilies {
                 guard let family = PreviewFamily(rawValue: name) else { continue }

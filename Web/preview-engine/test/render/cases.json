@@ -244,5 +244,469 @@
   "name": "calib-text-rect-spacing",
   "size": "large",
   "source": "$render(\n  <vstack background=\"#ffffff\" frame=\"max\">\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n    <text font=\"body\" color=\"black\" background=\"#ffd0d0\">Hxg body</text>\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n    <text font=\"17\" color=\"black\" background=\"#d0ffd0\">Hxg 17</text>\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n    <text font=\"caption\" color=\"black\" background=\"#ffd0d0\">Hxg caption</text>\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n    <text font=\"12\" color=\"black\" background=\"#d0ffd0\">Hxg 12</text>\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n    <text font=\"title\" color=\"black\" background=\"#ffd0d0\">Hxg title</text>\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n    <text font=\"28\" color=\"black\" background=\"#d0ffd0\">Hxg 28</text>\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n  </vstack>\n);\n"
+ },
+ {
+  "name": "hstack-columns-wrap",
+  "size": "small",
+  "source": "$render(<vstack frame=\"max\" spacing=\"8\" padding=\"14\"><hstack frame=\"max\"><text font=\"headline\" weight=\"bold\">World Clock</text><spacer/></hstack><hstack frame=\"max\"><vstack alignment=\"leading\"><text font=\"caption\" color=\"#94a3b8\">BEIJING</text><text font=\"title3\" weight=\"bold\">08:25</text></vstack><spacer/><vstack alignment=\"leading\"><text font=\"caption\" color=\"#94a3b8\">SAN JOSE</text><text font=\"title3\" weight=\"bold\">04:25</text></vstack><spacer/><vstack alignment=\"leading\"><text font=\"caption\" color=\"#94a3b8\">NEW YORK</text><text font=\"title3\" weight=\"bold\">07:25</text></vstack></hstack></vstack>)"
+ },
+ {
+  "name": "hstack-columns-wrap-plain",
+  "size": "small",
+  "source": "$render(<hstack padding=\"14\"><vstack alignment=\"leading\"><text font=\"caption\" color=\"#94a3b8\">BEIJING</text><text font=\"title3\" weight=\"bold\">08:25</text></vstack><spacer/><vstack alignment=\"leading\"><text font=\"caption\" color=\"#94a3b8\">SAN JOSE</text><text font=\"title3\" weight=\"bold\">04:25</text></vstack><spacer/><vstack alignment=\"leading\"><text font=\"caption\" color=\"#94a3b8\">NEW YORK</text><text font=\"title3\" weight=\"bold\">07:25</text></vstack></hstack>)"
+ },
+ {
+  "name": "overflow-year-progress-375",
+  "size": "small",
+  "source": "$render(<hstack background=\"#0284c7\" frame=\"max\" spacing=\"16\" padding=\"14\"><vstack alignment=\"leading\" spacing=\"3\"><text font=\"caption\" color=\"#7dd3fc\">YEAR PROGRESS</text><text font=\"largeTitle\" weight=\"bold\" color=\"white\">74</text><text font=\"caption\" color=\"#bae6fd\">days remaining</text></vstack><spacer/><icon systemName=\"hourglass\" size=\"42\" color=\"#38bdf8\"/></hstack>)",
+  "profile": "iphone-375"
+ },
+ {
+  "name": "overflow-days-left-cjk-375",
+  "size": "small",
+  "source": "$render(<hstack background=\"#9f1239\" frame=\"max\" spacing=\"16\" padding=\"14\"><vstack alignment=\"leading\" spacing=\"3\"><text font=\"caption\" color=\"#fda4af\">今年还剩</text><text font=\"largeTitle\" weight=\"bold\" color=\"white\">74 天</text><text font=\"caption\" color=\"#fecdd3\">把今天过得有意义</text></vstack><spacer/><icon systemName=\"sparkles\" size=\"40\" color=\"#fb7185\"/></hstack>)",
+  "profile": "iphone-375"
+ },
+ {
+  "name": "overflow-current-time-375",
+  "size": "small",
+  "source": "$render(<hstack background=\"#172554\" frame=\"max\" spacing=\"16\" padding=\"14\"><vstack alignment=\"leading\" spacing=\"3\"><text font=\"caption\" color=\"#93c5fd\">CURRENT TIME</text><text font=\"largeTitle\" weight=\"bold\" color=\"white\">4:00 AM</text><text font=\"caption\" color=\"#bfdbfe\">January 1, 2026</text></vstack><spacer/><icon systemName=\"clock.fill\" size=\"42\" color=\"#60a5fa\"/></hstack>)",
+  "profile": "iphone-375"
+ },
+ {
+  "name": "overflow-three-texts-375",
+  "size": "small",
+  "source": "$render(<vstack alignment=\"leading\" padding=\"14\" frame=\"max\"><text font=\"headline\">This Week</text><text font=\"subheadline\" color=\"gray\">Make today count and keep going</text><text font=\"caption\">Monday through Sunday</text></vstack>)",
+  "profile": "iphone-375"
+ },
+ {
+  "name": "overflow-year-progress",
+  "size": "small",
+  "source": "$render(<hstack background=\"#0284c7\" frame=\"max\" spacing=\"16\" padding=\"14\"><vstack alignment=\"leading\" spacing=\"3\"><text font=\"caption\" color=\"#7dd3fc\">YEAR PROGRESS</text><text font=\"largeTitle\" weight=\"bold\" color=\"white\">74</text><text font=\"caption\" color=\"#bae6fd\">days remaining</text></vstack><spacer/><icon systemName=\"hourglass\" size=\"42\" color=\"#38bdf8\"/></hstack>)"
+ },
+ {
+  "name": "overflow-days-left-cjk",
+  "size": "small",
+  "source": "$render(<hstack background=\"#9f1239\" frame=\"max\" spacing=\"16\" padding=\"14\"><vstack alignment=\"leading\" spacing=\"3\"><text font=\"caption\" color=\"#fda4af\">今年还剩</text><text font=\"largeTitle\" weight=\"bold\" color=\"white\">74 天</text><text font=\"caption\" color=\"#fecdd3\">把今天过得有意义</text></vstack><spacer/><icon systemName=\"sparkles\" size=\"40\" color=\"#fb7185\"/></hstack>)"
+ },
+ {
+  "name": "overflow-current-time",
+  "size": "small",
+  "source": "$render(<hstack background=\"#172554\" frame=\"max\" spacing=\"16\" padding=\"14\"><vstack alignment=\"leading\" spacing=\"3\"><text font=\"caption\" color=\"#93c5fd\">CURRENT TIME</text><text font=\"largeTitle\" weight=\"bold\" color=\"white\">4:00 AM</text><text font=\"caption\" color=\"#bfdbfe\">January 1, 2026</text></vstack><spacer/><icon systemName=\"clock.fill\" size=\"42\" color=\"#60a5fa\"/></hstack>)"
+ },
+ {
+  "name": "overflow-three-texts",
+  "size": "small",
+  "source": "$render(<vstack alignment=\"leading\" padding=\"14\" frame=\"max\"><text font=\"headline\">This Week</text><text font=\"subheadline\" color=\"gray\">Make today count and keep going</text><text font=\"caption\">Monday through Sunday</text></vstack>)"
+ },
+ {
+  "name": "symbol-airplane",
+  "size": "small",
+  "source": "$render(<icon systemName=\"airplane\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-arrow.clockwise",
+  "size": "small",
+  "source": "$render(<icon systemName=\"arrow.clockwise\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-arrow.down.right",
+  "size": "small",
+  "source": "$render(<icon systemName=\"arrow.down.right\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-arrow.up.right",
+  "size": "small",
+  "source": "$render(<icon systemName=\"arrow.up.right\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-backward.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"backward.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-banknote.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"banknote.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-battery.100",
+  "size": "small",
+  "source": "$render(<icon systemName=\"battery.100\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-battery.100.bolt",
+  "size": "small",
+  "source": "$render(<icon systemName=\"battery.100.bolt\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-bed.double.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"bed.double.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-birthday.cake.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"birthday.cake.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-bolt.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"bolt.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-books.vertical.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"books.vertical.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-briefcase.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"briefcase.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-calendar",
+  "size": "small",
+  "source": "$render(<icon systemName=\"calendar\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-calendar.badge.exclamationmark",
+  "size": "small",
+  "source": "$render(<icon systemName=\"calendar.badge.exclamationmark\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-calendar.circle.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"calendar.circle.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-chart.line.uptrend.xyaxis",
+  "size": "small",
+  "source": "$render(<icon systemName=\"chart.line.uptrend.xyaxis\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-chart.pie.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"chart.pie.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-checklist",
+  "size": "small",
+  "source": "$render(<icon systemName=\"checklist\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-checkmark.circle.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"checkmark.circle.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-chevron.left.forwardslash.chevron.right",
+  "size": "small",
+  "source": "$render(<icon systemName=\"chevron.left.forwardslash.chevron.right\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-circle",
+  "size": "small",
+  "source": "$render(<icon systemName=\"circle\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-clock",
+  "size": "small",
+  "source": "$render(<icon systemName=\"clock\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-clock.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"clock.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-cloud.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"cloud.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-cloud.rain.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"cloud.rain.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-cloud.sun.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"cloud.sun.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-cup.and.saucer.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"cup.and.saucer.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-desktopcomputer",
+  "size": "small",
+  "source": "$render(<icon systemName=\"desktopcomputer\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-drop.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"drop.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-face.smiling",
+  "size": "small",
+  "source": "$render(<icon systemName=\"face.smiling\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-figure.run",
+  "size": "small",
+  "source": "$render(<icon systemName=\"figure.run\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-figure.walk",
+  "size": "small",
+  "source": "$render(<icon systemName=\"figure.walk\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-figure.walk.circle.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"figure.walk.circle.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-flame.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"flame.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-fork.knife",
+  "size": "small",
+  "source": "$render(<icon systemName=\"fork.knife\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-forward.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"forward.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-globe.americas.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"globe.americas.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-graduationcap.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"graduationcap.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-heart.text.square.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"heart.text.square.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-hourglass",
+  "size": "small",
+  "source": "$render(<icon systemName=\"hourglass\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-house.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"house.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-leaf.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"leaf.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-link",
+  "size": "small",
+  "source": "$render(<icon systemName=\"link\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-location.circle.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"location.circle.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-location.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"location.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-location.slash.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"location.slash.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-magnifyingglass",
+  "size": "small",
+  "source": "$render(<icon systemName=\"magnifyingglass\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-map.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"map.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-moon.stars.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"moon.stars.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-mosaic.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"mosaic.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-music.note",
+  "size": "small",
+  "source": "$render(<icon systemName=\"music.note\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-party.popper.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"party.popper.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-pause.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"pause.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-quote.opening",
+  "size": "small",
+  "source": "$render(<icon systemName=\"quote.opening\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-sparkles",
+  "size": "small",
+  "source": "$render(<icon systemName=\"sparkles\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-suitcase.rolling.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"suitcase.rolling.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-sun.max.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"sun.max.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-sunrise.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"sunrise.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-sunset.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"sunset.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-timer",
+  "size": "small",
+  "source": "$render(<icon systemName=\"timer\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-video.fill",
+  "size": "small",
+  "source": "$render(<icon systemName=\"video.fill\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-wand.and.stars",
+  "size": "small",
+  "source": "$render(<icon systemName=\"wand.and.stars\" size=\"40\"/>)"
+ },
+ {
+  "name": "symbol-wind",
+  "size": "small",
+  "source": "$render(<icon systemName=\"wind\" size=\"40\"/>)"
+ },
+ {
+  "name": "split-texts-long-first",
+  "size": "small",
+  "source": "$render(<hstack padding=\"10\"><text font=\"title3\" fontWeight=\"bold\">Alphabetical</text><text font=\"title3\" fontWeight=\"bold\">Banana</text><text font=\"title3\" fontWeight=\"bold\">Cat</text></hstack>)"
+ },
+ {
+  "name": "split-texts-short-first",
+  "size": "small",
+  "source": "$render(<hstack padding=\"10\"><text font=\"title3\" fontWeight=\"bold\">Cat</text><text font=\"title3\" fontWeight=\"bold\">Banana</text><text font=\"title3\" fontWeight=\"bold\">Alphabetical</text></hstack>)"
+ },
+ {
+  "name": "split-texts-equal",
+  "size": "small",
+  "source": "$render(<hstack padding=\"10\"><text font=\"title3\" fontWeight=\"bold\">Mango</text><text font=\"title3\" fontWeight=\"bold\">Mango</text><text font=\"title3\" fontWeight=\"bold\">Mango</text></hstack>)"
+ },
+ {
+  "name": "split-columns-spacers",
+  "size": "small",
+  "source": "$render(<hstack padding=\"10\"><vstack alignment=\"leading\"><text font=\"caption\">BEIJING</text><text font=\"title3\" fontWeight=\"bold\">08:00 PM</text></vstack><spacer/><vstack alignment=\"leading\"><text font=\"caption\">SAN JOSE</text><text font=\"title3\" fontWeight=\"bold\">04:00 AM</text></vstack><spacer/><vstack alignment=\"leading\"><text font=\"caption\">NEW YORK</text><text font=\"title3\" fontWeight=\"bold\">07:00 AM</text></vstack></hstack>)"
+ },
+ {
+  "name": "split-columns-nospacers",
+  "size": "small",
+  "source": "$render(<hstack padding=\"10\"><vstack alignment=\"leading\"><text font=\"caption\">BEIJING</text><text font=\"title3\" fontWeight=\"bold\">08:00 PM</text></vstack><vstack alignment=\"leading\"><text font=\"caption\">SAN JOSE</text><text font=\"title3\" fontWeight=\"bold\">04:00 AM</text></vstack><vstack alignment=\"leading\"><text font=\"caption\">NEW YORK</text><text font=\"title3\" fontWeight=\"bold\">07:00 AM</text></vstack></hstack>)"
+ },
+ {
+  "name": "split-tight-columns-spacers",
+  "size": "small",
+  "source": "$render(<hstack frame=\"max,44\" padding=\"horizontal,10\"><vstack alignment=\"leading\"><text font=\"caption\">BEIJING</text><text font=\"title3\" fontWeight=\"bold\">08:00 PM</text></vstack><spacer/><vstack alignment=\"leading\"><text font=\"caption\">SAN JOSE</text><text font=\"title3\" fontWeight=\"bold\">04:00 AM</text></vstack><spacer/><vstack alignment=\"leading\"><text font=\"caption\">NEW YORK</text><text font=\"title3\" fontWeight=\"bold\">07:00 AM</text></vstack></hstack>)"
+ },
+ {
+  "name": "split-tight-texts-long-first",
+  "size": "small",
+  "source": "$render(<hstack frame=\"max,26\" padding=\"horizontal,10\"><text font=\"title3\" fontWeight=\"bold\">Alphabetical</text><text font=\"title3\" fontWeight=\"bold\">Banana</text><text font=\"title3\" fontWeight=\"bold\">Cat</text></hstack>)"
+ },
+ {
+  "name": "split-tight-texts-equal",
+  "size": "small",
+  "source": "$render(<hstack frame=\"max,26\" padding=\"horizontal,10\"><text font=\"title3\" fontWeight=\"bold\">Mangosteen</text><text font=\"title3\" fontWeight=\"bold\">Mangosteen</text><text font=\"title3\" fontWeight=\"bold\">Mangosteen</text></hstack>)"
+ },
+ {
+  "name": "split-tight-ampm",
+  "size": "small",
+  "source": "$render(<hstack frame=\"max,26\" padding=\"horizontal,10\"><text font=\"title3\" fontWeight=\"bold\">08:00 PM</text><spacer/><text font=\"title3\" fontWeight=\"bold\">04:00 AM</text><spacer/><text font=\"title3\" fontWeight=\"bold\">07:00 AM</text></hstack>)"
+ },
+ {
+  "name": "emoji-row-plain",
+  "size": "small",
+  "source": "$render(<vstack frame=\"max\" alignment=\"top\"><hstack alignment=\"leading\"><text font=\"body\">  🪼        🐟    🐠         🫧</text><text font=\"body\">🐠</text><text font=\"body\">         🫧</text><spacer/></hstack></vstack>)"
+ },
+ {
+  "name": "emoji-row-swing",
+  "size": "small",
+  "source": "$render(<vstack frame=\"max\" alignment=\"top\"><hstack alignment=\"leading\"><text font=\"body\">  🪼        🐟    🐠         🫧</text><text font=\"body\" animation={$animation({type:\"swing\",duration:30,direction:\"vertical\",distance:70})}>🐠</text><text font=\"body\">         🫧</text><spacer/></hstack></vstack>)"
+ },
+ {
+  "name": "emoji-row-single",
+  "size": "small",
+  "source": "$render(<vstack frame=\"max\" alignment=\"top\"><hstack alignment=\"leading\"><text font=\"body\">  🪼        🐟    🐠         🫧</text><spacer/></hstack></vstack>)"
+ },
+ {
+  "name": "emoji-row-tight",
+  "size": "small",
+  "source": "$render(<vstack frame=\"max\" alignment=\"top\"><hstack alignment=\"leading\" frame=\"max,24\"><text font=\"body\">  🪼        🐟    🐠         🫧</text><text font=\"body\">🐠</text><text font=\"body\">         🫧</text><spacer/></hstack></vstack>)"
+ },
+ {
+  "name": "emoji-row-tight-swing",
+  "size": "small",
+  "source": "$render(<vstack frame=\"max\" alignment=\"top\"><hstack alignment=\"leading\" frame=\"max,24\"><text font=\"body\">  🪼        🐟    🐠         🫧</text><text font=\"body\" animation={$animation({type:\"swing\",duration:30,direction:\"vertical\",distance:70})}>🐠</text><text font=\"body\">         🫧</text><spacer/></hstack></vstack>)"
+ },
+ {
+  "name": "emoji-text-tight",
+  "size": "small",
+  "source": "$render(<vstack frame=\"max\" alignment=\"top\"><text font=\"body\" frame=\"max,24\">  🪼        🐟    🐠         🫧  🐬       🐬</text></vstack>)"
+ },
+ {
+  "name": "label-narrow-wrap",
+  "size": "small",
+  "source": "$render(<vstack frame=\"max\"><label title=\"Battery level is low\" systemName=\"battery.100\" frame=\"70\"/></vstack>)"
+ },
+ {
+  "name": "label-narrow-text",
+  "size": "small",
+  "source": "$render(<vstack frame=\"max\"><text frame=\"70\">Battery level is low</text></vstack>)"
+ },
+ {
+  "name": "label-circular-rows",
+  "size": "accessoryCircular",
+  "source": "$render(<vstack frame=\"max\" spacing=\"8\"><label title=\"Sunrise\" systemName=\"sunrise.fill\" color=\"#f59e0b\"/><label title=\"Battery\" systemName=\"battery.100\" color=\"#22c55e\"/></vstack>)"
  }
 ]

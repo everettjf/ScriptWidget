@@ -18,13 +18,18 @@ export class Node {
 
 const cjk = /[\u2e80-\u9fff\uac00-\ud7af\uf900-\ufaff\uff00-\uffef]/u;
 
-/// Break units of a paragraph: words, and each CJK character, which breaks
-/// without a space. A unit keeps the separator that precedes it, and closing
-/// punctuation stays with the unit before it (UAX #14).
+// One emoji: a pictograph with its variation selector, modifiers, and joined
+// pictographs, or a flag.
+const emojiCluster = /(\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic}|[\u{1F3FB}-\u{1F3FF}])*\uFE0F?|[\u{1F1E6}-\u{1F1FF}]{2})/u;
+
+/// Break units of a paragraph: words, and each CJK character and emoji, which
+/// break without a space (UAX #14 ID class). A unit keeps the separator that
+/// precedes it, and closing punctuation stays with the unit before it.
 function breakUnits(paragraph) {
   const units = [];
   for (const word of paragraph.split(/ +/).filter(Boolean)) {
-    const pieces = cjk.test(word) ? word.split(/(?=[\u2e80-\u9fff\uac00-\ud7af\uf900-\ufaff])/u).filter(Boolean) : [word];
+    const byEmoji = emojiCluster.test(word) ? word.split(emojiCluster).filter(Boolean) : [word];
+    const pieces = byEmoji.flatMap((part) => (cjk.test(part) ? part.split(/(?=[\u2e80-\u9fff\uac00-\ud7af\uf900-\ufaff])/u).filter(Boolean) : [part]));
     pieces.forEach((piece, index) => {
       const separator = index === 0 ? " " : "";
       if (units.length && /^[:;,.!?)\]}%，。！？、：；）」』]/.test(piece)) units[units.length - 1].text += separator + piece;
@@ -139,13 +144,26 @@ export class TextNode extends Node {
     return lines;
   }
   /// The longest prefix that fits with "…", cut mid-word, with trailing
-  /// spaces dropped ("Hello fr…", "Travel…").
+  /// spaces dropped ("Hello fr…", "Travel…"). Runs of spaces are kept, as
+  /// CoreText keeps them.
   ellipsize(value, width) {
-    const characters = [...value.replace(/\s+/g, " ")];
-    const fits = (count) => this.measurer.measure(`${characters.slice(0, count).join("").trimEnd()}…`, this.style, null).width <= width + 0.01;
+    const characters = [...value.replace(/\n/g, " ")];
+    const fits = (count) => this.truncatedWidth(characters, count) <= width + 0.01;
     let low = 0; let high = characters.length;
     while (low < high) { const middle = Math.ceil((low + high) / 2); if (fits(middle)) low = middle; else high = middle - 1; }
     return `${characters.slice(0, low).join("").trimEnd()}…`;
+  }
+  /// Width CoreText draws for the first `count` characters plus "…": the
+  /// prefix keeps its advance from the full string (kerning against the next
+  /// character included) and the ellipsis is not kerned with it, so "07…"
+  /// cut from "07:00 AM" is wider than "07…" measured alone.
+  truncatedWidth(characters, count) {
+    const prefix = characters.slice(0, count).join("").trimEnd();
+    const length = [...prefix].length;
+    const next = characters[length];
+    const measure = (value) => this.measurer.measure(value, this.style, null).width;
+    const advance = next === undefined || next === " " || prefix === "" ? measure(prefix) : measure(prefix + next) - measure(next);
+    return advance + this.measurer.ellipsisWidth(this.style);
   }
   /// SwiftUI truncation to `count` lines: earlier lines stay as broken, the
   /// rest is cut mid-word with "…", and the text reports the widest drawn
@@ -160,13 +178,18 @@ export class TextNode extends Node {
     for (const line of kept) {
       for (const character of line.replace(/-$/, "")) {
         while (position < this.text.length && /\s/.test(this.text[position]) && !/\s/.test(character)) position += 1;
-        if (this.text[position] === character || (character === "\u00a0" && this.text[position] === " ")) position += 1;
+        // Characters may be surrogate pairs (emoji): compare and advance by
+        // their UTF-16 length.
+        if (this.text.startsWith(character, position)) position += character.length;
+        else if (character === "\u00a0" && this.text[position] === " ") position += 1;
       }
     }
     const rest = this.text.slice(position).trimStart();
     const last = this.ellipsize(rest, width);
     const drawn = [...kept, last];
-    return { text: drawn.join("\n"), width: Math.max(...drawn.map((line) => this.measurer.measure(line, this.style, null).width)) };
+    const restCharacters = [...rest.replace(/\n/g, " ")];
+    const lastWidth = this.truncatedWidth(restCharacters, [...last].length - 1);
+    return { text: drawn.join("\n"), width: Math.max(lastWidth, ...kept.map((line) => this.measurer.measure(line, this.style, null).width)) };
   }
   metrics(width) { return this.measurer.measure(width === null ? this.text : this.displayText(width), this.style, width); }
   layout(pw, ph) {
@@ -176,7 +199,9 @@ export class TextNode extends Node {
     // Offered no width at all, SwiftUI draws nothing.
     if (pw !== null && pw <= 0.01) return { width: 0, height: natural, lines: 1, total: 1, text: "" };
     if (pw === null || pw === Infinity) { const m = this.metrics(null); width = m.width; lines = m.lines; }
-    else if (pw < this.measurer.ellipsisWidth(this.style) && !this.wrapsCharacters(pw)) { width = this.measurer.ellipsisWidth(this.style); lines = 1; }
+    // Narrower than "…" and its first character: SwiftUI keeps the offered
+    // width and draws a clipped "…".
+    else if (pw < this.measurer.ellipsisWidth(this.style) && !this.wrapsCharacters(pw)) return { width: snap(pw), height: natural, lines: 1, total: 1, text: this.text.trim() === "" ? "" : "…", clip: true };
     else {
       // Offered at least the natural width: keep the unwrapped layout rather
       // than re-measuring at an explicit width, which can wrap on sub-pixel
@@ -237,9 +262,16 @@ export class AspectNode extends Node {
   }
 }
 
+/// The offer to re-propose to a child while placing: SwiftUI places
+/// subviews with the proposal they were sized with, so a view that came out
+/// smaller than offered (text that fit in fewer lines) is not re-offered only
+/// its final size, which could make a text that needed the room truncate.
+const placementOffer = (final, proposed) => (proposed !== null && proposed !== undefined && proposed !== Infinity && proposed > final ? proposed : final);
+
 export class PaddingNode extends Node {
   constructor(child, [top, trailing, bottom, leading]) { super(); this.child = child; this.insets = { top, trailing, bottom, leading }; }
   size(pw, ph) {
+    this.proposal = [pw, ph];
     const { top, trailing, bottom, leading } = this.insets;
     const [w, h] = this.child.size(sub(pw, leading + trailing), sub(ph, top + bottom));
     return [w + leading + trailing, h + top + bottom];
@@ -248,7 +280,8 @@ export class PaddingNode extends Node {
     super.place(x, y, width, height);
     const { top, trailing, bottom, leading } = this.insets;
     const innerW = Math.max(0, width - leading - trailing); const innerH = Math.max(0, height - top - bottom);
-    const [w, h] = this.child.size(innerW, innerH);
+    const [pw, ph] = this.proposal ?? [width, height];
+    const [w, h] = this.child.size(placementOffer(innerW, sub(pw, leading + trailing)), placementOffer(innerH, sub(ph, top + bottom)));
     this.child.place(leading + (innerW - w) / 2, top + (innerH - h) / 2, w, h);
   }
 }
@@ -259,6 +292,7 @@ const alignOffset = (space, size, where) => (where === "start" ? 0 : where === "
 export class FrameNode extends Node {
   constructor(child, { mode, width, height, alignment }) { super(); this.child = child; this.mode = mode; this.width = width; this.height = height; this.alignment = alignment; }
   size(pw, ph) {
+    this.proposal = [pw, ph];
     if (this.mode === "max") {
       const [cw, ch] = this.child.size(pw, ph);
       return [pw === null ? cw : pw, ph === null ? ch : ph];
@@ -270,7 +304,11 @@ export class FrameNode extends Node {
   }
   place(x, y, width, height) {
     super.place(x, y, width, height);
-    const [w, h] = this.child.size(width, height);
+    // Fixed dimensions offer exactly their length; the others re-offer what
+    // the frame itself was offered.
+    const [pw, ph] = this.proposal ?? [width, height];
+    const fixedW = this.mode === "size" || this.mode === "width"; const fixedH = this.mode === "size" || this.mode === "height";
+    const [w, h] = this.child.size(fixedW ? width : placementOffer(width, pw), fixedH ? height : placementOffer(height, ph));
     const [horizontal, vertical] = this.alignment;
     this.child.place(alignOffset(width, w, horizontal), alignOffset(height, h, vertical), w, h);
   }
@@ -346,7 +384,11 @@ export class StackNode extends Node {
     const finalCross = this.axis === "h" ? height : width;
     const rigid = (limit) => this.children.some((child) => this.cross(this.propose(child, null, 0)) > limit + 0.01);
     const pAlong = proposedAlong;
-    const pCross = proposedCross !== null && proposedCross !== Infinity && finalCross > proposedCross + 0.01 && rigid(proposedCross) ? proposedCross : finalCross;
+    // A stack that came out shorter across than offered (texts that fit in
+    // fewer lines) places its children with that same offer too: offering
+    // only its final size would make a text that needed the room truncate.
+    const offered = proposedCross !== null && proposedCross !== Infinity;
+    const pCross = offered && (finalCross < proposedCross - 0.01 || (finalCross > proposedCross + 0.01 && rigid(proposedCross))) ? proposedCross : finalCross;
     const sizes = this.allocate(pAlong, pCross);
     let cursor = 0;
     this.children.forEach((child, index) => {
@@ -395,9 +437,13 @@ export class GridNode extends Node {
   constructor(axis, children, { items, spacing, alignment }) {
     super();
     this.axis = axis; this.children = children; this.items = items; this.spacing = spacing; this.alignment = alignment;
+    // LazyVGrid/LazyHGrid's spacing separates rows (columns of an HGrid);
+    // tracks are separated by each GridItem's spacing, which ScriptWidget
+    // leaves at the system default of 8 points.
+    this.trackSpacing = 8;
   }
   tracks(available) {
-    const spacing = this.spacing;
+    const spacing = this.trackSpacing;
     const fixed = this.items.filter((item) => item.type === "fixed").reduce((sum, item) => sum + item.value, 0);
     const flexibleCount = this.items.filter((item) => item.type !== "fixed").length;
     const free = Math.max(0, available - fixed - spacing * Math.max(0, this.items.length - 1));
@@ -428,7 +474,7 @@ export class GridNode extends Node {
   }
   size(pw, ph) {
     const { tracks, extents } = this.arrange(this.axis === "v" ? pw : ph);
-    const along = tracks.reduce((sum, value) => sum + value, 0) + this.spacing * Math.max(0, tracks.length - 1);
+    const along = tracks.reduce((sum, value) => sum + value, 0) + this.trackSpacing * Math.max(0, tracks.length - 1);
     const cross = extents.reduce((sum, value) => sum + value, 0) + this.spacing * Math.max(0, extents.length - 1);
     const width = this.axis === "v" ? (pw === null || pw === Infinity ? along : pw) : cross;
     const height = this.axis === "v" ? cross : (ph === null || ph === Infinity ? along : ph);
@@ -437,12 +483,12 @@ export class GridNode extends Node {
   place(x, y, width, height) {
     super.place(x, y, width, height);
     const { tracks, lines, extents } = this.arrange(this.axis === "v" ? width : height);
-    const total = tracks.reduce((sum, value) => sum + value, 0) + this.spacing * Math.max(0, tracks.length - 1);
+    const total = tracks.reduce((sum, value) => sum + value, 0) + this.trackSpacing * Math.max(0, tracks.length - 1);
     const start = ((this.axis === "v" ? width : height) - total) / 2;
     let lineOffset = 0;
     lines.forEach((line, lineIndex) => {
       for (const { child, track, size } of line) {
-        const trackOffset = start + tracks.slice(0, track).reduce((sum, value) => sum + value, 0) + this.spacing * track;
+        const trackOffset = start + tracks.slice(0, track).reduce((sum, value) => sum + value, 0) + this.trackSpacing * track;
         if (this.axis === "v") child.place(trackOffset + (tracks[track] - size[0]) / 2, lineOffset + (extents[lineIndex] - size[1]) / 2, size[0], size[1]);
         else child.place(lineOffset + (extents[lineIndex] - size[0]) / 2, trackOffset + (tracks[track] - size[1]) / 2, size[0], size[1]);
       }
@@ -460,15 +506,33 @@ const emojiAdvances = [1,3,4,6,7,9,10,12,13,14,16,17,19,20,21,23,23,24,24,25,26,
 const emojiGlyphs = [1,2.5,4,5,6.5,7.5,9,10,11.5,12.5,14,15,16.5,17.5,19,20,20.5,21,21.5,22,22.5,23,23.5,24,24.5,25.5,26.5,27.5,28.5,29.5,30.5,31.5,32.5,33.5,34.5,35.5,36.5,37.5,38.5,39.5,40.5,41.5,42.5,43.5,44.5,45.5,46.5,47.5,48.5,49.5,50.5,51.5,52.5,53.5,54.5,55.5,56.5,57.5,58.5,59.5,60.5,61.5,62.5,63.5,64.5,65.5,66,66.5,67.5,68.5,69.5,70.5,71.5,72.5,73.5,74.5,75.5,76.5,77.5,78.5,79.5,80.5,81.5,82.5,83.5,84.5,85.5,86.5,87.5,88.5,89.5,90.5,91.5,92.5,93.5,94.5,95.5,96.5,97.5,98.5,99.5,100.5,101.5,102.5,103.5,104.5,105.5,106.5,107.5,108.5,109.5,110.5,111.5,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158];
 const emojiRun = /(\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic}|[\u{1F3FB}-\u{1F3FF}])*|[\u{1F1E6}-\u{1F1FF}]{2})/u;
 
-/// Sets element's text, drawing emoji runs with `emoji` ({fontSize,
-/// padding} in px, from the measurer) when the browser needs adjusting.
-export function fillText(element, text, emoji) {
-  if (!emoji || !emojiRun.test(text)) { element.textContent = text; return; }
+// Advance of one Han ideograph in CoreText's system font (PingFang through
+// the SF cascade) for font sizes 1...160; weight and design do not change it.
+// Browsers draw these glyphs at their own advance (Chrome tracks them
+// differently), so the measurer letter-spaces Han runs to match.
+const hanAdvances = [0.994,1.988,2.982,3.977,4.971,5.965,6.959,7.953,8.947,9.942,10.936,11.918,12.899,13.891,14.883,15.875,16.851,17.842,18.834,19.154,20.053,20.945,21.898,22.85,23.802,24.754,25.706,26.658,27.583,28.506,29.427,30.346,31.263,32.211,33.158,34.105,35.018,35.964,36.911,37.82,38.765,39.711,40.656,41.56,42.505,43.449,44.35,45.293,46.237,47.18,48.124,49.068,50.011,50.955,51.898,52.842,53.786,54.729,55.673,56.617,57.56,58.504,59.447,60.391,61.335,62.278,63.222,64.165,65.109,66.053,66.996,67.94,68.883,69.827,70.771,71.714,72.658,73.602,74.545,75.489,76.432,77.376,78.32,79.263,80.207,81.15,82.094,83.038,83.981,84.925,85.868,86.812,87.756,88.699,89.643,90.586,91.53,92.474,93.417,94.361,95.305,96.248,97.192,98.135,99.079,100.023,100.966,101.91,102.853,103.797,104.741,105.684,106.628,107.571,108.515,109.459,110.402,111.346,112.289,113.233,114.177,115.12,116.064,117.008,117.951,118.895,119.838,120.782,121.726,122.669,123.613,124.556,125.5,126.444,127.387,128.331,129.274,130.218,131.162,132.105,133.049,133.992,134.936,135.88,136.823,137.767,138.711,139.654,140.598,141.541,142.485,143.429,144.372,145.316,146.259,147.203,148.147,149.09,150.034,150.977];
+const hanRun = /(\p{Script=Han}+)/u;
+const hanAdvance = (size) => {
+  const index = Math.min(hanAdvances.length, Math.max(1, size)) - 1;
+  const low = Math.floor(index); const high = Math.min(hanAdvances.length - 1, low + 1);
+  const value = hanAdvances[low] + (hanAdvances[high] - hanAdvances[low]) * (index - low);
+  return size > hanAdvances.length ? value * size / hanAdvances.length : value;
+};
+
+/// Sets element's text, drawing emoji runs with `adjust.emoji` ({fontSize,
+/// padding} in px) and Han runs with `adjust.han` ({letterSpacing} in px),
+/// both from the measurer, when the browser needs adjusting.
+export function fillText(element, text, adjust) {
+  const emoji = adjust?.emoji && emojiRun.test(text) ? adjust.emoji : null;
+  const han = adjust?.han && hanRun.test(text) ? adjust.han : null;
+  if (!emoji && !han) { element.textContent = text; return; }
   const doc = element.ownerDocument;
-  element.replaceChildren(...text.split(emojiRun).filter((part) => part !== "").map((part) => {
-    if (!emojiRun.test(part)) return doc.createTextNode(part);
+  const pattern = new RegExp(`${emoji ? emojiRun.source : "(?!)"}|${han ? hanRun.source : "(?!)"}`, "u");
+  element.replaceChildren(...text.split(pattern).filter((part) => part !== undefined && part !== "").map((part) => {
     const span = doc.createElement("span");
-    Object.assign(span.style, { fontSize: `${emoji.fontSize}px`, lineHeight: "0", padding: `0 ${emoji.padding}px` });
+    if (emoji && emojiRun.test(part)) Object.assign(span.style, { fontSize: `${emoji.fontSize}px`, lineHeight: "0", padding: `0 ${emoji.padding}px`, position: "relative", top: `${emoji.drop}px` });
+    else if (han && hanRun.test(part)) span.style.letterSpacing = `${han.letterSpacing}px`;
+    else return doc.createTextNode(part);
     span.textContent = part;
     return span;
   }));
@@ -487,13 +551,14 @@ export function createTextMeasurer(doc) {
   const apply = (style) => {
     probe.style.fontFamily = style.family; probe.style.fontSize = `${style.size}px`;
     probe.style.fontWeight = String(style.weight); probe.style.lineHeight = `${style.leading}px`;
+    probe.style.fontVariantNumeric = style.design === "serif" && !style.custom ? "lining-nums" : "";
   };
   const measure = (text, style, width) => {
     const key = `${style.key}|${width}|${text}`;
     if (cache.has(key)) return cache.get(key);
     apply(style);
     probe.style.width = width === null ? "max-content" : `${width}px`;
-    fillText(probe, text, emojiSize(style));
+    fillText(probe, text, textAdjustments(style));
     const range = doc.createRange();
     range.selectNodeContents(probe);
     const rects = [...range.getClientRects()].filter((rect) => rect.width > 0 || rect.height > 0);
@@ -516,12 +581,30 @@ export function createTextMeasurer(doc) {
     const advance = emojiAdvances[index] ?? style.size * 1.09;
     const glyph = emojiGlyphs[index] ?? style.size;
     // Browsers that differ draw the glyph as wide as its advance.
+    // CoreText enlarges small emoji around their middle; resized in the
+    // browser they would grow up from the baseline, so drop them by half
+    // the enlargement.
     const result = measured > 0 && Math.abs(measured - advance) > 0.5
-      ? { fontSize: style.size * glyph / measured, padding: Math.max(0, (advance - glyph) / 2) }
+      ? { fontSize: style.size * glyph / measured, padding: Math.max(0, (advance - glyph) / 2), drop: Math.max(0, (glyph - style.size) / 2) }
       : null;
     emojiStyles.set(style.key, result);
     return result;
   }
+  // How far to letter-space Han runs so each ideograph advances as far as in
+  // CoreText, or null when the browser already matches.
+  const hanStyles = new Map();
+  function hanSpacing(style) {
+    if (hanStyles.has(style.key)) return hanStyles.get(style.key);
+    apply(style);
+    probe.style.width = "max-content";
+    probe.textContent = "\u4ECA".repeat(10);
+    const measured = probe.getBoundingClientRect().width / 10;
+    const delta = hanAdvance(style.size) - measured;
+    const result = measured > 0 && Math.abs(delta) > 0.02 ? { letterSpacing: delta } : null;
+    hanStyles.set(style.key, result);
+    return result;
+  }
+  const textAdjustments = (style) => ({ emoji: emojiSize(style), han: hanSpacing(style) });
   // Where the browser draws the first baseline below the top of a line box
   // of the style's leading (fonts round their metrics differently).
   const baselines = new Map();
@@ -540,6 +623,7 @@ export function createTextMeasurer(doc) {
     measure,
     baseline,
     emojiSize,
+    textAdjustments,
     ellipsisWidth: (style) => measure("…", style, null).width,
     dispose() { host.remove(); },
   };
