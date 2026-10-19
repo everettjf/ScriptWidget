@@ -18,27 +18,27 @@ if [ -n "$IPAD_UDID" ]; then
   fi
 fi
 
+# xcodebuild passes only TEST_RUNNER_-prefixed variables to the test process.
 if [ -n "${SCRIPTWIDGET_ICLOUD_DEVICE_DESTINATION:-}" ]; then
   echo "Running real iCloud container round-trip on the configured signed-in iPad"
-  xcodebuild -quiet \
+  TEST_RUNNER_SCRIPTWIDGET_ICLOUD_INTEGRATION=1 xcodebuild -quiet \
     -project iOS/ScriptWidget.xcodeproj -scheme ScriptWidgetRuntimeTests \
     -destination "$SCRIPTWIDGET_ICLOUD_DEVICE_DESTINATION" \
-    -derivedDataPath "$DERIVED_DATA/icloud-device" \
-    SCRIPTWIDGET_ICLOUD_INTEGRATION=1 \
+    -derivedDataPath "$DERIVED_DATA/icloud-device" -allowProvisioningUpdates \
     test -only-testing:ScriptWidgetRuntimeTests/ICloudContainerIntegrationTests
 fi
 
 if [ -n "${SCRIPTWIDGET_ICLOUD_WRITER_DESTINATION:-}" ] && [ -n "${SCRIPTWIDGET_ICLOUD_READER_DESTINATION:-}" ]; then
   TOKEN=${SCRIPTWIDGET_ICLOUD_SHARED_TOKEN:-$(date +%s)}
   echo "Writing cross-device iCloud probe $TOKEN"
+  TEST_RUNNER_SCRIPTWIDGET_ICLOUD_INTEGRATION=1 TEST_RUNNER_SCRIPTWIDGET_ICLOUD_ROLE=writer TEST_RUNNER_SCRIPTWIDGET_ICLOUD_SHARED_TOKEN="$TOKEN" \
   xcodebuild -quiet -project iOS/ScriptWidget.xcodeproj -scheme ScriptWidgetRuntimeTests \
-    -destination "$SCRIPTWIDGET_ICLOUD_WRITER_DESTINATION" -derivedDataPath "$DERIVED_DATA/icloud-writer" \
-    SCRIPTWIDGET_ICLOUD_INTEGRATION=1 SCRIPTWIDGET_ICLOUD_ROLE=writer SCRIPTWIDGET_ICLOUD_SHARED_TOKEN="$TOKEN" \
+    -destination "$SCRIPTWIDGET_ICLOUD_WRITER_DESTINATION" -derivedDataPath "$DERIVED_DATA/icloud-writer" -allowProvisioningUpdates \
     test -only-testing:ScriptWidgetRuntimeTests/ICloudContainerIntegrationTests/testCrossDeviceConvergenceWhenConfigured
   echo "Reading cross-device iCloud probe $TOKEN"
+  TEST_RUNNER_SCRIPTWIDGET_ICLOUD_INTEGRATION=1 TEST_RUNNER_SCRIPTWIDGET_ICLOUD_ROLE=reader TEST_RUNNER_SCRIPTWIDGET_ICLOUD_SHARED_TOKEN="$TOKEN" \
   xcodebuild -quiet -project iOS/ScriptWidget.xcodeproj -scheme ScriptWidgetRuntimeTests \
-    -destination "$SCRIPTWIDGET_ICLOUD_READER_DESTINATION" -derivedDataPath "$DERIVED_DATA/icloud-reader" \
-    SCRIPTWIDGET_ICLOUD_INTEGRATION=1 SCRIPTWIDGET_ICLOUD_ROLE=reader SCRIPTWIDGET_ICLOUD_SHARED_TOKEN="$TOKEN" \
+    -destination "$SCRIPTWIDGET_ICLOUD_READER_DESTINATION" -derivedDataPath "$DERIVED_DATA/icloud-reader" -allowProvisioningUpdates \
     test -only-testing:ScriptWidgetRuntimeTests/ICloudContainerIntegrationTests/testCrossDeviceConvergenceWhenConfigured
 fi
 

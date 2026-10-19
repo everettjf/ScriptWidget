@@ -29,6 +29,15 @@ import AppIntentsTesting
 // (the macOS target "ScriptWidgetMac" ships PRODUCT_NAME = ScriptWidget).
 @testable import ScriptWidget
 
+/// Skips a test that reads the repository checkout through `#filePath`. Such
+/// tests run on Simulator and macOS; a physical device cannot see the Mac's disk.
+func skipUnlessRepositoryCheckout(_ directory: URL) throws {
+    var isDirectory: ObjCBool = false
+    guard FileManager.default.fileExists(atPath: directory.path, isDirectory: &isDirectory), isDirectory.boolValue else {
+        throw XCTSkip("Reads the repository checkout; runs on Simulator and macOS, not on a device.")
+    }
+}
+
 final class AICopilotPromptTests: XCTestCase {
     func testSkillsAugmentPromptDeterministically() {
         let prompt = AIWidgetSkills.augment(
@@ -385,6 +394,7 @@ final class RuntimeContractTests: XCTestCase {
     }
 
     func testBundledExamplesFitThePublishedSourceBudget() throws {
+        try skipUnlessRepositoryCheckout(URL(fileURLWithPath: #filePath).deletingLastPathComponent())
         let testsDirectory = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
         let templates = testsDirectory
             .deletingLastPathComponent()
@@ -1561,6 +1571,7 @@ final class GalleryTests: XCTestCase {
     }
 
     func testRepositoryGalleryIndexAndHashesValidate() throws {
+        try skipUnlessRepositoryCheckout(repositoryRoot)
         let data = try Data(contentsOf: repositoryRoot.appendingPathComponent("Gallery/index.json"))
         let index = try XCTUnwrap(try GalleryIndexValidator.decode(data).get())
         XCTAssertEqual(index.items.count, 2)
@@ -1576,6 +1587,7 @@ final class GalleryTests: XCTestCase {
     }
 
     func testIndexRejectsUnknownFieldsAndUnsafePaths() throws {
+        try skipUnlessRepositoryCheckout(repositoryRoot)
         let source = try Data(contentsOf: repositoryRoot.appendingPathComponent("Gallery/index.json"))
         var object = try XCTUnwrap(JSONSerialization.jsonObject(with: source) as? [String: Any])
         object["futureField"] = true
@@ -1591,6 +1603,7 @@ final class GalleryTests: XCTestCase {
     }
 
     func testClientUsesETagAndFallsBackToVerifiedOfflineCache() async throws {
+        try skipUnlessRepositoryCheckout(repositoryRoot)
         let source = try Data(contentsOf: repositoryRoot.appendingPathComponent("Gallery/index.json"))
         let indexURL = GalleryClient.defaultIndexURL
         let transport = GalleryTestTransport(responses: [
@@ -1614,6 +1627,7 @@ final class GalleryTests: XCTestCase {
     }
 
     func testInstallerVerifiesAndInstallsWidgetAndSkillTransactionally() async throws {
+        try skipUnlessRepositoryCheckout(repositoryRoot)
         let indexData = try Data(contentsOf: repositoryRoot.appendingPathComponent("Gallery/index.json"))
         let index = try GalleryIndexValidator.decode(indexData).get()
         var responses: [URL: Result<(Data, HTTPURLResponse), Error>] = [:]
@@ -1645,6 +1659,7 @@ final class GalleryTests: XCTestCase {
     }
 
     func testChangedFingerprintAtSameVersionOffersUpdate() throws {
+        try skipUnlessRepositoryCheckout(repositoryRoot)
         let root = makeTemporaryDirectory()
         let registry = GalleryInstallationRegistry(fileURL: root.appendingPathComponent("registry.json"))
         let item = try XCTUnwrap(try GalleryIndexValidator.decode(Data(contentsOf: repositoryRoot.appendingPathComponent("Gallery/index.json"))).get().items.first)

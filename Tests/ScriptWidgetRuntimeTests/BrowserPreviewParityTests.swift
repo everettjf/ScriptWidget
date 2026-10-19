@@ -384,6 +384,7 @@ final class BrowserPreviewParityTests: XCTestCase {
     /// Web/preview-engine writes this .swt with the Studio export code; iPhone
     /// must accept it with the same preflight, extraction, and validation.
     func testWebExportedPackageImportsNatively() throws {
+        try skipUnlessRepositoryCheckout(Self.repositoryRoot)
         let archive = Self.repositoryRoot.appendingPathComponent("Web/preview-engine/test/fixtures/web-export.swt")
         XCTAssertNil(ScriptPackageArchivePreflight.validate(archive))
         let destination = FileManager.default.temporaryDirectory.appendingPathComponent("web-export-\(UUID().uuidString)")
@@ -436,6 +437,7 @@ final class BrowserPreviewParityTests: XCTestCase {
     }
 
     func testCorpusTreesMatchCheckedInParityFile() throws {
+        try skipUnlessRepositoryCheckout(Self.repositoryRoot)
         let prelude = try String(contentsOf: Self.parityDirectory.appendingPathComponent("prelude.js"), encoding: .utf8)
         var entries: [String: Any] = [:]
         for (name, directory) in try Self.corpusPackages() {
