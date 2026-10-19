@@ -51,6 +51,7 @@
 		7C1CD291557F279F10015471 /* ScriptWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B6F215257FA2DE1B4C3186 /* ScriptWidgetAppIntent.swift */; };
 		805F9FB982666CCD89E41042 /* ScriptWidgetRuntimeElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8592AB70139A30534BBCD978 /* ScriptWidgetRuntimeElement.swift */; };
 		87A5D1DA5D3FBB4B4D175CD1 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = 2FED329A4E1DB49EAE393E63 /* SwiftyJSON */; };
+		87BAD7AD54E16FC2F0B079AA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B770AC2044FCF79C5C02FF0F /* Assets.xcassets */; };
 		8835386A14F7133BAA0528DA /* ScriptWidgetElementTagImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69E92800A6E280534F8EB542 /* ScriptWidgetElementTagImage.swift */; };
 		8A422FD08053E7F1EAF54A4D /* CompareModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 455D5664AEA5C2F615823A2C /* CompareModel.swift */; };
 		8CC4526E82316BE21DA9AB91 /* ButtonActionAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48F2FE39420DBDAB74523572 /* ButtonActionAppIntent.swift */; };
@@ -157,6 +158,7 @@
 		AE81A7C11747FCA0A9A1EF71 /* ScriptWidgetElementTagZStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementTagZStack.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagZStack.swift; sourceTree = "<group>"; };
 		B0C6491F33A677450964D105 /* ScriptWidgetElementTagShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementTagShape.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagShape.swift; sourceTree = "<group>"; };
 		B26418C9074552F9D6D0C96B /* ImageDiff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageDiff.swift; sourceTree = "<group>"; };
+		B770AC2044FCF79C5C02FF0F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B90FE479B727E15CD43C026F /* ScriptWidgetElementTagExtras.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetElementTagExtras.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagExtras.swift; sourceTree = "<group>"; };
 		B9DE458FEFED9E8FC94FD995 /* ScriptWidgetAttributeFontModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ScriptWidgetAttributeFontModifier.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Text/ScriptWidgetAttributeFontModifier.swift; sourceTree = "<group>"; };
 		BB1ADA1660891F9673BA1A35 /* MineGaugeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MineGaugeView.swift; path = ../../Shared/ScriptWidgetRuntime/Widget/Util/MineGaugeView.swift; sourceTree = "<group>"; };
@@ -312,6 +314,7 @@
 		FD2387E2CA801F2EE83C09AC = {
 			isa = PBXGroup;
 			children = (
+				B770AC2044FCF79C5C02FF0F /* Assets.xcassets */,
 				7823B6F22FD8591AB231AC6F /* Info.plist */,
 				6FE86127CFCA4810FF77D85C /* Resources */,
 				9690A5AB83D3EE1E417A0728 /* Shared */,
@@ -389,6 +392,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C35482C1767599A5B80529C2 /* Apple ][.ttf in Resources */,
+				87BAD7AD54E16FC2F0B079AA /* Assets.xcassets in Resources */,
 				F63CB02F9E4406054DB48BE0 /* Larabiefont Free.ttf in Resources */,
 				4B3EA045D2B897D957522246 /* Monofonto.ttf in Resources */,
 				EC0BA7E0AF736B818C98EBEC /* New.ttf in Resources */,
