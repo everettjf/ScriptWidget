@@ -708,5 +708,55 @@
   "name": "label-circular-rows",
   "size": "accessoryCircular",
   "source": "$render(<vstack frame=\"max\" spacing=\"8\"><label title=\"Sunrise\" systemName=\"sunrise.fill\" color=\"#f59e0b\"/><label title=\"Battery\" systemName=\"battery.100\" color=\"#22c55e\"/></vstack>)"
+ },
+ {
+  "name": "lock-circ-vstack-3text",
+  "size": "accessoryCircular",
+  "source": "$render(<vstack><text font=\"headline\">Headline text</text><text font=\"body\">Body line here</text><text font=\"caption\">Caption under it</text></vstack>)"
+ },
+ {
+  "name": "lock-circ-vstack-max",
+  "size": "accessoryCircular",
+  "source": "$render(<vstack frame=\"max\"><text font=\"headline\">Headline text</text><text font=\"body\">Body line here</text><text font=\"caption\">Caption under it</text></vstack>)"
+ },
+ {
+  "name": "lock-circ-tall-fixed",
+  "size": "accessoryCircular",
+  "source": "$render(<vstack><rect frame=\"40,90\" color=\"blue\"/><text font=\"caption\">Below</text></vstack>)"
+ },
+ {
+  "name": "lock-circ-wide-fixed",
+  "size": "accessoryCircular",
+  "source": "$render(<hstack><rect frame=\"120,20\" color=\"red\"/><text font=\"caption\">Side</text></hstack>)"
+ },
+ {
+  "name": "lock-circ-padded",
+  "size": "accessoryCircular",
+  "source": "$render(<vstack padding=\"14\" frame=\"max\" background=\"#1f2937\"><text font=\"title2\" fontWeight=\"bold\" color=\"white\">Big title</text><text font=\"caption\" color=\"#9ca3af\">Small caption text</text></vstack>)"
+ },
+ {
+  "name": "lock-rect-vstack-3text",
+  "size": "accessoryRectangular",
+  "source": "$render(<vstack><text font=\"headline\">Headline text</text><text font=\"body\">Body line here</text><text font=\"caption\">Caption under it</text></vstack>)"
+ },
+ {
+  "name": "lock-rect-vstack-max",
+  "size": "accessoryRectangular",
+  "source": "$render(<vstack frame=\"max\"><text font=\"headline\">Headline text</text><text font=\"body\">Body line here</text><text font=\"caption\">Caption under it</text></vstack>)"
+ },
+ {
+  "name": "lock-rect-tall-fixed",
+  "size": "accessoryRectangular",
+  "source": "$render(<vstack><rect frame=\"40,90\" color=\"blue\"/><text font=\"caption\">Below</text></vstack>)"
+ },
+ {
+  "name": "lock-rect-wide-fixed",
+  "size": "accessoryRectangular",
+  "source": "$render(<hstack><rect frame=\"120,20\" color=\"red\"/><text font=\"caption\">Side</text></hstack>)"
+ },
+ {
+  "name": "lock-rect-padded",
+  "size": "accessoryRectangular",
+  "source": "$render(<vstack padding=\"14\" frame=\"max\" background=\"#1f2937\"><text font=\"title2\" fontWeight=\"bold\" color=\"white\">Big title</text><text font=\"caption\" color=\"#9ca3af\">Small caption text</text></vstack>)"
  }
 ]
