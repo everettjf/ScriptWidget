@@ -19,6 +19,7 @@ targets:
       - path: Sources
       - path: Info.plist
         buildPhase: none
+      - path: Assets.xcassets
       - path: ../../Shared/ScriptWidgetRuntime/Common/ScriptManager.swift
         group: Shared
       - path: ../../Shared/ScriptWidgetRuntime/Common/ScriptMetadata.swift
@@ -177,6 +178,7 @@ targets:
         PRODUCT_NAME: ScriptWidget Preview
         PRODUCT_BUNDLE_IDENTIFIER: app.xnu.scriptwidget.preview
         INFOPLIST_FILE: Info.plist
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SWIFT_VERSION: "5.0"
         CODE_SIGN_IDENTITY: "-"
         CODE_SIGN_STYLE: Manual
