@@ -134,6 +134,10 @@ export async function launchChrome({ width = 800, height = 800, scale = 2, start
       };
       return {
         call, evaluate, consoleMessages,
+        /// Calls `handler(params)` for each CDP event `method` of this page.
+        onEvent(method, handler) {
+          listeners.add((message) => { if (message.sessionId === sessionId && message.method === method) handler(message.params); });
+        },
         async goto(url) { await call("Page.navigate", { url }); },
         async waitFor(expression, timeout = 15000) {
           const deadline = Date.now() + timeout;

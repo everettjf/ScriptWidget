@@ -77,6 +77,13 @@ function Stage({ output }: { output: PreviewOutput }) {
   return (
     <div id="stage" className="grid min-h-[300px] place-items-center overflow-auto bg-stage px-3 py-6 max-[720px]:justify-items-start max-[720px]:p-4" aria-live="polite">
       <div ref={host} className={output.kind === "widget" ? "contents" : "hidden"} />
+      {output.kind === "unavailable" && (
+        <div id="runtime-unavailable" role="alert" className="max-w-sm rounded-xl border bg-card p-4 text-sm">
+          <strong>The preview can't start</strong>
+          <p className="mt-1.5 text-muted-foreground">{output.message}</p>
+          <p className="mt-1.5 text-muted-foreground">You can keep editing, export the widget, and preview it on iPhone.</p>
+        </div>
+      )}
       {output.kind === "error" && (
         <div className="max-w-full rounded-xl border border-destructive bg-card p-3 text-destructive">
           <strong>{output.errorKind}</strong>

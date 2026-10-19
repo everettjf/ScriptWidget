@@ -88,7 +88,7 @@ export function App() {
 
   const importFile = async (file: File) => {
     const result = await importPackage(new Uint8Array(await file.arrayBuffer()));
-    if (result.error !== undefined) { toast.error("This package cannot be imported", { description: result.error }); return; }
+    if (result.error !== undefined) { toast.error(`${file.name} can't be imported`, { description: `${result.error} Export a .swt from ScriptWidget or Web Studio and try again.` }); return; }
     await model.addProject(createProject(result.manifest.name, result.files));
     toast.success(`Imported ${result.manifest.name}`);
   };
@@ -103,10 +103,31 @@ export function App() {
     toast.success(`Added ${target}`, { description: `Use <image id="${name.replace(/\.[^.]+$/, "")}" /> in your widget.` });
   };
 
+  // Dropping a .swt or .zip anywhere on the page imports it; images are
+  // added to the open project.
+  const [dragging, setDragging] = useState(false);
+  const onDrop = (event: React.DragEvent) => {
+    event.preventDefault();
+    setDragging(false);
+    const file = event.dataTransfer.files[0];
+    if (!file) return;
+    if (/\.(swt|zip)$/i.test(file.name)) void importFile(file);
+    else if (/^image\/(png|jpeg|webp|gif)$/.test(file.type)) void addImage(file);
+    else toast.error(`${file.name} isn't a widget package or image`, { description: "Drop a .swt or .zip package, or a PNG, JPEG, WebP, or GIF image." });
+  };
+
   if (!project || !report) return <div className="grid h-full place-items-center text-sm text-muted-foreground">Loading projects…</div>;
 
   return (
-    <div className="flex h-full flex-col max-[1100px]:h-auto">
+    <div className="relative flex h-full flex-col max-[1100px]:h-auto"
+      onDragOver={(event) => { if (event.dataTransfer.types.includes("Files")) { event.preventDefault(); setDragging(true); } }}
+      onDragLeave={(event) => { if (event.currentTarget === event.target) setDragging(false); }}
+      onDrop={onDrop}>
+      {dragging && (
+        <div id="drop-overlay" className="pointer-events-none absolute inset-0 z-40 grid place-items-center bg-primary/10 ring-4 ring-primary/40 ring-inset">
+          <p className="rounded-lg bg-card px-4 py-2 text-sm font-medium shadow">Drop a .swt package to import it, or an image to add it</p>
+        </div>
+      )}
       <a href="#editor" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-card focus:px-3 focus:py-1.5">Skip to editor</a>
       <TopBar
         projectName={project.name} projectID={project.id} onRename={model.rename}

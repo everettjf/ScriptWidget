@@ -46,6 +46,18 @@ async function desktop(): Promise<void> {
     })()`);
     await page.waitFor("document.getElementById('project-name').value === 'Web Export Fixture' && document.querySelector('.sw-widget')?.textContent.includes('From the web')", 20000);
     console.log("imported .swt renders");
+    // Dropping the same package on the page imports another copy.
+    const projectsBefore = await page.evaluate<number>("document.querySelectorAll('#project-list li').length");
+    await page.evaluate(`(async () => {
+      const bytes = await (await fetch("/__fixture.swt")).arrayBuffer();
+      const transfer = new DataTransfer();
+      transfer.items.add(new File([bytes], "Dropped Fixture.swt", { type: "application/zip" }));
+      const target = document.getElementById("root").firstElementChild;
+      target.dispatchEvent(new DragEvent("dragover", { bubbles: true, cancelable: true, dataTransfer: transfer }));
+      target.dispatchEvent(new DragEvent("drop", { bubbles: true, cancelable: true, dataTransfer: transfer }));
+    })()`);
+    await page.waitFor(`document.querySelectorAll('#project-list li').length === ${projectsBefore + 1} && !document.getElementById('drop-overlay')`, 20000);
+    console.log("dropped .swt imports");
     // Editing the source updates the preview.
     await page.evaluate("document.querySelector('.cm-content').focus(); document.execCommand('selectAll')");
     await page.call("Input.insertText", { text: "$render(<text>Edited in the smoke test</text>)" });
@@ -80,9 +92,28 @@ async function phone(): Promise<void> {
   }
 }
 
+/// A content blocker that stops sandbox.html must produce a clear message
+/// within seconds, not a 30-second spinner.
+async function blockedSandbox(): Promise<void> {
+  const chrome = await launchChrome({ width: 1200, height: 800, scale: 1 });
+  try {
+    const page = await chrome.newPage();
+    // Fail sandbox.html the way a content-blocking extension does.
+    page.onEvent("Fetch.requestPaused", (params: { requestId: string }) => void page.call("Fetch.failRequest", { requestId: params.requestId, errorReason: "BlockedByClient" }));
+    await page.call("Fetch.enable", { patterns: [{ urlPattern: "*sandbox.html*" }] });
+    const started = Date.now();
+    await page.goto(studioURL);
+    await page.waitFor("document.getElementById('runtime-unavailable')?.textContent.includes('blocked the preview sandbox')", 12000);
+    console.log(`blocked sandbox: explained after ${((Date.now() - started) / 1000).toFixed(1)} s`);
+  } finally {
+    await chrome.close();
+  }
+}
+
 try {
   await desktop();
   await phone();
+  await blockedSandbox();
 } catch (error) {
   console.error((error as Error).message);
   failed = true;

@@ -8,7 +8,7 @@ import { runtimeContract } from "../contract.js";
 /// strict Content-Security-Policy: a `srcdoc` frame inherits the parent's
 /// policy, a URL-loaded sandboxed frame does not. `sandboxDocument` (srcdoc)
 /// suits pages without a CSP.
-export function createPreviewSandbox({ sandboxDocument, sandboxURL, assetBaseURL, container = document.body, onLog = () => {}, startupTimeoutMilliseconds = 30000 }) {
+export function createPreviewSandbox({ sandboxDocument, sandboxURL, assetBaseURL, container = document.body, onLog = () => {}, startupTimeoutMilliseconds = 30000, blockedFrameMilliseconds = 4000 }) {
   const iframe = document.createElement("iframe");
   iframe.setAttribute("sandbox", "allow-scripts");
   iframe.setAttribute("aria-hidden", "true");
@@ -34,10 +34,16 @@ export function createPreviewSandbox({ sandboxDocument, sandboxURL, assetBaseURL
   const assets = Promise.all(["core.js", "util.js", "moment.min.js"].map(loadText))
     .then(([babel, util, moment]) => ({ babel, supportScripts: { "util.js": util, "moment.min.js": moment } }));
 
+  // The frame says hello as soon as its script runs. A frame that loads but
+  // never does was replaced by an error page: a content blocker or browser
+  // policy blocked the sandbox document, which no retry will fix.
+  let booted = false;
   const onMessage = (event) => {
     if (event.source !== iframe.contentWindow || event.origin !== "null") return;
     const message = event.data;
     if (!message || typeof message !== "object") return;
+    booted = true;
+    if (message.type === "booted") return;
     if (message.type === "log") onLog(String(message.message));
     else if (message.type === "ready") resolveReady();
     else if (message.type === "failed") rejectReady(new Error(message.message));
@@ -49,6 +55,9 @@ export function createPreviewSandbox({ sandboxDocument, sandboxURL, assetBaseURL
   window.addEventListener("message", onMessage);
 
   iframe.addEventListener("load", async () => {
+    setTimeout(() => {
+      if (!booted) rejectReady(new Error("The browser blocked the preview sandbox. A content blocker or browser setting may be stopping it; allow this site or try another browser."));
+    }, blockedFrameMilliseconds);
     try {
       const { babel } = await assets;
       iframe.contentWindow.postMessage({ type: "init", babel }, "*");

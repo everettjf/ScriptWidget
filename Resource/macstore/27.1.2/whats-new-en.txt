@@ -1,0 +1,3 @@
+Eight new built-in widgets that adapt to every size: Month Calendar, Weather Glance, Activity Rings, World Clock Faces, Year in Dots, Habit Heatmap, Now Playing, and Portfolio Pulse.
+Code in the editor is easier to read in Dark Mode.
+Widgets shared from Web Studio in Safari now import directly.

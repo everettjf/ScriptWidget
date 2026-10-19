@@ -3,6 +3,7 @@ export interface ChromePage {
   call(method: string, params?: Record<string, unknown>): Promise<any>;
   evaluate<T = unknown>(expression: string): Promise<T>;
   consoleMessages: string[];
+  onEvent<T = unknown>(method: string, handler: (params: T) => void): void;
   goto(url: string): Promise<void>;
   waitFor(expression: string, timeout?: number): Promise<true>;
   screenshot(clip?: { x: number; y: number; width: number; height: number }): Promise<Buffer>;
