@@ -127,4 +127,6 @@ export const symbolShapes = Object.freeze({
   "heart.text.square.fill": (id) => `<defs><mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24"><rect width="24" height="24" fill="white"/>`
     + `<path fill="black" d="M8 9.6C4.9 7.5 4.9 4.4 6.8 4.4C7.6 4.4 8 5.1 8 5.1C8 5.1 8.4 4.4 9.2 4.4C11.1 4.4 11.1 7.5 8 9.6Z${roundedRect(5.5, 13.3, 11.5, 1.5, 0.75)}${roundedRect(5.5, 17.3, 8.5, 1.5, 0.75)}"/></mask></defs>`
     + `<path mask="url(#${id})" d="${roundedRect(2, 2, 19.5, 19.5, 3.4)}"/>`,
+  "globe.americas.fill": () => `<circle cx="11.75" cy="11.75" r="10.2" fill="none" stroke="currentColor" stroke-width="1.7"/>`
+    + `<path d="M4.5 6L6.5 3.5L11 1.8L16.5 2.2L17.5 4L15 5.2L14 7.5L12 8.5L10 9L8.3 8L6 7ZM10.5 10L17 10.5L18.2 12.5L17.5 15L15 17L13.5 18L12.5 15.5L11.3 12.5Z" stroke="currentColor" stroke-width="0.8" stroke-linejoin="round"/>`,
 });
