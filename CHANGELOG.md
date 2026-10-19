@@ -28,6 +28,7 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 - Web preview fidelity across every iOS widget size (16 sizes, 1,649 compared renders, 98.2% matching pixels): baselines, line pitch, VStack spacing, truncation, dictionary hyphenation for text styles, emoji metrics, and stack placement now follow measured SwiftUI behavior.
 - Web preview on iPhone sizes: line breaking now follows TextKit's standard strategy, truncation cuts mid-word without a space before "…", Chinese text is no longer hyphenated, charts use the iOS plot insets and label font, and buttons lay out their label side by side.
 - Web Studio on iPhone: the native preview image is no longer blank, and packages whose names contain spaces open and save correctly from the browser.
+- The share extension imports `.swt` and `.jsx` files shared from a web page (Web Share in Safari), which arrive as files rather than URLs.
 - Importing a package with a malformed `widget.json` now fails instead of replacing the manifest with a legacy one.
 - `fontWeight`, `fontDesign`, and the older `weight` property are now applied to text, dates, icons, labels, and images. They were documented and used by templates but previously ignored.
 

@@ -607,7 +607,8 @@ on average (2.26% with Lucide icons alone).
 | Pages layout | `site/` + Studio at `/studio/` assembled like the workflow passes the smoke test; both workflows parse |
 | Chromium, Firefox, WebKit on Ubuntu and Windows (GitHub Actions, Web Browsers workflow) | Studio renders (28–90 ms), 71 templates, `.swt` import; 100/100 byte-identical trees; every isolation probe blocked; engine test suite passes on both OSes |
 | Live site | https://xnu.app/scriptwidget/studio/ deployed by Pages and rendering over HTTPS in headless Chrome |
-| **Not verified** | A physical iPhone, and the share-sheet install (needs taps on the device or simulator) |
+| Web Share in iOS 27 Safari (simulator) | `navigator.canShare` accepts the exported `Widget.swt` (`application/zip`) in a secure context, so **Install on iPhone** opens the share sheet; the share extension builds with the file-representation import path |
+| **Not verified** | A physical iPhone, and choosing ScriptWidget in the share sheet through to a completed import (needs taps on the device or simulator) |
 
 WebKit note: revoking a blob URL immediately after `new Worker(url)` prevents
 WebKit from starting the Worker because it fetches the script asynchronously.
