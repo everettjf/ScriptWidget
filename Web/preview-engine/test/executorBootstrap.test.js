@@ -27,6 +27,8 @@ function runInWorkerScope(source, fixtures) {
       fetch: () => { throw new Error("the worker's own fetch must not be reachable"); },
     });
     context.self = context;
+    // Firefox throws from some worker getters in an opaque origin.
+    vm.runInContext(`Object.defineProperty(globalThis, "caches", { get() { throw new Error("NS_ERROR_FAILURE"); }, configurable: true });`, context);
     context.importScripts = (url) => vm.runInContext(blobs.get(url), context);
     vm.runInContext(`(${executorBootstrap.toString()})(${scriptWidgetKernel.toString()})`, context);
     const config = JSON.stringify({ contract: runtimeContract, environments: { "widget-size": "small", "widget-param": "" }, preview: { appearance: "light" }, fixtures, manifest: null, hasManifest: false });
