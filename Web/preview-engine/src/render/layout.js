@@ -117,6 +117,10 @@ export class TextNode extends Node {
 
   /// SwiftUI keeps breaking a word one character per line in a column
   /// narrower than "…" as long as its first character fits.
+  /// Whether a height proposal leaves room for a single line only.
+  oneLine(ph) {
+    return ph !== null && ph !== Infinity && ph < this.style.natural + this.style.leading - 1e-6;
+  }
   wrapsCharacters(width) {
     const first = [...this.text.trim()][0];
     return first !== undefined && this.measurer.measure(first, this.style, null).width <= width + 0.01;
@@ -199,9 +203,13 @@ export class TextNode extends Node {
     // Offered no width at all, SwiftUI draws nothing.
     if (pw !== null && pw <= 0.01) return { width: 0, height: natural, lines: 1, total: 1, text: "" };
     if (pw === null || pw === Infinity) { const m = this.metrics(null); width = m.width; lines = m.lines; }
-    // Narrower than "…" and its first character: SwiftUI keeps the offered
-    // width and draws a clipped "…".
-    else if (pw < this.measurer.ellipsisWidth(this.style) && !this.wrapsCharacters(pw)) return { width: snap(pw), height: natural, lines: 1, total: 1, text: this.text.trim() === "" ? "" : "…", clip: true };
+    // Narrower than "…": with room for one line, SwiftUI draws the text
+    // itself unwrapped and clipped ("Bl" for BEIJING in 9 points); with room
+    // for more lines and not even the first character fitting, a clipped "…".
+    else if (pw < this.measurer.ellipsisWidth(this.style) && (this.oneLine(ph) || !this.wrapsCharacters(pw))) {
+      const text = this.text.trim() === "" ? "" : this.oneLine(ph) ? this.text.split("\n")[0] : "…";
+      return { width: snap(pw), height: natural, lines: 1, total: 1, text, clip: true };
+    }
     else {
       // Offered at least the natural width: keep the unwrapped layout rather
       // than re-measuring at an explicit width, which can wrap on sub-pixel
