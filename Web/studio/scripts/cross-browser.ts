@@ -32,6 +32,9 @@ interface Result {
   checks?: Record<string, boolean>;
   pageErrors?: string[];
   error?: string;
+  /// On failure: console errors and the visible page text, to see why.
+  consoleErrors?: string[];
+  pageText?: string;
 }
 
 declare global {
@@ -49,6 +52,7 @@ let failed = false;
 for (const name of requested) {
   const result: Result = { browser: name, platform: process.platform };
   let browser: Browser | undefined;
+  let failureDetail: (() => Promise<void>) | undefined;
   try {
     const type = browsers[name];
     if (!type) throw new Error(`Unknown browser ${name}`);
@@ -57,6 +61,13 @@ for (const name of requested) {
     const page = await context.newPage();
     const errors: string[] = [];
     page.on("pageerror", (error) => errors.push(error.message));
+    const consoleErrors: string[] = [];
+    page.on("console", (message) => { if (message.type() === "error") consoleErrors.push(message.text().slice(0, 400)); });
+    failureDetail = async () => {
+      result.pageErrors = errors;
+      result.consoleErrors = consoleErrors;
+      result.pageText = (await page.evaluate(() => document.body?.innerText ?? "").catch(() => "")).replace(/\s+/g, " ").slice(0, 600);
+    };
 
     // Studio: starter preview, templates, and .swt import.
     await page.goto(`${studio.origin}/index.html`);
@@ -92,6 +103,7 @@ for (const name of requested) {
     if (!Object.values(checks).every(Boolean) || errors.length) failed = true;
   } catch (error) {
     result.error = (error as Error).message.split("\n")[0];
+    await failureDetail?.().catch(() => {});
     failed = true;
   } finally {
     await browser?.close();
