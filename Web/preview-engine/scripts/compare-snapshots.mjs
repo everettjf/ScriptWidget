@@ -94,7 +94,17 @@ for (let index = 0; index < names.length; index += 1) {
 }
 report.sort((a, b) => (b.diffPercent ?? 100) - (a.diffPercent ?? 100));
 fs.writeFileSync(path.join(root, process.env.SW_FONTS ? `dist/compare-report-${process.env.SW_FONTS}-fonts.json` : "dist/compare-report.json"), JSON.stringify(report, null, 1));
-const scored = report.filter((item) => item.diffPercent !== undefined);
+// Entries whose native snapshot cannot be reproduced, so they say nothing
+// about the engine. They are still compared and listed, but kept out of the
+// averages.
+const unmeasurable = {
+  "component/date": "relative timers read the real clock at export time",
+  "component/toggle": "ImageRenderer draws Toggle as a placeholder",
+  "catalog/076-toggle": "ImageRenderer draws Toggle as a placeholder",
+};
+const entryOf = (name) => name.slice(0, name.lastIndexOf("@"));
+const scoredAll = report.filter((item) => item.diffPercent !== undefined);
+const scored = scoredAll.filter((item) => !unmeasurable[entryOf(item.name)]);
 const median = scored.length ? scored.map((item) => item.diffPercent).sort((a, b) => a - b)[Math.floor(scored.length / 2)] : null;
 console.log(`compared ${scored.length}, errors ${report.length - scored.length}, median diff ${median}%`);
 for (const item of report.slice(0, 15)) console.log(String(item.diffPercent ?? item.error).padStart(7), item.name);
@@ -132,6 +142,7 @@ for (const item of scored) {
   }
 }
 const summary = {
+  excluded: Object.fromEntries(Object.entries(unmeasurable).map(([entry, reason]) => [entry, { reason, renders: scoredAll.filter((item) => entryOf(item.name) === entry).length }])),
   all: summarize(scored.map((item) => item.diffPercent)),
   sizes: Object.fromEntries([...groups].sort(([a], [b]) => a.localeCompare(b)).map(([key, values]) => [key, summarize(values)])),
   tags: Object.fromEntries([...tags].sort(([a], [b]) => a.localeCompare(b)).map(([key, values]) => [key, summarize(values)])),
@@ -141,6 +152,7 @@ console.log("\n| Size | Renders | Median diff | Mean same | ≥99% same | ≤3% 
 for (const [key, row] of [...Object.entries(summary.sizes), ["all", summary.all]]) {
   console.log(`| ${key} | ${row.renders} | ${row.medianDiff}% | ${row.meanSame}% | ${row.within1}% | ${row.within3}% | ${row.within5}% |`);
 }
+console.log(`\nNot averaged (${scoredAll.length - scored.length} renders): ${Object.entries(unmeasurable).map(([entry, reason]) => `${entry} (${reason})`).join("; ")}`);
 browser.close(); server.close();
 await new Promise((resolve) => { chrome.once("exit", resolve); chrome.kill(); });
 fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });

@@ -122,6 +122,17 @@ test("SF Symbol metrics come from SwiftUI", () => {
   assert.deepEqual(symbolMetrics.globe, [1.17, 1.17]);
 });
 
+test("symbol stand-ins are measured symbols drawn with well-formed SVG", async () => {
+  const { symbolShapes } = await import("../src/render/symbolShapes.js");
+  for (const [name, shape] of Object.entries(symbolShapes)) {
+    assert.ok(symbolMetrics[name], `${name} has SwiftUI metrics`);
+    const markup = shape("m1");
+    assert.ok(markup.length > 0 && !markup.includes("undefined") && !markup.includes("NaN"), name);
+    // Every mask a stand-in uses is defined with the id it was given.
+    for (const [, id] of markup.matchAll(/url\(#([^)]+)\)/g)) assert.ok(markup.includes(`id="${id}"`), `${name} defines ${id}`);
+  }
+});
+
 test("hyphenation follows the TeX patterns Apple uses", () => {
   const hyphenated = (word) => { let out = ""; let last = 0; for (const point of hyphenationPoints(word)) { out += `${word.slice(last, point)}-`; last = point; } return out + word.slice(last); };
   // Matched against CFStringGetHyphenationLocationBeforeIndex.

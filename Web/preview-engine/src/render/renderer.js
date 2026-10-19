@@ -10,10 +10,14 @@ import {
 import { coverage, generalProps, ignoredProp } from "./coverage.js";
 import { deviceProfiles, widgetSize } from "./profiles.js";
 import { symbolMetrics } from "./symbolMetrics.generated.js";
+import { symbolShapes } from "./symbolShapes.js";
 import { lucideIcons, sfSymbolToLucide } from "./icons.generated.js";
 
 /// A path is closed when it uses Z or its final absolute point returns to
 /// the starting move (Lucide draws some outlines that way).
+// Unique mask ids across every widget drawn in a page.
+let maskCounter = 0;
+
 function closedPath(d) {
   if (/z/i.test(d)) return true;
   const start = /^\s*M\s*(-?[\d.]+)[\s,]*(-?[\d.]+)/.exec(d);
@@ -386,7 +390,11 @@ export async function renderWidget(treeJSON, {
   function glyph(systemName, font, inputPaint) {
     const paint = inputPaint ?? { color: primary() };
     const style = textStyleFor(font);
-    const icon = lucideIconFor(systemName);
+    // "x.circle.fill" / "x.square.fill": a filled container with the inner
+    // symbol cut out of it.
+    const containerMatch = /^(.+)\.(circle|square)\.fill$/.exec(systemName);
+    const container = containerMatch?.[2] ?? null;
+    const icon = container ? (lucideIconFor(containerMatch[1]) ?? []) : lucideIconFor(systemName);
     if (icon) report("info", "icon.approximated", `SF Symbol "${systemName}" is drawn with an open-source look-alike icon`);
     else report("warning", "icon.unmapped", `SF Symbol "${systemName}" has no web icon yet; a placeholder is shown`);
     // Real SF Symbol proportions when known (symbolMetrics.generated.js).
@@ -411,6 +419,33 @@ export async function renderWidget(treeJSON, {
       for (const [key, value] of Object.entries({ width: side, height: side, viewBox: "0 0 24 24", fill: "none", stroke: colorValue,
         "stroke-width": String(Math.max(1.5, Math.min(3, 1.4 + (style.weight - 100) / 400))), "stroke-linecap": "round", "stroke-linejoin": "round" })) svg.setAttribute(key, String(value));
       Object.assign(svg.style, { position: "absolute", left: `${(width - side) / 2}px`, top: `${(height - side) / 2}px` });
+      const shape = symbolShapes[systemName];
+      if (shape) {
+        svg.setAttribute("fill", "currentColor"); svg.setAttribute("stroke", "none");
+        Object.assign(svg.style, { color: colorValue, overflow: "visible" });
+        svg.innerHTML = shape(`sw-cut-${++maskCounter}`);
+        element.appendChild(svg);
+        return;
+      }
+      if (container) {
+        const id = `sw-cut-${++maskCounter}`;
+        const strokeWidth = Number(svg.getAttribute("stroke-width"));
+        svg.innerHTML = `<defs><mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24"><rect width="24" height="24" fill="white"/>`
+          + `<g transform="translate(12 12) scale(0.58) translate(-12 -12)" stroke="black" fill="none" stroke-width="${strokeWidth * 1.45}"></g></mask></defs>`
+          + (container === "circle" ? `<circle cx="12" cy="12" r="11" stroke="none" fill="${colorValue}" mask="url(#${id})"/>` : `<rect x="1.5" y="1.5" width="21" height="21" rx="5" stroke="none" fill="${colorValue}" mask="url(#${id})"/>`);
+        const cut = svg.querySelector("g");
+        for (const [tag, attributes] of icon) {
+          const item = element.ownerDocument.createElementNS(svgNS, tag);
+          for (const [key, value] of Object.entries(attributes)) item.setAttribute(key, String(value));
+          cut.appendChild(item);
+        }
+        element.appendChild(svg);
+        return;
+      }
+      // Lucide's plane points up and to the right and its quote closes; SF
+      // draws airplane level and quote.opening as an opening mark.
+      const turn = { airplane: 45, "airplane.departure": 0, "quote.opening": 180 }[systemName];
+      if (turn) svg.style.transform = `rotate(${turn}deg)`;
       // SF ".fill" variants are solid: fill the icon's closed shapes.
       const filled = /\.fill(\.|$)/.test(systemName);
       for (const [tag, attributes] of icon) {
@@ -1106,9 +1141,15 @@ export async function renderWidget(treeJSON, {
     vibrant: { plain: "grayscale(1) brightness(1.25)", accent: "grayscale(1) brightness(1.25)" },
   };
 
-  function draw(node, parent, accented = false) {
+  // iOS SwiftUI puts each view's vertical origin on the 2x pixel grid in widget
+  // coordinates (horizontal positions stay fractional: glyphs are placed
+  // with subpixel precision). `origin` is the parent's absolute position.
+  const snapToPixel = (value) => (platform() === "macos" ? value : Math.round(value * 2) / 2);
+  function draw(node, parent, accented = false, origin = [0, 0]) {
     const element = doc.createElement("div");
-    const { x, y, width, height } = node.frame;
+    const { width, height } = node.frame;
+    const absolute = [origin[0] + node.frame.x, snapToPixel(origin[1] + node.frame.y)];
+    const x = absolute[0] - origin[0]; const y = absolute[1] - origin[1];
     Object.assign(element.style, { position: "absolute", left: `${x}px`, top: `${y}px`, width: `${width}px`, height: `${height}px` });
     let accent = accented;
     if (node instanceof DecorationNode) {
@@ -1122,16 +1163,16 @@ export async function renderWidget(treeJSON, {
       node.draw(node, element);
       if (modeFilters[renderingMode]) element.style.filter = modeFilters[renderingMode][accent ? "accent" : "plain"];
     }
-    for (const child of node.children ?? (node.child ? [node.child] : [])) draw(child, element, accent);
+    for (const child of node.children ?? (node.child ? [node.child] : [])) draw(child, element, accent, absolute);
   }
 
   function applyDecoration(element, decoration, width, height) {
     const style = element.style;
     if (decoration.animation && animations === "firstFrame") {
-      // What ImageRenderer captures: clock hands at rest and the swing layout
-      // at angle 0, which shifts the content by half the distance.
-      const animation = decoration.animation;
-      if (animation.type === "swing") style.transform = animation.direction === "horizontal" ? `translateX(${animation.distance / 2}px)` : `translateY(${animation.distance / 2}px)`;
+      // What ImageRenderer captures: clock hands at rest, and the swing
+      // overlay's nested frames at angle 0, which leave the content where
+      // its own layout put it (measured with Animation Aquarium).
+      void decoration.animation;
     } else if (decoration.animation) {
       const animation = decoration.animation;
       if (animation.type === "swing") {
@@ -1172,6 +1213,10 @@ export async function renderWidget(treeJSON, {
     widget.setAttribute("role", "img");
     widget.setAttribute("aria-label", "Widget preview");
     Object.assign(widget.style, { position: "relative", width: `${size.width}px`, height: `${size.height}px`, overflow: "hidden", backgroundColor: cssColor(systemBackground(appearance)), colorScheme: appearance });
+    // iOS draws grayscale-antialiased glyphs; macOS font smoothing would
+    // thicken stems by about 15%. macOS widgets keep the smoothing
+    // (measured: text ink matches native exactly with it).
+    if (platform() !== "macos") widget.style.webkitFontSmoothing = "antialiased";
     const rootPaint = parsePaint(propReader(root.props).string("background"), appearance);
     if (renderingMode === "fullColor" && !(lockScreen && family.startsWith("accessory"))) {
       if (rootPaint?.color) widget.style.backgroundColor = cssColor(rootPaint.color);

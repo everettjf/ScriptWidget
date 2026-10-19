@@ -18,13 +18,18 @@ export class Node {
 
 const cjk = /[\u2e80-\u9fff\uac00-\ud7af\uf900-\ufaff\uff00-\uffef]/u;
 
-/// Break units of a paragraph: words, and each CJK character, which breaks
-/// without a space. A unit keeps the separator that precedes it, and closing
-/// punctuation stays with the unit before it (UAX #14).
+// One emoji: a pictograph with its variation selector, modifiers, and joined
+// pictographs, or a flag.
+const emojiCluster = /(\p{Extended_Pictographic}(?:\uFE0F|\u200D\p{Extended_Pictographic}|[\u{1F3FB}-\u{1F3FF}])*\uFE0F?|[\u{1F1E6}-\u{1F1FF}]{2})/u;
+
+/// Break units of a paragraph: words, and each CJK character and emoji, which
+/// break without a space (UAX #14 ID class). A unit keeps the separator that
+/// precedes it, and closing punctuation stays with the unit before it.
 function breakUnits(paragraph) {
   const units = [];
   for (const word of paragraph.split(/ +/).filter(Boolean)) {
-    const pieces = cjk.test(word) ? word.split(/(?=[\u2e80-\u9fff\uac00-\ud7af\uf900-\ufaff])/u).filter(Boolean) : [word];
+    const byEmoji = emojiCluster.test(word) ? word.split(emojiCluster).filter(Boolean) : [word];
+    const pieces = byEmoji.flatMap((part) => (cjk.test(part) ? part.split(/(?=[\u2e80-\u9fff\uac00-\ud7af\uf900-\ufaff])/u).filter(Boolean) : [part]));
     pieces.forEach((piece, index) => {
       const separator = index === 0 ? " " : "";
       if (units.length && /^[:;,.!?)\]}%，。！？、：；）」』]/.test(piece)) units[units.length - 1].text += separator + piece;
@@ -139,13 +144,26 @@ export class TextNode extends Node {
     return lines;
   }
   /// The longest prefix that fits with "…", cut mid-word, with trailing
-  /// spaces dropped ("Hello fr…", "Travel…").
+  /// spaces dropped ("Hello fr…", "Travel…"). Runs of spaces are kept, as
+  /// CoreText keeps them.
   ellipsize(value, width) {
-    const characters = [...value.replace(/\s+/g, " ")];
-    const fits = (count) => this.measurer.measure(`${characters.slice(0, count).join("").trimEnd()}…`, this.style, null).width <= width + 0.01;
+    const characters = [...value.replace(/\n/g, " ")];
+    const fits = (count) => this.truncatedWidth(characters, count) <= width + 0.01;
     let low = 0; let high = characters.length;
     while (low < high) { const middle = Math.ceil((low + high) / 2); if (fits(middle)) low = middle; else high = middle - 1; }
     return `${characters.slice(0, low).join("").trimEnd()}…`;
+  }
+  /// Width CoreText draws for the first `count` characters plus "…": the
+  /// prefix keeps its advance from the full string (kerning against the next
+  /// character included) and the ellipsis is not kerned with it, so "07…"
+  /// cut from "07:00 AM" is wider than "07…" measured alone.
+  truncatedWidth(characters, count) {
+    const prefix = characters.slice(0, count).join("").trimEnd();
+    const length = [...prefix].length;
+    const next = characters[length];
+    const measure = (value) => this.measurer.measure(value, this.style, null).width;
+    const advance = next === undefined || next === " " || prefix === "" ? measure(prefix) : measure(prefix + next) - measure(next);
+    return advance + this.measurer.ellipsisWidth(this.style);
   }
   /// SwiftUI truncation to `count` lines: earlier lines stay as broken, the
   /// rest is cut mid-word with "…", and the text reports the widest drawn
@@ -160,13 +178,18 @@ export class TextNode extends Node {
     for (const line of kept) {
       for (const character of line.replace(/-$/, "")) {
         while (position < this.text.length && /\s/.test(this.text[position]) && !/\s/.test(character)) position += 1;
-        if (this.text[position] === character || (character === "\u00a0" && this.text[position] === " ")) position += 1;
+        // Characters may be surrogate pairs (emoji): compare and advance by
+        // their UTF-16 length.
+        if (this.text.startsWith(character, position)) position += character.length;
+        else if (character === "\u00a0" && this.text[position] === " ") position += 1;
       }
     }
     const rest = this.text.slice(position).trimStart();
     const last = this.ellipsize(rest, width);
     const drawn = [...kept, last];
-    return { text: drawn.join("\n"), width: Math.max(...drawn.map((line) => this.measurer.measure(line, this.style, null).width)) };
+    const restCharacters = [...rest.replace(/\n/g, " ")];
+    const lastWidth = this.truncatedWidth(restCharacters, [...last].length - 1);
+    return { text: drawn.join("\n"), width: Math.max(lastWidth, ...kept.map((line) => this.measurer.measure(line, this.style, null).width)) };
   }
   metrics(width) { return this.measurer.measure(width === null ? this.text : this.displayText(width), this.style, width); }
   layout(pw, ph) {
@@ -176,7 +199,9 @@ export class TextNode extends Node {
     // Offered no width at all, SwiftUI draws nothing.
     if (pw !== null && pw <= 0.01) return { width: 0, height: natural, lines: 1, total: 1, text: "" };
     if (pw === null || pw === Infinity) { const m = this.metrics(null); width = m.width; lines = m.lines; }
-    else if (pw < this.measurer.ellipsisWidth(this.style) && !this.wrapsCharacters(pw)) { width = this.measurer.ellipsisWidth(this.style); lines = 1; }
+    // Narrower than "…" and its first character: SwiftUI keeps the offered
+    // width and draws a clipped "…".
+    else if (pw < this.measurer.ellipsisWidth(this.style) && !this.wrapsCharacters(pw)) return { width: snap(pw), height: natural, lines: 1, total: 1, text: this.text.trim() === "" ? "" : "…", clip: true };
     else {
       // Offered at least the natural width: keep the unwrapped layout rather
       // than re-measuring at an explicit width, which can wrap on sub-pixel
@@ -237,9 +262,16 @@ export class AspectNode extends Node {
   }
 }
 
+/// The offer to re-propose to a child while placing: SwiftUI places
+/// subviews with the proposal they were sized with, so a view that came out
+/// smaller than offered (text that fit in fewer lines) is not re-offered only
+/// its final size, which could make a text that needed the room truncate.
+const placementOffer = (final, proposed) => (proposed !== null && proposed !== undefined && proposed !== Infinity && proposed > final ? proposed : final);
+
 export class PaddingNode extends Node {
   constructor(child, [top, trailing, bottom, leading]) { super(); this.child = child; this.insets = { top, trailing, bottom, leading }; }
   size(pw, ph) {
+    this.proposal = [pw, ph];
     const { top, trailing, bottom, leading } = this.insets;
     const [w, h] = this.child.size(sub(pw, leading + trailing), sub(ph, top + bottom));
     return [w + leading + trailing, h + top + bottom];
@@ -248,7 +280,8 @@ export class PaddingNode extends Node {
     super.place(x, y, width, height);
     const { top, trailing, bottom, leading } = this.insets;
     const innerW = Math.max(0, width - leading - trailing); const innerH = Math.max(0, height - top - bottom);
-    const [w, h] = this.child.size(innerW, innerH);
+    const [pw, ph] = this.proposal ?? [width, height];
+    const [w, h] = this.child.size(placementOffer(innerW, sub(pw, leading + trailing)), placementOffer(innerH, sub(ph, top + bottom)));
     this.child.place(leading + (innerW - w) / 2, top + (innerH - h) / 2, w, h);
   }
 }
@@ -259,6 +292,7 @@ const alignOffset = (space, size, where) => (where === "start" ? 0 : where === "
 export class FrameNode extends Node {
   constructor(child, { mode, width, height, alignment }) { super(); this.child = child; this.mode = mode; this.width = width; this.height = height; this.alignment = alignment; }
   size(pw, ph) {
+    this.proposal = [pw, ph];
     if (this.mode === "max") {
       const [cw, ch] = this.child.size(pw, ph);
       return [pw === null ? cw : pw, ph === null ? ch : ph];
@@ -270,7 +304,11 @@ export class FrameNode extends Node {
   }
   place(x, y, width, height) {
     super.place(x, y, width, height);
-    const [w, h] = this.child.size(width, height);
+    // Fixed dimensions offer exactly their length; the others re-offer what
+    // the frame itself was offered.
+    const [pw, ph] = this.proposal ?? [width, height];
+    const fixedW = this.mode === "size" || this.mode === "width"; const fixedH = this.mode === "size" || this.mode === "height";
+    const [w, h] = this.child.size(fixedW ? width : placementOffer(width, pw), fixedH ? height : placementOffer(height, ph));
     const [horizontal, vertical] = this.alignment;
     this.child.place(alignOffset(width, w, horizontal), alignOffset(height, h, vertical), w, h);
   }
@@ -346,7 +384,11 @@ export class StackNode extends Node {
     const finalCross = this.axis === "h" ? height : width;
     const rigid = (limit) => this.children.some((child) => this.cross(this.propose(child, null, 0)) > limit + 0.01);
     const pAlong = proposedAlong;
-    const pCross = proposedCross !== null && proposedCross !== Infinity && finalCross > proposedCross + 0.01 && rigid(proposedCross) ? proposedCross : finalCross;
+    // A stack that came out shorter across than offered (texts that fit in
+    // fewer lines) places its children with that same offer too: offering
+    // only its final size would make a text that needed the room truncate.
+    const offered = proposedCross !== null && proposedCross !== Infinity;
+    const pCross = offered && (finalCross < proposedCross - 0.01 || (finalCross > proposedCross + 0.01 && rigid(proposedCross))) ? proposedCross : finalCross;
     const sizes = this.allocate(pAlong, pCross);
     let cursor = 0;
     this.children.forEach((child, index) => {
@@ -488,7 +530,7 @@ export function fillText(element, text, adjust) {
   const pattern = new RegExp(`${emoji ? emojiRun.source : "(?!)"}|${han ? hanRun.source : "(?!)"}`, "u");
   element.replaceChildren(...text.split(pattern).filter((part) => part !== undefined && part !== "").map((part) => {
     const span = doc.createElement("span");
-    if (emoji && emojiRun.test(part)) Object.assign(span.style, { fontSize: `${emoji.fontSize}px`, lineHeight: "0", padding: `0 ${emoji.padding}px` });
+    if (emoji && emojiRun.test(part)) Object.assign(span.style, { fontSize: `${emoji.fontSize}px`, lineHeight: "0", padding: `0 ${emoji.padding}px`, position: "relative", top: `${emoji.drop}px` });
     else if (han && hanRun.test(part)) span.style.letterSpacing = `${han.letterSpacing}px`;
     else return doc.createTextNode(part);
     span.textContent = part;
@@ -539,8 +581,11 @@ export function createTextMeasurer(doc) {
     const advance = emojiAdvances[index] ?? style.size * 1.09;
     const glyph = emojiGlyphs[index] ?? style.size;
     // Browsers that differ draw the glyph as wide as its advance.
+    // CoreText enlarges small emoji around their middle; resized in the
+    // browser they would grow up from the baseline, so drop them by half
+    // the enlargement.
     const result = measured > 0 && Math.abs(measured - advance) > 0.5
-      ? { fontSize: style.size * glyph / measured, padding: Math.max(0, (advance - glyph) / 2) }
+      ? { fontSize: style.size * glyph / measured, padding: Math.max(0, (advance - glyph) / 2), drop: Math.max(0, (glyph - style.size) / 2) }
       : null;
     emojiStyles.set(style.key, result);
     return result;

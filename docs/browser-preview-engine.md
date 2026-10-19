@@ -461,42 +461,116 @@ calibration cases, and applied in the renderer:
   1 em (Chrome).
 - Stacks place children with the offers they were sized with; a rigid child
   wider than the proposal does not widen the other rows.
+- Padding, frames, and stacks re-offer what they were offered when placing a
+  child that came out smaller; offering only its final size made texts that
+  needed the room lose lines on each pass.
+- A text narrower than "…" and its first character keeps the offered width
+  and draws a clipped "…" instead of widening its row.
+- iOS draws grayscale-antialiased glyphs: the web turns off macOS font
+  smoothing for iOS profiles (text ink was 15% heavier in Chrome); macOS
+  widgets keep it.
+- Han ideographs advance as in CoreText (0.99 em up to 19 pt, 0.95 em from
+  20 pt; same on iOS and macOS); serif text uses lining figures.
+- Small emoji grow around their middle, so enlarged emoji drop by half the
+  enlargement; swing animations leave content at its own position in a
+  snapshot.
+- Swift Charts: at most four value-axis intervals, no rounding when the value
+  axis is hidden, opaque areas without a line.
+- iOS puts each view's vertical origin on the 2x pixel grid in widget
+  coordinates (rounding half up); horizontal positions stay fractional.
+  macOS keeps fractional positions.
+- `x.circle.fill` and `x.square.fill` symbols draw a filled circle or rounded
+  square with the inner symbol cut out; `airplane` points level and
+  `quote.opening` opens.
+- Where the closest Lucide icon differs a lot in silhouette, the web draws an
+  original stand-in from simple primitives, sized from the native render
+  mapped into the same 24-unit box (`src/render/symbolShapes.js`; 44 of the
+  64 symbols the bundled scripts use).
+- Truncation follows CoreText: the kept prefix keeps its advance from the
+  full string (kerning with the next character) and "…" is added unkerned,
+  so "07…" cut from "07:00 AM" needs 41.4 points, not 39.4; runs of spaces
+  are kept; and emoji break like CJK characters (UAX #14 ID class).
 
 ### Results
 
 | Size (iOS 27 simulator, Chrome) | Mean matching pixels | Renders ≥ 99% identical |
 | --- | --- | --- |
-| small (375 / 393 / 430 pt) | 97.24% / 97.25% / 97.62% | 33% / 36% / 37% |
-| medium (375 / 393 / 430 pt, iPad) | 98.48% / 98.67% / 98.84% / 98.89% | 43–48% |
-| large (375 / 393 / 430 pt, iPad) | 99.25% / 99.35% / 99.45% / 99.46% | 76–89% |
-| extraLarge, extraLargePortrait (iPad) | 99.73% / 99.73% | 98% / 98% |
-| accessory circular / rectangular / inline | 94.93% / 96.14% / 95.52% | 20% / 21% / 24% |
-| **All 1,649 renders** | **98.18%** (was 96.94% when this pass started) | **55.7%** (was 40.6%) |
+| small (375 / 393 / 430 pt) | 98.62% / 98.69% / 98.86% | 53% / 53% / 58% |
+| medium (375 / 393 / 430 pt, iPad) | 99.10% / 99.24% / 99.35% / 99.39% | 69–82% |
+| large (375 / 393 / 430 pt, iPad) | 99.50% / 99.58% / 99.65% / 99.67% | 88–94% |
+| extraLarge, extraLargePortrait (iPad) | 99.82% / 99.84% | 98% / 99% |
+| accessory circular / rectangular / inline | 97.36% / 98.01% / 97.53% | 30–35% |
+| **All 1,933 averaged renders** (108 corpus entries × 16 sizes, 138 calibration cases including one per SF Symbol the scripts use, 100-item component catalog) | **99.01%** (98.18% before this pass) | **69.4%** |
 
-By content, over the 1,600 corpus renders:
+Not averaged (33 renders, still compared and listed by `npm run compare`):
+`component/date` (relative timers read the real clock at export time) and
+`component/toggle` / `catalog/076-toggle` (ImageRenderer draws Toggle as a
+placeholder).
+
+Per size, over the corpus renders (the 33 unreproducible renders above
+excluded), and the same without widgets that draw SF Symbols, whose
+look-alike artwork is the one difference the engine cannot remove:
+
+| Size | Renders | Mean matching pixels | Without SF Symbols | Mean matching pixels |
+| --- | --- | --- | --- | --- |
+| small~iphone-375 | 106 | 98.62% | 61 | 99.03% |
+| small | 106 | 98.69% | 61 | 99.05% |
+| small~iphone-430 | 106 | 98.86% | 61 | 99.20% |
+| medium~iphone-375 | 106 | 99.10% | 61 | 99.35% |
+| medium | 106 | 99.24% | 61 | 99.48% |
+| medium~iphone-430 | 106 | 99.35% | 61 | 99.58% |
+| medium~ipad-1024 | 106 | 99.39% | 61 | 99.63% |
+| large~iphone-375 | 106 | 99.50% | 61 | 99.64% |
+| large | 106 | 99.58% | 61 | 99.73% |
+| large~iphone-430 | 106 | 99.65% | 61 | 99.79% |
+| large~ipad-1024 | 106 | 99.67% | 61 | 99.80% |
+| extraLarge~ipad-1024 | 106 | 99.82% | 61 | 99.89% |
+| extraLargePortrait~ipad-1024 | 106 | 99.84% | 61 | 99.90% |
+| accessoryCircular | 106 | 97.36% | 61 | 97.60% |
+| accessoryRectangular | 106 | 98.01% | 61 | 98.64% |
+| accessoryInline | 106 | 97.53% | 61 | 97.96% |
+
+Without SF Symbols every Home Screen size is at least 99% identical. The
+accessory sizes stay below 99% either way: most corpus widgets were designed
+for the Home Screen and overflow a 72-point frame, where SwiftUI's squeezing
+of rows and clipping still differ from the web by a point or two.
+
+By content, over the 1,696 averaged corpus renders:
 
 | Content | small | medium | large | extraLarge | accessory |
 | --- | --- | --- | --- | --- | --- |
-| Text, shapes, images only | 98.79% | 99.47% | 99.74% | 99.88% | 97.30% |
-| Uses SF Symbols | 96.09% | 98.04% | 99.05% | 99.59% | 93.55% |
-| Other approximated features | 96.90% | 98.49% | 99.25% | 99.69% | 95.81% |
+| Text, shapes, images only | 99.35% | 99.59% | 99.81% | 99.92% | 98.21% |
+| Uses SF Symbols | 98.23% | 98.94% | 99.41% | 99.74% | 97.04% |
+| Other approximated features | 98.38% | 99.29% | 99.56% | 99.82% | 97.66% |
 
-macOS (ScriptWidget Preview, `WKWebView`): corpus mean 99.06% matching
-pixels, median difference 0.40%, 216 of 300 renders at least 99% identical.
+macOS (ScriptWidget Preview, `WKWebView`): 584 renders (corpus, calibration
+cases, and the component catalog); mean 99.30% matching pixels over the 517
+renders without the per-symbol cases, 99.05% on the per-symbol cases.
+
+The 64 per-symbol cases (`case/symbol-*`, one SF Symbol at 40 points in a
+small widget) measure each look-alike on its own: 1.16% of the widget differs
+on average (2.26% with Lucide icons alone).
 
 ### What still differs
 
-- **SF Symbols.** They cannot be redistributed, so the web draws Lucide
-  look-alikes at the measured symbol sizes. No widget that shows a symbol
-  at small size reaches 99%; this is the largest remaining gap.
+- **SF Symbols.** They cannot be redistributed, and the system font does not
+  carry them for the browser to use, so the web draws Lucide look-alikes or
+  original stand-ins at the measured symbol sizes. Symbols remain the largest
+  share of the difference at small and accessory sizes.
+- **Overflowing rows and crowded chart labels.** When a row cannot fit its
+  children (four large emoji in a 148-point widget, launcher tiles), SwiftUI
+  squeezes frames in ways the web does not model; Swift Charts collapses
+  crowded axis labels to "…".
 - **Accessory sizes.** Most corpus widgets were designed for Home Screen
   sizes and overflow a 72-point frame; clipping and centering of overflowing
   content still differ by a point or two.
 - **ImageRenderer artifacts.** `toggle` renders as a placeholder in native
   snapshots, and relative timers depend on the real clock, so those renders
   are not meaningful comparisons.
-- **Swing animations.** The swing modifier's oversized overlay frames change
-  how the surrounding rows wrap (Animation Aquarium).
+- **Overflowing small layouts.** When a 148–170 pt widget cannot fit its
+  content, SwiftUI's split of the leftover width between a text column and a
+  symbol can differ from the web by a fraction of a point, which changes how
+  many characters fit per line.
 
 ## Verification matrix
 
@@ -506,8 +580,8 @@ pixels, median difference 0.40%, 216 of 300 renders at least 99% identical.
 | Tree parity, iOS 27.0 simulator JavaScriptCore | identical to the reference |
 | Tree parity, Node 24 / Chromium (headless and Claude pane) | 100/100 byte-identical |
 | Tree parity, iOS 27 Safari (WebKit) in the simulator | 100/100 byte-identical; all isolation probes blocked; CSP control reached |
-| Pixel comparison vs iOS 27 snapshots, Chrome on macOS | every iOS size: 1,649 renders, 98.18% matching pixels, 55.7% at least 99% identical (see Coverage across every iOS size) |
-| Pixel comparison vs macOS 27 native, `WKWebView` (ScriptWidget Preview) | corpus 99.06% matching pixels, median 0.40%, 216/300 at least 99% identical |
+| Pixel comparison vs iOS 27 snapshots, Chrome on macOS | every iOS size: 1,933 averaged renders, 99.01% matching pixels, 69.4% at least 99% identical (see Coverage across every iOS size) |
+| Pixel comparison vs macOS 27 native, `WKWebView` (ScriptWidget Preview) | 599 renders; 99.30% matching pixels without the per-symbol cases |
 | Web Studio, headless Chrome smoke test | starter, 71 templates, image template, `.swt` import all render |
 | Web Studio, iOS 27 Safari | renders with the strict page CSP and URL-loaded sandbox |
 | Web-exported `.swt` imported by native code | passes preflight, extraction, validation, execution |
