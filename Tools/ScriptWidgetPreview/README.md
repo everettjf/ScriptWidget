@@ -31,8 +31,15 @@ runtime sources as the macOS widget extension. The app finds the repository
 from its source location; set `SCRIPTWIDGET_REPO` to use another checkout.
 
 The sidebar lists the comparison corpus (bundled `api`, `component`, and
-`template` packages, Gallery widgets, and `Web/preview-engine/test/render/cases.json`).
-**File › Open Package Folder…** compares any package directory.
+`template` packages, Gallery widgets, `Web/preview-engine/test/render/cases.json`,
+and the component catalog `Web/preview-engine/test/catalog/catalog.json`).
+**File › Open Package Folder…** compares any package directory. Launch with
+`--select <id>` (for example `--select "template/Plant Care"`) to open an entry.
+
+The web engine has no network. When a script's GET request has no fixture,
+the app downloads that URL once and renders again with the response as a
+fixture, so both sides show the same data. Other methods (POST, PUT, …) are
+not replayed, so packages that depend on them show the web error.
 
 ## Batch comparison
 
@@ -41,14 +48,16 @@ The sidebar lists the comparison corpus (bundled `api`, `component`, and
 ```
 
 Options: `--filter <prefix>` (for example `case/`) and
-`--families small,medium,large`. Packages that need live data (`fetch`,
-`$http`, `$location`, `$health`, `$dataSource`) are skipped. The output
+`--families small,medium,large`. Packages that read `$location`, `$health`,
+or `$dataSource` are skipped; network packages are compared as above. The output
 directory receives `native/`, `web/`, and `diff/` PNGs and `report.json`.
 
 ## SF Symbol metrics
 
 `Scripts/symbol-metrics.swift` measures every SF Symbol the web engine maps
-to a look-alike icon and regenerates
+to a look-alike icon, their `.fill` variants, and every symbol name that
+appears as a string in the bundled scripts, Gallery, and test sources, and
+regenerates
 `Web/preview-engine/src/render/symbolMetrics.generated.js`:
 
 ```bash

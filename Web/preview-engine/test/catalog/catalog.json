@@ -1,0 +1,802 @@
+[
+ {
+  "id": "001-text-default",
+  "group": "Text",
+  "title": "Default text",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<text>Hello ScriptWidget</text>)"
+ },
+ {
+  "id": "002-text-styles-large",
+  "group": "Text",
+  "title": "Large text styles",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack alignment=\"leading\"><text font=\"largeTitle\">Large Title</text><text font=\"title\">Title</text><text font=\"title2\">Title 2</text><text font=\"title3\">Title 3</text></vstack>)"
+ },
+ {
+  "id": "003-text-styles-small",
+  "group": "Text",
+  "title": "Small text styles",
+  "size": "large",
+  "dark": false,
+  "source": "$render(<vstack alignment=\"leading\"><text font=\"headline\">Headline</text><text font=\"body\">Body</text><text font=\"callout\">Callout</text><text font=\"subheadline\">Subheadline</text><text font=\"footnote\">Footnote</text><text font=\"caption\">Caption</text><text font=\"caption2\">Caption 2</text></vstack>)"
+ },
+ {
+  "id": "004-text-sizes",
+  "group": "Text",
+  "title": "Numeric font sizes",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack alignment=\"bottom\"><text font=\"10\">10</text><text font=\"14\">14</text><text font=\"20\">20</text><text font=\"28\">28</text><text font=\"40\">40</text><text font=\"56\">56</text></hstack>)"
+ },
+ {
+  "id": "005-text-weights",
+  "group": "Text",
+  "title": "Font weights",
+  "size": "large",
+  "dark": false,
+  "source": "$render(<vstack alignment=\"leading\" spacing=\"2\"><text font=\"18\" fontWeight=\"ultraLight\">ultraLight</text><text font=\"18\" fontWeight=\"thin\">thin</text><text font=\"18\" fontWeight=\"light\">light</text><text font=\"18\" fontWeight=\"regular\">regular</text><text font=\"18\" fontWeight=\"medium\">medium</text><text font=\"18\" fontWeight=\"semibold\">semibold</text><text font=\"18\" fontWeight=\"bold\">bold</text><text font=\"18\" fontWeight=\"heavy\">heavy</text><text font=\"18\" fontWeight=\"black\">black</text></vstack>)"
+ },
+ {
+  "id": "006-text-designs",
+  "group": "Text",
+  "title": "Font designs",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack alignment=\"leading\"><text font=\"22\" fontDesign=\"default\">Default 0123</text><text font=\"22\" fontDesign=\"rounded\">Rounded 0123</text><text font=\"22\" fontDesign=\"serif\">Serif 0123</text><text font=\"22\" fontDesign=\"monospaced\">Mono 0123</text></vstack>)"
+ },
+ {
+  "id": "007-text-named-colors",
+  "group": "Text",
+  "title": "Named colors",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack alignment=\"leading\"><text font=\"headline\" color=\"red\">red</text><text font=\"headline\" color=\"orange\">orange</text><text font=\"headline\" color=\"yellow\">yellow</text><text font=\"headline\" color=\"green\">green</text><text font=\"headline\" color=\"blue\">blue</text><text font=\"headline\" color=\"purple\">purple</text><text font=\"headline\" color=\"pink\">pink</text><text font=\"headline\" color=\"gray\">gray</text></vstack>)"
+ },
+ {
+  "id": "008-text-hex-colors",
+  "group": "Text",
+  "title": "Hex colors and opacity",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack alignment=\"leading\"><text font=\"title3\" color=\"#ff6b6b\">#ff6b6b</text><text font=\"title3\" color=\"#2563eb\">#2563eb</text><text font=\"title3\" color=\"blue,0.5\">blue, 50%</text><text font=\"title3\" color=\"#8016a34a\">ARGB #8016a34a</text></vstack>)"
+ },
+ {
+  "id": "009-text-multiline-alignment",
+  "group": "Text",
+  "title": "Multiline alignment",
+  "size": "large",
+  "dark": false,
+  "source": "$render(<vstack spacing=\"10\"><text frame=\"260\" alignment=\"leading\">Leading aligned text that wraps onto a second line</text><text frame=\"260\" alignment=\"center\">Center aligned text that wraps onto a second line</text><text frame=\"260\" alignment=\"trailing\">Trailing aligned text that wraps onto a second line</text></vstack>)"
+ },
+ {
+  "id": "010-text-truncation",
+  "group": "Text",
+  "title": "Truncation",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<vstack alignment=\"leading\"><text font=\"title\" frame=\"max,40\">A headline far too long for this frame</text><text font=\"body\" frame=\"max,22\">One line of body text that is cut off</text></vstack>)"
+ },
+ {
+  "id": "011-text-hyphenation",
+  "group": "Text",
+  "title": "Hyphenation (text styles)",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<hstack><text font=\"title\" frame=\"90,max\">Unbelievable information</text><text font=\"22\" frame=\"60,max\">Unbelievable</text></hstack>)"
+ },
+ {
+  "id": "012-text-cjk",
+  "group": "Text",
+  "title": "Chinese text",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack alignment=\"leading\"><text font=\"title2\">今天是个好日子</text><text font=\"body\">把今天过得有意义，记录每一个值得纪念的瞬间。</text><text font=\"caption\" color=\"gray\">农历九月廿七 · 霜降</text></vstack>)"
+ },
+ {
+  "id": "013-text-emoji",
+  "group": "Text",
+  "title": "Emoji",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack><text font=\"title\">🌤️ 24° Sunny</text><text font=\"body\">🐠🐡🦐 🪸🌿⚓️</text><text font=\"40\">🎉</text></vstack>)"
+ },
+ {
+  "id": "014-text-gradient-color",
+  "group": "Text",
+  "title": "Gradient text",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<text font=\"largeTitle\" fontWeight=\"heavy\" color={$gradient({'type': 'linear', 'colors': ['#f97316', '#ec4899'], 'startPoint': 'leading', 'endPoint': 'trailing'})}>Glow</text>)"
+ },
+ {
+  "id": "015-text-shadow",
+  "group": "Text",
+  "title": "Text shadow",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<vstack spacing=\"10\"><text font=\"title\" shadow=\"black,4,0,2\">Shadow</text><text font=\"title\" color=\"white\" shadow=\"blue,6,0,0\" background=\"#1e293b\" padding=\"6\">Glow</text></vstack>)"
+ },
+ {
+  "id": "016-date-time",
+  "group": "Date",
+  "title": "Date: time style",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<vstack><date style=\"time\" date={1767268800000} font=\"title\"/><date style=\"date\" date={1767268800000} font=\"caption\"/></vstack>)"
+ },
+ {
+  "id": "017-date-styled",
+  "group": "Date",
+  "title": "Date: styled",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack alignment=\"leading\" padding=\"12\" background=\"#0f172a\" frame=\"max\" corner=\"16\"><text font=\"caption\" color=\"#94a3b8\">NEXT MEETING</text><date style=\"time\" date={1767272400000} font=\"largeTitle\" fontWeight=\"bold\" color=\"white\"/><date style=\"date\" date={1767272400000} font=\"callout\" color=\"#cbd5e1\"/></vstack>)"
+ },
+ {
+  "id": "018-vstack-default-spacing",
+  "group": "Stacks",
+  "title": "VStack default spacing",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack><text font=\"headline\">Headline</text><text font=\"subheadline\" color=\"gray\">Subheadline</text><rect frame=\"120,10\" color=\"blue\"/><text>After a shape</text></vstack>)"
+ },
+ {
+  "id": "019-vstack-explicit-spacing",
+  "group": "Stacks",
+  "title": "VStack spacing 0 / 16",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"30\"><vstack spacing=\"0\"><rect frame=\"40,20\" color=\"orange\"/><rect frame=\"40,20\" color=\"orange\"/><rect frame=\"40,20\" color=\"orange\"/></vstack><vstack spacing=\"16\"><rect frame=\"40,20\" color=\"teal\"/><rect frame=\"40,20\" color=\"teal\"/><rect frame=\"40,20\" color=\"teal\"/></vstack></hstack>)"
+ },
+ {
+  "id": "020-vstack-alignment",
+  "group": "Stacks",
+  "title": "VStack alignment",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"12\"><vstack alignment=\"leading\" background=\"#e0f2fe\" padding=\"6\"><text font=\"caption\">leading</text><rect frame=\"30,10\" color=\"blue\"/><rect frame=\"60,10\" color=\"blue\"/></vstack><vstack alignment=\"center\" background=\"#e0f2fe\" padding=\"6\"><text font=\"caption\">center</text><rect frame=\"30,10\" color=\"blue\"/><rect frame=\"60,10\" color=\"blue\"/></vstack><vstack alignment=\"trailing\" background=\"#e0f2fe\" padding=\"6\"><text font=\"caption\">trailing</text><rect frame=\"30,10\" color=\"blue\"/><rect frame=\"60,10\" color=\"blue\"/></vstack></hstack>)"
+ },
+ {
+  "id": "021-hstack-alignment",
+  "group": "Stacks",
+  "title": "HStack alignment",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack spacing=\"8\"><hstack alignment=\"top\" background=\"#fef3c7\"><rect frame=\"20,40\" color=\"orange\"/><text font=\"caption\">top</text><rect frame=\"20,20\" color=\"red\"/></hstack><hstack alignment=\"center\" background=\"#fef3c7\"><rect frame=\"20,40\" color=\"orange\"/><text font=\"caption\">center</text><rect frame=\"20,20\" color=\"red\"/></hstack><hstack alignment=\"bottom\" background=\"#fef3c7\"><rect frame=\"20,40\" color=\"orange\"/><text font=\"caption\">bottom</text><rect frame=\"20,20\" color=\"red\"/></hstack></vstack>)"
+ },
+ {
+  "id": "022-hstack-spacing",
+  "group": "Stacks",
+  "title": "HStack spacing",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack spacing=\"10\"><hstack><circle frame=\"24,24\" color=\"red\"/><circle frame=\"24,24\" color=\"green\"/><circle frame=\"24,24\" color=\"blue\"/></hstack><hstack spacing=\"24\"><circle frame=\"24,24\" color=\"red\"/><circle frame=\"24,24\" color=\"green\"/><circle frame=\"24,24\" color=\"blue\"/></hstack></vstack>)"
+ },
+ {
+  "id": "023-zstack-layers",
+  "group": "Stacks",
+  "title": "ZStack layers",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<zstack><circle frame=\"110,110\" color=\"#bfdbfe\"/><circle frame=\"70,70\" color=\"#3b82f6\"/><text font=\"title\" fontWeight=\"bold\" color=\"white\">Z</text></zstack>)"
+ },
+ {
+  "id": "024-spacer-horizontal",
+  "group": "Stacks",
+  "title": "Spacer in HStack",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack padding=\"16\"><text font=\"headline\">Left</text><spacer/><text font=\"headline\">Right</text></hstack>)"
+ },
+ {
+  "id": "025-spacer-vertical",
+  "group": "Stacks",
+  "title": "Spacer in VStack",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<vstack frame=\"max\" padding=\"14\" alignment=\"leading\"><text font=\"headline\">Top</text><spacer/><text font=\"caption\" color=\"gray\">Bottom</text></vstack>)"
+ },
+ {
+  "id": "026-nested-stacks",
+  "group": "Stacks",
+  "title": "Nested stacks",
+  "size": "large",
+  "dark": false,
+  "source": "$render(<vstack spacing=\"12\" padding=\"16\"><hstack><text font=\"title2\" fontWeight=\"bold\">Today</text><spacer/><text font=\"caption\" color=\"gray\">3 tasks</text></hstack><hstack><circle frame=\"10,10\" color=\"blue\"/><text font=\"body\">Design review</text><spacer/><text font=\"footnote\" color=\"gray\">10:00</text></hstack><hstack><circle frame=\"10,10\" color=\"orange\"/><text font=\"body\">Lunch with Sam</text><spacer/><text font=\"footnote\" color=\"gray\">12:30</text></hstack><hstack><circle frame=\"10,10\" color=\"green\"/><text font=\"body\">Gym</text><spacer/><text font=\"footnote\" color=\"gray\">18:00</text></hstack></vstack>)"
+ },
+ {
+  "id": "027-fragment-children",
+  "group": "Stacks",
+  "title": "Fragments and arrays",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack>{[\"One\",\"Two\",\"Three\"].map(t => <text font=\"title3\">{t}</text>)}<><text color=\"gray\">Fragment A</text><text color=\"gray\">Fragment B</text></></vstack>)"
+ },
+ {
+  "id": "028-frame-fixed",
+  "group": "Frame",
+  "title": "Fixed frames",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack><rect frame=\"40,40\" color=\"red\"/><rect frame=\"80,40\" color=\"green\"/><rect frame=\"40,80\" color=\"blue\"/></hstack>)"
+ },
+ {
+  "id": "029-frame-max-alignment",
+  "group": "Frame",
+  "title": "frame=max with alignment",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<zstack><text frame=\"max,topLeading\" background=\"#fde68a\">topLeading</text><text frame=\"max,bottomTrailing\">bottomTrailing</text></zstack>)"
+ },
+ {
+  "id": "030-padding-forms",
+  "group": "Frame",
+  "title": "Padding forms",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"10\"><text padding=\"12\" background=\"#fecaca\">all 12</text><text padding=\"horizontal,16\" background=\"#bfdbfe\">h16</text><text padding=\"vertical,12\" background=\"#bbf7d0\">v12</text><text padding=\"4,16,10,2\" background=\"#fde68a\">4 sides</text></hstack>)"
+ },
+ {
+  "id": "031-background-colors",
+  "group": "Frame",
+  "title": "Backgrounds",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"8\"><text padding=\"10\" background=\"red\" color=\"white\">red</text><text padding=\"10\" background=\"#0ea5e9\" color=\"white\">hex</text><text padding=\"10\" background=\"black,0.6\" color=\"white\">60%</text></hstack>)"
+ },
+ {
+  "id": "032-root-background",
+  "group": "Frame",
+  "title": "Root background",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<vstack background=\"#7c3aed\" frame=\"max\"><text font=\"title\" fontWeight=\"bold\" color=\"white\">Purple</text></vstack>)"
+ },
+ {
+  "id": "033-root-gradient",
+  "group": "Frame",
+  "title": "Root gradient background",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack frame=\"max\" background={$gradient({'type': 'linear', 'colors': ['#0ea5e9', '#6366f1'], 'startPoint': 'topLeading', 'endPoint': 'bottomTrailing'})}><text font=\"title\" fontWeight=\"bold\" color=\"white\">Gradient</text></vstack>)"
+ },
+ {
+  "id": "034-corner-radius",
+  "group": "Decoration",
+  "title": "Corner radius",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"12\"><text padding=\"14\" background=\"#f472b6\" corner=\"4\">4</text><text padding=\"14\" background=\"#f472b6\" corner=\"12\">12</text><text padding=\"14\" background=\"#f472b6\" corner=\"24\">24</text></hstack>)"
+ },
+ {
+  "id": "035-clip-shapes",
+  "group": "Decoration",
+  "title": "Clip shapes",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"10\"><vstack frame=\"60,60\" background=\"#22c55e\" clip=\"rect\"/><vstack frame=\"60,60\" background=\"#22c55e\" clip=\"circle\"/><vstack frame=\"60,60\" background=\"#22c55e\" clip=\"capsule\"/><vstack frame=\"60,60\" background=\"#22c55e\" clip=\"ellipse\"/></hstack>)"
+ },
+ {
+  "id": "036-opacity",
+  "group": "Decoration",
+  "title": "Opacity",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"8\"><rect frame=\"40,40\" color=\"blue\" opacity=\"1\"/><rect frame=\"40,40\" color=\"blue\" opacity=\"0.75\"/><rect frame=\"40,40\" color=\"blue\" opacity=\"0.5\"/><rect frame=\"40,40\" color=\"blue\" opacity=\"0.25\"/></hstack>)"
+ },
+ {
+  "id": "037-rotation",
+  "group": "Decoration",
+  "title": "Rotation",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"24\"><rect frame=\"40,40\" color=\"orange\" rotation=\"15\"/><text font=\"title\" rotation={-12}>Tilt</text><capsule frame=\"70,26\" color=\"teal\" rotation=\"45\"/></hstack>)"
+ },
+ {
+  "id": "038-shadow",
+  "group": "Decoration",
+  "title": "Shadows",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"24\"><rect frame=\"60,60\" color=\"white\" corner=\"12\" shadow=\"black,6,0,4\"/><circle frame=\"60,60\" color=\"white\" shadow=\"blue,10,0,0\"/></hstack>)"
+ },
+ {
+  "id": "039-gradients",
+  "group": "Decoration",
+  "title": "Linear / radial / angular gradients",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"8\"><rect frame=\"90,110\" color={$gradient({'type': 'linear', 'colors': ['blue', 'white', 'pink'], 'startPoint': 'topLeading', 'endPoint': 'bottomTrailing'})}/><vstack frame=\"90,110\" background={$gradient({'type': 'radial', 'colors': ['orange', 'red'], 'center': 'center', 'startRadius': 5, 'endRadius': 60})}/><vstack frame=\"90,110\" background={$gradient({'type': 'angular', 'colors': ['green', 'blue', 'black', 'green'], 'center': 'center'})}/></hstack>)"
+ },
+ {
+  "id": "040-rect-fill",
+  "group": "Shapes",
+  "title": "Rect",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<rect frame=\"100,70\" color=\"#3b82f6\"/>)"
+ },
+ {
+  "id": "041-rect-stroke-corner",
+  "group": "Shapes",
+  "title": "Rect stroke and corner",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"16\"><rect frame=\"70,50\" stroke=\"3\" color=\"green\"/><rect frame=\"70,50\" corner=\"14\" color=\"purple\"/></hstack>)"
+ },
+ {
+  "id": "042-circle-fill-stroke",
+  "group": "Shapes",
+  "title": "Circle fill and stroke",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"16\"><circle frame=\"60,60\" color=\"#ef4444\"/><circle frame=\"60,60\" stroke=\"6\" color=\"#ef4444\"/></hstack>)"
+ },
+ {
+  "id": "043-circle-trim",
+  "group": "Shapes",
+  "title": "Circle trim arcs",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"16\"><circle frame=\"60,60\" stroke=\"8\" trim=\"0,0.25\" color=\"blue\"/><circle frame=\"60,60\" stroke=\"8\" trim=\"0,0.6\" color=\"green\"/><circle frame=\"60,60\" stroke=\"8\" trim=\"0.2\" rotation=\"90\" color=\"orange\"/></hstack>)"
+ },
+ {
+  "id": "044-capsule-ellipse",
+  "group": "Shapes",
+  "title": "Capsule and ellipse",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"16\"><capsule frame=\"110,40\" color=\"#14b8a6\"/><ellipse frame=\"90,50\" color=\"#f59e0b\"/><ellipse frame=\"60,40\" stroke=\"4\" color=\"purple\"/></hstack>)"
+ },
+ {
+  "id": "045-roundedrect",
+  "group": "Shapes",
+  "title": "Rounded rect",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"10\"><roundedrect frame=\"70,50\"/><roundedrect frame=\"70,50\" radius=\"24\" color=\"#fda4af\"/></hstack>)"
+ },
+ {
+  "id": "046-shape-flexible",
+  "group": "Shapes",
+  "title": "Shapes filling space",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<vstack padding=\"10\"><rect color=\"#c084fc\" corner=\"10\"/><capsule color=\"#22d3ee\" frame=\"max,24\"/></vstack>)"
+ },
+ {
+  "id": "047-shape-gradient-fill",
+  "group": "Shapes",
+  "title": "Gradient fill",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<circle frame=\"110,110\" color={$gradient({'type': 'linear', 'colors': ['#facc15', '#f97316'], 'startPoint': 'top', 'endPoint': 'bottom'})}/>)"
+ },
+ {
+  "id": "048-divider",
+  "group": "Shapes",
+  "title": "Divider",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack padding=\"16\"><text>Above</text><divider/><text>Below</text><hstack frame=\"max,30\"><text>L</text><divider axis=\"vertical\"/><text>R</text></hstack></vstack>)"
+ },
+ {
+  "id": "049-line",
+  "group": "Shapes",
+  "title": "Line",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack spacing=\"10\"><line length=\"140\" thickness=\"2\" color=\"#94a3b8\"/><hstack spacing=\"8\"><line axis=\"vertical\" length=\"30\" thickness=\"3\" color=\"#f59e0b\"/><text>Vertical line</text></hstack></vstack>)"
+ },
+ {
+  "id": "050-image-system",
+  "group": "Images",
+  "title": "SF Symbol images",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"14\"><image systemName=\"star.fill\"/><image systemName=\"heart.fill\" font=\"title\"/><image systemName=\"bolt.fill\" font=\"largeTitle\"/><image/></hstack>)"
+ },
+ {
+  "id": "051-icon-sizes",
+  "group": "Images",
+  "title": "Icon sizes and colors",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"14\" alignment=\"center\"><icon systemName=\"sun.max.fill\" size=\"16\" color=\"orange\"/><icon systemName=\"sun.max.fill\" size=\"28\" color=\"orange\"/><icon systemName=\"cloud.rain.fill\" size=\"40\" color=\"#3b82f6\"/></hstack>)"
+ },
+ {
+  "id": "052-icon-grid",
+  "group": "Images",
+  "title": "Common symbols",
+  "size": "large",
+  "dark": false,
+  "source": "$render(<vgrid columns='[{\"type\":\"flexible\"},{\"type\":\"flexible\"},{\"type\":\"flexible\"},{\"type\":\"flexible\"}]' spacing=\"14\"><icon systemName=\"house.fill\" size=\"26\" color=\"#334155\"/><icon systemName=\"gear\" size=\"26\" color=\"#334155\"/><icon systemName=\"bell.fill\" size=\"26\" color=\"#334155\"/><icon systemName=\"calendar\" size=\"26\" color=\"#334155\"/><icon systemName=\"clock\" size=\"26\" color=\"#334155\"/><icon systemName=\"cart.fill\" size=\"26\" color=\"#334155\"/><icon systemName=\"envelope.fill\" size=\"26\" color=\"#334155\"/><icon systemName=\"heart\" size=\"26\" color=\"#334155\"/><icon systemName=\"star\" size=\"26\" color=\"#334155\"/><icon systemName=\"bookmark.fill\" size=\"26\" color=\"#334155\"/><icon systemName=\"person.fill\" size=\"26\" color=\"#334155\"/><icon systemName=\"magnifyingglass\" size=\"26\" color=\"#334155\"/><icon systemName=\"trash\" size=\"26\" color=\"#334155\"/><icon systemName=\"folder.fill\" size=\"26\" color=\"#334155\"/><icon systemName=\"camera.fill\" size=\"26\" color=\"#334155\"/><icon systemName=\"battery.75\" size=\"26\" color=\"#334155\"/></vgrid>)"
+ },
+ {
+  "id": "053-icon-weights",
+  "group": "Images",
+  "title": "Icon weights",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"16\"><icon systemName=\"checkmark.circle\" size=\"30\" fontWeight=\"ultraLight\"/><icon systemName=\"checkmark.circle\" size=\"30\" fontWeight=\"regular\"/><icon systemName=\"checkmark.circle\" size=\"30\" fontWeight=\"bold\"/><icon systemName=\"checkmark.circle\" size=\"30\" fontWeight=\"black\"/></hstack>)"
+ },
+ {
+  "id": "054-label",
+  "group": "Images",
+  "title": "Label",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack alignment=\"leading\" spacing=\"10\"><label title=\"Favorites\" systemName=\"star.fill\"/><label title=\"Alarm\" systemName=\"alarm\" color=\"orange\"/><label title=\"Downloads\" systemName=\"arrow.down.circle\" font=\"headline\"/></vstack>)"
+ },
+ {
+  "id": "055-icon-with-text-row",
+  "group": "Images",
+  "title": "Icon rows",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack alignment=\"leading\" spacing=\"8\"><hstack spacing=\"8\"><icon systemName=\"checkmark.circle.fill\" size=\"18\" color=\"green\"/><text font=\"callout\">Passport</text></hstack><hstack spacing=\"8\"><icon systemName=\"circle\" size=\"18\" color=\"gray\"/><text font=\"callout\">Charger</text></hstack><hstack spacing=\"8\"><icon systemName=\"circle\" size=\"18\" color=\"gray\"/><text font=\"callout\">Headphones</text></hstack></vstack>)"
+ },
+ {
+  "id": "056-progress-linear",
+  "group": "Data",
+  "title": "Progress (linear)",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack spacing=\"10\" padding=\"14\"><progress value={0.25}/><progress value={0.6} color=\"#22c55e\"/><progress value={0.9} color=\"#f97316\" trackColor=\"#fde68a\" thickness=\"10\"/></vstack>)"
+ },
+ {
+  "id": "057-progress-circular",
+  "group": "Data",
+  "title": "Progress (circular)",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"16\"><progress value={0.3} style=\"circular\" frame=\"50\"/><progress value={3} total={4} style=\"circular\" label=\"75\" frame=\"60\"/><progress value={0.9} style=\"circular\" color=\"#10b981\" thickness=\"9\" frame=\"70\"/></hstack>)"
+ },
+ {
+  "id": "058-ring",
+  "group": "Data",
+  "title": "Ring",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"16\"><ring value={0.25} frame=\"50,50\"/><ring value={0.6} thickness=\"10\" color=\"#ec4899\" frame=\"60,60\"/><ring value={0.95} thickness=\"6\" color=\"#22c55e\" trackColor=\"#dcfce7\" frame=\"70,70\"/></hstack>)"
+ },
+ {
+  "id": "059-gauge-default",
+  "group": "Data",
+  "title": "Gauge",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack><gauge value={0.35} frame=\"120,120\" title=\"Speed\"/><gauge value={0.8} frame=\"120,120\" title=\"Load\"/></hstack>)"
+ },
+ {
+  "id": "060-gauge-sections",
+  "group": "Data",
+  "title": "Gauge with sections and needle",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<gauge value=\"0.7\" angle=\"220\" thickness=\"8\" needleColor=\"red\" sections='[{\"color\":\"green\",\"value\":0.4},{\"color\":\"yellow\",\"value\":0.3},{\"color\":\"red\",\"value\":0.3}]' label=\"70\" frame=\"140,140\"/>)"
+ },
+ {
+  "id": "061-gauge-system",
+  "group": "Data",
+  "title": "System gauge",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"20\"><gauge type=\"system\" value=\"0.4\" current=\"40\" text=\"CPU\"/><gauge type=\"system\" style=\"linear\" value=\"0.7\" text=\"Disk\" min=\"0\" max=\"100\" frame=\"120,40\"/></hstack>)"
+ },
+ {
+  "id": "062-stat",
+  "group": "Data",
+  "title": "Stat",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"20\"><stat title=\"Steps\" value=\"8,421\" subtitle=\"Today\"/><stat title=\"Calories\" value=\"512\" subtitle=\"kcal\" color=\"#f97316\"/></hstack>)"
+ },
+ {
+  "id": "063-badge-chip",
+  "group": "Data",
+  "title": "Badge and chip",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack spacing=\"10\"><hstack><badge text=\"NEW\"/><badge text=\"3\" background=\"red\"/></hstack><hstack><chip text=\"Design\"/><chip text=\"Travel\" background=\"#dbeafe\" borderColor=\"#3b82f6\" color=\"#1d4ed8\"/></hstack></vstack>)"
+ },
+ {
+  "id": "064-chart-bar",
+  "group": "Data",
+  "title": "Chart: bar",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<chart type=\"bar\" color=\"#6366f1\" data='[{\"label\":\"Mon\",\"value\":5},{\"label\":\"Tue\",\"value\":8},{\"label\":\"Wed\",\"value\":3},{\"label\":\"Thu\",\"value\":12},{\"label\":\"Fri\",\"value\":9}]'/>)"
+ },
+ {
+  "id": "065-chart-line",
+  "group": "Data",
+  "title": "Chart: line + points",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<chart type=\"line-point\" data='[{\"label\":\"A\",\"value\":10},{\"label\":\"B\",\"value\":30},{\"label\":\"C\",\"value\":20},{\"label\":\"D\",\"value\":40}]'/>)"
+ },
+ {
+  "id": "066-chart-area",
+  "group": "Data",
+  "title": "Chart: area",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<chart type=\"area\" color=\"#14b8a6\" data='[{\"label\":\"1\",\"value\":2},{\"label\":\"2\",\"value\":6},{\"label\":\"3\",\"value\":4},{\"label\":\"4\",\"value\":9},{\"label\":\"5\",\"value\":7}]'/>)"
+ },
+ {
+  "id": "067-chart-hidden-axes",
+  "group": "Data",
+  "title": "Chart without axes",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<chart type=\"bar\" hideXAxis=\"true\" hideYAxis=\"true\" color=\"#f43f5e\" data='[{\"label\":\"a\",\"value\":3},{\"label\":\"b\",\"value\":7},{\"label\":\"c\",\"value\":5},{\"label\":\"d\",\"value\":9}]'/>)"
+ },
+ {
+  "id": "068-chart-categories",
+  "group": "Data",
+  "title": "Chart with categories",
+  "size": "large",
+  "dark": false,
+  "source": "$render(<chart type=\"bar\" data='[{\"label\":\"Q1\",\"value\":4,\"category\":\"Plan\"},{\"label\":\"Q1\",\"value\":3,\"category\":\"Actual\"},{\"label\":\"Q2\",\"value\":6,\"category\":\"Plan\"},{\"label\":\"Q2\",\"value\":7,\"category\":\"Actual\"}]'/>)"
+ },
+ {
+  "id": "069-vgrid-flexible",
+  "group": "Grids",
+  "title": "VGrid flexible columns",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vgrid spacing=\"6\" columns='[{\"type\":\"flexible\"},{\"type\":\"flexible\"},{\"type\":\"flexible\"}]'>{Array.from({length:6},(_, i)=><rect frame=\"max,36\" color=\"#fb923c\" corner=\"6\"/>)}</vgrid>)"
+ },
+ {
+  "id": "070-vgrid-fixed",
+  "group": "Grids",
+  "title": "VGrid fixed + flexible",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vgrid spacing=\"6\" columns='[{\"type\":\"fixed\",\"value\":\"60\"},{\"type\":\"flexible\"}]'>{Array.from({length:4},(_, i)=><rect frame=\"max,30\" color=\"#38bdf8\" corner=\"6\"/>)}</vgrid>)"
+ },
+ {
+  "id": "071-vgrid-adaptive",
+  "group": "Grids",
+  "title": "VGrid default (adaptive)",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vgrid spacing=\"8\">{Array.from({length:12},(_, i)=><circle frame=\"26,26\" color=\"#a78bfa\"/>)}</vgrid>)"
+ },
+ {
+  "id": "072-hgrid",
+  "group": "Grids",
+  "title": "HGrid",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hgrid spacing=\"6\" columns='[{\"type\":\"flexible\"},{\"type\":\"flexible\"}]'>{Array.from({length:8},(_, i)=><rect frame=\"40,max\" color=\"#4ade80\" corner=\"6\"/>)}</hgrid>)"
+ },
+ {
+  "id": "073-grid-calendar",
+  "group": "Grids",
+  "title": "Calendar grid",
+  "size": "large",
+  "dark": false,
+  "source": "$render(<vgrid spacing=\"6\" columns='[{\"type\":\"flexible\"},{\"type\":\"flexible\"},{\"type\":\"flexible\"},{\"type\":\"flexible\"},{\"type\":\"flexible\"},{\"type\":\"flexible\"},{\"type\":\"flexible\"}]'>{Array.from({length:28},(_, i)=><text font=\"callout\" color={i===17?\"white\":\"black\"} background={i===17?\"#ef4444\":\"clear\"} frame=\"28,28\" corner=\"14\">{i+1}</text>)}</vgrid>)"
+ },
+ {
+  "id": "074-button",
+  "group": "Controls",
+  "title": "Button",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<vstack><button action=\"reload\"><image systemName=\"arrow.clockwise\"/><text>Refresh</text></button><button action=\"reload\"><text>Plain button</text></button></vstack>)"
+ },
+ {
+  "id": "075-link",
+  "group": "Controls",
+  "title": "Link",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<vstack><link url=\"https://xnu.app/scriptwidget\"><text font=\"headline\">Open website</text></link><text font=\"caption\" color=\"gray\" linkurl=\"https://example.com\">linkurl text</text></vstack>)"
+ },
+ {
+  "id": "076-toggle",
+  "group": "Controls",
+  "title": "Toggle",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack padding=\"12\"><toggle on={true}><text>Wi-Fi</text></toggle><toggle on={false}><text>Bluetooth</text></toggle></vstack>)"
+ },
+ {
+  "id": "077-dark-text",
+  "group": "Dark",
+  "title": "Dark: text styles",
+  "size": "medium",
+  "dark": true,
+  "source": "$render(<vstack alignment=\"leading\"><text font=\"title\">Title</text><text font=\"body\">Body text</text><text font=\"caption\" color=\"secondary\">Secondary caption</text></vstack>)"
+ },
+ {
+  "id": "078-dark-shapes",
+  "group": "Dark",
+  "title": "Dark: system colors",
+  "size": "medium",
+  "dark": true,
+  "source": "$render(<hstack spacing=\"8\"><circle frame=\"36,36\" color=\"red\"/><circle frame=\"36,36\" color=\"orange\"/><circle frame=\"36,36\" color=\"yellow\"/><circle frame=\"36,36\" color=\"green\"/><circle frame=\"36,36\" color=\"blue\"/><circle frame=\"36,36\" color=\"purple\"/><circle frame=\"36,36\" color=\"gray\"/></hstack>)"
+ },
+ {
+  "id": "079-dark-card",
+  "group": "Dark",
+  "title": "Dark: card",
+  "size": "medium",
+  "dark": true,
+  "source": "$render(<vstack alignment=\"leading\" padding=\"14\" frame=\"max\"><text font=\"caption\" color=\"gray\">BALANCE</text><text font=\"largeTitle\" fontWeight=\"bold\">$1,250</text><progress value={0.42}/></vstack>)"
+ },
+ {
+  "id": "080-dark-icons",
+  "group": "Dark",
+  "title": "Dark: icons",
+  "size": "small",
+  "dark": true,
+  "source": "$render(<hstack spacing=\"12\"><icon systemName=\"moon.fill\" size=\"30\"/><icon systemName=\"star.fill\" size=\"30\" color=\"yellow\"/></hstack>)"
+ },
+ {
+  "id": "081-weather-card",
+  "group": "Composite",
+  "title": "Weather card",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<vstack alignment=\"leading\" padding=\"14\" frame=\"max\" background={$gradient({'type': 'linear', 'colors': ['#38bdf8', '#2563eb'], 'startPoint': 'top', 'endPoint': 'bottom'})}><text font=\"headline\" color=\"white\">Cupertino</text><text font=\"48\" fontWeight=\"thin\" color=\"white\">24°</text><spacer/><icon systemName=\"sun.max.fill\" size=\"20\" color=\"yellow\"/><text font=\"caption\" color=\"white\">Sunny · H:27° L:15°</text></vstack>)"
+ },
+ {
+  "id": "082-steps-card",
+  "group": "Composite",
+  "title": "Steps card",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<vstack padding=\"14\" frame=\"max\" background=\"#111827\" alignment=\"leading\"><text font=\"caption\" color=\"#9ca3af\">STEPS</text><text font=\"title\" fontWeight=\"bold\" color=\"white\">8,421</text><spacer/><progress value={0.84} color=\"#22c55e\" trackColor=\"#374151\"/><text font=\"caption2\" color=\"#9ca3af\">84% of 10,000</text></vstack>)"
+ },
+ {
+  "id": "083-agenda-list",
+  "group": "Composite",
+  "title": "Agenda list",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack alignment=\"leading\" spacing=\"6\" padding=\"14\" frame=\"max\"><text font=\"headline\">Agenda</text><hstack spacing=\"8\"><capsule frame=\"4,30\" color=\"#3b82f6\"/><vstack alignment=\"leading\" spacing=\"0\"><text font=\"callout\" fontWeight=\"semibold\">Standup</text><text font=\"caption\" color=\"gray\">9:30 – 9:45</text></vstack></hstack><hstack spacing=\"8\"><capsule frame=\"4,30\" color=\"#f97316\"/><vstack alignment=\"leading\" spacing=\"0\"><text font=\"callout\" fontWeight=\"semibold\">Design critique</text><text font=\"caption\" color=\"gray\">11:00 – 12:00</text></vstack></hstack></vstack>)"
+ },
+ {
+  "id": "084-countdown",
+  "group": "Composite",
+  "title": "Countdown",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<vstack padding=\"14\" frame=\"max\" background=\"#be123c\"><text font=\"caption\" color=\"#fecdd3\">DAYS UNTIL</text><text font=\"56\" fontWeight=\"heavy\" color=\"white\">42</text><text font=\"callout\" color=\"white\">Summer trip</text></vstack>)"
+ },
+ {
+  "id": "085-quote-card",
+  "group": "Composite",
+  "title": "Quote card",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack alignment=\"leading\" padding=\"16\" frame=\"max\" background=\"#fef3c7\"><text font=\"title\" color=\"#92400e\">“</text><text font=\"body\" color=\"#78350f\">The best way to predict the future is to invent it.</text><spacer/><text font=\"caption\" color=\"#b45309\">— Alan Kay</text></vstack>)"
+ },
+ {
+  "id": "086-two-columns",
+  "group": "Composite",
+  "title": "Two columns",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"12\" padding=\"14\" frame=\"max\"><vstack alignment=\"leading\"><text font=\"caption\" color=\"gray\">INCOME</text><text font=\"title2\" fontWeight=\"bold\" color=\"green\">$4,200</text></vstack><divider axis=\"vertical\"/><vstack alignment=\"leading\"><text font=\"caption\" color=\"gray\">SPENT</text><text font=\"title2\" fontWeight=\"bold\" color=\"red\">$2,950</text></vstack></hstack>)"
+ },
+ {
+  "id": "087-habit-dots",
+  "group": "Composite",
+  "title": "Habit dots",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack alignment=\"leading\" padding=\"14\" frame=\"max\"><text font=\"headline\">Reading streak</text><hstack spacing=\"6\">{Array.from({length:7},(_, i)=><circle frame=\"22,22\" color={i<5?\"#22c55e\":\"#e5e7eb\"}/>)}</hstack><text font=\"caption\" color=\"gray\">5 of 7 days</text></vstack>)"
+ },
+ {
+  "id": "088-battery-panel",
+  "group": "Composite",
+  "title": "Battery panel",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"16\" padding=\"16\" frame=\"max\" background=\"#0f766e\"><ring value={0.8} thickness=\"10\" color=\"#2dd4bf\" trackColor=\"#134e4a\" frame=\"70,70\"/><vstack alignment=\"leading\"><text font=\"caption\" color=\"#99f6e4\">BATTERY</text><text font=\"largeTitle\" fontWeight=\"bold\" color=\"white\">80%</text><text font=\"caption\" color=\"#99f6e4\">About 9 hours left</text></vstack></hstack>)"
+ },
+ {
+  "id": "089-music-player",
+  "group": "Composite",
+  "title": "Now playing",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"12\" padding=\"14\" frame=\"max\" background=\"#1f2937\"><rect frame=\"70,70\" corner=\"10\" color={$gradient({'type': 'linear', 'colors': ['#f472b6', '#8b5cf6'], 'startPoint': 'topLeading', 'endPoint': 'bottomTrailing'})}/><vstack alignment=\"leading\" spacing=\"4\"><text font=\"headline\" color=\"white\">Midnight City</text><text font=\"subheadline\" color=\"#9ca3af\">M83</text><progress value={0.35} color=\"white\" trackColor=\"#4b5563\"/></vstack></hstack>)"
+ },
+ {
+  "id": "090-stock-row",
+  "group": "Composite",
+  "title": "Stock rows",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack spacing=\"8\" padding=\"14\" frame=\"max\"><hstack><text font=\"headline\">AAPL</text><spacer/><text font=\"callout\" color=\"green\">231.40</text><badge text=\"+1.2%\" background=\"green\"/></hstack><hstack><text font=\"headline\">TSLA</text><spacer/><text font=\"callout\" color=\"red\">198.10</text><badge text=\"-2.4%\" background=\"red\"/></hstack><hstack><text font=\"headline\">MSFT</text><spacer/><text font=\"callout\" color=\"green\">421.75</text><badge text=\"+0.6%\" background=\"green\"/></hstack></vstack>)"
+ },
+ {
+  "id": "091-checklist",
+  "group": "Composite",
+  "title": "Checklist",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<vstack alignment=\"leading\" spacing=\"7\" padding=\"14\" frame=\"max\" background=\"#0284c7\"><text font=\"headline\" fontWeight=\"bold\" color=\"white\">Ready to go</text><hstack spacing=\"7\"><icon systemName=\"circle\" size=\"13\" color=\"#bae6fd\"/><text font=\"callout\" color=\"white\">Passport</text></hstack><hstack spacing=\"7\"><icon systemName=\"circle\" size=\"13\" color=\"#bae6fd\"/><text font=\"callout\" color=\"white\">Charger</text></hstack><hstack spacing=\"7\"><icon systemName=\"circle\" size=\"13\" color=\"#bae6fd\"/><text font=\"callout\" color=\"white\">Headphones</text></hstack></vstack>)"
+ },
+ {
+  "id": "092-header-badge",
+  "group": "Composite",
+  "title": "Header with badge",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack alignment=\"leading\" padding=\"14\" frame=\"max\"><hstack><text font=\"title3\" fontWeight=\"bold\">Inbox</text><spacer/><badge text=\"12\" background=\"#2563eb\"/></hstack><text font=\"callout\" color=\"gray\">Latest: Your order has shipped</text><spacer/><hstack><chip text=\"Work\"/><chip text=\"Personal\"/></hstack></vstack>)"
+ },
+ {
+  "id": "093-plant-care",
+  "group": "Composite",
+  "title": "Plant care",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<vstack frame=\"max\" alignment=\"leading\" spacing=\"8\" padding=\"14\" background=\"#15803d\"><hstack frame=\"max\"><icon systemName=\"leaf.fill\" size=\"24\" color=\"#dcfce7\"/><spacer/><text font=\"caption\" color=\"#f0fdf4\">PLANT CARE</text></hstack><text font=\"title2\" fontWeight=\"bold\" color=\"white\">Monstera</text><text font=\"callout\" color=\"#dcfce7\">Water in 2 days</text><spacer/><progress value={5} total=\"7\" color=\"#86efac\"/></vstack>)"
+ },
+ {
+  "id": "094-focus-gauge",
+  "group": "Composite",
+  "title": "Focus timer",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<vstack padding=\"8\" frame=\"max\" background=\"#1e293b\"><text font=\"caption\" color=\"#94a3b8\">Focus Timer</text><text font=\"title\" color=\"white\">25:00</text><gauge value={0.4} frame=\"90,90\"/></vstack>)"
+ },
+ {
+  "id": "095-big-number-large",
+  "group": "Composite",
+  "title": "Large dashboard",
+  "size": "large",
+  "dark": false,
+  "source": "$render(<vstack spacing=\"14\" padding=\"16\" frame=\"max\" alignment=\"leading\"><text font=\"title2\" fontWeight=\"bold\">This week</text><hstack spacing=\"12\"><stat title=\"Runs\" value=\"4\"/><stat title=\"Distance\" value=\"21 km\"/><stat title=\"Pace\" value=\"5:12\"/></hstack><chart type=\"bar\" color=\"#0ea5e9\" data='[{\"label\":\"M\",\"value\":5},{\"label\":\"T\",\"value\":0},{\"label\":\"W\",\"value\":7},{\"label\":\"T\",\"value\":0},{\"label\":\"F\",\"value\":9}]'/></vstack>)"
+ },
+ {
+  "id": "096-cjk-card",
+  "group": "Composite",
+  "title": "Chinese card",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<vstack alignment=\"leading\" padding=\"14\" frame=\"max\" background=\"#9f1239\"><text font=\"caption\" color=\"#fda4af\">今年还剩</text><text font=\"largeTitle\" fontWeight=\"bold\" color=\"white\">74 天</text><text font=\"caption\" color=\"#fecdd3\">把今天过得有意义</text></vstack>)"
+ },
+ {
+  "id": "097-emoji-card",
+  "group": "Composite",
+  "title": "Emoji card",
+  "size": "small",
+  "dark": false,
+  "source": "$render(<vstack spacing=\"4\" frame=\"max\" background=\"#fef9c3\"><text font=\"48\">☕️</text><text font=\"headline\">Coffee break</text><text font=\"caption\" color=\"gray\">in 15 min</text></vstack>)"
+ },
+ {
+  "id": "098-tiles",
+  "group": "Composite",
+  "title": "Launcher tiles",
+  "size": "medium",
+  "dark": false,
+  "source": "$render(<hstack spacing=\"8\" padding=\"12\" frame=\"max\"><vstack spacing=\"6\" frame=\"max\" background=\"#2563eb\" corner=\"14\"><icon systemName=\"calendar\" size=\"26\" color=\"white\"/><text font=\"caption\" color=\"white\">Calendar</text></vstack><vstack spacing=\"6\" frame=\"max\" background=\"#475569\" corner=\"14\"><icon systemName=\"chevron.left.forwardslash.chevron.right\" size=\"26\" color=\"white\"/><text font=\"caption\" color=\"white\">Code</text></vstack><vstack spacing=\"6\" frame=\"max\" background=\"#047857\" corner=\"14\"><icon systemName=\"magnifyingglass\" size=\"26\" color=\"white\"/><text font=\"caption\" color=\"white\">Search</text></vstack></hstack>)"
+ },
+ {
+  "id": "099-progress-list",
+  "group": "Composite",
+  "title": "Progress list",
+  "size": "large",
+  "dark": false,
+  "source": "$render(<vstack spacing=\"12\" padding=\"16\" frame=\"max\" alignment=\"leading\"><text font=\"title3\" fontWeight=\"bold\">Goals</text><vstack alignment=\"leading\" spacing=\"4\"><hstack><text font=\"callout\">Reading</text><spacer/><text font=\"caption\" color=\"gray\">70%</text></hstack><progress value={0.7} color=\"#6366f1\"/></vstack><vstack alignment=\"leading\" spacing=\"4\"><hstack><text font=\"callout\">Workouts</text><spacer/><text font=\"caption\" color=\"gray\">45%</text></hstack><progress value={0.45} color=\"#f97316\"/></vstack><vstack alignment=\"leading\" spacing=\"4\"><hstack><text font=\"callout\">Savings</text><spacer/><text font=\"caption\" color=\"gray\">90%</text></hstack><progress value={0.9} color=\"#22c55e\"/></vstack><vstack alignment=\"leading\" spacing=\"4\"><hstack><text font=\"callout\">Sleep</text><spacer/><text font=\"caption\" color=\"gray\">60%</text></hstack><progress value={0.6} color=\"#06b6d4\"/></vstack></vstack>)"
+ },
+ {
+  "id": "100-long-text-large",
+  "group": "Composite",
+  "title": "Long paragraph",
+  "size": "large",
+  "dark": false,
+  "source": "$render(<vstack alignment=\"leading\" padding=\"16\" spacing=\"8\"><text font=\"headline\">About ScriptWidget</text><text font=\"body\">ScriptWidget lets you build iOS widgets with JavaScript and JSX. Write a few lines, preview them, and add the widget to your Home Screen. Templates cover clocks, weather, habits, finance, and more.</text></vstack>)"
+ }
+]

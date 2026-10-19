@@ -244,5 +244,59 @@
   "name": "calib-text-rect-spacing",
   "size": "large",
   "source": "$render(\n  <vstack background=\"#ffffff\" frame=\"max\">\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n    <text font=\"body\" color=\"black\" background=\"#ffd0d0\">Hxg body</text>\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n    <text font=\"17\" color=\"black\" background=\"#d0ffd0\">Hxg 17</text>\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n    <text font=\"caption\" color=\"black\" background=\"#ffd0d0\">Hxg caption</text>\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n    <text font=\"12\" color=\"black\" background=\"#d0ffd0\">Hxg 12</text>\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n    <text font=\"title\" color=\"black\" background=\"#ffd0d0\">Hxg title</text>\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n    <text font=\"28\" color=\"black\" background=\"#d0ffd0\">Hxg 28</text>\n    <rect frame=\"40,10\" color=\"#0000ff\"/>\n  </vstack>\n);\n"
+ },
+ {
+  "name": "hstack-columns-wrap",
+  "size": "small",
+  "source": "$render(<vstack frame=\"max\" spacing=\"8\" padding=\"14\"><hstack frame=\"max\"><text font=\"headline\" weight=\"bold\">World Clock</text><spacer/></hstack><hstack frame=\"max\"><vstack alignment=\"leading\"><text font=\"caption\" color=\"#94a3b8\">BEIJING</text><text font=\"title3\" weight=\"bold\">08:25</text></vstack><spacer/><vstack alignment=\"leading\"><text font=\"caption\" color=\"#94a3b8\">SAN JOSE</text><text font=\"title3\" weight=\"bold\">04:25</text></vstack><spacer/><vstack alignment=\"leading\"><text font=\"caption\" color=\"#94a3b8\">NEW YORK</text><text font=\"title3\" weight=\"bold\">07:25</text></vstack></hstack></vstack>)"
+ },
+ {
+  "name": "hstack-columns-wrap-plain",
+  "size": "small",
+  "source": "$render(<hstack padding=\"14\"><vstack alignment=\"leading\"><text font=\"caption\" color=\"#94a3b8\">BEIJING</text><text font=\"title3\" weight=\"bold\">08:25</text></vstack><spacer/><vstack alignment=\"leading\"><text font=\"caption\" color=\"#94a3b8\">SAN JOSE</text><text font=\"title3\" weight=\"bold\">04:25</text></vstack><spacer/><vstack alignment=\"leading\"><text font=\"caption\" color=\"#94a3b8\">NEW YORK</text><text font=\"title3\" weight=\"bold\">07:25</text></vstack></hstack>)"
+ },
+ {
+  "name": "overflow-year-progress-375",
+  "size": "small",
+  "source": "$render(<hstack background=\"#0284c7\" frame=\"max\" spacing=\"16\" padding=\"14\"><vstack alignment=\"leading\" spacing=\"3\"><text font=\"caption\" color=\"#7dd3fc\">YEAR PROGRESS</text><text font=\"largeTitle\" weight=\"bold\" color=\"white\">74</text><text font=\"caption\" color=\"#bae6fd\">days remaining</text></vstack><spacer/><icon systemName=\"hourglass\" size=\"42\" color=\"#38bdf8\"/></hstack>)",
+  "profile": "iphone-375"
+ },
+ {
+  "name": "overflow-days-left-cjk-375",
+  "size": "small",
+  "source": "$render(<hstack background=\"#9f1239\" frame=\"max\" spacing=\"16\" padding=\"14\"><vstack alignment=\"leading\" spacing=\"3\"><text font=\"caption\" color=\"#fda4af\">今年还剩</text><text font=\"largeTitle\" weight=\"bold\" color=\"white\">74 天</text><text font=\"caption\" color=\"#fecdd3\">把今天过得有意义</text></vstack><spacer/><icon systemName=\"sparkles\" size=\"40\" color=\"#fb7185\"/></hstack>)",
+  "profile": "iphone-375"
+ },
+ {
+  "name": "overflow-current-time-375",
+  "size": "small",
+  "source": "$render(<hstack background=\"#172554\" frame=\"max\" spacing=\"16\" padding=\"14\"><vstack alignment=\"leading\" spacing=\"3\"><text font=\"caption\" color=\"#93c5fd\">CURRENT TIME</text><text font=\"largeTitle\" weight=\"bold\" color=\"white\">4:00 AM</text><text font=\"caption\" color=\"#bfdbfe\">January 1, 2026</text></vstack><spacer/><icon systemName=\"clock.fill\" size=\"42\" color=\"#60a5fa\"/></hstack>)",
+  "profile": "iphone-375"
+ },
+ {
+  "name": "overflow-three-texts-375",
+  "size": "small",
+  "source": "$render(<vstack alignment=\"leading\" padding=\"14\" frame=\"max\"><text font=\"headline\">This Week</text><text font=\"subheadline\" color=\"gray\">Make today count and keep going</text><text font=\"caption\">Monday through Sunday</text></vstack>)",
+  "profile": "iphone-375"
+ },
+ {
+  "name": "overflow-year-progress",
+  "size": "small",
+  "source": "$render(<hstack background=\"#0284c7\" frame=\"max\" spacing=\"16\" padding=\"14\"><vstack alignment=\"leading\" spacing=\"3\"><text font=\"caption\" color=\"#7dd3fc\">YEAR PROGRESS</text><text font=\"largeTitle\" weight=\"bold\" color=\"white\">74</text><text font=\"caption\" color=\"#bae6fd\">days remaining</text></vstack><spacer/><icon systemName=\"hourglass\" size=\"42\" color=\"#38bdf8\"/></hstack>)"
+ },
+ {
+  "name": "overflow-days-left-cjk",
+  "size": "small",
+  "source": "$render(<hstack background=\"#9f1239\" frame=\"max\" spacing=\"16\" padding=\"14\"><vstack alignment=\"leading\" spacing=\"3\"><text font=\"caption\" color=\"#fda4af\">今年还剩</text><text font=\"largeTitle\" weight=\"bold\" color=\"white\">74 天</text><text font=\"caption\" color=\"#fecdd3\">把今天过得有意义</text></vstack><spacer/><icon systemName=\"sparkles\" size=\"40\" color=\"#fb7185\"/></hstack>)"
+ },
+ {
+  "name": "overflow-current-time",
+  "size": "small",
+  "source": "$render(<hstack background=\"#172554\" frame=\"max\" spacing=\"16\" padding=\"14\"><vstack alignment=\"leading\" spacing=\"3\"><text font=\"caption\" color=\"#93c5fd\">CURRENT TIME</text><text font=\"largeTitle\" weight=\"bold\" color=\"white\">4:00 AM</text><text font=\"caption\" color=\"#bfdbfe\">January 1, 2026</text></vstack><spacer/><icon systemName=\"clock.fill\" size=\"42\" color=\"#60a5fa\"/></hstack>)"
+ },
+ {
+  "name": "overflow-three-texts",
+  "size": "small",
+  "source": "$render(<vstack alignment=\"leading\" padding=\"14\" frame=\"max\"><text font=\"headline\">This Week</text><text font=\"subheadline\" color=\"gray\">Make today count and keep going</text><text font=\"caption\">Monday through Sunday</text></vstack>)"
  }
 ]

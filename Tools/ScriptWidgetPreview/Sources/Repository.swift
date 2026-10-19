@@ -54,6 +54,15 @@ enum Repository {
                                      preferredFamily: item["size"] as? String, dark: item["dark"] as? Bool ?? false))
             }
         }
+        let catalogURL = engine.appendingPathComponent("test/catalog/catalog.json")
+        if let data = try? Data(contentsOf: catalogURL),
+           let catalog = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] {
+            for item in catalog {
+                guard let id = item["id"] as? String, let source = item["source"] as? String else { continue }
+                entries.append(Entry(id: "catalog/\(id)", directory: nil, inlineSource: source,
+                                     preferredFamily: item["size"] as? String, dark: item["dark"] as? Bool ?? false))
+            }
+        }
         return entries
     }
 

@@ -103,7 +103,7 @@ for (const item of report.slice(0, 15)) console.log(String(item.diffPercent ?? i
 // "medium~iphone-430", ...). "Same" is the share of matching pixels.
 const groups = new Map();
 for (const item of scored) {
-  const key = item.name.startsWith("case/") ? "calibration cases" : item.name.slice(item.name.lastIndexOf("@") + 1);
+  const key = item.name.startsWith("case/") ? "calibration cases" : item.name.startsWith("catalog/") ? "component catalog" : item.name.slice(item.name.lastIndexOf("@") + 1);
   if (!groups.has(key)) groups.set(key, []);
   groups.get(key).push(item.diffPercent);
 }
@@ -121,7 +121,8 @@ const summarize = (values) => {
 const corpusSources = JSON.parse(fs.readFileSync(path.join(root, "dist/parity-corpus.json"), "utf8")).corpus
   .map((item) => [item.name, Object.values(item.files).filter((value) => typeof value === "string").join("\n")]);
 const caseSources = JSON.parse(fs.readFileSync(path.join(root, "test/render/cases.json"), "utf8")).map((item) => [`case/${item.name}`, item.source]);
-const sources = Object.fromEntries([...corpusSources, ...caseSources]);
+const catalogSources = JSON.parse(fs.readFileSync(path.join(root, "test/catalog/catalog.json"), "utf8")).map((item) => [`catalog/${item.id}`, item.source]);
+const sources = Object.fromEntries([...corpusSources, ...caseSources, ...catalogSources]);
 const tags = new Map();
 for (const item of scored) {
   const source = sources[item.name.slice(0, item.name.lastIndexOf("@"))] ?? "";
