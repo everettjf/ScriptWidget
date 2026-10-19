@@ -31,6 +31,14 @@ test("legacy templates gain a manifest", () => {
   assert.deepEqual(Object.keys(textFiles(project.files)).sort(), ["main.jsx", "meta.json", "widget.json"]);
 });
 
+test("template copies declare the sizes their script handles", () => {
+  const source = 'const size = $getenv("widget-size"); if (size === "accessoryCircular") $render(<text/>); else if (size === "extraLarge") $render(<text/>); else $render(<text/>);';
+  const adaptive = projectFromTemplate({ id: "template/A", source: "template", name: "A", description: "", category: "time", files: { "main.jsx": source } });
+  assert.deepEqual(packageReport(adaptive).manifest?.supportedFamilies, ["systemSmall", "systemMedium", "systemLarge", "systemExtraLarge", "accessoryCircular"]);
+  const plain = projectFromTemplate({ id: "template/B", source: "template", name: "B", description: "", category: "time", files: { "main.jsx": "$render(<text/>)" } });
+  assert.deepEqual(packageReport(plain).manifest?.supportedFamilies, ["systemSmall", "systemMedium", "systemLarge"]);
+});
+
 test("preview families follow the manifest and the device", () => {
   assert.deepEqual(previewFamilies({ supportedFamilies: ["systemSmall", "accessoryCircular"] }, "iphone-393"), ["small", "accessoryCircular"]);
   assert.deepEqual(previewFamilies({ supportedFamilies: ["systemExtraLarge"] }, "iphone-393"), ["small", "medium", "large"]);

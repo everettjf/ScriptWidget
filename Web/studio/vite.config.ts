@@ -37,10 +37,15 @@ function templateCatalog(): string {
         }
       };
       visit("");
-      let meta: { name?: string; description?: string; category?: string } = {};
+      let meta: { name?: string; description?: string; category?: string; featured?: boolean; tags?: string[]; icon?: string } = {};
       const metaText = files["meta.json"] ?? files["widget.json"];
       try { meta = typeof metaText === "string" ? JSON.parse(metaText) : {}; } catch { meta = {}; }
-      templates.push({ id: `${source}/${name}`, source, name: meta.name ?? name, description: meta.description ?? "", category: meta.category ?? (source === "gallery" ? "gallery" : "starter"), files });
+      templates.push({
+        id: `${source}/${name}`, source, name: meta.name ?? name, description: meta.description ?? "",
+        category: meta.category ?? (source === "gallery" ? "gallery" : "starter"),
+        // Gallery widgets are curated, so they are featured with the templates marked featured.
+        featured: source === "gallery" || meta.featured === true, tags: Array.isArray(meta.tags) ? meta.tags : [], icon: meta.icon ?? null, files,
+      });
     }
   }
   return JSON.stringify({ templates });
