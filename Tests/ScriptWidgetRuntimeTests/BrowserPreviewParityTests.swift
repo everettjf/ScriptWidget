@@ -218,7 +218,9 @@ final class BrowserPreviewParityTests: XCTestCase {
                                                      package: job.package, containerBackgroundElement: element)
             let renderer = ImageRenderer(content: BrowserPreviewSnapshotView(element: element, context: context, size: job.render.size)
                 .environment(\.colorScheme, job.dark ? .dark : .light))
-            renderer.scale = 2
+            // Optional high-resolution native captures for App Store artwork.
+            let requestedScale = Double(ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_SCALE"] ?? "2") ?? 2
+            renderer.scale = CGFloat(min(4, max(1, requestedScale)))
             guard let data = renderer.uiImage?.pngData() else { continue }
             let fileName = job.name.replacingOccurrences(of: "/", with: "__").replacingOccurrences(of: " ", with: "_") + ".png"
             try data.write(to: output.appendingPathComponent(fileName), options: .atomic)
@@ -482,8 +484,13 @@ final class BrowserPreviewParityTests: XCTestCase {
         guard recorded["timeZone"] as? String == TimeZone.current.identifier else {
             throw XCTSkip("native-trees.json was recorded in \(recorded["timeZone"] ?? "?"); this machine uses \(TimeZone.current.identifier)")
         }
-        XCTAssertEqual(NSDictionary(dictionary: current["entries"] as? [String: Any] ?? [:]),
-                       NSDictionary(dictionary: recorded["entries"] as? [String: Any] ?? [:]),
-                       "Native trees changed. Regenerate native-trees.json and re-run Web/preview-engine parity tests.")
+        let currentEntries = current["entries"] as? [String: Any] ?? [:]
+        let recordedEntries = recorded["entries"] as? [String: Any] ?? [:]
+        XCTAssertEqual(Set(currentEntries.keys), Set(recordedEntries.keys))
+        for name in currentEntries.keys.sorted() {
+            XCTAssertEqual(NSDictionary(dictionary: currentEntries[name] as? [String: Any] ?? [:]),
+                           NSDictionary(dictionary: recordedEntries[name] as? [String: Any] ?? [:]),
+                           "Native tree changed for \(name). Regenerate native-trees.json only after reviewing the difference.")
+        }
     }
 }

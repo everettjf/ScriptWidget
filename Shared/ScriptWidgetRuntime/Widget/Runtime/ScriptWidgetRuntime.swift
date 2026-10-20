@@ -113,15 +113,13 @@ enum ScriptWidgetError: Error {
 }
 
 enum ScriptWidgetRuntimeContract {
-    static let apiVersion = "1.1"
+    static let apiVersion = "1.2"
     static let maximumSourceBytes = 512 * 1_024
     static let maximumTranspiledBytes = 2 * 1_024 * 1_024
     static let executionTimeout: DispatchTimeInterval = .seconds(5)
-    /// Babel runs untrusted source too; generous so slow devices still compile.
+    /// Checked before/after trusted Babel parsing and during AST traversal.
+    /// Public JavaScriptCore APIs cannot preempt a native parser/built-in call.
     static let compileTimeout: TimeInterval = 10
-    /// How often JavaScriptCore's watchdog re-checks whether a still-running
-    /// script must be terminated; bounds overrun past the execution limit.
-    static let watchdogSlice: TimeInterval = 0.25
     static let maximumElementNodes = 1_000
     static let maximumElementDepth = 64
     static let maximumPropsPerElement = 128
@@ -376,11 +374,12 @@ enum ScriptWidgetCompiler {
         guard let context = JSContext() else {
             return .failure(.internalError("Unable to create compiler context"))
         }
-        let deadline = Date().addingTimeInterval(timeLimit)
-        let watchdog = ScriptWidgetJavaScriptWatchdog.install(
-            on: context,
-            slice: min(ScriptWidgetRuntimeContract.watchdogSlice, timeLimit)
-        ) { Date() >= deadline }
+        let deadline = ContinuousClock.now.advanced(by: .seconds(timeLimit))
+        let withinDeadline: @convention(block) () -> Bool = { ContinuousClock.now < deadline }
+        context["__scriptWidgetCompileActive"] = unsafeBitCast(withinDeadline, to: JSValue.self)
+        guard withinDeadline() else {
+            return .failure(.resourceLimit("Compilation exceeded its time limit"))
+        }
         var exceptionInfo: String?
         context.exceptionHandler = { _, exception in
             exceptionInfo = ScriptWidgetRuntime.describeException(exception)
@@ -388,12 +387,42 @@ enum ScriptWidgetCompiler {
         context.evaluateScript(babelContent)
         context.evaluateScript("""
             function ScriptWidgetTransform(input) {
-                return Babel.transform(input, { presets: ['scriptwidget'] }).code
+                const guardName = '__scriptWidgetCheckExecution';
+                const plugin = function({ types: t }) {
+                    const check = () => t.expressionStatement(t.callExpression(t.identifier(guardName), []));
+                    const guardBody = path => {
+                        path.ensureBlock();
+                        path.get('body').unshiftContainer('body', check());
+                    };
+                    return { visitor: {
+                        // Reserve the guard name in ALL scopes, including catch
+                        // parameters, imports and destructuring. No dynamic with scope.
+                        Program(path) {
+                            path.traverse({
+                                Identifier(identifier) {
+                                    if (!__scriptWidgetCompileActive()) throw new Error('Compilation time limit exceeded');
+                                    if (identifier.node.name === guardName) {
+                                        throw new Error('Reserved runtime identifier: ' + guardName);
+                                    }
+                                },
+                                WithStatement(statement) {
+                                    throw new Error('with statements are unsupported');
+                                }
+                            });
+                        },
+                        'Loop|Function': { exit: guardBody },
+                        CatchClause: { exit(path) { path.get('body').unshiftContainer('body', check()); } },
+                        TryStatement: { exit(path) {
+                            if (path.node.finalizer) path.get('finalizer').unshiftContainer('body', check());
+                        } }
+                    } };
+                };
+                return Babel.transform(input, { presets: ['scriptwidget'], plugins: [plugin] }).code;
             }
             """)
         let transformed = context.objectForKeyedSubscript("ScriptWidgetTransform")?
             .call(withArguments: [source])
-        if watchdog?.didTerminate == true {
+        if !withinDeadline() {
             return .failure(.resourceLimit("Compilation exceeded the \(Int(timeLimit))-second time limit"))
         }
         guard let output = transformed?.toString() else {
@@ -461,12 +490,7 @@ class ScriptWidgetRuntime {
             package: package, isDarkMode: ScriptWidgetRuntimeDevice.systemIsDarkMode
         )
         runtimeContext.scriptWidgetRunningState = runningState
-        // The sync executors cancel the session at the execution limit; the
-        // watchdog turns that into termination of any still-running script.
-        let session = runningState.executionSession
-        ScriptWidgetJavaScriptWatchdog.install(
-            on: runtimeContext, slice: ScriptWidgetRuntimeContract.watchdogSlice
-        ) { !session.isActive }
+        ScriptWidgetExecutionGuard.install(on: runtimeContext, session: runningState.executionSession)
         ScriptWidgetMemoryPressure.install()
         ScriptWidgetPrecompiler.install()
     }

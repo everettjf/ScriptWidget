@@ -1,4 +1,4 @@
-# ScriptWidget runtime API 1.1
+# ScriptWidget runtime API 1.2
 
 The public JavaScript/JSX host contract is versioned independently from the app. Scripts can read `$runtime.apiVersion` and must feature-detect optional device capabilities.
 
@@ -28,7 +28,9 @@ XML input is limited to 256 KiB, 2,048 elements, 32 levels, and 256 KiB of decod
 
 - Source text: 512 KiB per execution.
 - Transpiled JavaScript: 2 MiB per execution.
-- Execution: 5 seconds, including unresolved asynchronous work. Synchronous code still running at the limit (for example `while (true) {}`) is terminated; `try`/`catch` cannot intercept the termination.
+- Execution: 5 seconds, including unresolved asynchronous work. Compiler-inserted checks at loops, function entries, catch and finally blocks unwind synchronous scripts after cancellation. Cancellation is sticky, so catching an exception cannot resume another guarded loop. Native built-ins and the trusted Babel parser cannot be forcibly interrupted using public JavaScriptCore APIs.
+- Runtime 1.2 disables dynamic code: `eval`, `Function`, and async/generator constructors, including prototype constructor access. These paths bypass compiler instrumentation. Move source into package files loaded by `$import`, use normal functions for behavior, and use `JSON.parse` for data. Existing documented `$` APIs and Package 2.0 manifests remain supported. `with` statements and the identifier `__scriptWidgetCheckExecution` are reserved/unsupported.
+- Old compiled artifacts are rebuilt with compiler fingerprint `scriptwidget-babel-v3` before execution; authored package files remain unchanged.
 
 Limits are available under `$runtime.limits`. Exceeding one produces a visible resource-limit error instead of a blank widget. Widget extensions remain subject to stricter operating-system CPU and memory budgets.
 

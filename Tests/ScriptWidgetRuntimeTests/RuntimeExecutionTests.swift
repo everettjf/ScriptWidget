@@ -311,7 +311,7 @@ final class RuntimeExecutionTests: XCTestCase {
         let jsx = "$render(<text>{$runtime.apiVersion}</text>);"
         let (element, error) = makeRuntime().executeJSXSyncForWidget(jsx)
         XCTAssertNil(error)
-        XCTAssertTrue(collectText(element!).contains("1.1"))
+        XCTAssertTrue(collectText(element!).contains("1.2"))
     }
 
     func testXMLParserReturnsStructuredNodes() {
@@ -411,18 +411,79 @@ final class RuntimeExecutionTests: XCTestCase {
         assertRuntimeStopped(runtime)
     }
 
-    func testRunawayCompilerContextIsTerminatedAtTimeLimit() {
-        XCTAssertTrue(ScriptWidgetJavaScriptWatchdog.isSupported)
-        let start = Date()
-        let result = ScriptWidgetCompiler.compile("x", babelContent: "while (true) {}", timeLimit: 0.5)
-        XCTAssertLessThan(Date().timeIntervalSince(start), 3)
+    func testCompilerRejectsExpiredDeadline() {
+        let result = ScriptWidgetCompiler.compile("x", babelContent: "", timeLimit: 0)
         guard case .failure(.resourceLimit) = result else {
             return XCTFail("expected resource-limit failure, got \(result)")
         }
     }
 
+    func testTimeoutCannotBeSwallowedByCatchOrFinally() {
+        let runtime = makeRuntime()
+        let (_, error) = runtime.executeJSXSyncForWidget("""
+            try { while (true) { try { while (true) {} } catch (e) {} } }
+            finally { while (true) {} }
+            """)
+        guard case .resourceLimit = error else {
+            return XCTFail("expected resource-limit timeout, got \(String(describing: error))")
+        }
+        assertRuntimeStopped(runtime)
+    }
+
+    func testDynamicCodeCannotBypassExecutionGuard() {
+        for source in [
+            "eval('while (true) {}')",
+            "(0, eval)('while (true) {}')",
+            "new Function('while (true) {}')()",
+            "(() => {}).constructor('while (true) {}')()",
+            "(async function(){}).constructor('while (true) {}')()",
+            "(function*(){}).constructor('while (true) {}')().next()",
+            "(async function*(){}).constructor('while (true) {}')().next()"
+        ] {
+            let start = Date()
+            let (_, error) = makeRuntime().executeJSXSyncForWidget(source)
+            XCTAssertNotNil(error, source)
+            XCTAssertTrue(error?.displayMessage.contains("Dynamic code") == true, source)
+            XCTAssertLessThan(Date().timeIntervalSince(start), 3, source)
+        }
+    }
+
+    func testGuardCannotBeShadowedOrReplaced() {
+        let (_, shadowError) = makeRuntime().executeJSXSyncForWidget("""
+            function run(__scriptWidgetCheckExecution) { /* private-widget-source-marker */ while (true) {} }
+            run(() => {});
+            """)
+        XCTAssertNotNil(shadowError)
+        XCTAssertTrue(shadowError?.displayMessage.contains("Reserved runtime identifier") == true)
+        XCTAssertFalse(shadowError?.displayMessage.contains("private-widget-source-marker") == true,
+                       "compiler policy errors must not include source fragments in public runtime logs")
+
+        let (element, error) = makeRuntime().executeJSXSyncForWidget("""
+            const descriptor = Object.getOwnPropertyDescriptor(globalThis, '__scriptWidgetCheckExecution');
+            $render(<text>{String(descriptor.writable) + ':' + String(descriptor.configurable)}</text>);
+            """)
+        XCTAssertNil(error)
+        XCTAssertTrue(element.map(collectText)?.contains("false:false") ?? false)
+    }
+
+    func testInstrumentedLoopAndFunctionFormsPreserveResults() {
+        let (element, error) = makeRuntime().executeJSXSyncForWidget("""
+            let total = 0;
+            for (let i = 0; i < 3; i++) total += i;
+            for (const value of [1, 2]) total += value;
+            for (const key in {x: 1}) total += key.length;
+            do { total++; } while (total < 9);
+            const twice = value => value * 2;
+            const boundTwice = Function.prototype.bind.call(twice, null);
+            function* values() { yield boundTwice(total); }
+            $render(<text>{String(values().next().value)}</text>);
+            """)
+        XCTAssertNil(error)
+        XCTAssertTrue(element.map(collectText)?.contains("18") ?? false)
+    }
+
     func testBusyButFiniteScriptIsNotInterruptedBeforeTimeLimit() {
-        // Longer than a watchdog slice but well inside the execution limit.
+        // A busy finite loop must still complete within the execution limit.
         let (element, error) = makeRuntime().executeJSXSyncForWidget("""
             const start = Date.now();
             while (Date.now() - start < 800) {}

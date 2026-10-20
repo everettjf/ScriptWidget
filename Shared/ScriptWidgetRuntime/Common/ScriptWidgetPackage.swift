@@ -251,7 +251,7 @@ struct ScriptWidgetBuildManifest: Codable, Equatable {
 
 enum ScriptWidgetBuildContract {
     static let runtimeAPIVersion = "1.0"
-    static let compilerFingerprint = "scriptwidget-babel-v2"
+    static let compilerFingerprint = "scriptwidget-babel-v3"
 }
 
 /// Common-layer indirection keeps Share Extension independent of JavaScriptCore

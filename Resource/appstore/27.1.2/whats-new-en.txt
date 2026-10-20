@@ -1,0 +1,5 @@
+Eight new built-in widgets, with layouts for Home Screen and Lock Screen sizes.
+More reliable offline widgets when iCloud files are unavailable.
+Import widgets shared from Web Studio in Safari.
+Improved text styling and code readability in Dark Mode.
+Improved handling of scripts that exceed the execution time limit.

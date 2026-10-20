@@ -2314,7 +2314,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27010;
+				CURRENT_PROJECT_VERSION = 27012;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
@@ -2326,7 +2326,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 27.1.1;
+				MARKETING_VERSION = 27.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2347,7 +2347,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27010;
+				CURRENT_PROJECT_VERSION = 27012;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
@@ -2358,7 +2358,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 27.1.1;
+				MARKETING_VERSION = 27.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2375,7 +2375,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27010;
+				CURRENT_PROJECT_VERSION = 27012;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -2384,7 +2384,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 27.1.1;
+				MARKETING_VERSION = 27.1.2;
 				OTHER_SWIFT_FLAGS = "-D IsWidgetTarget";
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2401,7 +2401,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27010;
+				CURRENT_PROJECT_VERSION = 27012;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -2410,7 +2410,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 27.1.1;
+				MARKETING_VERSION = 27.1.2;
 				OTHER_SWIFT_FLAGS = "-D IsWidgetTarget";
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2426,7 +2426,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27010;
+				CURRENT_PROJECT_VERSION = 27012;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -2435,7 +2435,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 27.1.1;
+				MARKETING_VERSION = 27.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.share;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -2450,7 +2450,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27010;
+				CURRENT_PROJECT_VERSION = 27012;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -2459,7 +2459,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 27.1.1;
+				MARKETING_VERSION = 27.1.2;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.share;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

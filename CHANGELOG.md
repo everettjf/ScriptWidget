@@ -31,6 +31,8 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 
 ### Fixed
 
+- Native Runtime 1.2 replaces a private JavaScriptCore timeout API with compiler-inserted cancellation checks. Old compiled caches are invalidated. Dynamic code (`eval` and function constructors) is unsupported; use package files with `$import` instead. Native built-in calls and the trusted Babel parser cannot be forcibly interrupted.
+
 - Web preview fidelity across every iOS widget size (16 sizes, 1,942 compared renders, 99.0% matching pixels; every medium, large, and iPad size above 99%): baselines, line pitch, VStack spacing, truncation, dictionary hyphenation for text styles, emoji metrics, and stack placement now follow measured SwiftUI behavior.
 - Web preview rules measured against native renders: area charts fill opaque, chart axes use at most four 1/2/5 intervals and a hidden value axis ends at the data maximum, Chinese characters advance as in CoreText, serif text uses lining figures, `.fill` SF Symbols get their real widths, grid spacing separates rows only (columns use SwiftUI's 8-point default), text narrower than an ellipsis is drawn clipped when one line fits, and macOS toggles draw as checkboxes with hyphenated text styles.
 - `fetch` in the browser preview: network templates such as Currency Pulse failed with "fetch is not a function".

@@ -1,0 +1,3 @@
+No account or sign-in is required. Open ScriptWidget, create a widget from a built-in template, edit main.jsx, and run the preview. Add a ScriptWidget widget to the Home Screen and choose the saved script.
+
+This update adds eight built-in templates, improves offline package loading and Safari file sharing, and fixes text styling. JavaScript runs using public JavaScriptCore APIs. Compiler-inserted cancellation checks handle runaway loops; dynamic code generation is disabled. Widget source remains visible and editable. Optional AI and network features are not needed for review.

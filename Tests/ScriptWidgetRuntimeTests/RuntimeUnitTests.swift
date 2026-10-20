@@ -380,7 +380,7 @@ final class ScriptWidgetErrorTests: XCTestCase {
 
 final class RuntimeContractTests: XCTestCase {
     func testPublicAPIVersionAndGlobalsAreFixed() {
-        XCTAssertEqual(ScriptWidgetRuntimeContract.apiVersion, "1.1")
+        XCTAssertEqual(ScriptWidgetRuntimeContract.apiVersion, "1.2")
         XCTAssertEqual(ScriptWidgetRuntimeContract.globalAPIs, ScriptWidgetRuntimeContract.globalAPIs.sorted())
         XCTAssertTrue(ScriptWidgetRuntimeContract.globalAPIs.contains("$render"))
         XCTAssertTrue(ScriptWidgetRuntimeContract.globalAPIs.contains("$runtime"))

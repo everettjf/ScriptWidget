@@ -1,0 +1,3 @@
+No account or sign-in is required. Open ScriptWidget, choose a built-in template under New Widget, edit main.jsx in Studio, and run the preview. Add ScriptWidget from the macOS widget gallery and select the saved script.
+
+This update adds eight built-in templates, improves offline package loading, and fixes text styling. JavaScript runs using public JavaScriptCore APIs. Compiler-inserted cancellation checks handle runaway loops; dynamic code generation is disabled. Widget source remains visible and editable. Optional AI and network features are not needed for review.

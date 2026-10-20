@@ -3,6 +3,10 @@
 // the Swift sources and fails when these values drift.
 
 export const runtimeContract = Object.freeze({
+  // Native 1.2 uses cooperative checks and disallows dynamic code. The web
+  // host keeps its disposable Worker and 1.1 semantics; caches are distinct.
+  nativeAPIVersion: "1.2",
+  nativeCompilerFingerprint: "scriptwidget-babel-v3",
   apiVersion: "1.1",
   compilerFingerprint: "scriptwidget-babel-v2",
   maximumSourceBytes: 512 * 1024,

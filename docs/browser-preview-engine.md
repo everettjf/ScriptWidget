@@ -144,9 +144,19 @@ Browsers workflow).
 - Error message text differs between engines (`ReferenceError: x is not
   defined` versus `Can't find variable: x`). Compare error kinds and categories,
   not messages.
-- Both hosts now stop runaway synchronous JavaScript: the browser terminates
-  the Worker at the deadline, and the native runtime terminates the script
-  through JavaScriptCore's execution-time watchdog within about 0.25 seconds.
+- The browser stops runaway JavaScript by terminating its Worker. Native
+  Runtime 1.2 uses only public JavaScriptCore APIs: Babel adds sticky cancellation
+  checks to loop iterations, function entries, catch blocks and finally blocks.
+  The compiler fingerprint invalidates older uninstrumented caches. Native
+  built-ins (for example a single expensive regular expression) and Babel's
+  parser cannot be preempted by these checks; the native deadline is cooperative,
+  not a hard VM interruption.
+- Native Runtime 1.2 disables `eval`, `Function`, and async/generator function
+  constructors, including prototype constructor access, so dynamic source cannot
+  bypass cancellation checks. Migrate dynamic source to package files loaded with
+  `$import`, or use ordinary functions and `JSON.parse` for data. The browser
+  preview still permits dynamic code in its disposable Worker. The identifier
+  `__scriptWidgetCheckExecution` is reserved and `with` statements are unsupported.
 - Built-ins differ by OS: iOS versions ship different JavaScriptCore releases,
   and the browser may offer newer `Array`/`Object` methods. The parity reference
   is macOS 27 and matches the iOS 27.0 simulator; older iOS releases and
