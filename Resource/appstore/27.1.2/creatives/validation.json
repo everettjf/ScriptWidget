@@ -1,0 +1,54 @@
+{
+  "assets": [
+    {
+      "file": "header-en.png",
+      "width": 3840,
+      "height": 1646,
+      "mode": "RGB",
+      "bytes": 620807,
+      "sha256": "2c6cbc83b428363a05faa4e9104d7e4cc095b745586a8e59d0f1f6c3fedba969"
+    },
+    {
+      "file": "search-results-en.png",
+      "width": 3840,
+      "height": 2560,
+      "mode": "RGB",
+      "bytes": 734121,
+      "sha256": "ff6722919914b924e5039e1c4e033b2a97689f68de53c008ef72531360685601"
+    }
+  ],
+  "sources": [
+    "Animation Golden Bloom",
+    "Animation Orbital Resonance",
+    "Habit Heatmap"
+  ],
+  "nativeCaptureLog": "/tmp/scriptwidget-populated-heatmap.log",
+  "visualReview": "Checked full canvases; no Calendar or Weather in current output; aspect ratios preserved.",
+  "appStoreConnect": {
+    "appId": "1555600758",
+    "version": "27.1.2",
+    "locale": "en-US",
+    "currentRevisionUploaded": true,
+    "headerAssociationObserved": "1 of 1 Header Asset",
+    "searchAssociationObserved": "1 of 1 Search Results Asset",
+    "reloadVerification": "Both placements verified after page reload. Save disabled; Prepare for Submission; Add for Review untouched.",
+    "reviewSubmitted": false,
+    "evidenceDirectory": "__Release/Apple/27.1.2-27012/evidence/jsx-creatives",
+    "uploadFiles": [
+      "scriptwidget-jsx-2c6cbc83b4-header-en.png",
+      "scriptwidget-jsx-ff67229199-search-results-en.png"
+    ]
+  },
+  "fixture": {
+    "file": "sources/habit-screenshot-fixture.js",
+    "streakDays": 11,
+    "todayCompleted": true,
+    "persistentWrites": false
+  },
+  "copy": {
+    "tagline": [
+      "Create with",
+      "JSX-style JavaScript."
+    ]
+  }
+}

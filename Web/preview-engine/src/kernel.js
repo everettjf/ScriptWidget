@@ -399,9 +399,9 @@ export function scriptWidgetKernel(global, host, configJSON) {
     });
   }
 
-  const storage = new Map(Object.entries(config.storage ?? {}));
-  const device = config.device ?? {};
-  const system = config.system ?? {};
+  const storage = new Map(Object.entries(config.storage ?? fixtures.storage ?? {}));
+  const device = config.device ?? fixtures.device ?? {};
+  const system = config.system ?? fixtures.system ?? {};
   const constant = (value) => () => unbridge(bridgeValue(value, 0));
 
   function readJSON(text) {
@@ -503,9 +503,22 @@ export function scriptWidgetKernel(global, host, configJSON) {
       },
     },
     $dataSource: {
-      request: (pluginID) => nativePromise((resolve, reject) => {
-        diagnostic("warning", "fixture.dataSource.missing", `Data Source Plugin ${nativeString(pluginID)} is not available in the web preview.`);
-        reject("Data Source Plugins are not available in the web preview");
+      request: (pluginID, operationID) => nativePromise((resolve, reject) => {
+        const plugin = nativeString(pluginID), operation = nativeString(operationID);
+        const fixture = (fixtures.dataSource ?? []).find((item) => item.pluginID === plugin && item.operationID === operation);
+        if (!fixture) {
+          diagnostic("warning", "fixture.dataSource.missing", `No Data Source mock for ${plugin} / ${operation}.`);
+          reject("Data Source Plugins need a matching mock in the web preview");
+          return;
+        }
+        // A mock must not hide missing package permissions or a disallowed host.
+        if (!config.manifest?.plugins?.includes(plugin)) { reject(`Plugin ${plugin} is not declared in widget.json`); return; }
+        const [policyError, host] = fetchPolicyError(nativeString(fixture.url ?? ""));
+        if (policyError || !nativeString(fixture.url).startsWith("https://")) { reject(policyError ?? "Data Source mocks require HTTPS"); return; }
+        if (!packageAllows(host)) { reject("Network host is not declared in widget.json"); return; }
+        if (++networkRequests > 16) { reject("Network request budget exceeded"); return; }
+        if (fixture.error !== undefined) { reject(nativeString(fixture.error)); return; }
+        resolve(bridgeValue(fixture.value, 0));
       }),
     },
     $xml_parse: (source) => host.parseXML(nativeString(source)),
@@ -545,6 +558,23 @@ export function scriptWidgetKernel(global, host, configJSON) {
       return true;
     },
   };
+  // Explicit per-method mocks override data APIs only. Rendering, package files,
+  // imports, runtime contracts and network policy continue to execute normally.
+  // Fresh bridged values prevent a script from modifying later mock responses.
+  const apiMocks = fixtures.api ?? {};
+  for (const namespace of ["$device", "$system", "$health", "$location"]) {
+    for (const method of ObjectKeys(apis[namespace])) {
+      const mock = apiMocks[`${namespace}.${method}`];
+      if (!mock || typeof mock !== "object" || ArrayIsArray(mock)) continue;
+      const hasError = Object.prototype.hasOwnProperty.call(mock, "error");
+      if (!hasError && !Object.prototype.hasOwnProperty.call(mock, "value")) continue;
+      const asynchronous = (namespace === "$health" && method !== "isAvailable") ||
+        (namespace === "$location" && (method === "current" || method === "requestAuthorization"));
+      apis[namespace][method] = asynchronous
+        ? () => nativePromise((resolve, reject) => hasError ? reject(nativeString(mock.error)) : resolve(bridgeValue(mock.value, 0)))
+        : () => { if (hasError) throw new Error(nativeString(mock.error)); return unbridge(bridgeValue(mock.value, 0)); };
+    }
+  }
   apis.$fetch = apis.fetch;
   apis.console = apis.$console;
   apis.Promise = global.Promise;

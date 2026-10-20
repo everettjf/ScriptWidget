@@ -44,12 +44,12 @@ the browser and previews them itself.
 - **Problems** lists runtime errors, manifest validation, and preview notes
   (for example, an SF Symbol drawn with a look-alike icon, or a property the
   iPhone runtime ignores). **Console** shows `console.log` output. **Package**
-  summarizes the manifest. **Fixtures** maps URLs to responses.
+  summarizes the manifest. **Mock Data** configures preview API responses.
 - If a content blocker or browser setting blocks the preview sandbox
   (`sandbox.html`), the preview says so within a few seconds. Allow the site or
   use another browser; editing, export, and Install on iPhone keep working.
 - The web preview never uses the network. `fetch` and `$http` read the
-  **Fixtures** JSON; location and health need fixtures too. Fixtures stay in
+  **Mock Data** rules; system services use editable sample responses. Fixtures stay in
   the browser and are not exported.
 
 The browser preview is fast feedback, not a pixel-perfect WidgetKit render.
@@ -126,3 +126,63 @@ copied into `src/components/ui` and import `cn` from `@/lib/utils`.
 - Imported `.swt` files are checked with the same archive limits as the iPhone
   app (size, entry count, paths, symlinks), and a malformed `widget.json` is
   rejected rather than reinterpreted.
+
+## Mock Data
+
+New projects include sample returns for every `$device` and `$system` method,
+plus location and HealthKit availability, authorization, steps, active energy,
+and heart rate. These are example values, not readings from your computer or
+phone. Dark mode follows the appearance control unless explicitly overridden.
+Template gallery previews use the same default samples.
+
+Open **Mock Data** below the preview and choose a data source and API. Primitive
+fields have form controls; **Response JSON** handles complete objects, arrays,
+nulls, and unusual return shapes. **Apply mock data** applies JSON edits. Choose
+**Throw / reject error** to exercise an error branch. Health and location also
+have coherent **Sample success**, **Permission denied** and **Unavailable**
+scenarios. **Reset this API** restores only the selected API's example.
+**Add missing samples** fills older projects without replacing existing method
+mocks, legacy fixture values, custom keys, or network rules.
+
+Network responses match an exact URL and method; response `body` is text and
+JSON responses are encoded as strings. An `error` simulates a failure. There is
+no wildcard response: unknown URLs produce a warning instead of invented data.
+Package network permissions and host restrictions still apply. Data Source
+rules match `pluginID` and `operationID` (regardless of parameters), with an
+HTTPS `url` and either `value` or `error`; the package must declare the plugin,
+network permission and domain. This previews the response shape without testing
+a plugin's native installation, request mapping or authentication.
+
+Storage provides initial key/value pairs for each preview run; writes are
+visible in that run and reset on rerun. Edit project files to provide `$file`
+inputs. Rendering, JSX, imports and XML parsing execute normally, `$getenv`
+uses the preview controls, and `$runtime` reports the actual preview contract.
+These computed APIs are not replaced with arbitrary return mocks.
+
+All settings live with the project draft in this browser, persist across reloads
+when browser storage is available, and never enter an exported `.swt` or
+`widget.json`. Use **Full JSON** for all options and existing legacy fixtures.
+Malformed JSON remains editable and shows a diagnostic rather than being lost.
+
+The additive per-method format is:
+
+```json
+{
+  "api": {
+    "$health.stepCountToday": {
+      "value": { "value": 6840, "unit": "count", "start": "2026-01-01T00:00:00Z", "end": "2026-01-01T12:00:00Z" }
+    },
+    "$location.current": { "error": "Location permission denied" },
+    "$device.battery": { "value": { "level": 0.8, "state": "unplugged" } }
+  },
+  "storage": { "example.count": "7" },
+  "fetch": [{ "url": "https://api.example.com/data", "method": "GET", "body": "{\"value\":42}" }],
+  "dataSource": []
+}
+```
+
+Each per-method rule has exactly one of `value` and `error`. Explicit rules take
+precedence over legacy `location`, `health.*`, `device` and `system` fixtures.
+The Node preview CLI also accepts this fixture format. Defaults in a project
+are intentionally stable, including sample timestamps; change them when testing
+time-sensitive scripts. Browser JavaScript's real clock is not frozen by mocks.

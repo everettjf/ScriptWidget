@@ -2,28 +2,72 @@
 // ScriptWidget
 // https://xnu.app/scriptwidget
 //
-// Habit Heatmap: one square per day, darker when you did more.
-// `log` holds 0-4 per day, oldest first; the sample is generated so the
-// widget looks lived-in. Store your own log with $storage.
-//
+// Tap Check in on a Home Screen widget (iOS 17+ / macOS 14+).
+// Rendering never marks a day complete. Records are local to this package;
+// renaming a habit's display name preserves its stable id and history.
+// Keep up to ten years of local calendar dates per habit. No network required.
+// Duplicate copies have separate history; this is not iCloud sync.
 
 const size = $getenv("widget-size");
 const habits = [
-  { name: "Read", color: ["#1B2A1E", "#0E4429", "#006D32", "#26A641", "#39D353"] },
-  { name: "Run", color: ["#1E1B2A", "#2E2266", "#4434A5", "#6B5BE0", "#9D8CFF"] },
-  { name: "Meditate", color: ["#2A1E1B", "#5C2A10", "#9A4A12", "#D9741C", "#FFA94D"] },
+  { id: "read", name: "Read", action: "checkInRead", color: ["#1B2A1E", "#0E4429", "#006D32", "#26A641", "#39D353"] },
+  { id: "run", name: "Run", action: "checkInRun", color: ["#1E1B2A", "#2E2266", "#4434A5", "#6B5BE0", "#9D8CFF"] },
+  { id: "meditate", name: "Meditate", action: "checkInMeditate", color: ["#2A1E1B", "#5C2A10", "#9A4A12", "#D9741C", "#FFA94D"] },
 ];
-// Deterministic sample activity: a simple linear congruential generator.
-const sample = (seed, days) => {
-  let state = seed;
-  return Array.from({ length: days }, (_, index) => {
-    state = (state * 1103515245 + 12345) % 2147483648;
-    const recent = index > days - 10;
-    return recent ? 1 + (state % 4) : state % 5 === 0 ? 0 : (state >> 8) % 5;
-  });
+const dateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+// Calendar arithmetic at noon handles DST without assuming 24-hour days.
+const dayOffset = (date, days) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + days, 12);
+const today = dayOffset(new Date(), 0);
+const todayKey = dateKey(today);
+const oldestKey = dateKey(dayOffset(today, -3659));
+const storageKey = (habit) => `habitHeatmap.v1.${habit.id}`;
+const readDays = (habit) => {
+  const raw = $storage.getString(storageKey(habit));
+  if (!raw) return [];
+  let days;
+  try { days = JSON.parse(raw); } catch (error) { throw new Error("Habit history is unreadable. Restore it before checking in."); }
+  if (!Array.isArray(days) || days.length > 3660 || days.some((day) => {
+    if (typeof day !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return true;
+    const parts = day.split("-").map(Number);
+    return dateKey(new Date(parts[0], parts[1] - 1, parts[2], 12)) !== day;
+  })) throw new Error("Invalid habit history. Restore it before checking in.");
+  return Array.from(new Set(days)).sort();
 };
-const logs = habits.map((habit, index) => sample(17 + index * 31, 26 * 7));
-const streak = (log) => { let count = 0; for (let i = log.length - 1; i >= 0 && log[i] > 0; i--) count++; return count; };
+function checkIn(habit) {
+  const days = readDays(habit);
+  if (days.includes(todayKey)) {
+    $render(<text>Already checked in</text>);
+    return;
+  }
+  // Separate habit keys prevent one habit's update from replacing another's.
+  const updated = days.filter((day) => day >= oldestKey);
+  updated.push(todayKey);
+  updated.sort();
+  if (updated.length > 3660 || !$storage.setString(storageKey(habit), JSON.stringify(updated))) {
+    throw new Error("Could not save check-in. Please try again.");
+  }
+  $render(<text>Checked in</text>);
+}
+function checkInRead() { return checkIn(habits[0]); }
+function checkInRun() { return checkIn(habits[1]); }
+function checkInMeditate() { return checkIn(habits[2]); }
+const records = habits.map(readDays);
+const streak = (days) => {
+  const completed = new Set(days);
+  let offset = completed.has(todayKey) ? 0 : -1;
+  let count = 0;
+  while (count < 3660 && completed.has(dateKey(dayOffset(today, offset)))) { count++; offset--; }
+  return count;
+};
+// Monday-first columns; future days in the current week stay blank.
+const weekEnd = dayOffset(today, 6 - (today.getDay() + 6) % 7);
+const logs = records.map((days) => {
+  const completed = new Set(days);
+  return Array.from({ length: 26 * 7 }, (_, index) => {
+    const key = dateKey(dayOffset(weekEnd, index - 26 * 7 + 1));
+    return key > todayKey ? -1 : completed.has(key) ? 4 : 0;
+  });
+});
 
 const Grid = ({ log, colors, weeks, cell, gap }) => {
   const days = log.slice(-weeks * 7);
@@ -32,44 +76,63 @@ const Grid = ({ log, colors, weeks, cell, gap }) => {
     <hstack spacing={gap}>
       {Array.from({ length: weeks }, (_, week) => (
         <vstack spacing={gap}>
-          {days.slice(week * 7, week * 7 + 7).map((level) => <rect frame={`${cell},${cell}`} corner={cell * 0.25} color={colors[level]} />)}
+          {days.slice(week * 7, week * 7 + 7).map((level) => <rect frame={`${cell},${cell}`} corner={cell * 0.25} color={level < 0 ? "clear" : colors[level]} />)}
         </vstack>
       ))}
     </hstack>
   );
 };
-const Header = ({ habit, log, font }) => (
+const daysFor = (habit) => records[habits.findIndex((item) => item.id === habit.id)];
+const streakLabel = (habit) => {
+  const count = streak(daysFor(habit));
+  return `${count} ${count === 1 ? "day" : "days"}`;
+};
+const Header = ({ habit, font }) => (
   <hstack>
     <text font={font} fontWeight="semibold" color="white">{habit.name}</text>
     <spacer />
     <icon systemName="flame.fill" size="12" color={habit.color[4]} />
-    <text font="caption" fontWeight="semibold" color={habit.color[4]}>{streak(log)} days</text>
+    <text font="caption" fontWeight="semibold" color={habit.color[4]}>{streakLabel(habit)}</text>
   </hstack>
 );
 
-if (size === "accessoryCircular") {
-  $render(<vstack spacing="0"><icon systemName="flame.fill" size="16" /><text font="title3" fontWeight="bold">{streak(logs[0])}</text></vstack>);
+const CheckIn = ({ habit }) => (
+  <button onClick={habit.action}>
+    <hstack spacing="4">
+      <icon systemName={daysFor(habit).includes(todayKey) ? "checkmark.circle.fill" : "plus.circle"} size="12" color={habit.color[4]} />
+      <text font="caption" color={habit.color[4]}>{daysFor(habit).includes(todayKey) ? "Done today" : "Check in"}</text>
+    </hstack>
+  </button>
+);
+
+// App Intent calls the named function after evaluating this source.
+if (size === "action") {
+  // Do not render a widget while handling a tap.
+} else if (size === "accessoryCircular") {
+  $render(<vstack spacing="0"><icon systemName="flame.fill" size="16" /><text font="title3" fontWeight="bold">{streak(records[0])}</text></vstack>);
 } else if (size === "accessoryRectangular") {
   $render(
     <vstack alignment="leading" spacing="3" frame="max,leading">
-      <text font="caption" fontWeight="semibold">{habits[0].name} · {streak(logs[0])}-day streak</text>
-      <Grid log={logs[0].map((level) => (level > 0 ? 4 : 1))} colors={["#444444", "#666666", "#888888", "#AAAAAA", "#FFFFFF"]} weeks={20} cell={5} gap={1.5} />
+      <text font="caption" fontWeight="semibold">{habits[0].name} · {streak(records[0])}-day streak</text>
+      <Grid log={logs[0].map((level) => (level < 0 ? -1 : level > 0 ? 4 : 1))} colors={["#444444", "#666666", "#888888", "#AAAAAA", "#FFFFFF"]} weeks={20} cell={5} gap={1.5} />
     </vstack>
   );
 } else if (size === "accessoryInline") {
-  $render(<text>{habits[0].name} · {streak(logs[0])}-day streak</text>);
+  $render(<text>{habits[0].name} · {streak(records[0])}-day streak</text>);
 } else if (size === "small") {
   $render(
-    <vstack alignment="leading" spacing="10" padding="14" background="#0D1117">
-      <Header habit={habits[0]} log={logs[0]} font="headline" />
-      <Grid log={logs[0]} colors={habits[0].color} weeks={8} cell={12} gap={3} />
+    <vstack alignment="leading" spacing="4" padding="12" background="#0D1117">
+      <Header habit={habits[0]} font="headline" />
+      <Grid log={logs[0]} colors={habits[0].color} weeks={8} cell={9} gap={2} />
+      <CheckIn habit={habits[0]} />
     </vstack>
   );
 } else if (size === "medium") {
   $render(
-    <vstack alignment="leading" spacing="10" padding="14" background="#0D1117">
-      <Header habit={habits[0]} log={logs[0]} font="headline" />
-      <Grid log={logs[0]} colors={habits[0].color} weeks={18} cell={12} gap={3} />
+    <vstack alignment="leading" spacing="4" padding="12" background="#0D1117">
+      <Header habit={habits[0]} font="headline" />
+      <Grid log={logs[0]} colors={habits[0].color} weeks={22} cell={10} gap={2} />
+      <CheckIn habit={habits[0]} />
     </vstack>
   );
 } else if (size === "extraLarge") {
@@ -77,8 +140,9 @@ if (size === "accessoryCircular") {
     <hstack alignment="top" spacing="28" padding="24" background="#0D1117">
       {habits.map((habit, index) => (
         <vstack alignment="leading" spacing="10" frame="max">
-          <Header habit={habit} log={logs[index]} font="headline" />
-          <Grid log={logs[index]} colors={habit.color} weeks={11} cell={14} gap={4} />
+          <Header habit={habit} font="headline" />
+          <Grid log={logs[index]} colors={habit.color} weeks={11} cell={12} gap={3} />
+          <CheckIn habit={habit} />
         </vstack>
       ))}
     </hstack>
@@ -88,8 +152,8 @@ if (size === "accessoryCircular") {
     <vstack alignment="leading" spacing="12" padding="16" background="#0D1117">
       {habits.map((habit, index) => (
         <vstack alignment="leading" spacing="5">
-          <Header habit={habit} log={logs[index]} font="subheadline" />
-          <Grid log={logs[index]} colors={habit.color} weeks={26} cell={9} gap={2} />
+          <hstack><Header habit={habit} font="subheadline" /><CheckIn habit={habit} /></hstack>
+          <Grid log={logs[index]} colors={habit.color} weeks={26} cell={7} gap={3} />
         </vstack>
       ))}
     </vstack>

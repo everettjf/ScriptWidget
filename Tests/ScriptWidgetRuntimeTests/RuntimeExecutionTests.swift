@@ -68,6 +68,87 @@ final class RuntimeExecutionTests: XCTestCase {
         XCTAssertEqual(frame.height, 64)
     }
 
+    private func habitSource(day: Int, month: Int = 3, year: Int = 2026) throws -> String {
+        let source = try XCTUnwrap(ScriptManager.readBundleFile(bundle: "Script", fileName: "template/Habit Heatmap/main.jsx"))
+        return """
+        const NativeDate = Date;
+        Date = class extends NativeDate {
+          constructor(...args) { super(...(args.length ? args : [\(year), \(month - 1), \(day), 12])); }
+        };
+        """ + source
+    }
+
+    private func habitRuntime(_ package: ScriptWidgetPackage, size: String = "medium") -> ScriptWidgetRuntime {
+        ScriptWidgetRuntime(package: package, environments: ["widget-size": size, "widget-param": ""])
+    }
+
+    func testHabitHeatmapExplicitCheckInPersistsAndDoesNotDoubleCount() throws {
+        let package = makeTempPackage()
+        defer {
+            _ = habitRuntime(package).executeJSXSyncForWidget("$storage.clear(); $render(<text>clean</text>);")
+            try? FileManager.default.removeItem(at: package.path)
+        }
+        func text(_ day: Int, size: String = "medium") throws -> String {
+            let result = habitRuntime(package, size: size).executeJSXSyncForWidget(try habitSource(day: day))
+            XCTAssertNil(result.1)
+            return collectText(try XCTUnwrap(result.0))
+        }
+        func tap(_ day: Int, _ action: String = "checkInRead") throws {
+            let result = habitRuntime(package, size: "action").executeJSXSyncForFunction(try habitSource(day: day), action)
+            XCTAssertNil(result.1, String(describing: result.1))
+        }
+        XCTAssertTrue(try text(7).contains("0 days"))
+        XCTAssertTrue(try text(7).contains("Check in"))
+        try tap(7)
+        try tap(7)
+        XCTAssertTrue(try text(7).contains("1 day"))
+        XCTAssertTrue(try text(7).contains("Done today"))
+        // March 8 crosses the US spring DST boundary. Yesterday's streak remains
+        // visible until today's check-in; a refresh alone must not complete today.
+        XCTAssertTrue(try text(8).contains("1 day"))
+        XCTAssertTrue(try text(8).contains("Check in"))
+        try tap(8)
+        XCTAssertTrue(try text(8).contains("2 days"))
+        XCTAssertTrue(try text(10).contains("0 days"))
+        try tap(10)
+        try tap(10, "checkInRun")
+        let stored = habitRuntime(package).executeJSXSyncForWidget("""
+        $render(<text>{$storage.getString("habitHeatmap.v1.read") + "|" + $storage.getString("habitHeatmap.v1.run")}</text>);
+        """)
+        let heatmap = habitRuntime(package, size: "action").executeJSXSyncForWidget(try habitSource(day: 10) + "\n$render(<text>{String(logs[0].filter(level => level === 4).length)}</text>);")
+        XCTAssertNil(heatmap.1)
+        XCTAssertEqual(collectText(try XCTUnwrap(heatmap.0)), "3")
+        XCTAssertEqual(collectText(try XCTUnwrap(stored.0)), #"["2026-03-07","2026-03-08","2026-03-10"]|["2026-03-10"]"#)
+        for family in ["small", "medium", "large", "extraLarge", "accessoryCircular", "accessoryRectangular", "accessoryInline"] {
+            let result = habitRuntime(package, size: family).executeJSXSyncForWidget(try habitSource(day: 10))
+            XCTAssertNil(result.1, family)
+            XCTAssertNotNil(result.0, family)
+        }
+        let unrelated = makeTempPackage()
+        defer { try? FileManager.default.removeItem(at: unrelated.path) }
+        let fresh = habitRuntime(unrelated).executeJSXSyncForWidget(try habitSource(day: 10))
+        XCTAssertTrue(collectText(try XCTUnwrap(fresh.0)).contains("0 days"))
+    }
+
+    func testHabitHeatmapRejectsCorruptHistoryAndReportsSaveFailure() throws {
+        let source = try habitSource(day: 1, month: 1)
+        for value in ["not json", #"["2026-02-30"]"#, #"{"unexpected":true}"#] {
+            let encoded = String(data: try JSONSerialization.data(withJSONObject: [value]), encoding: .utf8)!
+            let stub = """
+            $storage = { getString: () => \(encoded)[0], setString: () => { throw new Error("must not overwrite"); } };
+            """
+            let output = makeRuntime(environments: ["widget-size": "action"]).executeJSXSyncForFunction(stub + source, "checkInRead")
+            XCTAssertTrue(output.1?.displayMessage.contains("history") == true)
+        }
+        let failed = makeRuntime(environments: ["widget-size": "action"]).executeJSXSyncForFunction(
+            "$storage = { getString: () => '', setString: () => false };" + source, "checkInRead")
+        XCTAssertTrue(failed.1?.displayMessage.contains("Could not save check-in") == true)
+        // Real calendar keys around year boundaries, rather than UTC date strings.
+        let output = makeRuntime().executeJSXSyncForWidget(source + "\n$render(<text>{dateKey(dayOffset(today, -1))}</text>);")
+        XCTAssertNil(output.1)
+        XCTAssertEqual(collectText(try XCTUnwrap(output.0)), "2025-12-31")
+    }
+
     // MARK: - Happy path
 
     func testSimpleVStackRenders() {

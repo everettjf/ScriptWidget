@@ -4,6 +4,7 @@
 import { renderWidget } from "../../../preview-engine/src/render/renderer.js";
 import type { Appearance, WidgetSize } from "../../../preview-engine/src/types.js";
 import { packageReport, projectFromTemplate, resourceURLs, textFiles, type Template } from "@/project.ts";
+import { sampleFixtures } from "@/mockData.ts";
 import { sandbox } from "@/runtime.ts";
 
 export type TemplatePreview =
@@ -46,7 +47,7 @@ export function renderTemplate(template: Template, family: WidgetSize, options: 
       manifest: report.manifest,
       environments: { "widget-size": family, "widget-param": "", "widget-rendering-mode": "fullColor" },
       preview: { appearance },
-      fixtures: {},
+      fixtures: sampleFixtures(),
     });
     if (result.error || result.tree === null) return { kind: "error", message: result.error?.message ?? "The widget did not render." };
     const rendered = await renderWidget(result.tree, { family, profile, appearance, renderingMode: "fullColor", resources: resourceURLs(files) });

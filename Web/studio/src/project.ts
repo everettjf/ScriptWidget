@@ -1,3 +1,5 @@
+import { defaultFixtures } from "./mockData.ts";
+export { defaultFixtures } from "./mockData.ts";
 // Project helpers shared by the Studio UI and its tests. No DOM access.
 import { decodeManifest, legacyManifest, newProjectFiles, validateManifest } from "../../preview-engine/src/package/index.js";
 import { deviceProfiles } from "../../preview-engine/src/render/profiles.js";
@@ -7,7 +9,7 @@ export interface Project {
   id: string;
   name: string;
   files: PackageFiles;
-  /// Preview-only fetch and location fixtures (JSON text); never exported.
+  /// Preview-only API mocks (JSON text); never exported.
   fixtures: string;
   createdAt: number;
   updatedAt: number;
@@ -51,14 +53,6 @@ export function previewFamilies(manifest: Pick<WidgetManifest, "supportedFamilie
   const available = declared.filter((family) => deviceProfiles[profile]?.[family]);
   return available.length ? available : (["small", "medium", "large"] as const).filter((family) => deviceProfiles[profile]?.[family]);
 }
-
-export const defaultFixtures = `{
-  "fetch": [
-    { "url": "https://api.example.com/data", "body": "{\\"value\\": 42}" }
-  ],
-  "location": { "latitude": 37.3349, "longitude": -122.009, "altitude": 0, "timestamp": "2026-01-01T12:00:00Z" }
-}
-`;
 
 const base64ToBytes = (value: string): Uint8Array => {
   const binary = atob(value);

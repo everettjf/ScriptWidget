@@ -176,7 +176,11 @@ final class BrowserPreviewParityTests: XCTestCase {
         }
         let output = Self.repositoryRoot.appendingPathComponent("Web/preview-engine/dist/native-snapshots")
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
-        let prelude = try String(contentsOf: Self.parityDirectory.appendingPathComponent("prelude.js"), encoding: .utf8)
+        var prelude = try String(contentsOf: Self.parityDirectory.appendingPathComponent("prelude.js"), encoding: .utf8)
+        // Screenshot-only fixture data, isolated from the app's persistent storage.
+        if let fixturePath = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_FIXTURE"], !fixturePath.isEmpty {
+            prelude += "\n" + (try String(contentsOfFile: fixturePath, encoding: .utf8)) + "\n"
+        }
         let profilesSource = try String(contentsOf: Self.repositoryRoot.appendingPathComponent("Web/preview-engine/src/render/profiles.js"), encoding: .utf8)
         let allRenders = BrowserPreviewSnapshotProfile.renders(profilesSource: profilesSource)
         // SCRIPTWIDGET_EXPORT_PROFILES=all exports every size; the default is

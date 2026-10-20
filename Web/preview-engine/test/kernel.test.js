@@ -120,3 +120,54 @@ test("package paths are normalized inside the package root", () => {
   assert.equal(normalizePackagePath("a\\b.js"), null);
   assert.equal(normalizePackagePath(""), null);
 });
+
+test("API mocks clone values, preserve async errors, and cannot replace rendering or policy", async () => {
+  const fixtures = { api: {
+    "$device.battery": { value: { level: 0, state: "charging" } },
+    "$system.name": { value: "ignored unknown method" },
+    "$system.brightness": { error: "sensor unavailable" },
+    "$location.current": { error: "location permission denied" },
+    "$render": { error: "must be ignored" },
+  } };
+  const output = await run(`
+    const battery = $device.battery(); battery.level = 99;
+    let syncError, asyncError;
+    try { $system.brightness(); } catch(e) { syncError = e.message; }
+    try { await $location.current(); } catch(e) { asyncError = String(e); }
+    $render(<text>{JSON.stringify({ battery: $device.battery(), syncError, asyncError })}</text>);
+  `, { fixtures });
+  assert.equal(output.error, null);
+  assert.deepEqual(JSON.parse(JSON.parse(output.tree).children[0]), { battery: { level: 0, state: "charging" }, syncError: "sensor unavailable", asyncError: "location permission denied" });
+  const empty = await run('$render(<text>{String(await $location.current())}</text>);', { fixtures: { api: { "$location.current": { value: null } } } });
+  assert.equal(JSON.parse(empty.tree).children[0], "null");
+  const legacy = await run('const p = await $location.current(); $render(<text>{String(p.latitude)}</text>);', { fixtures: { location: { latitude: 9 } } });
+  assert.equal(JSON.parse(legacy.tree).children[0], "9");
+});
+
+test("mock storage resets between runs and direct host values retain precedence", async () => {
+  const fixtures = { storage: { count: "7", history: { days: ["today"] } }, device: { name: "Fixture" }, system: { brightness: 0.2 } };
+  const source = `const initial = $storage.getString("count"); $storage.setString("count", "8"); $render(<text>{JSON.stringify({ initial, next: $storage.getString("count"), history: $storage.getJSON("history"), name: $device.name(), brightness: $system.brightness() })}</text>);`;
+  for (let i = 0; i < 2; i++) {
+    const result = await run(source, { fixtures, device: { name: "Host" } });
+    assert.equal(result.error, null);
+    assert.deepEqual(JSON.parse(JSON.parse(result.tree).children[0]), { initial: "7", next: "8", history: { days: ["today"] }, name: "Host", brightness: 0.2 });
+  }
+});
+
+test("Data Source mocks require a matching operation and all package network declarations", async () => {
+  const fixtures = { dataSource: [{ pluginID: "example.weather", operationID: "current", url: "https://api.example.com/weather", value: { temperature: 22 } }] };
+  const manifest = { permissions: ["network"], networkDomains: ["api.example.com"], plugins: ["example.weather"] };
+  const source = 'const value = await $dataSource.request("example.weather", "current", {city:"London"}); $render(<text>{JSON.stringify(value)}</text>);';
+  const allowed = await run(source, { fixtures, manifest });
+  assert.equal(allowed.error, null);
+  assert.deepEqual(JSON.parse(JSON.parse(allowed.tree).children[0]), { temperature: 22 });
+  for (const denied of [{ ...manifest, plugins: [] }, { ...manifest, permissions: [] }, { ...manifest, networkDomains: [] }, null]) {
+    assert.notEqual((await run(source, { fixtures, manifest: denied })).error, null);
+  }
+  const privateMock = { dataSource: [{ ...fixtures.dataSource[0], url: "https://127.0.0.1/private" }] };
+  assert.match((await run(source, { fixtures: privateMock, manifest })).error.message, /private|Local/);
+  const mismatch = await run(source.replace('"current"', '"other"'), { fixtures, manifest });
+  assert.ok(mismatch.diagnostics.some((item) => item.code === "fixture.dataSource.missing"));
+  const failure = { dataSource: [{ ...fixtures.dataSource[0], error: "server down" }] };
+  assert.match((await run(source, { fixtures: failure, manifest })).error.message, /server down/);
+});

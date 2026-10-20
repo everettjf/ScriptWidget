@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { renderWidget } from "../../../preview-engine/src/render/renderer.js";
 import type { Appearance, RenderingMode, Severity, WidgetSize } from "../../../preview-engine/src/types.js";
 import { packageReport, resourceURLs, textFiles, type Project } from "@/project.ts";
+import { parseMocks } from "@/mockData.ts";
 import { sandbox } from "@/runtime.ts";
 
 export interface PreviewSettings {
@@ -55,7 +56,7 @@ export function usePreview(project: Project | null, settings: PreviewSettings): 
       const report = packageReport({ files });
       const problems: Message[] = report.issues.map((issue) => ({ severity: issue.severity, text: issue.message }));
       let fixtureData: unknown = {};
-      try { fixtureData = JSON.parse(fixtures || "{}"); } catch (error) { problems.push({ severity: "warning", text: `Fixtures are not valid JSON: ${(error as Error).message}` }); }
+      try { fixtureData = parseMocks(fixtures || "{}"); } catch (error) { problems.push({ severity: "warning", text: `Fixtures are not valid JSON: ${(error as Error).message}` }); }
       const result = await sandbox.execute({
         files: textFiles(files),
         entry: report.manifest?.entry ?? "main.jsx",

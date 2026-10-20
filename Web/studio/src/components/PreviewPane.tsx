@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
+import { MockDataPanel } from "@/components/MockDataPanel";
 import { cn } from "@/lib/utils";
 import { familyLabels, type PackageReport } from "@/project.ts";
 import type { Message, PreviewOutput, PreviewSettings, PreviewState } from "@/hooks/usePreview.ts";
@@ -163,7 +163,7 @@ export function PreviewPane({ settings, families, onSettings, preview, report, f
           </TabsTrigger>
           <TabsTrigger value="console" className="text-xs">Console</TabsTrigger>
           <TabsTrigger value="package" className="text-xs">Package</TabsTrigger>
-          <TabsTrigger value="fixtures" className="text-xs">Fixtures</TabsTrigger>
+          <TabsTrigger value="fixtures" className="text-xs">Mock Data</TabsTrigger>
         </TabsList>
         {/* Panels stay mounted so their content is always in the page. */}
         <TabsContent forceMount value="problems" className="min-h-40 bg-card px-3 py-2.5 data-[state=inactive]:hidden">
@@ -176,9 +176,7 @@ export function PreviewPane({ settings, families, onSettings, preview, report, f
           <PackageSummary report={report} />
         </TabsContent>
         <TabsContent forceMount value="fixtures" className="flex min-h-40 flex-col gap-2 bg-card px-3 py-2.5 data-[state=inactive]:hidden">
-          <p className="text-xs text-muted-foreground">The web preview never uses the network. Map URLs to responses here; fixtures stay in this browser and are not exported.</p>
-          <Textarea id="fixtures" spellCheck={false} aria-label="Preview fixtures JSON" className="min-h-44 font-mono text-xs"
-            value={fixtures} onChange={(event) => onFixtures(event.target.value)} />
+          <MockDataPanel fixtures={fixtures} onChange={onFixtures} />
         </TabsContent>
       </Tabs>
     </section>

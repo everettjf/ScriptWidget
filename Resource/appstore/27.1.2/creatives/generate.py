@@ -64,9 +64,10 @@ def header():
     brand(canvas, 220, 230)
     text(canvas, 'Widgets,', (210, 510), 255)
     text(canvas, 'your way.', (210, 805), 255, ACCENT)
-    text(canvas, 'Create with JavaScript.', (224, 1170), 68, MUTED, 'regular', 'text')
-    widget(canvas, 'calendar.png', 1990, 260, 585, 3)
-    widget(canvas, 'weather.png', 2725, 155, 585, -3)
+    text(canvas, 'Create with', (224, 1170), 68, MUTED, 'regular', 'text')
+    text(canvas, 'JSX-style JavaScript.', (224, 1264), 68, MUTED, 'regular', 'text')
+    widget(canvas, 'golden-bloom.png', 1990, 260, 585, 3)
+    widget(canvas, 'orbital-resonance.png', 2725, 155, 585, -3)
     widget(canvas, 'habits.png', 2200, 930, 1140, -2)
     return canvas
 
@@ -76,10 +77,11 @@ def search():
     brand(canvas, 250, 220)
     text(canvas, 'Widgets,', (240, 530), 255)
     text(canvas, 'your way.', (240, 825), 255, ACCENT)
-    text(canvas, 'Create with JavaScript.', (254, 1170), 68, MUTED, 'regular', 'text')
+    text(canvas, 'Create with', (254, 1170), 68, MUTED, 'regular', 'text')
+    text(canvas, 'JSX-style JavaScript.', (254, 1264), 68, MUTED, 'regular', 'text')
     code_card(canvas, 250, 1530, 1460, 540)
-    widget(canvas, 'calendar.png', 1990, 450, 640, 3)
-    widget(canvas, 'weather.png', 2730, 720, 640, -3)
+    widget(canvas, 'golden-bloom.png', 1990, 450, 640, 3)
+    widget(canvas, 'orbital-resonance.png', 2730, 720, 640, -3)
     widget(canvas, 'habits.png', 2040, 1620, 1320, -2)
     return canvas
 

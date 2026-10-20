@@ -47,3 +47,28 @@ Save the script, add a ScriptWidget widget from the system widget gallery, and s
 - Share a package using the existing `.swt` import/export flow.
 
 Never place API secrets directly in a widget you plan to share. Treat imported packages, network responses, and generated code as untrusted until reviewed.
+
+## Habit Heatmap: daily check-ins
+
+Create a widget from **Habit Heatmap** under New Widget. It starts with an empty
+history, rather than sample activity. Small and medium widgets track Read;
+large and extra-large widgets show Read, Run and Meditate. Tap **Check in** on a
+Home Screen widget to save today's completion (iOS 17+ / macOS 14+). A successful
+action requests a WidgetKit timeline reload; the system controls when it appears.
+Lock Screen accessories display the first habit's streak without a check-in button.
+The editor preview displays the saved state; previewing never creates a check-in.
+
+Each habit can be completed once per local calendar day. Repeat taps are harmless.
+An unfinished today preserves a streak ending yesterday; a missed yesterday resets
+it. Heatmap columns start on Monday, checked days are colored, and future days are
+blank. Calendar dates follow the device's local timezone when checking in; past
+date labels do not shift when you travel. Regular WidgetKit refreshes update the
+calendar after midnight; they are not guaranteed to run exactly at midnight.
+
+History is saved offline in package-namespaced `$storage`, with up to 3,660 days
+retained on the next check-in. It survives widget refreshes and app restarts, and
+is separate for each package and habit. It is local storage, not iCloud history
+sync. Copying or renaming a package creates a different storage namespace. Edit
+habit display names and colors in `main.jsx`, keeping the `id` and action function
+names unchanged to preserve history and button routing. Invalid saved data or a
+failed write reports an error instead of claiming the check-in succeeded.

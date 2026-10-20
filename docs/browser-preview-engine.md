@@ -257,7 +257,7 @@ See the user guide, [Web Studio in the browser](web-studio-browser.md).
 | File | Role |
 | --- | --- |
 | `Web/studio/src/App.tsx` | React app: projects, files, preview controls, templates, import, export, install. Built with shadcn/ui components (Radix primitives, Tailwind CSS 4) in `src/components/ui`. |
-| `Web/studio/src/components/*.tsx` | Top bar, sidebar, editor pane, preview pane (Problems/Console/Package/Fixtures tabs), and dialogs. |
+| `Web/studio/src/components/*.tsx` | Top bar, sidebar, editor pane, preview pane (Problems/Console/Package/Mock Data tabs), and dialogs. |
 | `Web/studio/src/hooks/*.ts` | `useProjects` (drafts and debounced saves), `usePreview` (sandbox runs and rendering, stale results dropped), `useConfirm`, `useColorScheme`. |
 | `Web/studio/src/editor.ts` | CodeMirror 6 with the Studio completions, diagnostics, and hover from `Editor/editorfe`. |
 | `Web/studio/src/store.ts` | IndexedDB drafts with an in-memory fallback and a visible warning when storage is unavailable. |
@@ -655,3 +655,14 @@ fonts (`SW_FONTS=inter npm run compare`): median 2.58% versus 1.87% with SF.
   never calls it times out.
 - `$import` needs real classic-script evaluation. Indirect `eval` does not
   share `let`/`const` between files the way `JSContext.evaluateScript` does.
+
+### Editable preview API mocks (engine 0.3.0)
+
+`fixtures.api` provides per-method `{ value }` or `{ error }` responses for
+`$device`, `$system`, `$health` and `$location`. Sync/async call behavior is
+preserved; values are bridged freshly on each call. Legacy fixture keys remain
+supported. `fixtures.storage` seeds each run; `fixtures.dataSource` provides
+explicit plugin/operation response rules with normal package network checks.
+Web Studio's `mockData.ts` defines the sample catalog and configuration helpers,
+and `MockDataPanel.tsx` provides forms, JSON editing and permission scenarios.
+See [Mock Data](web-studio-browser.md#mock-data) for the user-facing contract.
