@@ -278,7 +278,18 @@ struct ScriptWidgetRecordStore {
     private var configurationByteLimit: Int { kind == .launcher ? 32768 : 4096 }
 
     func configuration(in snapshot: ScriptWidgetRecordSnapshot) throws -> [String: Any] {
-        guard let raw = snapshot.values[Self.configurationKey], !raw.isEmpty else { return kind.defaults }
+        var raw = snapshot.values[Self.configurationKey] ?? ""
+        if raw.isEmpty {
+            guard kind == .wallpaper else { return kind.defaults }
+            // Portable defaults are package data, never imported user records.
+            // Saved native configuration always takes precedence, including errors.
+            let result = package.readFileResult(fullPath: package.path.appendingPathComponent("wallpaper.json"))
+            if let content = result.content { raw = content }
+            else {
+                guard result.icloud == .notInICloud else { throw ScriptWidgetRecordError.invalidData }
+                return kind.defaults
+            }
+        }
         guard raw.utf8.count <= configurationByteLimit, let object = try? JSONSerialization.jsonObject(with: Data(raw.utf8)) as? [String: Any],
               Set(object.keys) == ["version", "kind", "values"], Self.integer(object["version"], range: 1...1),
               object["kind"] as? String == kind.rawValue, let values = object["values"] as? [String: Any] else { throw ScriptWidgetRecordError.invalidData }

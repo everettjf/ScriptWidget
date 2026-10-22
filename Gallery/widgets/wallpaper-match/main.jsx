@@ -1,7 +1,7 @@
 // Import and calibrate your own background in Records & Configuration.
 // Crops match one Home Screen size, position and light/dark appearance.
 if (!$import("lib/configuration.js")) throw new Error("Install the complete Wallpaper Match template.");
-const options = wallpaperConfiguration.read($storage.getString("recordTemplate.config.v1"));
+const options = wallpaperConfiguration.load();
 const family = $getenv("widget-size"), appearance = $device.isdarkmode() ? "dark" : "light";
 const color = options.ink === "light" || (options.ink === "adaptive" && appearance === "dark") ? "#ffffff" : "#111827";
 const referenceDate = new Date($getenv("timeline-date") || Date.now());

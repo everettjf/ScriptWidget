@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-22T14:23:12.398Z",
+  "generatedAt": "2026-10-22T15:10:52.188Z",
   "items": [
     {
       "author": "ScriptWidget Community",
@@ -769,15 +769,15 @@
       "featured": true,
       "files": [
         {
-          "bytes": 2273,
+          "bytes": 2672,
           "path": "lib/configuration.js",
-          "sha256": "38c2b2391248b0bc72279ed14b87ea6f6fa9dbe146797e9cb2f1d2a12f7c2895",
+          "sha256": "4e9b2e03a5795955789d946a1e46c40d223f415066211be9836d55a0b9ef6845",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/wallpaper-match/lib/configuration.js"
         },
         {
-          "bytes": 2843,
+          "bytes": 2797,
           "path": "main.jsx",
-          "sha256": "5d7ccb457de92b66c6f36e43860e0cc7ebcba066383708f3f7ad55b5b7ef7d35",
+          "sha256": "d3e4d51dd138053bbadf64d9f040659852c1664c457d90d73e0bfe4dd53d8558",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/wallpaper-match/main.jsx"
         },
         {
@@ -801,7 +801,7 @@
         {
           "bytes": 838,
           "path": "widget.json",
-          "sha256": "fa8c31c10491b1e78883c9f52e88d0ae861de2ffcafa1d9f228b65509bd44794",
+          "sha256": "e0899e8d0d514aae92e6dfcc85cf455158c3dd8d42ff3b1e7378151d651cfe20",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/wallpaper-match/widget.json"
         }
       ],
@@ -811,14 +811,14 @@
       "minimumRuntimeVersion": "1.0",
       "name": "Wallpaper Match",
       "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/wallpaper-match",
-      "summary": "Requires Runtime API 1.3. Calibrate crops from your own wallpaper, separately for each size and appearance. Optional title, caption and date.",
+      "summary": "Requires Runtime API 1.4. Calibrate crops from your own wallpaper, separately for each size and appearance. Optional title, caption and date.",
       "symbol": "photo.on.rectangle",
       "tags": [
         "wallpaper",
         "background",
         "offline"
       ],
-      "version": "1.0.0"
+      "version": "1.1.0"
     },
     {
       "author": "ScriptWidget",

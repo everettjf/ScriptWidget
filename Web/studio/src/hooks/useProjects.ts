@@ -16,6 +16,7 @@ export interface ProjectsModel {
   openFile(path: string): void;
   /// Replaces files; null removes a path.
   updateFiles(changes: Record<string, string | Uint8Array | null>): void;
+  updateProjectFiles(id: string, expectedFiles: PackageFiles, changes: Record<string, string | Uint8Array | null>): boolean;
   rename(name: string): void;
   setFixtures(text: string): void;
 }
@@ -35,6 +36,7 @@ export function useProjects(): ProjectsModel {
 
   const openProject = useCallback((next: Project) => {
     dirty.current = false;
+    latest.current = next;
     preferences.write("project", next.id);
     setProject(next);
     setPath(initialPath(next));
@@ -80,8 +82,12 @@ export function useProjects(): ProjectsModel {
   }, []);
 
   const edit = useCallback((change: (current: Project) => Project) => {
+    const current = latest.current;
+    if (!current) return;
     dirty.current = true;
-    setProject((current) => (current ? change(current) : current));
+    const next = change(current);
+    latest.current = next;
+    setProject(next);
   }, []);
 
   const addProject = useCallback(async (next: Project) => {
@@ -112,6 +118,15 @@ export function useProjects(): ProjectsModel {
     });
   }, [edit]);
 
+  // Async authoring dialogs must commit to the same project and file snapshot
+  // they reviewed, never to whichever project happens to be open later.
+  const updateProjectFiles = useCallback((id: string, expectedFiles: PackageFiles, changes: Record<string, string | Uint8Array | null>) => {
+    const current = latest.current;
+    if (!current || current.id !== id || current.files !== expectedFiles) return false;
+    updateFiles(changes);
+    return true;
+  }, [updateFiles]);
+
   const rename = useCallback((input: string) => {
     const name = input.trim() || "My Widget";
     edit((current) => {
@@ -124,5 +139,5 @@ export function useProjects(): ProjectsModel {
 
   const setFixtures = useCallback((fixtures: string) => edit((current) => ({ ...current, fixtures })), [edit]);
 
-  return { projects, project, path, saveState, openProject, addProject, removeProject, openFile: setPath, updateFiles, rename, setFixtures };
+  return { projects, project, path, saveState, openProject, addProject, removeProject, openFile: setPath, updateFiles, updateProjectFiles, rename, setFixtures };
 }

@@ -24,8 +24,8 @@
 | --- | --- | --- |
 | M2 | M2-1 记录模板、M2-2 数据卡片、M2-3 动作目录、M2-4 本地 Live Activity、M2-5 主题/宠物/时段、M2-6 配置与 Gallery | 未完成；复用已有基础继续实现 |
 | M3 | M3-1 日历、M3-2 提醒事项、M3-3 自动照片、M3-4 更多健康类型、M3-5 跨平台/Mock/文档/验收 | 日历、提醒事项、相册和扩展健康已接入开发；真机授权/撤权及系统入口验收仍待完成 |
-| M4 | M4-1 原生凭据、M4-2 请求代理、M4-3 Apple Music、M4-4 其他服务核验、M4-5 授权面板与音乐模板 | GitHub 原生连接、owner 授权、受限请求、公开 profile API、模板与 Web Mock 已接通开发；OAuth 登录/刷新、音乐及真实账户/签名设备验收待完成 |
-| M5 | M5-1 可视化 JSX 子集、M5-2 主题与原创资产、M5-3 材质/壁纸效果、M5-4 编辑流程与分发 | 未开始 |
+| M4 | M4-1 原生凭据、M4-2 请求代理、M4-3 Apple Music、M4-4 其他服务核验、M4-5 授权面板与音乐模板 | GitHub 原生连接/受限请求和只读 Music 快照、模板与 Web Mock 已接通；OAuth 登录/刷新、播放动作和真实账户/签名设备验收待完成 |
+| M5 | M5-1 可视化 JSX 子集、M5-2 主题与原创资产、M5-3 材质/壁纸效果、M5-4 编辑流程与分发 | 三端布局/主题/素材、公开材质及原生/Web 壁纸工具已接通开发；旧动画兼容、最终流程和物理设备专项仍待完成 |
 
 每项沿用原计划的完整验收标准。服务和平台原型不通过时先记录实际证据及限制，不以静态模板替代真实功能。
 
@@ -872,3 +872,21 @@ Layout Starter 的说明和元数据已更新，Gallery 摘要/哈希同步，�
 最终 `./Scripts/release-readiness.sh` 退出 0：Editor 52、预览引擎 162、Web Studio 93、Gallery 同步 2 项、全部浏览器验证通过；Mac **665 通过 / 0 失败 / 32 跳过**，iPhone 17 Simulator **675 通过 / 0 失败 / 31 跳过**。两端 xcresult runtimeWarnings 为空，保留 Xcode 目标选择和 SDK 版本解析诊断；两端 app scheme build 及独立探针通过。证据位于 `__Release/capabilities/wallpaper-web-crop/`。
 
 这次仅交付图片处理基础，尚未暴露 Web 操作界面。接下来需连接裁切对话框、项目切换的异步身份保护，以及可随包导出的配置；Web mock storage 不参与包导出，不能替代这项配置。原生已保存的设置需要优先保留。M5-3/4、M4 剩余工作和设备验收继续；无新增 Web 部署、构建上传或送审。
+
+### 2026-10-22：Web 壁纸工具与可携带配置
+
+Wallpaper Match 的 Web 侧栏新增 Wallpaper crops 工具：PNG/JPEG 选图、真实指针拖动、工作图像素字段、五尺寸/明暗/位置选择、裁切预览、单独导出 PNG、十个 selection slot 和十二个文件上限。替换同一 slot 保留旧 PNG；保存、重开后显式清理未引用文件。旧保存引用在草稿期间继续受保护，取消不写项目。原始完整截图仅在会话内使用。
+
+新增可选包数据 `wallpaper.json`，闭合格式为 `{version:1,kind:"wallpaper",values:...}`，上限 4096 UTF-8 bytes，复用原生配置的字段/枚举/长度/本地图片名称约束。模板和原生 Records & Configuration 都优先读已有用户设置，只有空/缺失时读包默认值；损坏的非空保存设置不会被默认值掩盖。包文件存在但无效时报告错误；读取默认值不自动写 user storage。显式保存到原生配置后才能单独导出包含这些引用的 record backup，整个包导出直接保留 JSON 和 PNG。
+
+Wallpaper Match 1.1.0 最低 Runtime API 1.4，确保原生配置 UI 理解这项可携带语义；发布校验器对 wallpaper 明确要求 1.4，其余 record 模板仍精确要求原来的 1.3，没有放宽未知版本或权限。Gallery 文件/版本/哈希同步。旧模板副本的工具提供 PNG 导出并提示重新从 Gallery 创建副本，保存配置按钮禁用，不自动重写用户 JavaScript。
+
+Web 工具的每次会话保留原始 project/files 快照，提交必须匹配 ID 和文件快照；变更期间出现其他文件编辑时拒绝保存。普通 Add image 也经过相同检查，避免异步读取后写到其他项目。解码/编码使用代数检查和卸载标记，取消/卸载后的迟到结果不会应用或触发下载。截图发现 CodeMirror toolbar 盖住 dialog 标题，已为 Web EditorPane 建立局部 stacking context；重拍截图并验证标题 hit-test。见 [壁纸工具说明](wallpaper-match.md)。
+
+原生新增三项检查覆盖配置模型初始化、不写真实记录、保存设置优先、无效 UTF-8/JSON/超限/链接拒绝和 JavaScriptCore 实际 `$file` 读取；预览引擎检查 portable/saved 输出相同及错误优先级，Web 测试检查配置和 PNG 随实际包导入导出。Chrome 使用真实 input 与 pointer，覆盖 slot 替换、源码不变、图片解码预览、保存重开、unused 清理、390px、不匹配文件快照拒绝，以及取消后解码迟到。还捕获实际 Export 按钮生成的 Blob，经 importPackage 和独立 ZIP 目录检查证实配置及两张 crop PNG 随包保留，而原始文件名没有进入包。
+
+首次完整检查被模板最低版本的旧 1.3 固定条件拦下；按上述精确 wallpaper 1.4 规则同步校验后从头重跑。浏览器脚本最初未等 Gallery 关闭和 dialog 动画结束，导致点击/拖动检查失败；改为等待实际 UI 状态及像素字段变化。初次独立 ZIP 检查误以为配置位于根目录，后按 .swt 的单一包目录读取；实际 importPackage 的导出检查已通过，无需改变归档格式。以上未完成运行不计入成功结果。
+
+最终完整 `./Scripts/release-readiness.sh` 退出 0：Editor **52**、预览引擎 **163**、Web Studio **96**、Gallery 同步 **2** 项、91 内置模板/22 curated 包、所有 browser scripts、TypeScript/生产构建、两端 app scheme build 和独立服务/存储/运行时探针通过。Mac **668 通过 / 0 失败 / 32 跳过**；iPhone 17 Simulator **678 通过 / 0 失败 / 31 跳过**。两端 xcresult runtimeWarnings 为空；SDK/link 和 Xcode 版本解析诊断保留。日志、summary、实际浏览器导出 .swt 及独立归档核验在 `__Release/capabilities/wallpaper-web-ui/`。完整 gate 后仅补文档/截图/验证记录与 PR，不改产品代码。
+
+Web 壁纸创作/导出这条开发链路据此完成，不代表整个 M5 完成；旧动画兼容和真实 WidgetKit/物理扩展内存，以及 M4 OAuth/刷新/播放动作和 M3 签名设备授权验收仍继续。没有 Web 部署、原生构建上传或送审，整体目标保持进行中。

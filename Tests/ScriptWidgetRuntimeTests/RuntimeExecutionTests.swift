@@ -1373,6 +1373,39 @@ final class RuntimeExecutionTests: XCTestCase {
     }
 
     @MainActor
+    func testWallpaperPortableConfigurationUsesNativeFileAPIAndPreservesSavedPrecedence() async throws {
+        let template = ScriptWidgetPackage(bundle: "Script", relativePath: "template/Wallpaper Match")
+        let package = makeTempPackage()
+        defer { try? FileManager.default.removeItem(at: package.path) }
+        let main = try XCTUnwrap(template.readMainFile().0)
+        XCTAssertTrue(package.writeMainFile(content: main).0)
+        XCTAssertTrue(package.writeFile(relativePath: "lib/configuration.js", content: try XCTUnwrap(template.readFile(relativePath: "lib/configuration.js").0)).0)
+        var manifest = try XCTUnwrap(template.readManifest()); manifest.name = package.name
+        XCTAssertTrue(package.writeManifest(manifest).0)
+        let config = wallpaperConfiguration(content: "date")
+        let raw = String(decoding: try JSONSerialization.data(withJSONObject: ["version":1, "kind":"wallpaper", "values":config], options: [.sortedKeys]), as: UTF8.self)
+        XCTAssertTrue(package.writeFile(relativePath: "wallpaper.json", content: raw).0)
+        let encoded = String(decoding: try JSONEncoder().encode(raw), as: UTF8.self)
+        func execute(_ saved: String) async throws -> String {
+            let source = "$storage={getString:()=>\(saved)};\n" + main
+            let runtime = ScriptWidgetRuntime(package: package, environments: ["widget-size":"accessoryRectangular", "timeline-date":"2026-01-01T12:00:00Z"])
+            let result = await Task.detached { runtime.executeJSXSyncForWidget(source) }.value
+            XCTAssertNil(result.1, result.1?.displayMessage ?? "")
+            return ScriptWidgetElementTreeJSON.encode(try XCTUnwrap(result.0))
+        }
+        let portableTree = try await execute("\"\"")
+        let savedTree = try await execute(encoded)
+        XCTAssertEqual(portableTree, savedTree)
+        XCTAssertTrue(portableTree.contains("Quiet space"))
+        XCTAssertTrue(package.writeFile(relativePath: "wallpaper.json", content: "invalid package data").0)
+        let precedenceTree = try await execute(encoded)
+        XCTAssertEqual(precedenceTree, savedTree)
+        let runtime = ScriptWidgetRuntime(package: package, environments: ["widget-size":"medium"])
+        let invalid = await Task.detached { runtime.executeJSXSyncForWidget("$storage={getString:()=>\"\"};\n" + main) }.value
+        XCTAssertNotNil(invalid.1)
+    }
+
+    @MainActor
     func testWallpaperTreesUseActualBinaryFilesAndMatchEveryFamilyAndAppearance() async throws {
         let template=ScriptWidgetPackage(bundle:"Script",relativePath:"template/Wallpaper Match")
         let main=try XCTUnwrap(template.readMainFile().0),helper=try XCTUnwrap(template.readFile(relativePath:"lib/configuration.js").0)

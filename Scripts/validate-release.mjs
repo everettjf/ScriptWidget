@@ -53,7 +53,8 @@ for (const name of names) {
   const descriptor = JSON.parse(await readFile(join(templateRoot, name, "record-template.json"), "utf8"));
   const manifest = JSON.parse(await readFile(join(templateRoot, name, "widget.json"), "utf8"));
   descriptorKinds.add(descriptor.kind);
-  if (descriptor.formatVersion !== 1 || !recordKinds.includes(descriptor.kind) || Object.keys(descriptor).length !== 2 || !manifest.permissions.includes("storage") || manifest.minimumRuntimeVersion !== "1.3") {
+  const minimumRuntimeVersion = descriptor.kind === "wallpaper" ? "1.4" : "1.3";
+  if (descriptor.formatVersion !== 1 || !recordKinds.includes(descriptor.kind) || Object.keys(descriptor).length !== 2 || !manifest.permissions.includes("storage") || manifest.minimumRuntimeVersion !== minimumRuntimeVersion) {
     failures.push(`${name}: record descriptor or storage requirements are invalid`);
   }
 }

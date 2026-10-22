@@ -28,10 +28,28 @@ Configuration backups preserve titles, content choices and resource references. 
 
 Imports and exports stay user initiated. Package paths are bounded and generated resource names cannot refer outside the current installation. An import draft cannot write into a removed, reinstalled or switched widget library. The wizard uses no network, photo-library-wide query or system wallpaper permission.
 
-## Web Studio implementation status
+## Web Studio
 
-The browser crop pipeline is implemented in `Web/studio/src/wallpaperCrop.ts`. It preflights PNG/JPEG encoded dimensions before decoding, normalizes EXIF orientation into a bounded in-memory canvas, validates integer crop coordinates and re-encodes the selected region as a metadata-free sRGB PNG. Starting shapes and image limits match the native wizard. Browser import currently accepts PNG/JPEG; unsupported formats must be converted before importing.
+Create a fresh **Wallpaper Match** copy from Gallery, then choose **Wallpaper crops…** in the file sidebar. Choose a PNG/JPEG reference, drag the rectangle and adjust the exact pixel fields. Select the size, Light/Dark appearance and a position label, then **Add crop**. Add separate selections for other sizes/appearances, choose content and text color, and **Save configuration**. The component preview updates using the saved crop; export the `.swt` package to carry the settings and images to the native app. **Export crop PNG** saves just the current selection.
 
-This pipeline is not yet connected to a Web Studio dialog. Portable configuration and project/session identity guards are still required before exposing it: preview mock storage is not included in an exported widget package and must not be used as a substitute for portable wallpaper settings. Existing native saved settings must take precedence over any package defaults.
+![Web Studio wallpaper crop dialog](images/wallpaper-web-crop.png)
 
-Run `node --test Web/studio/test/wallpaperCrop.test.ts` for allocation and geometry boundaries, and `node Web/studio/scripts/wallpaper-crop-smoke.ts` for real browser decoding, EXIF rotation, pixel selection, output dimensions and PNG metadata checks. The browser check is included in the release-readiness gate when Chrome is available.
+PNG/JPEG import has the same source, working-image and crop limits as the native wizard. Convert unsupported browser formats before importing. The browser checks encoded dimensions before decoding and normalizes orientation. The original reference stays in memory and is discarded when the tool closes. Only prepared PNGs enter the project. Changes remain a draft until Save configuration; Cancel discards them. A late decode after closing cannot change another project, and saving is rejected if the project files changed while the tool was open.
+
+Replacing a size/appearance keeps the earlier crop file. Save, reopen the tool and explicitly delete unused crops to reclaim the twelve-file budget. Files referenced by the original saved configuration remain protected while replacement selections are still a draft. The tool does not infer a missing dark crop from a light selection. Native saved settings and preview mock storage take precedence over the package defaults, so an existing `recordTemplate.config.v1` mock can intentionally override this preview.
+
+Template 1.1.0 requires Runtime 1.4 or later so native Records & Configuration also understands portable defaults. Older template copies can export a PNG here but must be recreated from the current Gallery template to save portable settings. The tool does not rewrite their JavaScript automatically.
+
+## Portable configuration
+
+`wallpaper.json` is optional package data, with a maximum of 4096 UTF-8 bytes:
+
+```json
+{"version":1,"kind":"wallpaper","values":{"title":"My space","caption":"","content":"none","ink":"adaptive","backgrounds":[]}}
+```
+
+Its closed envelope and values use the native wallpaper configuration validation: title up to 40 UTF-16 code units, caption up to 80, content `none`/`text`/`date`, ink `adaptive`/`light`/`dark`, at most ten unique family/appearance selections. Each selection contains exactly `family`, `appearance`, `image` and `label`. Image is a generated lowercase `background-<UUID>` basename for `image/<basename>.png`; the position label is nonempty, at most 30 UTF-16 code units and contains no control/format characters. Paths and remote URLs are not accepted as image names.
+
+The template and native configuration UI read saved `recordTemplate.config.v1` first. If it is empty/absent, they use `wallpaper.json`; a missing portable file uses the ordinary template defaults. Present invalid JSON, unknown fields, unsupported versions and invalid values report an error. A valid saved native configuration remains authoritative even when the package defaults are damaged. Reading portable defaults never seeds user storage. To preserve their references in a separate record backup, explicitly Save Configuration in the native app first; the package export already carries both defaults and PNGs.
+
+Run `node --test Web/studio/test/wallpaperCrop.test.ts Web/studio/test/wallpaperConfiguration.test.ts` for geometry and portable export boundaries. `node Web/studio/scripts/wallpaper-crop-smoke.ts` checks actual browser codecs, pixels and metadata; after building Web Studio, `node Web/studio/scripts/wallpaper-smoke.ts` checks the Gallery-to-crop-to-package workflow, saved reload, cleanup, phone width and late/cross-snapshot writes. Both browser checks run in release-readiness when Chrome is available. Native tests cover package defaults in Records & Configuration and the real JavaScriptCore `$file` bridge, saved-setting precedence and invalid data.

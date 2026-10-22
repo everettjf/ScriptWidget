@@ -27,5 +27,13 @@ var wallpaperConfiguration = (() => {
       throw new Error("Saved background settings are invalid. Open Records & Configuration to repair them.");
     return state.values;
   }
-  return {read, validate};
+  function load() {
+    const saved = $storage.getString("recordTemplate.config.v1");
+    if (saved !== "") return read(saved);
+    if (!$file.exists("wallpaper.json")) return defaults;
+    const portable = $file.read("wallpaper.json");
+    if (portable === "") throw new Error("wallpaper.json is empty or unavailable. Restore or repair the package settings.");
+    return read(portable);
+  }
+  return {read, validate, load};
 })();

@@ -2719,6 +2719,50 @@ final class ScriptWidgetRecordStoreTests: XCTestCase {
     }
 
     @MainActor
+    func testWallpaperPortableDefaultsLoadInNativeConfigurationWithoutWritingRecords() throws {
+        let store = try makeStore(.wallpaper)
+        var values = ScriptWidgetRecordKind.wallpaper.defaults
+        values["title"] = "From Web Studio"
+        values["content"] = "date"
+        values["backgrounds"] = [["family":"medium", "appearance":"light", "label":"Top left", "image":"background-00000000-0000-4000-8000-000000000001"]]
+        let raw = try XCTUnwrap(try store.settingConfiguration(values, in: store.read()).values[ScriptWidgetRecordStore.configurationKey])
+        let url = store.package.path.appendingPathComponent("wallpaper.json")
+        try Data(raw.utf8).write(to: url)
+        let model = ScriptWidgetRecordsModel(package: store.package, store: store)
+        XCTAssertFalse(model.isError, model.message ?? "")
+        XCTAssertEqual(model.habitTitle, "From Web Studio")
+        XCTAssertEqual(model.wallpaperContent, "date")
+        XCTAssertEqual(model.wallpaperBackgrounds.first?.label, "Top left")
+        XCTAssertTrue(try store.read().values.isEmpty, "Portable defaults do not seed user storage")
+        model.habitTitle = "My native choice"
+        model.saveConfiguration()
+        XCTAssertFalse(model.isError, model.message ?? "")
+        try Data("broken package configuration".utf8).write(to: url)
+        model.reload()
+        XCTAssertFalse(model.isError, "Saved native settings take precedence over broken portable defaults")
+        XCTAssertEqual(model.habitTitle, "My native choice")
+        XCTAssertThrowsError(try store.configuration(in: .init(values: [ScriptWidgetRecordStore.configurationKey:"invalid saved settings"])))
+    }
+
+    func testWallpaperPortableConfigurationRejectsPresentInvalidFilesAndUnsafePaths() throws {
+        let store = try makeStore(.wallpaper)
+        let url = store.package.path.appendingPathComponent("wallpaper.json")
+        XCTAssertEqual(try store.configuration(in: store.read())["title"] as? String, "My space")
+        for data in [Data(), Data("{}".utf8), Data([0xff]), Data(repeating: 32, count: 4097)] {
+            try data.write(to: url)
+            XCTAssertThrowsError(try store.configuration(in: store.read()))
+        }
+        try FileManager.default.removeItem(at: url)
+        let outside = store.container.appendingPathComponent("outside-wallpaper.json")
+        try Data("{}".utf8).write(to: outside)
+        try FileManager.default.createSymbolicLink(at: url, withDestinationURL: outside)
+        XCTAssertThrowsError(try store.configuration(in: store.read()))
+        let water = try makeStore(.hydration)
+        try Data("invalid but unrelated".utf8).write(to: water.package.path.appendingPathComponent("wallpaper.json"))
+        XCTAssertEqual(try water.configuration(in: water.read())["goal"] as? Int, 8)
+    }
+
+    @MainActor
     func testWallpaperSelectionsSaveExplicitlyProtectResourcesAndRoundTripConfiguration() throws {
         let store=try makeStore(.wallpaper),model=ScriptWidgetRecordsModel(package:store.package,store:store)
         let image=try ScriptWidgetWallpaperCrop(x:0,y:0,width:400,height:200).cropped(photoFixture())

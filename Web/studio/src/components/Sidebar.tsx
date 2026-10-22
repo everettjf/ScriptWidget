@@ -15,6 +15,7 @@ interface SidebarProps {
   onDeleteFile(path: string): void;
   onAddFile(): void;
   onAddImage(): void;
+  onWallpaper?: () => void;
 }
 
 function SectionTitle({ children }: { children: string }) {
@@ -51,7 +52,7 @@ const fileIcon = (path: string) => {
   return <FileCode2 className="size-3.5 shrink-0 text-muted-foreground" />;
 };
 
-export function Sidebar({ projects, project, path, entry, onOpenProject, onDeleteProject, onOpenFile, onDeleteFile, onAddFile, onAddImage }: SidebarProps) {
+export function Sidebar({ projects, project, path, entry, onOpenProject, onDeleteProject, onOpenFile, onDeleteFile, onAddFile, onAddImage, onWallpaper }: SidebarProps) {
   return (
     <aside className="flex flex-col gap-4 overflow-auto bg-sidebar p-3" aria-label="Projects and files">
       <section className="flex flex-col gap-1.5">
@@ -76,6 +77,7 @@ export function Sidebar({ projects, project, path, entry, onOpenProject, onDelet
           ))}
         </ul>
         <Button id="add-image" variant="link" size="sm" className="h-auto self-start px-2 py-1" onClick={onAddImage}>Add image…</Button>
+        {onWallpaper && <Button id="open-wallpaper" variant="outline" size="sm" onClick={onWallpaper}>Wallpaper crops…</Button>}
       </section>
       <p className="mt-auto text-xs text-muted-foreground">Drafts are saved in this browser. Export a .swt file to keep a copy.</p>
     </aside>

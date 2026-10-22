@@ -28,6 +28,22 @@ test("background references, duplicate slots, labels and unknown fields fail clo
  const variants=[{...base,extra:true},{...base,content:"clock"},{...base,ink:"remote"},{...base,backgrounds:[asset(),asset()]},{...base,backgrounds:[{...asset(),image:"../outside"}]},{...base,backgrounds:[{...asset(),image:"https://example.com/p.png"}]},{...base,backgrounds:[{...asset(),label:"hidden\u202e"}]},{...base,backgrounds:[{...asset(),family:"watch"}]},{...base,backgrounds:[{...asset(),appearance:"tinted"}]},{...base,title:"x".repeat(41)}];
  for(const config of variants)assert.ok((await run(config)).error,JSON.stringify(config));
 });
+test("portable package defaults match saved settings, while saved settings retain precedence",async()=>{
+ const raw=JSON.stringify({version:1,kind:"wallpaper",values:base});
+ const extraFiles={"wallpaper.json":raw,[`image/${asset().image}.png`]:new Uint8Array([0,255,1])};
+ const portable=await run(null,{extraFiles}),saved=await run(base);
+ assert.equal(portable.error,null);assert.equal(portable.tree,saved.tree);
+ const own={...base,title:"My native choice"};
+ assert.equal((await run(own,{extraFiles:{...extraFiles,"wallpaper.json":"broken"}})).tree,(await run(own)).tree);
+ for(const invalid of ["", "{", "{}", " ".repeat(4097),JSON.stringify({version:true,kind:"wallpaper",values:base})]){
+  assert.ok((await run(null,{extraFiles:{"wallpaper.json":invalid}})).error);
+ }
+ const inspected=await run(null,{extraFiles,inspect:true});
+ assert.equal(JSON.parse(inspected.tree).children[0],"","Reading package defaults does not create user records");
+ const files={...readPackageDirectory(fileURLToPath(root)),...extraFiles};
+ const corrupt=await executePackageInNode({files,environments:{"widget-size":"medium"},fixtures:{storage:{"recordTemplate.config.v1":"invalid saved data"}}});
+ assert.ok(corrupt.error,"Corrupt saved settings must not fall back to portable defaults");
+});
 test("all families render with no crop, valid crops and missing crops in both appearances",async()=>{
  for(const family of families)for(const dark of [false,true])for(const missing of [false,true]){
   const config={...base,content:"date",backgrounds:[asset(family,dark?"dark":"light")]};
