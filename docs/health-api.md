@@ -26,3 +26,12 @@ Unknown options, malformed dates and invalid ranges reject with `invalid_options
 The **Health Overview** template supports `overview`, `sleep`, `activity` and `workouts` parameters across eight families. It displays real activity goals, sleep stages and a recent workout while retaining explicit setup, empty and error states. The package requests only `health`, with no storage or network access.
 
 Web Studio provides editable, explicitly simulated best-state summaries and a **No shared data** scenario. Sleep mocks describe the aggregate above rather than raw HealthKit samples. Keep stage totals, intervals, `hasSamples` and units consistent when editing; invalid aggregates fail visibly. Workout samples are filtered by the requested interval and limit. Browser samples never authorize native access or persist native Health records. Native fixture and browser screenshots verify rendering, not real device HealthKit consent or source aggregation.
+
+
+Native medium-size rendering with deterministic test data (not personal Health records):
+
+![Health Overview with sample sleep, activity and workout summaries](images/health-overview-ready.png)
+
+The same layout with no shared samples; missing measurements remain empty:
+
+![Health Overview without shared Health samples](images/health-overview-empty.png)
