@@ -2,15 +2,16 @@ import { EditorView, showPanel } from "@codemirror/view";
 import { undo, redo, undoDepth, redoDepth, isolateHistory } from "@codemirror/commands";
 import { parseVisualLayout, editVisualLayout, visualPropertyDefinitions } from "./visualLayout.js";
 import { parseWidgetTheme, initializeWidgetTheme, editWidgetTheme, widgetThemeFields, widgetThemePresets, importWidgetTheme, exportWidgetTheme } from "./widgetTheme.js";
+import { visualResources, visualResourcesChanged, setVisualLayoutResources, visualAssetCatalog, insertVisualAsset } from "./visualAssets.js";
 
 const supportedProperty = definition => ["string", "number", "number|string", "date|number", "boolean", "enum", "color", "url", "action-id", "storage-key"].includes(definition.type);
 function element(tag, className, text) {
   const dom = document.createElement(tag); if (className) dom.className = className; if (text !== undefined) dom.textContent = text; return dom;
 }
-function layoutPanel(view) {
+function layoutPanel(view, options) {
   const dom = element("section", "sw-layout"), header = element("div", "sw-layout-header"), body = element("div", "sw-layout-body");
   dom.setAttribute("aria-label", "Visual layout editor");
-  let open = false, mode = "layout", model = null, selectedID = null, propertyName = "", dragging = null;
+  let open = false, mode = "layout", model = null, selectedID = null, propertyName = "", dragging = null, destroyed = false;
   const token = String(Math.random());
   const button = (label, action, disabled = false) => {
     const value = element("button", "sw-layout-button", label); value.type = "button"; value.disabled = disabled;
@@ -21,9 +22,50 @@ function layoutPanel(view) {
   const hint = element("span", "sw-layout-hint", "Select layers and edit literal JSX"), undoButton = button("Undo", () => undo(view)), redoButton = button("Redo", () => redo(view));
   const themeToggle = button("Theme", () => { open = mode === "theme" ? !open : true; mode = "theme"; render(); view.requestMeasure(); });
   themeToggle.setAttribute("aria-expanded", "false");
-  header.append(toggle, themeToggle, hint, undoButton, redoButton); dom.append(header, body);
+  const assetsToggle = button("Assets", () => { open = mode === "assets" ? !open : true; mode = "assets"; render(); view.requestMeasure(); });
+  assetsToggle.setAttribute("aria-expanded", "false");
+  header.append(toggle, themeToggle, assetsToggle, hint, undoButton, redoButton); dom.append(header, body);
   body.hidden = undoButton.hidden = redoButton.hidden = true;
   const error = element("p", "sw-layout-error"); error.setAttribute("role", "alert"); error.hidden = true; dom.append(error);
+  function renderAssets() {
+    model = parseVisualLayout(view.state.doc.toString());
+    const panel = element("div", "sw-layout-inspector sw-theme-inspector"); body.replaceChildren(panel);
+    panel.append(element("div", "sw-layout-title", "Widget assets"));
+    panel.append(element("p", "sw-layout-notice", "Insert editable original JSX or a package image. Originals follow connected theme colors; pet artwork is static. Import photos with the app's existing image tools or Web Studio's Add image."));
+    if (model.issue) { panel.append(element("p", "sw-layout-notice", model.issue)); return; }
+    const containers = model.nodes.filter(node => node.structure), destination = element("select"); destination.setAttribute("aria-label", "Asset destination");
+    for (const node of containers) { const option = element("option", "", `${node.tag} · line ${view.state.doc.lineAt(node.from).number}`); option.value = node.id; destination.append(option); }
+    if (containers.some(node => node.id === selectedID)) destination.value = selectedID;
+    else selectedID = destination.value;
+    destination.addEventListener("change", () => { selectedID = destination.value; }); panel.append(destination);
+    const disabled = view.state.readOnly || !containers.length;
+    if (!containers.length) panel.append(element("p", "sw-layout-notice", "Add a stack/grid with literal JSX children in Code to insert assets."));
+    function insert(kind, path) {
+      try {
+        if (view.state.readOnly) throw new Error("This document is read only.");
+        const edit = insertVisualAsset(model, view.state.doc.toString(), { id: destination.value, kind, path }, view.state.field(visualResources));
+        selectedID = destination.value; error.hidden = true;
+        view.dispatch({ changes: edit.changes, selection: {anchor:edit.selectedFrom}, annotations:isolateHistory.of("full"), userEvent:"input.asset", scrollIntoView:true });
+      } catch (reason) { error.textContent = reason.message; error.hidden = false; }
+    }
+    for (const [kind, asset] of Object.entries(visualAssetCatalog)) {
+      const row = element("div", "sw-layout-actions"); row.append(button(`Insert ${asset.name}`, () => insert(kind), disabled), element("span", "", asset.description)); panel.append(row);
+    }
+    panel.append(element("div", "sw-layout-title", "Package images"));
+    const resources = view.state.field(visualResources);
+    const images = element("select"); images.setAttribute("aria-label", "Package image");
+    for (const path of resources) { const option = element("option", "", path); option.value = path; images.append(option); }
+    images.disabled = !resources.length;
+    panel.append(images, button("Insert package image", () => insert("photo", images.value), disabled || !resources.length));
+    if (!resources.length) panel.append(element("p", "sw-layout-notice", "No supported images in image/. Add a PNG, JPEG or WebP to the package, then refresh or reopen the editor."));
+    if (options.refreshResources) panel.append(button("Refresh images", async () => {
+      try {
+        const paths = await options.refreshResources();
+        if (!destroyed) { error.hidden = true; setVisualLayoutResources(view, paths); }
+      } catch { if (!destroyed) { error.textContent = "Images could not be refreshed. Reopen this document and try again."; error.hidden = false; } }
+    }));
+    panel.append(element("p", "sw-layout-notice", "Bloom mark, Leaf mark and Pebble friend: original ScriptWidget geometry, MIT licensed. Package photos retain their own rights. See the Studio assets documentation."));
+  }
   function themeEdit(action, expected) {
     try {
       if (view.state.readOnly) throw new Error("This document is read only.");
@@ -80,9 +122,11 @@ function layoutPanel(view) {
   }
   function render() {
     toggle.setAttribute("aria-expanded", String(open && mode === "layout")); themeToggle.setAttribute("aria-expanded", String(open && mode === "theme"));
+    assetsToggle.setAttribute("aria-expanded", String(open && mode === "assets"));
     body.hidden = !open; undoButton.hidden = redoButton.hidden = !open; hint.hidden = open;
     undoButton.disabled = view.state.readOnly || undoDepth(view.state) === 0; redoButton.disabled = view.state.readOnly || redoDepth(view.state) === 0;
     if (!open) return;
+    if (mode === "assets") { renderAssets(); return; }
     if (mode === "theme") { renderTheme(); return; }
     model = parseVisualLayout(view.state.doc.toString()); body.replaceChildren();
     if (model.issue) { body.append(element("p", "sw-layout-notice", model.issue)); return; }
@@ -184,15 +228,16 @@ function layoutPanel(view) {
     if (!open) return;
     const position = view.state.selection.main.from;
     const next = model?.nodes.filter(node => node.from <= position && position < node.to).at(-1)?.id;
-    if (update.docChanged || update.startState.readOnly !== view.state.readOnly || (update.selectionSet && next !== selectedID)) { if (update.docChanged) selectedID = null; render(); }
+    const resourcesChanged = update.transactions.some(transaction => transaction.effects.some(effect => effect.is(visualResourcesChanged)));
+    if (update.docChanged || resourcesChanged || update.startState.readOnly !== view.state.readOnly || (update.selectionSet && next !== selectedID)) { if (update.docChanged && mode !== "assets") selectedID = null; render(); }
     undoButton.disabled = view.state.readOnly || undoDepth(view.state) === 0; redoButton.disabled = view.state.readOnly || redoDepth(view.state) === 0;
-  }};
+  },destroy() { destroyed = true; }};
 }
 
 const theme = EditorView.baseTheme({
   ".sw-layout": {fontFamily:"system-ui, sans-serif",fontSize:"12px",backgroundColor:"#f6f7fa",color:"#272a34",borderBottom:"1px solid #dce0e9"},
   "&dark .sw-layout": {backgroundColor:"#252830",color:"#eceef5",borderColor:"#414552"},
-  ".sw-layout-header": {display:"flex",alignItems:"center",gap:"8px",padding:"6px 10px"},
+  ".sw-layout-header": {display:"flex",alignItems:"center",flexWrap:"wrap",gap:"8px",padding:"6px 10px"},
   ".sw-layout-toggle": {fontWeight:"600"}, ".sw-layout-hint": {opacity:"0.65",fontSize:"11px"},
   ".sw-layout-button": {fontFamily:"inherit",fontSize:"11px",color:"inherit",backgroundColor:"transparent",border:"1px solid #a0a5b655",borderRadius:"6px",padding:"4px 8px",cursor:"pointer",whiteSpace:"nowrap"},
   ".sw-layout-button:disabled": {opacity:"0.4",cursor:"default"},
@@ -215,4 +260,4 @@ const theme = EditorView.baseTheme({
   ".sw-layout button:focus-visible,.sw-layout input:focus-visible,.sw-layout select:focus-visible": {outline:"2px solid #4085f5",outlineOffset:"1px"},
   "@media (max-width: 480px)": {".sw-layout-body":{gridTemplateColumns:"minmax(90px, 1fr) minmax(150px, 1.6fr)"},".sw-layout-hint":{display:"none"}},
 });
-export function visualLayoutEditor() { return [theme, showPanel.of(layoutPanel)]; }
+export function visualLayoutEditor(options = {}) { return [theme, visualResources, showPanel.of(view => layoutPanel(view, options))]; }

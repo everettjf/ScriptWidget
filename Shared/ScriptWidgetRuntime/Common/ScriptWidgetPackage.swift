@@ -40,6 +40,7 @@ enum StudioProtocol {
     static let documentSave = "document.save"
     static let documentReplace = "document.replace"
     static let documentSetReadOnly = "document.setReadOnly"
+    static let documentResources = "document.resources"
     static let editorInsert = "editor.insert"
     static let editorFormat = "editor.format"
     static let editorGetState = "editor.getState"
@@ -584,19 +585,19 @@ enum ScriptWidgetPackageFiles {
         return operation(directory, last)
     }
 
-    static func list(root: URL, relative: String? = nil) -> [String]? {
+    static func list(root: URL, relative: String? = nil, maximumCount: Int = 100_000) -> [String]? {
         if let relative {
             return withParent(root: root, relative: relative) { directory, name in
                 let child = openat(directory, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
                 guard child >= 0 else { return nil }
                 defer { close(child) }
-                return names(child)
+                return names(child, maximumCount: maximumCount)
             }
         }
         let fd = open(root.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
         guard fd >= 0 else { return nil }
         defer { close(fd) }
-        return names(fd)
+        return names(fd, maximumCount: maximumCount)
     }
 
     static func kind(root: URL, relative: String) -> mode_t? {
@@ -1621,6 +1622,25 @@ struct ScriptWidgetPackage: Sendable {
             guard locallyAvailableFileURL(fullPath: imageURL) != nil else { return nil }
             return ImageModel(name: imageURL.deletingPathExtension().lastPathComponent, path: imageURL)
         }.sorted { $0.name.compare($1.name) == .orderedAscending }
+    }
+
+    /// Names only for Studio. No image decoding, library queries or remote downloads.
+    func editorImageResources() -> [String] {
+        guard canRead, accessError == nil,
+              let names = ScriptWidgetPackageFiles.list(root: path, relative: "image", maximumCount: 4096) else { return [] }
+        var resources: [String] = []
+        for name in names.sorted() {
+            let relative = "image/" + name
+            guard name == name.trimmingCharacters(in: .whitespacesAndNewlines), !name.contains(".."),
+                  relative.utf8.count <= 1024, ScriptWidgetPackageFiles.components(relative)?.count == 2,
+                  ["png", "jpg", "jpeg", "webp"].contains((name as NSString).pathExtension.lowercased()),
+                  let safe = ScriptWidgetPackageFiles.safeURL(root: path, relative: relative, allowMissing: false),
+                  ScriptWidgetPackageFiles.kind(root: path, relative: relative) == S_IFREG,
+                  locallyAvailableFileURL(fullPath: safe) != nil else { continue }
+            resources.append(relative)
+            if resources.count == 256 { break }
+        }
+        return resources
     }
     
 #if os(macOS)

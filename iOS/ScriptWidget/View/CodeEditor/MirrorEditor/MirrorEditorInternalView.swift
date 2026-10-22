@@ -63,6 +63,7 @@ struct MirrorEditorInternalActionProvider {
     var onRead: READER?
     var onWrite: WRITER?
     var onIsReadOnly: ISREADONLY?
+    var onResources: (() -> [String])? = nil
 }
 
 class MirrorEditorInternalView: WKWebView {
@@ -136,6 +137,14 @@ class MirrorEditorInternalView: WKWebView {
             self?.scheduleDraftSnapshot()
             callback?(["result": "ok"])
         })
+
+        self.bridge?.register(handlerName: StudioProtocol.documentResources) { [weak self] parameters, callback in
+            guard let self, !self.isTearingDown, let id = self.currentDocumentID,
+                  parameters?["documentID"] as? String == id else {
+                callback?(["result": "failed"]); return
+            }
+            callback?(["result": "ok", "documentID": id, "resources": self.action?.onResources?() ?? []])
+        }
         
         self.load(URLRequest(url: StudioEditorBundleSchemeHandler.indexURL))
         
@@ -346,6 +355,7 @@ class MirrorEditorInternalView: WKWebView {
                     "content": content,
                     "version": 0,
                     "readOnly": action?.onIsReadOnly?() ?? false,
+                    "resources": action?.onResources?() ?? [],
                 ]
             )
         }

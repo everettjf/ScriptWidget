@@ -57,8 +57,8 @@ final class VisualLayoutEditorTests: XCTestCase {
         try await wait(web, "!!document.querySelector('.sw-layout-toggle') && !!window.__nativeHandlers['document.open']")
         return web
     }
-    @MainActor private func open(_ web: WKWebView, source: String, id: String = "fixture/main.jsx", readOnly: Bool = false) async throws {
-        let data = try json(["documentID":id,"payload":["content":source,"version":0,"readOnly":readOnly]])
+    @MainActor private func open(_ web: WKWebView, source: String, id: String = "fixture/main.jsx", readOnly: Bool = false, resources: [String] = []) async throws {
+        let data = try json(["documentID":id,"payload":["content":source,"version":0,"readOnly":readOnly,"resources":resources]])
         _ = try await evaluate(web, "window.__nativeCall('document.open',\(data))")
     }
     @MainActor private func content(_ web: WKWebView) async throws -> String {
@@ -184,9 +184,14 @@ final class VisualLayoutEditorTests: XCTestCase {
         let unchanged = try await content(web); XCTAssertEqual(unchanged, redone)
     }
     @MainActor func testNativeLayoutScreenshot() async throws {
-        guard let path = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_LAYOUT_EDITOR"] else { throw XCTSkip("Opt in to native bundled editor screenshot") }
+        let assetsPath = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_ASSETS_EDITOR"]
+        guard let path = assetsPath ?? ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_LAYOUT_EDITOR"] else { throw XCTSkip("Opt in to native bundled editor screenshot") }
         let web = try await editor(); try await open(web, source: source)
-        _ = try await evaluate(web, "window.__nativeCall('editor.setTheme',{payload:{theme:'light'}});document.querySelector('.sw-layout-toggle').click();[...document.querySelectorAll('.sw-layout-layer')].find(row=>row.textContent.includes('Calm morning')).click()")
+        if assetsPath != nil {
+            _ = try await evaluate(web,"window.__nativeCall('editor.setTheme',{payload:{theme:'light'}});[...document.querySelectorAll('.sw-layout button')].find(b=>b.textContent==='Theme').click();[...document.querySelectorAll('.sw-layout button')].find(b=>b.textContent==='Connect layout to Meadow theme').click();[...document.querySelectorAll('.sw-layout button')].find(b=>b.textContent==='Assets').click();[...document.querySelectorAll('.sw-layout button')].find(b=>b.textContent==='Insert Pebble friend').click();")
+        } else {
+            _ = try await evaluate(web, "window.__nativeCall('editor.setTheme',{payload:{theme:'light'}});document.querySelector('.sw-layout-toggle').click();[...document.querySelectorAll('.sw-layout-layer')].find(row=>row.textContent.includes('Calm morning')).click()")
+        }
         #if os(macOS)
         let window = NSWindow(contentRect: web.frame, styleMask: [.titled], backing: .buffered, defer: false)
         window.contentView = web; window.orderBack(nil); defer { window.orderOut(nil) }
@@ -201,6 +206,106 @@ final class VisualLayoutEditorTests: XCTestCase {
         let png = try XCTUnwrap(snapshot.pngData())
         #endif
         try png.write(to: URL(fileURLWithPath: path))
+    }
+    @MainActor func testNativeAssetsInsertUndoAndRenderOriginalsAndPackageImages() async throws {
+        let web = try await editor()
+        let code = "// Keep my source\n$render(<hstack frame=\"max\" spacing=\"12\" padding=\"12\" background=\"#F2FAF5\"><vstack spacing=\"4\"><text font=\"headline\">Make it yours</text><text font=\"caption\">Your shapes. Your colors.</text></vstack></hstack>);"
+        let scratch = FileManager.default.temporaryDirectory.appendingPathComponent("AssetRuntime-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: scratch.appendingPathComponent("image"), withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        try code.write(to: scratch.appendingPathComponent("main.jsx"), atomically: true, encoding: .utf8)
+        let image = ImageRenderer(content: LinearGradient(colors: [.green,.blue],startPoint:.topLeading,endPoint:.bottomTrailing).frame(width:96,height:64))
+        let cgImage = try XCTUnwrap(image.cgImage)
+        #if os(macOS)
+        let png = try XCTUnwrap(NSBitmapImageRep(cgImage:cgImage).representation(using:.png,properties:[:]))
+        #else
+        let png = try XCTUnwrap(UIImage(cgImage:cgImage).pngData())
+        #endif
+        try png.write(to:scratch.appendingPathComponent("image/Sample.png"))
+        if let output = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_ASSET_WIDGETS"] {
+            let directory = URL(fileURLWithPath:output); try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true)
+            try png.write(to:directory.appendingPathComponent("Sample.png"))
+        }
+        let package = ScriptWidgetPackage(path:scratch,readonly:true)
+        XCTAssertEqual(package.editorImageResources(),["image/Sample.png"])
+        let button = "[...document.querySelectorAll('.sw-layout button')].find(button=>button.textContent==="
+        var examples: [String:[String:String]] = [:]
+        for themed in [false,true] {
+            for (kind,title) in [("bloom","Bloom mark"),("leaf","Leaf mark"),("pebble","Pebble friend"),("photo","package image")] {
+                let key = (themed ? "themed-" : "literal-") + kind
+                try await open(web,source:code,id:key,resources:package.editorImageResources())
+                if themed { _ = try await evaluate(web,button+"'Theme').click();"+button+"'Connect layout to Meadow theme').click();") }
+                let before = try await content(web)
+                _ = try await evaluate(web,button+"'Assets').click();"+button+"'Insert \(title)').click();")
+                let after = try await content(web); XCTAssertNotEqual(after,before)
+                try await wait(web,"window.__nativeCalls.some(call=>call.name==='document.save' && call.data.documentID===\(try json(key)))")
+                _ = try await evaluate(web,button+"'Undo').click()")
+                let undone = try await content(web); XCTAssertEqual(undone,before)
+                _ = try await evaluate(web,button+"'Redo').click()")
+                let redone = try await content(web); XCTAssertEqual(redone,after)
+                let engine = ScriptWidgetRuntime(package:package,environments:["widget-size":"medium"],isDarkMode:false)
+                let result = engine.executeJSXSyncForWidget(after)
+                XCTAssertNil(result.1,result.1?.displayMessage ?? "")
+                let root = try XCTUnwrap(result.0)
+                examples[key] = ["source":after,"tree":ScriptWidgetElementTreeJSON.encode(root)]
+                if let output = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_ASSET_WIDGETS"] {
+                    let directory = URL(fileURLWithPath:output); try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true)
+                    let context = ScriptWidgetElementContext(runtime:engine,debugMode:false,scriptName:"Original assets",scriptParameter:"",package:package)
+                    let renderer = ImageRenderer(content:ScriptWidgetElementView(element:root,context:context).frame(width:329,height:155).background(Color.white).environment(\.colorScheme,.light)); renderer.scale = 2
+                    let captured = try XCTUnwrap(renderer.cgImage)
+                    #if os(macOS)
+                    let data = try XCTUnwrap(NSBitmapImageRep(cgImage:captured).representation(using:.png,properties:[:]))
+                    #else
+                    let data = try XCTUnwrap(UIImage(cgImage:captured).pngData())
+                    #endif
+                    try data.write(to:directory.appendingPathComponent(key+".png"))
+                }
+            }
+        }
+        let repository = URL(fileURLWithPath:#filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let fixture = repository.appendingPathComponent("Web/preview-engine/test/parity/asset-edit-trees.json")
+        if ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_ASSET_TREES"] == "1" {
+            try JSONSerialization.data(withJSONObject:["formatVersion":1,"original":code,"examples":examples],options:[.prettyPrinted,.sortedKeys]).write(to:fixture)
+        } else {
+            let stored = try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:fixture)) as? [String:Any])
+            XCTAssertEqual(stored["examples"] as? [String:[String:String]],examples)
+        }
+    }
+    @MainActor func testNativeResourceRefreshRejectsLateOrWrongDocumentRepliesAndReadOnlyWrites() async throws {
+        let web = try await editor()
+        try await open(web,source:source,id:"first",resources:["image/First.png"])
+        _ = try await evaluate(web,"window.__originalCall=window.WKWebViewJavascriptBridge.callHandler;window.WKWebViewJavascriptBridge.callHandler=(name,data,callback)=>{if(name==='document.resources')window.__pendingResources=callback;else window.__originalCall(name,data,callback);};[...document.querySelectorAll('.sw-layout button')].find(b=>b.textContent==='Assets').click();[...document.querySelectorAll('.sw-layout button')].find(b=>b.textContent==='Refresh images').click();")
+        try await open(web,source:source,id:"second")
+        _ = try await evaluate(web,"[...document.querySelectorAll('.sw-layout button')].find(b=>b.textContent==='Assets').click();window.__pendingResources({result:'ok',documentID:'first',resources:['image/First.png']});")
+        try await Task.sleep(nanoseconds:100_000_000)
+        let empty = try await evaluate(web,"document.querySelector('select[aria-label=\"Package image\"]').options.length") as? Int
+        XCTAssertEqual(empty,0)
+        _ = try await evaluate(web,"[...document.querySelectorAll('.sw-layout button')].find(b=>b.textContent==='Refresh images').click();window.__pendingResources({result:'ok',documentID:'first',resources:['image/Wrong.png']});")
+        try await wait(web,"!document.querySelector('.sw-layout-error').hidden")
+        let stillEmpty = try await evaluate(web,"document.querySelector('select[aria-label=\"Package image\"]').options.length") as? Int
+        XCTAssertEqual(stillEmpty,0)
+        _ = try await evaluate(web,"[...document.querySelectorAll('.sw-layout button')].find(b=>b.textContent==='Refresh images').click();window.__pendingResources({result:'ok',documentID:'second',resources:['image/Current.png','../private.png']});")
+        try await wait(web,"document.querySelector('select[aria-label=\"Package image\"]').value==='image/Current.png'")
+        let before = try await content(web); XCTAssertEqual(before,source)
+        try await open(web,source:source,id:"readonly",readOnly:true,resources:["image/Current.png"])
+        _ = try await evaluate(web,"[...document.querySelectorAll('.sw-layout button')].find(b=>b.textContent==='Assets').click();[...document.querySelectorAll('.sw-layout button')].find(b=>b.textContent==='Insert Pebble friend').dispatchEvent(new MouseEvent('click'));")
+        let unchanged = try await content(web); XCTAssertEqual(unchanged,source)
+    }
+    func testStudioImageResourcesRejectLinksDirectoriesUnsupportedTypesAndBoundTheList() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("AssetList-"+UUID().uuidString)
+        try FileManager.default.createDirectory(at:root.appendingPathComponent("image"),withIntermediateDirectories:true)
+        defer { try? FileManager.default.removeItem(at:root) }
+        let package = ScriptWidgetPackage(path:root,readonly:true)
+        let image = root.appendingPathComponent("image")
+        for name in ["Safe.png","Photo.JPG","skip.heic","skip.svg","skip.txt","a..b.png"," leading.png"] { try Data([1,2,3]).write(to:image.appendingPathComponent(name)) }
+        try FileManager.default.createDirectory(at:image.appendingPathComponent("directory.png"),withIntermediateDirectories:true)
+        try Data([4,5]).write(to:root.appendingPathComponent("outside.png"))
+        try FileManager.default.createSymbolicLink(at:image.appendingPathComponent("linked.png"),withDestinationURL:root.appendingPathComponent("outside.png"))
+        try FileManager.default.linkItem(at:root.appendingPathComponent("outside.png"),to:image.appendingPathComponent("hardlink.png"))
+        XCTAssertEqual(package.editorImageResources(),["image/Photo.JPG","image/Safe.png"])
+        XCTAssertNil(ScriptWidgetPackageFiles.list(root:root,relative:"image",maximumCount:3))
+        for index in 0..<260 { try Data([1]).write(to:image.appendingPathComponent("bounded-\(index).png")) }
+        XCTAssertEqual(package.editorImageResources().count,256)
     }
     @MainActor func testBundleResourcesAreBoundedTypedAndCannotEscapeTheEditorRoot() throws {
         let base = FileManager.default.temporaryDirectory.appendingPathComponent("EditorResources-" + UUID().uuidString)

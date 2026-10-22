@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-22T12:20:56.647Z",
+  "generatedAt": "2026-10-22T13:17:51.787Z",
   "items": [
     {
       "author": "ScriptWidget Community",
@@ -1067,9 +1067,9 @@
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/layout-starter/main.jsx"
         },
         {
-          "bytes": 243,
+          "bytes": 268,
           "path": "meta.json",
-          "sha256": "462b5e30c955f8946ee69808167ebca4a3bd2b51dea06dce2a274a9f0d7ad8a7",
+          "sha256": "fb0473b1a79d4f37d9c2f3ece84effef94213ee4d1eddb4a2cc3a25d5f98170a",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/layout-starter/meta.json"
         },
         {

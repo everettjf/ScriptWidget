@@ -101,7 +101,7 @@ export function App() {
     const target = `image/${name}`;
     if (project.files[target] && !(await confirm({ title: `Replace ${target}?`, description: "The existing image is replaced in this project.", action: "Replace" }))) return;
     model.updateFiles({ [target]: new Uint8Array(await file.arrayBuffer()) });
-    toast.success(`Added ${target}`, { description: `Use <image id="${name.replace(/\.[^.]+$/, "")}" /> in your widget.` });
+    toast.success(`Added ${target}`, { description: `Insert it from Assets, or use <image name="${name}" /> in your widget.` });
   };
 
   // Dropping a .swt or .zip anywhere on the page imports it; images are

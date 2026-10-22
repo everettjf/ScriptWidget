@@ -13,6 +13,7 @@ import { scriptWidgetCompletions } from "../../../Editor/editorfe/src/scriptWidg
 import { scriptWidgetDiagnostics, scriptWidgetHover } from "../../../Editor/editorfe/src/scriptWidgetLanguage.js";
 import { studioTheme } from "../../../Editor/editorfe/src/studioTheme.js";
 import { visualLayoutEditor } from "../../../Editor/editorfe/src/visualLayoutEditor.js";
+import { setVisualLayoutResources } from "../../../Editor/editorfe/src/visualAssets.js";
 
 export interface StudioEditor {
   readonly view: EditorView;
@@ -23,6 +24,7 @@ export interface StudioEditor {
   forget(path: string): void;
   focus(): void;
   setTheme(mode: "light" | "dark"): void;
+  setResources(paths: string[]): void;
   destroy(): void;
 }
 
@@ -61,6 +63,7 @@ export function createEditor(parent: HTMLElement, onChange: (path: string, text:
     reset() { states.clear(); currentPath = null; },
     forget(path) { states.delete(path); },
     focus() { view.focus(); },
+    setResources(paths) { setVisualLayoutResources(view, paths); },
     setTheme(next) {
       if (next === themeMode) return;
       themeMode = next;

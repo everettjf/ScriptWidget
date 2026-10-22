@@ -35,6 +35,7 @@ import { scriptWidgetCompletions } from "./scriptWidgetCompletions.js";
 import { scriptWidgetDiagnostics, scriptWidgetHover } from "./scriptWidgetLanguage.js";
 import { studioTheme } from "./studioTheme.js";
 import { visualLayoutEditor } from "./visualLayoutEditor.js";
+import { setVisualLayoutResources } from "./visualAssets.js";
 import { loadDocumentState, saveDocumentState } from "./documentState.js";
 import { DocumentSaveCoordinator, initialStudioState, recoverableDraft, reduceStudioState, removeDraft, shouldWarnBeforeLeaving, writeDraft } from "./webStudioState.js";
 import { WebStudioAPI } from "./webStudioAPI.js";
@@ -48,6 +49,7 @@ const theme = new Compartment();
 let bridge = null;
 let documentID = null;
 let documentVersion = 0;
+let documentGeneration = 0;
 let suppressChanges = false;
 let saveTimer = null;
 let stateTimer = null;
@@ -105,7 +107,15 @@ const extensions = [
   highlightActiveLineGutter(),
   highlightSpecialChars(),
   history(),
-  visualLayoutEditor(),
+  visualLayoutEditor({ refreshResources: () => new Promise((resolve, reject) => {
+    const expectedID = documentID, generation = documentGeneration;
+    const timeout = window.setTimeout(() => reject(new Error("Resource refresh timed out")), 5000);
+    callNative(bridge, StudioMessage.documentResources, {}, expectedID, (response = {}) => {
+      window.clearTimeout(timeout);
+      if (expectedID !== documentID || generation !== documentGeneration || response.result !== "ok" || response.documentID !== expectedID || !Array.isArray(response.resources)) reject(new Error("Document resources are unavailable"));
+      else resolve(response.resources);
+    });
+  }) }),
   foldGutter(),
   drawSelection(),
   dropCursor(),
@@ -143,6 +153,7 @@ const view = new EditorView({
 });
 
 function replaceDocument(content, nextDocumentID = documentID, version = 0) {
+  documentGeneration += 1;
   const previousSelection = view.state.selection.main;
   saveDocumentState(window.localStorage, documentID, { anchor: previousSelection.anchor, head: previousSelection.head, scrollTop: view.scrollDOM.scrollTop });
   suppressChanges = true;
@@ -237,6 +248,7 @@ connectNativeBridge((nativeBridge) => {
 
   register(StudioMessage.documentOpen, ({ payload = {}, documentID: id }) => {
     replaceDocument(payload.content, id, payload.version ?? 0);
+    setVisualLayoutResources(view, payload.resources ?? []);
     setReadOnly(payload.readOnly);
     return { protocolVersion: STUDIO_PROTOCOL_VERSION };
   });
@@ -415,6 +427,7 @@ async function startWebStudio() {
     conflict = null;
     conflictBanner.hidden = true;
     replaceDocument(result.content, nextID, 0);
+    setVisualLayoutResources(view, packages.find(item => item.id === loadedPackageID)?.files ?? []);
     saveCoordinator.open({ documentID: nextID, packageID: loadedPackageID, path: loadedPath, revision: result.revision, content: result.content });
     setReadOnly(Boolean(result.readOnly));
     updateDocumentChrome(result);
@@ -552,6 +565,12 @@ async function startWebStudio() {
     callHandler(name, envelope, callback = () => {}) {
       if (name === StudioMessage.documentSave) {
         saveWebDocument(envelope.payload.content, callback);
+      } else if (name === StudioMessage.documentResources) {
+        const expectedID = documentID, expectedPackage = loadedPackageID;
+        api("/api/v1/packages").then(result => {
+          if (expectedID !== documentID || envelope.documentID !== documentID || expectedPackage !== loadedPackageID) { callback({result:"failed"}); return; }
+          callback({result:"ok",documentID:expectedID,resources:(result.packages ?? []).find(item => item.id === expectedPackage)?.files ?? []});
+        }).catch(() => callback({result:"failed"}));
       } else {
         callback({ result: "ok" });
       }

@@ -45,4 +45,4 @@ The shared Theme controls and browser preview after a Midnight preset and accent
 
 ![Theme controls with persisted source and preview](images/theme-web-studio.png)
 
-This increment supplies reusable themes. Photo resource selection, original asset insertion and the visual effects work remain tracked in the [capabilities plan](widget-capabilities-plan.md).
+The shared [Assets panel](studio-assets.md) inserts package images and original theme-aware shapes. Additional visual effects and final delivery checks remain tracked in the [capabilities plan](widget-capabilities-plan.md).

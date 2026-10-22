@@ -832,3 +832,17 @@ M5-1 首个支持子集据此勾选；M5-2 主题/资产、M5-3 效果与 M5-4 �
 最终完整 `./Scripts/release-readiness.sh` 退出 0：Mac **657 通过 / 0 失败 / 32 跳过**，iPhone 17 Simulator **667 通过 / 0 失败 / 31 跳过**，两个 xcresult 的 runtimeWarnings 均为空。Editor 48、预览引擎 158、Web Studio 87、Gallery 同步 2 项、90 个内置模板/21 个 curated 包、TypeScript/生产构建、两个 app scheme build、既有浏览器 smoke 和 Layout/Theme 操作脚本，以及独立运行时/存储/服务探针通过。SDK/link、并发和 Xcode 版本解析诊断保留，不称作无编译警告。证据目录 `__Release/capabilities/themes/` 包含完整日志、两端 summary 与 verification；主动中止日志单独保存。完整 gate 后仅更新文档/证据和 PR，不改产品源码。
 
 本增量没有完成照片资源选择、原创素材插入、效果与 M4 的剩余工作；M5-2 保持未勾选。没有 Web 部署、原生上传或送审，也没有新增物理设备/签名容器/扩展内存验收证据。
+
+### 2026-10-22：M5-2 原创素材和包内图片创作流程
+
+沿用同一分支接入 Assets 面板：iOS/macOS/Web 使用相同的目录、source-range 插入命令和 CodeMirror resource field。Bloom mark、Leaf mark、Pebble friend 是本次编写的原生 JSX 几何构图，不依赖下载素材或系统图标；有受支持的 widgetTheme 时连接 accent/foreground/surface，否则使用 Meadow 字面量颜色。首次插入同时在源文件中保留出处、SPDX 和完整仓库 MIT 许可，重复插入不重复附加。静态宠物素材不伪装为新的互动系统；真实本地照料记录仍由 Pocket Pet 提供。
+
+复用已有图片导入流程。图片目录只列 package `image/` 直接子文件中的 PNG/JPEG/WebP，插入 `name={"filename.png"}`，符合原生现有 basename 解析，而非把任意嵌套路径交给 Image。Web 随项目文件变化更新列表；原生 document.open 携带可选 resources，Refresh images 通过新增 document.resources 请求当前文档的名称列表。前端同时核对文档 ID/generation，面板销毁后不应用迟到回复；元数据 effect 不改源码、不写保存、不产生 Undo 记录。
+
+原生来源经过现有包访问与规范路径检查，拒绝链接、目录、歧义和越界；前端也过滤格式、控制符、层级和 case/Unicode 冲突。展示至多 256 个候选，原生目录或前端列表超过 4096 条时拒绝。没有系统相册枚举、图片字节桥接、远端自动下载或权限扩张；实际解码沿用已有图像预算。
+
+编辑器 52、Web Studio 88 项聚焦检查通过。实际 WKWebView 插入/保存/Undo/Redo、只读、late/wrong-document response 与成功刷新已验证；八组 literal/themed × 三种原创素材/一张包内图片的 source 与真实 JSC 树，在 Web 的相同编辑和 Package 导入导出后逐一匹配。图片 bytes、无关源码和完整许可均保留。Chrome 使用真实指针点击和 image input 验证图片列表变化、已解码预览、原有撤销历史、保存重开、三个素材和 390px 布局。原生 SwiftUI 的素材/本地图片截图、原生 WK 面板和浏览器前后图已检查，见 [Studio assets](studio-assets.md)。这些结果不代表实际 WidgetKit 或签名容器验收。
+
+Layout Starter 的说明和元数据已更新，Gallery 摘要/哈希同步，主 JSX 与原生/Web 既有 corpus 均不重写。首次完整检查在 metadata drift 处正确失败；执行显式 Gallery --write 同步后重新完整检查，失败日志单独保留。M5-3 效果、M5-4 最终能力表与流程验收，以及 M4 剩余授权/播放和物理设备专项仍继续；尚未部署、上传或送审。
+
+最终完整 `./Scripts/release-readiness.sh` 退出 0：Mac **660 通过 / 0 失败 / 32 跳过**，iPhone 17 Simulator **670 通过 / 0 失败 / 31 跳过**，两个 xcresult 的 runtimeWarnings 均为空。Editor 52、预览引擎 158、Web Studio 88、Gallery 同步 2 项、90 内置模板/21 curated 包、生产 TypeScript/构建、两端 app build、既有 browser/Layout/Theme smoke、新 Assets smoke 和独立运行时/服务/存储探针均通过。SDK/link、Sendable 和 Xcode 版本解析诊断保留，跳过不算通过。完整 gate 后仅补文档/证据和 PR，不改产品代码。证据目录 `__Release/capabilities/assets/` 包含成功完整日志、metadata drift 失败日志、两端 summary 与 verification。M5-2 首批主题/资源据此勾选；M5 与完整 M3–M5 目标仍未完成。

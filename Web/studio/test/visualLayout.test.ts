@@ -5,7 +5,8 @@ import { EditorState } from "@codemirror/state";
 import { exportPackage, importPackage, newManifest } from "../../preview-engine/src/package/index.js";
 import { executePackageInNode } from "../../preview-engine/src/node.js";
 import { parseVisualLayout, editVisualLayout } from "../../../Editor/editorfe/src/visualLayout.js";
-import { parseWidgetTheme, editWidgetTheme, widgetThemePresets } from "../../../Editor/editorfe/src/widgetTheme.js";
+import { parseWidgetTheme, editWidgetTheme, widgetThemePresets, initializeWidgetTheme } from "../../../Editor/editorfe/src/widgetTheme.js";
+import { insertVisualAsset, visualAssetLicense } from "../../../Editor/editorfe/src/visualAssets.js";
 
 test("visual edits survive Package 2.0 export/import with all unrelated source and binary files intact", async () => {
   const source = '// Keep comments\nconst day="Monday";\n$render(<vstack spacing="8"><text>Hello</text><text>{day}</text></vstack>);\n';
@@ -66,5 +67,26 @@ test("themes edited in real native WKWebView render identically on Web and survi
     assert.equal(imported.files["main.jsx"], changed); assert.deepEqual(imported.files["images/keep.bin"], files["images/keep.bin"]);
     const result = await executePackageInNode({files: imported.files, environments:{"widget-size":"medium"}});
     assert.equal(result.error,null); assert.equal(result.tree,fixture.examples[name].tree,name);
+  }
+});
+
+test("original JSX and package image insertions match native WKWebView/JSC and retain licenses/resources on export", async () => {
+  const fixture = JSON.parse(fs.readFileSync(new URL("../../preview-engine/test/parity/asset-edit-trees.json",import.meta.url),"utf8"));
+  const sample = new Uint8Array(fs.readFileSync(new URL("../../preview-engine/test/parity/assets/Sample.png",import.meta.url)));
+  assert.equal(fixture.formatVersion,1); assert.equal(Object.keys(fixture.examples).length,8);
+  for (const [key, example] of Object.entries(fixture.examples) as [string,{source:string;tree:string}][]) {
+    let source = fixture.original as string;
+    if (key.startsWith("themed-")) source = EditorState.create({doc:source}).update(initializeWidgetTheme(source)).state.doc.toString();
+    const model = parseVisualLayout(source), kind = key.split("-")[1]!;
+    const edit = insertVisualAsset(model, source, {id:model.roots[0]!,kind,path:"image/Sample.png"},["image/Sample.png"]);
+    const changed = EditorState.create({doc:source}).update({changes:edit.changes}).state.doc.toString();
+    assert.equal(changed, example.source, key);
+    assert.equal(changed.includes(visualAssetLicense),kind!=="photo");
+    const files = {"main.jsx":changed,"widget.json":JSON.stringify(newManifest("Asset parity")),"image/Sample.png":sample,"lib/keep.js":"// Unrelated user code\n"};
+    const archive = exportPackage(files); assert.equal(archive.error,undefined);
+    const imported = await importPackage(archive.bytes!); assert.equal(imported.error,undefined);
+    assert.equal(imported.files["main.jsx"],changed); assert.deepEqual(imported.files["image/Sample.png"],sample); assert.equal(imported.files["lib/keep.js"],files["lib/keep.js"]);
+    const result = await executePackageInNode({files:imported.files,environments:{"widget-size":"medium"}});
+    assert.equal(result.error,null); assert.equal(result.tree,example.tree,key);
   }
 });

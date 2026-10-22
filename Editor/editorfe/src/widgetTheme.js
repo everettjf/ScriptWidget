@@ -61,7 +61,7 @@ export function parseWidgetTheme(source) {
       let direct = false;
       for (const statement of children(tree.topNode)) {
         const call = statement.firstChild;
-        if (statement.name === "ExpressionStatement" && call?.name === "CallExpression" && source.slice(call.firstChild.from, call.firstChild.to) === "$render" && call.from < layout.nodes[0].from && call.to > layout.nodes[0].to) direct = true;
+        if (layout.nodes[0] && statement.name === "ExpressionStatement" && call?.name === "CallExpression" && source.slice(call.firstChild.from, call.firstChild.to) === "$render" && call.from < layout.nodes[0].from && call.to > layout.nodes[0].to) direct = true;
       }
       model.canInitialize &&= direct;
       return model;

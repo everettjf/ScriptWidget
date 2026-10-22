@@ -7,6 +7,7 @@ export const StudioMessage = Object.freeze({
   documentChanged: "document.changed",
   documentSave: "document.save",
   documentSetReadOnly: "document.setReadOnly",
+  documentResources: "document.resources",
   editorInsert: "editor.insert",
   editorFormat: "editor.format",
   editorSetTheme: "editor.setTheme",

@@ -164,6 +164,14 @@ final class EditorInternalWebView: WKWebView {
             self?.scheduleDraftSnapshot()
             callback?(["result": "ok"])
         }
+
+        bridge?.register(handlerName: StudioProtocol.documentResources) { [weak self] parameters, callback in
+            guard let self, let id = self.currentDocumentID,
+                  parameters?["documentID"] as? String == id, let model = self.scriptModel else {
+                callback?(["result": "failed"]); return
+            }
+            callback?(["result": "ok", "documentID": id, "resources": model.package.editorImageResources()])
+        }
     }
 
     private func openCurrentDocument() {
@@ -179,6 +187,7 @@ final class EditorInternalWebView: WKWebView {
                 "content": recovered,
                 "version": 0,
                 "readOnly": model.package.readonly,
+                "resources": model.package.editorImageResources(),
             ]
         )
     }

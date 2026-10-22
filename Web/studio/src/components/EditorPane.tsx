@@ -49,6 +49,8 @@ export function EditorPane({ project, path, saveState, colorScheme, onChange }: 
     if (instance.currentPath !== path || instance.view.state.doc.toString() !== value) instance.open(path, value);
   }, [project.id, path, value]);
 
+  useEffect(() => { editor.current?.setResources(Object.keys(project.files)); }, [project.id, project.files, path, value]);
+
   const imageURL = useMemo(() => (value instanceof Uint8Array ? resourceURLs({ [path]: value })[path] : undefined), [path, value]);
 
   return (

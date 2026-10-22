@@ -40,6 +40,8 @@ struct MirrorEditorScriptView: UIViewRepresentable {
         } onIsReadOnly: {
             
             return model.package.readonly
+        } onResources: {
+            model.package.editorImageResources()
         }
         return provider
     }
