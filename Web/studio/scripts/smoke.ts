@@ -16,6 +16,20 @@ const studioURL = `${server.origin}${siteRoot ? "/studio/index.html" : "/index.h
 const exceptions = (page: ChromePage) => page.consoleMessages.filter((line) => line.startsWith("exception") || line.startsWith("error"));
 let failed = false;
 
+// A rendered preview can be ready while the Gallery dialog is still animating
+// closed. Hit-test the actual pointer target instead of clicking through it.
+async function clickReady(page: ChromePage, expression: string): Promise<void> {
+  await page.evaluate(`(${expression}).scrollIntoView({block:'center',inline:'center'})`);
+  const hitTest = `(() => {const target=(${expression});if(!target)return false;const r=target.getBoundingClientRect();const hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return r.width>0&&r.height>0&&!target.disabled&&!!hit&&target.contains(hit);})()`;
+  if (!(await page.evaluate<boolean>(hitTest))) {
+    console.log("pointer target waiting:", await page.evaluate<string>(`(() => {const target=(${expression}),r=target.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return JSON.stringify({target:target.textContent,hit:hit?.tagName,slot:hit?.getAttribute('data-slot'),state:hit?.getAttribute('data-state')});})()`));
+  }
+  await page.waitFor(hitTest);
+  const point = await page.evaluate<{x:number;y:number}>(`(() => {const r=(${expression}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+  await page.call("Input.dispatchMouseEvent",{type:"mousePressed",...point,button:"left",clickCount:1});
+  await page.call("Input.dispatchMouseEvent",{type:"mouseReleased",...point,button:"left",clickCount:1});
+}
+
 async function desktop(): Promise<void> {
   const chrome = await launchChrome({ width: 1400, height: 900, scale: 1 });
   try {
@@ -159,9 +173,7 @@ async function calendarScope(): Promise<void> {
     await page.waitFor("!!document.getElementById('template-copy')");
     await page.evaluate("document.getElementById('template-copy').click()");
     await page.waitFor("!document.getElementById('template-detail') && document.querySelector('.sw-widget')?.textContent.includes('Read and recharge')", 20000);
-    const tabPoint = await page.evaluate<{x:number;y:number}>("(() => {const r=[...document.querySelectorAll('[role=tab]')].find((tab) => tab.textContent === 'Mock Data').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()");
-    await page.call("Input.dispatchMouseEvent", {type:"mousePressed",...tabPoint,button:"left",clickCount:1});
-    await page.call("Input.dispatchMouseEvent", {type:"mouseReleased",...tabPoint,button:"left",clickCount:1});
+    await clickReady(page, "[...document.querySelectorAll('[role=tab]')].find(tab=>tab.textContent==='Mock Data')");
     await page.waitFor("document.querySelector('[role=tab][aria-selected=true]')?.textContent === 'Mock Data' && document.getElementById('mock-data-panel').offsetParent !== null");
     await page.waitFor("!!document.getElementById('mock-group')");
     await page.evaluate("(() => {const input=document.getElementById('mock-group');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,'calendar');input.dispatchEvent(new Event('change',{bubbles:true}));})()");
@@ -194,9 +206,7 @@ async function connectedServices(): Promise<void> {
     const page = await chrome.newPage();
     await page.call("Emulation.setEmulatedMedia",{features:[{name:"prefers-color-scheme",value:"light"}]});
     const openMocks = async () => {
-      const point = await page.evaluate<{x:number;y:number}>("(() => {const r=[...document.querySelectorAll('[role=tab]')].find(tab=>tab.textContent==='Mock Data').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()");
-      await page.call("Input.dispatchMouseEvent",{type:"mousePressed",...point,button:"left",clickCount:1});
-      await page.call("Input.dispatchMouseEvent",{type:"mouseReleased",...point,button:"left",clickCount:1});
+      await clickReady(page, "[...document.querySelectorAll('[role=tab]')].find(tab=>tab.textContent==='Mock Data')");
       await page.waitFor("document.querySelector('[role=tab][aria-selected=true]')?.textContent==='Mock Data' && document.getElementById('mock-data-panel').offsetParent!==null");
     };
     await page.goto(studioURL);
@@ -249,12 +259,12 @@ async function musicPlayback(): Promise<void> {
   const chrome = await launchChrome({width:1400,height:1000,scale:1});
   try {
     const page = await chrome.newPage();
+    // Make the closing Gallery overlay outlive its fast widget preview so the
+    // real pointer test consistently exercises the transition, including CI.
+    await page.call("Animation.enable");
+    await page.call("Animation.setPlaybackRate",{playbackRate:0.1});
     await page.call("Emulation.setEmulatedMedia",{features:[{name:"prefers-color-scheme",value:"light"}]});
-    const click = async (expression: string) => {
-      const point = await page.evaluate<{x:number;y:number}>(`(() => {const r=(${expression}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
-      await page.call("Input.dispatchMouseEvent",{type:"mousePressed",...point,button:"left",clickCount:1});
-      await page.call("Input.dispatchMouseEvent",{type:"mouseReleased",...point,button:"left",clickCount:1});
-    };
+    const click = (expression: string) => clickReady(page, expression);
     const select = async (id: string, value: string) => page.evaluate(`(() => {const input=document.getElementById(${JSON.stringify(id)});Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
     await page.goto(studioURL);
     await page.waitFor("!!document.querySelector('.sw-widget')",20000);
