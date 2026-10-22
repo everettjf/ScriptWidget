@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { launchChrome, serveDirectory, type ChromePage } from "../../preview-engine/scripts/lib/chrome.mjs";
+import { launchChrome, serveDirectory, clickReady, type ChromePage } from "../../preview-engine/scripts/lib/chrome.mjs";
 
 const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../dist");
 const fixture = fs.readFileSync(path.resolve(dist, "../../preview-engine/test/fixtures/web-export.swt"));
@@ -16,19 +16,6 @@ const studioURL = `${server.origin}${siteRoot ? "/studio/index.html" : "/index.h
 const exceptions = (page: ChromePage) => page.consoleMessages.filter((line) => line.startsWith("exception") || line.startsWith("error"));
 let failed = false;
 
-// A rendered preview can be ready while the Gallery dialog is still animating
-// closed. Hit-test the actual pointer target instead of clicking through it.
-async function clickReady(page: ChromePage, expression: string): Promise<void> {
-  await page.evaluate(`(${expression}).scrollIntoView({block:'center',inline:'center'})`);
-  const hitTest = `(() => {const target=(${expression});if(!target)return false;const r=target.getBoundingClientRect();const hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return r.width>0&&r.height>0&&!target.disabled&&!!hit&&target.contains(hit);})()`;
-  if (!(await page.evaluate<boolean>(hitTest))) {
-    console.log("pointer target waiting:", await page.evaluate<string>(`(() => {const target=(${expression}),r=target.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return JSON.stringify({target:target.textContent,hit:hit?.tagName,slot:hit?.getAttribute('data-slot'),state:hit?.getAttribute('data-state')});})()`));
-  }
-  await page.waitFor(hitTest);
-  const point = await page.evaluate<{x:number;y:number}>(`(() => {const r=(${expression}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
-  await page.call("Input.dispatchMouseEvent",{type:"mousePressed",...point,button:"left",clickCount:1});
-  await page.call("Input.dispatchMouseEvent",{type:"mouseReleased",...point,button:"left",clickCount:1});
-}
 
 async function desktop(): Promise<void> {
   const chrome = await launchChrome({ width: 1400, height: 900, scale: 1 });

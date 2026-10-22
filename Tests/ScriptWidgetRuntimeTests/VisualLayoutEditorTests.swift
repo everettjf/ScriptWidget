@@ -96,6 +96,58 @@ final class VisualLayoutEditorTests: XCTestCase {
         XCTAssertEqual(undoStillDisabled,true)
         let retained = try await content(web); XCTAssertEqual(retained, other)
     }
+    @MainActor func testRetiredLayoutFormsCannotEditAnotherFileWithIdenticalSource() async throws {
+        let web = try await editor(); try await open(web, source: source)
+        _ = try await evaluate(web, """
+        document.querySelector('.sw-layout-toggle').click();
+        [...document.querySelectorAll('.sw-layout-layer')].find(row=>row.textContent.includes('Calm morning')).click();
+        const input=document.querySelector('input[aria-label="Layer text"]');
+        input.value='Retired text'; window.retiredTextForm=input.closest('form');
+        window.retiredPropertyForm=document.querySelector('select[aria-label="Layout property"]').closest('form');
+        document.querySelector('[aria-label="Layout property value"]').value='#ff0000';
+        """)
+        try await open(web, source: source, id: "fixture/identical.jsx")
+        _ = try await evaluate(web, "window.retiredTextForm.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));window.retiredPropertyForm.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));")
+        let retained = try await content(web); XCTAssertEqual(retained, source)
+    }
+    @MainActor func testRetiredAssetsAndUndoCannotChangeTheCurrentFile() async throws {
+        let web = try await editor(); try await open(web, source: source)
+        let buttons = "[...document.querySelectorAll('.sw-layout button')].find(button=>button.textContent==="
+        _ = try await evaluate(web, buttons + "'Assets').click();window.retiredAsset=" + buttons + "'Insert Pebble friend');void 0;")
+        try await open(web, source: source, id: "fixture/identical.jsx")
+        _ = try await evaluate(web, "window.retiredAsset.click()")
+        let retained = try await content(web); XCTAssertEqual(retained, source)
+        _ = try await evaluate(web, "document.querySelector('.sw-layout-toggle').click();document.querySelectorAll('.sw-layout-layer')[0].click();" + buttons + "'Add text').click();window.retiredUndo=" + buttons + "'Undo');void 0;")
+        let edited = try await content(web)
+        try await open(web, source: edited, id: "fixture/third.jsx")
+        _ = try await evaluate(web, "document.querySelector('.sw-layout-toggle').click();document.querySelectorAll('.sw-layout-layer')[0].click();" + buttons + "'Add spacer').click();")
+        let third = try await content(web); XCTAssertNotEqual(third, edited)
+        _ = try await evaluate(web, "window.retiredUndo.click()")
+        let afterUndo = try await content(web); XCTAssertEqual(afterUndo, third)
+    }
+    @MainActor func testRetiredThemeFormCannotEditAnotherFileWithIdenticalSource() async throws {
+        let web = try await editor(); try await open(web, source: source)
+        let buttons = "[...document.querySelectorAll('.sw-layout button')].find(button=>button.textContent==="
+        _ = try await evaluate(web, buttons + "'Theme').click();" + buttons + "'Connect layout to Meadow theme').click();")
+        let themed = try await content(web)
+        _ = try await evaluate(web, "const input=document.querySelector('input[aria-label=\"Theme background\"]');input.value='#ff0000';window.retiredThemeForm=input.closest('form');void 0;")
+        try await open(web, source: themed, id: "fixture/identical-themed.jsx")
+        _ = try await evaluate(web, "window.retiredThemeForm.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}))")
+        let retained = try await content(web); XCTAssertEqual(retained, themed)
+    }
+    @MainActor func testControlsRetiredByPanelRerenderCannotEditTheSameDocument() async throws {
+        let web = try await editor(); try await open(web, source: source)
+        _ = try await evaluate(web, """
+        document.querySelector('.sw-layout-toggle').click();
+        [...document.querySelectorAll('.sw-layout-layer')].find(row=>row.textContent.includes('Calm morning')).click();
+        const input=document.querySelector('input[aria-label="Layer text"]');input.value='Retired text';window.retiredForm=input.closest('form');
+        [...document.querySelectorAll('.sw-layout button')].find(button=>button.textContent==='Assets').click();
+        window.retiredAsset=[...document.querySelectorAll('.sw-layout button')].find(button=>button.textContent==='Insert Pebble friend');
+        [...document.querySelectorAll('.sw-layout button')].find(button=>button.textContent==='Theme').click();
+        window.retiredForm.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true}));window.retiredAsset.click();
+        """)
+        let retained = try await content(web); XCTAssertEqual(retained, source)
+    }
     @MainActor func testNativeUnsupportedRootsKeepSourceAndShowTheCodeBoundary() async throws {
         let web = try await editor(), code = "const widget=<text>Do not rewrite</text>;$render(widget);"
         try await open(web, source: code)

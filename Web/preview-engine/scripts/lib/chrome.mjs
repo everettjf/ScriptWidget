@@ -162,3 +162,17 @@ export async function launchChrome({ width = 800, height = 800, scale = 2, start
     },
   };
 }
+
+// A rendered preview can be ready while the Gallery dialog is still animating
+// closed. Hit-test the actual pointer target instead of clicking through it.
+export async function clickReady(page, expression) {
+  await page.evaluate(`(${expression}).scrollIntoView({block:'center',inline:'center',behavior:'instant'})`);
+  const hitTest = `(async () => {const target=(${expression});if(!target)return false;target.scrollIntoView({block:'center',inline:'center',behavior:'instant'});const before=target.getBoundingClientRect();await new Promise(requestAnimationFrame);const r=target.getBoundingClientRect();const stable=['x','y','width','height'].every(key=>Math.abs(before[key]-r[key])<0.5);const hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return stable&&r.width>0&&r.height>0&&!target.disabled&&!!hit&&target.contains(hit);})()`;
+  if (!(await page.evaluate(hitTest))) {
+    console.log("pointer target waiting:", await page.evaluate(`(() => {const target=(${expression}),r=target.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return JSON.stringify({target:target.textContent,hit:hit?.tagName,slot:hit?.getAttribute('data-slot'),state:hit?.getAttribute('data-state')});})()`));
+  }
+  await page.waitFor(hitTest);
+  const point = await page.evaluate(`(() => {const r=(${expression}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+  await page.call("Input.dispatchMouseEvent",{type:"mousePressed",...point,button:"left",clickCount:1});
+  await page.call("Input.dispatchMouseEvent",{type:"mouseReleased",...point,button:"left",clickCount:1});
+}

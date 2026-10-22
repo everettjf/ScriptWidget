@@ -2,21 +2,19 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { launchChrome, serveDirectory } from "../../preview-engine/scripts/lib/chrome.mjs";
+import { launchChrome, serveDirectory, clickReady } from "../../preview-engine/scripts/lib/chrome.mjs";
 import { importPackage } from "../../preview-engine/src/package/index.js";
 
 const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../dist");
 const server = await serveDirectory(dist), chrome = await launchChrome({ width: 1440, height: 1100, scale: 1 });
 try {
   const page = await chrome.newPage();
+  // Exercise real pointer operations while dialogs take longer to settle.
+  await page.call("Animation.enable");
+  await page.call("Animation.setPlaybackRate", { playbackRate: 0.25 });
   await page.call("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "light" }] });
   await page.goto(`${server.origin}/index.html`); await page.waitFor("!!document.querySelector('.sw-widget')", 20000);
-  const click = async (expression: string) => {
-    await page.evaluate(`(${expression}).scrollIntoView({block:'center'})`);
-    const position = await page.evaluate<{ x: number; y: number }>(`(()=>{const r=(${expression}).getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2}})()`);
-    await page.call("Input.dispatchMouseEvent", { type: "mousePressed", ...position, button: "left", clickCount: 1 });
-    await page.call("Input.dispatchMouseEvent", { type: "mouseReleased", ...position, button: "left", clickCount: 1 });
-  };
+  const click = (expression: string) => clickReady(page, expression);
   const id = (value: string) => `document.getElementById(${JSON.stringify(value)})`;
   const set = async (name: string, value: string) => page.evaluate(`(()=>{const input=${id(name)};Object.getOwnPropertyDescriptor(${name === "wallpaper-appearance" || name === "wallpaper-content" ? "HTMLSelectElement" : "HTMLInputElement"}.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('${name === "wallpaper-appearance" || name === "wallpaper-content" ? "change" : "input"}',{bubbles:true}));})()`);
   const upload = async () => page.evaluate(`(async()=>{const canvas=document.createElement('canvas');canvas.width=1179;canvas.height=2556;const c=canvas.getContext('2d'),gradient=c.createLinearGradient(0,0,1179,2556);gradient.addColorStop(0,'#f8dcc7');gradient.addColorStop(0.55,'#d9dfc7');gradient.addColorStop(1,'#6b9b83');c.fillStyle=gradient;c.fillRect(0,0,1179,2556);c.fillStyle='#eebfa2';c.beginPath();c.arc(850,650,230,0,Math.PI*2);c.fill();c.fillStyle='#47765f';c.beginPath();c.moveTo(0,1800);c.bezierCurveTo(300,1200,800,2000,1179,1500);c.lineTo(1179,2556);c.lineTo(0,2556);c.fill();const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));const data=new DataTransfer();data.items.add(new File([blob],'private-location-wallpaper.png',{type:'image/png'}));const input=document.getElementById('wallpaper-image-input');input.files=data.files;input.dispatchEvent(new Event('change',{bubbles:true}));})()`);

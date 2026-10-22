@@ -1047,3 +1047,26 @@ N01 整体流程审核继续，N02 旧私有动画替代及 Web/native 周期一
 在实际 Chrome 中将 Gallery CSS 动画播放速率设为 0.1，保持预览真实执行，用鼠标事件重现退出遮罩比预览结束更晚的场景。无等待负对照 `/tmp/scriptwidget-smoke-pointer-negative.ts` 退出 1，命中记录为 `{target:Mock Data,hit:DIV,slot:dialog-overlay,state:closed}`，随后产生与 CI 相同的选中标签超时。加入滚动与真实 `elementFromPoint` 命中检查后，相同受控动画场景退出 0，Music 全部状态及保存重载通过。没有增加超时或关闭产品动画，也没有把真实点击替换成程序化点击。Calendar/GitHub 的同类操作使用同一就绪检查。
 
 证据：`/tmp/scriptwidget-pointer-negative.log`、`/tmp/scriptwidget-pointer-transition-smoke.log`；这只修正测试交互时机，产品源码未变。远端最终 gate 仍待验证。
+
+## 2026-10-22：编辑器旧控件与水族箱收尾
+
+新增真实 WKWebView 回归，在同源码不同 documentID 下持有旧表单。修复前 Mac 运行 `14-57-22` 的 xcresult 失败，显示新文件中的 Calm morning 被替换为 Retired text。面板现在按销毁状态与 DOM 归属拒绝已退休控件；统一覆盖 click/submit/change/keyboard/drag，属性表单也受保护，保留现有资源刷新 nonce/文档检查。两端 bundle 已由相同源码重新生成。
+
+新增四项回归覆盖跨文件的文字/属性表单、素材/Undo、主题，以及同文件重绘后控件。Mac 最终聚焦运行 `14-59-16` 为 19 通过/0 失败/1 跳过；iPad 运行 `15-04-48` 合并快照导出为 20 通过/0 失败/1 跳过，runtimeWarnings 为空。此前新增测试把 DOM 对象作为脚本返回值传给 WK 桥接，导致两项 InvalidTransition；已改为 void 返回。旧 iPhone 运行也记录这两项测试错误，Xcode 随后卡在收集模拟器诊断；确认父子进程及工作目录并保存采样后，仅终止其 simctl 诊断子进程，让原 xcodebuild 以 65 结束。没有重置模拟器或把旧运行计为通过。
+
+Aquarium 改用单个生物单个 cell、分 family 数量和小范围摆动，八种 family 共 16 张原生/Web 实际截图无旧有省略号和海床换行。小号 4.06%（旧 14.35%）；全组 0.98–4.66%、中位 2.82%，细微像素对齐差异仍保留，不调整比较阈值或声称像素一致。截图与比较说明见 public-animations.md。真实原生树重新导出并语义比较，只有 Aquarium 条目变化，保留原文件格式。第一次完整 gate 因旧树基准失败（退出 1）；更新后重新执行，最终结果另记。
+
+证据汇总在本地 `__Release/capabilities/ab-completion/`，原始 xcresult 在现有 DerivedData 下；本项仍未完成真机/部署验收。
+
+### 本批最终本地回归
+
+完整 `release-readiness.sh`（`/tmp/scriptwidget-ab-completion-final-readiness.log`）退出 0：Mac 675 通过/0 失败/32 跳过，iPhone 17 Simulator 685 通过/0 失败/31 跳过；两个 xcresult 的 runtimeWarnings 均为空。确切路径：
+
+- Mac：`/tmp/scriptwidget-runtime-delivery/macos-tests/Logs/Test/Test-ScriptWidgetRuntimeTests-2026.10.22_15-08-32--0700.xcresult`
+- iPhone：`/tmp/scriptwidget-runtime-delivery/ios-tests/Logs/Test/Test-ScriptWidgetRuntimeTests-2026.10.22_15-10-52--0700.xcresult`
+
+随后将命中检查提取到测试专用 Chrome helper，并对 Wallpaper 使用同样检查。初版只滚动一次，在真实异步上传后出现 Cancel 无法命中；改成每次检查滚动到当前目标并跨 animation frame 验证几何位置稳定，保留鼠标输入。放慢 CSS 动画后的完整 Wallpaper 流程通过。最新测试工具代码以 `SCRIPTWIDGET_SKIP_XCODE=1 ./Scripts/release-readiness.sh` 再验退出 0（`/tmp/scriptwidget-ab-completion-web-final.log`），涵盖所有浏览器流程、Editor 52、engine 172、Studio 96、Gallery sync 2 和生产构建；没有将该次 skip-Xcode 运行计成原生测试。产品与原生测试源码未再变化。
+
+设备构建矩阵退出 0（`/tmp/scriptwidget-ab-completion-matrix.log`）。SDK/link/Sendable/Xcode 诊断仍保留，非 runtimeWarnings 清零的含义。远端运行 39862348666 的 Studio Mock Data 已通过，在旧版 Wallpaper smoke 中超时，尚未运行独立探针；新工具及产品候选仍须最终 CI。iPad 全量结果另记。
+
+最终 `ipad-icloud-tests.sh` 退出 0：iPad Pro 13-inch (M5) Simulator 685 通过/0 失败/31 跳过，runtimeWarnings 为空；xcresult：`/tmp/scriptwidget-ab-ipad-tests/ipad/Logs/Test/Test-ScriptWidgetRuntimeTests-2026.10.22_15-12-40--0700.xcresult`。日志 `/tmp/scriptwidget-ab-completion-ipad.log`。该次仅运行确定性模拟器状态测试，未提供任何真实 iCloud writer/reader/device 参数，不计真实签名容器或跨设备 iCloud 通过。

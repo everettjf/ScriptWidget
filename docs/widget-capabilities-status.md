@@ -10,7 +10,7 @@
 | M3：个人数据 | 指定来源日历；指定列表提醒事项读取及显式写入、操作回执；选定照片/相册快照与轮换；健康睡眠、活动、运动摘要 | 只使用授权范围内的数据；真实授权/撤权和有限照片选择仍需真机验收 |
 | M4：GitHub 和 Music | 原生 GitHub 连接、Keychain 凭据、逐组件授权和受限资料代理；iOS Apple Music 只读播放快照、设置与模板 | macOS Music 明确不可用；没有播放控制 |
 | M5：创作工具 | iOS/macOS/Web Layout、Theme、Assets；JSX 支持子集内编辑、撤销和源码保留；公开材质与回退；壁纸裁切和可导出配置 | 动态 JavaScript 继续通过 Code 编辑；Web 材质是有说明的近似效果 |
-| M5：公开动画与 GIF | 私有桥接已移除，改用公开时间轴/旋转/位移、有界 ImageIO；原生/Web 时相与静态回退对齐，固定快照时钟统一 | 系统调度不保证永久动画；小号水族箱排版与真实扩展内存/WidgetKit/AOD 验收仍待完成 |
+| M5：公开动画与 GIF | 私有桥接已移除，改用公开时间轴/旋转/位移、有界 ImageIO；原生/Web 时相与静态回退对齐，固定快照时钟统一 | 系统调度不保证永久动画；小号水族箱截断已修复；真实扩展内存/WidgetKit/AOD 验收仍待完成 |
 | Web Studio 对齐 | 已新增 API 的可编辑默认样例、授权/空数据/错误场景，服务独立 fixture；浏览器编辑、保存重载和导出验证 | Web 不访问手机私人数据、不连接真实服务，mock 不作为原生真实数据导出 |
 
 ## 本轮移除
@@ -19,10 +19,12 @@ Spotify 条件接入、授权/刷新、播放读取及内部写操作记录已�
 
 ## 验证与交付状态
 
-公开动画最终实现的 `./Scripts/release-readiness.sh` 通过：Mac **671 / 0 失败 / 32 跳过**，iPhone 17 Simulator **681 / 0 失败 / 31 跳过**。iPad Pro 13-inch (M5) Simulator **681 / 0 失败 / 31 跳过**，三端 runtimeWarnings 均为空。Editor 52、预览引擎 172、Web Studio 96、服务 probe 24、91 模板/22 curated 包、保留的浏览器流程及两端 app build 通过；构建矩阵通过。实际跨浏览器动画、127 树及隔离检查在 Chromium/WebKit 通过，本机 Firefox 启动失败，不计通过；[Linux/Windows 跨浏览器 CI](https://github.com/everettjf/scriptwidget/actions/runs/39859999773) 已在 `03fe86d` 通过。整模板比较 9 张，中位差异 0.48%，小号水族箱 14.35% 仍为 N01 待修。SDK/link/Sendable/Xcode 诊断保留。证据见 [实施记录](widget-capabilities-execution.md)。A/B 仍未全部完成。
+`03fe86d` 产品基线的 `./Scripts/release-readiness.sh` 通过：Mac **671 / 0 失败 / 32 跳过**，iPhone 17 Simulator **681 / 0 失败 / 31 跳过**。iPad Pro 13-inch (M5) Simulator **681 / 0 失败 / 31 跳过**，三端 runtimeWarnings 均为空。Editor 52、预览引擎 172、Web Studio 96、服务 probe 24、91 模板/22 curated 包、保留的浏览器流程及两端 app build 通过；构建矩阵通过。实际跨浏览器动画、127 树及隔离检查在 Chromium/WebKit 通过，本机 Firefox 启动失败，不计通过；[Linux/Windows 跨浏览器 CI](https://github.com/everettjf/scriptwidget/actions/runs/39859999773) 已在 `03fe86d` 通过。该基线整模板比较 9 张，中位差异 0.48%，其中小号水族箱 14.35%；后续修复的独立比较见下文。SDK/link/Sendable/Xcode 诊断保留。证据见 [实施记录](widget-capabilities-execution.md)。A/B 仍未全部完成。
 
 当前是本地开发与验证成果：没有执行本轮 Web 部署、原生商店构建上传或 App Review 提交。App Review 仍由用户操作。真机、签名 Keychain/iCloud、WidgetKit 调度、Always On 和扩展内存验收未完成，不能称作已满足全部发版门槛。完整门槛见 [发布检查](release-readiness.md)。
 
 ## 当前收尾顺序
 
 按 [新版规划](widget-capabilities-plan.md) 分四批：剩余缺陷 → B 三端验收 → A 真机验收 → 最终回归与发布。当前新增确认的阻塞为 [Release Readiness CI](https://github.com/everettjf/scriptwidget/actions/runs/39860010673) 探针加载 `XCTestCore.framework` 失败；与本地 gate 通过分别记录。相同源码切换文件后的旧控件行为仍为待验证风险，尚未称作已确认缺陷。规划整理未修改产品代码，未新增测试或发布证据。
+
+编辑器旧表单串改问题已修复，四项新增回归纳入两端 bundle；Mac 聚焦 19 通过/1 跳过，iPad 连同快照导出 20 通过/1 跳过，均 0 失败。水族箱八种 family 的 16 张比较为 0.98–4.66%，小号 4.06%，无旧有截断/换行；仍存在细微像素对齐差异，见 [截图](public-animations.md)。新增测试曾发生 DOM 返回值桥接错误，已修复；旧 iPhone 运行失败不计通过。本批完整 gate 已退出 0：Mac 675 / iPhone Simulator 685 通过、均 0 失败，分别跳过 32/31 项，runtimeWarnings 为空；后续测试工具调整经最终 Web gate 再验退出 0。构建矩阵通过，iPad 模拟器 685 通过/0 失败/31 跳过、runtimeWarnings 为空；远端最终 CI 待确认，当前仍不宣称 A/B 全部完成。

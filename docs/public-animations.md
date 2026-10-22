@@ -18,7 +18,7 @@ Apple documents [data-update animations in widgets](https://developer.apple.com/
 The Runtime 1.4 candidate keeps the same property/tag strings and Package/compiler ABI 1.0; scripts do not need rewriting. The implementation and browser semantics change from the previous experimental private path. Preview engine **0.18.0** records this change. No permanent-loop guarantee is carried forward, and this change is not evidence that an existing animation will run continuously on a Home Screen.
 
 - `clockSecond`, `clockMinute` (including the old `clockMiniute` alias) and `clockHour` use local wall-clock components in their configured timezone. Standard periods are 60, 3,600 and 43,200 seconds.
-- `clockCustom,n` and JSON `type:"clock"` retain signed **half-turn** intervals: a full turn takes `2 * abs(n)` seconds. Negative values reverse direction. Magnitudes below 0.25 seconds become 0.25 with the same sign. Nonfinite raw quick values do not start an animation; malformed/nonfinite JSON shows a generic error without logging source contents.
+- `clockCustom,n` and JSON `type:"clock"` retain signed **half-turn** intervals: a full turn takes `2 * abs(n)` seconds. Negative values reverse direction. Magnitudes below 0.25 seconds become 0.25 with the same sign. Nonfinite raw quick values do not start an animation; malformed/nonfinite JSON shows a generic error on iOS without logging source contents; unsupported or invalid Mac effects stay at rest.
 - Custom phase is deterministic from the 2001 reference epoch plus the timezone offset at the selected date, including DST. This replaces the opaque private implementation's phase. Old previews that clamped negative intervals or treated `n` as a full cycle will change; source stays intact.
 - Swing uses a sinusoidal offset with a full cycle of twice `duration`, starts at zero and respects signed `distance`. Duration is bounded to 0.1–86,400 seconds (invalid/nonpositive values use one second); distance is bounded to ±10,000 points. Mac swing remains static. CSS live easing is sampled; explicit `animationElapsed` gives the exact deterministic pose.
 - GIF frames use their cumulative delays without expanding duplicated images or arc/mask overlays. Snapshots now use the first frame in both native and browser rendering, replacing the browser's former weighted rest-frame approximation. Existing input/canvas/frame/decoded-byte bounds stay intact. Inactive/fixed native views decode only the first frame.
@@ -34,3 +34,17 @@ These tests cover app-hosted rendering and browser behavior. Actual physical Wid
 The actual native Clock template at the shared fixed snapshot time (hands and caption both show 4:00 AM):
 
 ![Public scheduled native clock snapshot](images/public-animation-clock-native.png)
+
+## Aquarium layout verification
+
+The Aquarium template now gives each creature its own bounded cell, varies its composition by widget family, and uses small swing distances. The small preview no longer truncates emoji rows or wraps the seabed. Accessories use static compact compositions; large/extra-large widgets add a swimming row. Edit this dynamic template in Code.
+
+| Previous Web small (`03fe86d`) | Current Web small | Current native small |
+| --- | --- | --- |
+| ![Previous small aquarium](images/aquarium-web-before-small.png) | ![Current Web small aquarium](images/aquarium-web-small.png) | ![Current native small aquarium](images/aquarium-native-small.png) |
+
+| Current Web medium | Current native medium |
+| --- | --- |
+| ![Current Web medium aquarium](images/aquarium-web-medium.png) | ![Current native medium aquarium](images/aquarium-native-medium.png) |
+
+At the fixed snapshot time, 16 native/Web comparisons cover all eight families and distinct iPhone/iPad profile sizes. Small differs by 4.06% (previously 14.35%); the full set ranges from 0.98% to 4.66%, with a 2.82% median. Fractional layout and emoji rasterization remain visibly slightly different; these results are not a claim of pixel-identical rendering. The old Web screenshot was captured from the original source through the same actual browser rendering pipeline. Native captures use SwiftUI on an iPad simulator with each profile's requested canvas dimensions; they do not certify physical WidgetKit behavior.

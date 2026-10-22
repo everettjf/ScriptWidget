@@ -13,9 +13,16 @@ function layoutPanel(view, options) {
   dom.setAttribute("aria-label", "Visual layout editor");
   let open = false, mode = "layout", model = null, selectedID = null, propertyName = "", dragging = null, destroyed = false, resourceRequest = 0;
   const token = String(Math.random());
+  // Detached controls can still receive queued/programmatic events. A matching
+  // source string does not prove that a control belongs to the current document.
+  const currentHandler = (target, action) => event => {
+    if (destroyed || !dom.contains(target)) { event.preventDefault(); return; }
+    return action(event);
+  };
+  const listen = (target, type, action) => target.addEventListener(type, currentHandler(target, action));
   const button = (label, action, disabled = false) => {
     const value = element("button", "sw-layout-button", label); value.type = "button"; value.disabled = disabled;
-    value.addEventListener("click", action); return value;
+    listen(value, "click", action); return value;
   };
   const toggle = button("Layout", () => { open = mode === "layout" ? !open : true; mode = "layout"; render(); view.requestMeasure(); });
   toggle.classList.add("sw-layout-toggle"); toggle.setAttribute("aria-expanded", "false");
@@ -37,10 +44,11 @@ function layoutPanel(view, options) {
     for (const node of containers) { const option = element("option", "", `${node.tag} · line ${view.state.doc.lineAt(node.from).number}`); option.value = node.id; destination.append(option); }
     if (containers.some(node => node.id === selectedID)) destination.value = selectedID;
     else selectedID = destination.value;
-    destination.addEventListener("change", () => { selectedID = destination.value; }); panel.append(destination);
+    listen(destination, "change", () => { selectedID = destination.value; }); panel.append(destination);
     const disabled = view.state.readOnly || !containers.length;
     if (!containers.length) panel.append(element("p", "sw-layout-notice", "Add a stack/grid with literal JSX children in Code to insert assets."));
     function insert(kind, path) {
+      if (destroyed) return;
       try {
         if (view.state.readOnly) throw new Error("This document is read only.");
         const edit = insertVisualAsset(model, view.state.doc.toString(), { id: destination.value, kind, path }, view.state.field(visualResources));
@@ -69,6 +77,7 @@ function layoutPanel(view, options) {
     panel.append(element("p", "sw-layout-notice", "Bloom mark, Leaf mark and Pebble friend: original ScriptWidget geometry, MIT licensed. Package photos retain their own rights. See the Studio assets documentation."));
   }
   function themeEdit(action, expected) {
+    if (destroyed) return;
     try {
       if (view.state.readOnly) throw new Error("This document is read only.");
       const source = view.state.doc.toString();
@@ -97,7 +106,7 @@ function layoutPanel(view, options) {
       if (field.type === "number") { input.type = "number"; input.min = "0"; input.max = String(field.maximum); input.step = "any"; }
       input.value = String(theme.tokens[name]); input.setAttribute("aria-label", `Theme ${name}`); input.disabled = locked;
       const submit = button(`Apply ${name}`, () => {}, locked); submit.type = "submit";
-      form.append(label, input, submit); form.addEventListener("submit", event => {
+      form.append(label, input, submit); listen(form, "submit", event => {
         event.preventDefault();
         const token = field.type === "number" ? (input.value.trim() ? Number(input.value) : NaN) : input.value;
         themeEdit(value => editWidgetTheme(theme, value, { ...theme.tokens, [name]: token }), source);
@@ -108,6 +117,7 @@ function layoutPanel(view, options) {
       button("Import theme JSON", () => themeEdit(value => editWidgetTheme(theme, value, importWidgetTheme(json.value).tokens), source), locked));
   }
   function apply(operation, expected = model?.source) {
+    if (destroyed) return;
     try {
       if (view.state.readOnly) throw new Error("This document is read only.");
       if (expected !== view.state.doc.toString()) throw new Error("Source changed during this operation. Select the layer again.");
@@ -118,6 +128,7 @@ function layoutPanel(view, options) {
     } catch (reason) { error.textContent = reason.message; error.hidden = false; }
   }
   function select(node) {
+    if (destroyed) return;
     selectedID = node.id; propertyName = "";
     view.dispatch({ selection: { anchor: node.from, head: node.to }, scrollIntoView: true, userEvent: "select.layout" });
     render();
@@ -148,7 +159,7 @@ function layoutPanel(view, options) {
       row.style.paddingInlineStart = `${8 + node.depth * 14}px`;
       row.setAttribute("role", "treeitem"); row.setAttribute("aria-level", String(node.depth + 1)); row.setAttribute("aria-selected", String(node.id === selected.id));
       row.tabIndex = node.id === selected.id ? 0 : -1; row.draggable = Boolean(movable);
-      row.addEventListener("keydown", event => {
+      listen(row, "keydown", event => {
         let next;
         if (event.key === "ArrowUp") next = model.nodes[Math.max(0, index - 1)];
         if (event.key === "ArrowDown") next = model.nodes[Math.min(model.nodes.length - 1, index + 1)];
@@ -157,17 +168,17 @@ function layoutPanel(view, options) {
         if (event.key === "Home") next = model.nodes[0]; if (event.key === "End") next = model.nodes.at(-1);
         if (next) { event.preventDefault(); event.stopPropagation(); select(next); listOfLayers().find(value => value.dataset.layerId === next.id)?.focus(); }
       });
-      row.addEventListener("dragstart", event => {
+      listen(row, "dragstart", event => {
         if (!movable) { event.preventDefault(); return; }
         dragging = { id: node.id, source: model.source }; event.dataTransfer.setData("application/x-scriptwidget-layer", token); event.dataTransfer.effectAllowed = "move";
       });
-      row.addEventListener("dragover", event => { if (dragging && parent?.structure && node.id !== dragging.id) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; } });
-      row.addEventListener("drop", event => {
+      listen(row, "dragover", event => { if (dragging && parent?.structure && node.id !== dragging.id) { event.preventDefault(); event.dataTransfer.dropEffect = "move"; } });
+      listen(row, "drop", event => {
         if (!dragging || event.dataTransfer.getData("application/x-scriptwidget-layer") !== token || !parent?.structure) return;
         event.preventDefault(); const held = dragging; dragging = null;
         apply({ type: "move", id: held.id, parentID: parent.id, index: parent.children.filter(id => id !== held.id).indexOf(node.id) }, held.source);
       });
-      row.addEventListener("dragend", () => { dragging = null; }); list.append(row);
+      listen(row, "dragend", () => { dragging = null; }); list.append(row);
     }
     function listOfLayers() { return [...dom.querySelectorAll(".sw-layout-layer")]; }
     const inspector = element("div", "sw-layout-inspector"), heading = element("div", "sw-layout-title", `<${selected.tag}>`);
@@ -177,7 +188,7 @@ function layoutPanel(view, options) {
       if (selected.textEditable) {
         const form = element("form", "sw-layout-form"), label = element("label", "", "Text"), input = element("input"); input.value = selected.text; input.setAttribute("aria-label", "Layer text");
         const submit = button("Apply text", () => {}); submit.type = "submit"; form.append(label, input, submit);
-        form.addEventListener("submit", event => { event.preventDefault(); apply({type: "text",id:selected.id,value:input.value}); }); inspector.append(form);
+        listen(form, "submit", event => { event.preventDefault(); apply({type: "text",id:selected.id,value:input.value}); }); inspector.append(form);
       }
       const definitions = Object.entries(visualPropertyDefinitions(selected)).filter(([, definition]) => supportedProperty(definition));
       const propertyForm = element("form", "sw-layout-form"), choose = element("select"); choose.setAttribute("aria-label", "Layout property");
@@ -196,13 +207,13 @@ function layoutPanel(view, options) {
         input.value = existing ? String(existing.value) : definition.values?.[0] ?? (definition.type === "boolean" ? "true" : "");
         const submit = button("Apply", () => {}); submit.type = "submit";
         controls.append(input, submit, button("Remove", () => apply({type:"property",id:selected.id,name:propertyName,remove:true}), !existing || definition.required));
-        propertyForm.onsubmit = event => {
+        propertyForm.onsubmit = currentHandler(propertyForm, event => {
           event.preventDefault();
           const value = definition.type === "boolean" ? input.value === "true" : definition.type === "number" ? (input.value.trim() ? Number(input.value) : NaN) : input.value;
           apply({type:"property",id:selected.id,name:propertyName,value});
-        };
+        });
       }
-      choose.addEventListener("change", renderProperty); renderProperty(); inspector.append(propertyForm);
+      listen(choose, "change", renderProperty); renderProperty(); inspector.append(propertyForm);
       const parent = model.nodes.find(node => node.id === selected.parentID), index = parent?.children.indexOf(selected.id) ?? -1;
       const actions = element("div", "sw-layout-actions");
       actions.append(button("Move up", () => apply({type:"move",id:selected.id,parentID:parent.id,index:index-1}), !parent?.structure || index <= 0),

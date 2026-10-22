@@ -10,10 +10,10 @@ Spotify 已移除；C 音乐控制扩展、D 远端/社交/Watch/系统监控已
 
 ## 当前基线
 
-- 开发成果已提交推送至 `03fe86d`；已有功能不重复开发。
-- 对应实现的本地完整 gate、iPad 模拟器状态测试和构建矩阵通过；计数与限制见 [状态表](widget-capabilities-status.md)。
+- 原产品基线 `03fe86d` 之后，已完成独立探针路径、编辑器旧控件隔离、水族箱布局和真实指针 smoke 修复；已有功能不重复开发。
+- 本批完整 gate：Mac 675 / iPhone Simulator 685 通过、均 0 失败；最终 Web gate 和构建矩阵通过。iPad 模拟器 685 通过/0 失败/31 跳过，计数与限制见 [状态表](widget-capabilities-status.md)。
 - 同一提交的 [Linux/Windows Web Browsers CI](https://github.com/everettjf/scriptwidget/actions/runs/39859999773) 通过。
-- [Release Readiness CI](https://github.com/everettjf/scriptwidget/actions/runs/39860010673) 失败：探针程序运行时找不到 `XCTestCore.framework`。本地通过不替代远端失败，需定位并修复。
+- 远端先后发现独立探针缺少 `XCTestCore.framework` 搜索路径和真实指针 smoke 抢在遮罩/布局稳定前点击。修复已在本地验证；[最近一次失败](https://github.com/everettjf/scriptwidget/actions/runs/39862348666) 位于旧版 Wallpaper smoke，最终候选仍待新的完整 CI。本地通过不替代远端结果。
 - 真机权限、签名共享容器、系统组件和扩展性能尚未完成验收；本轮尚未部署 Web 或上传原生商店构建。
 
 ## 按顺序完成四批工作
@@ -36,4 +36,4 @@ Spotify 已移除；C 音乐控制扩展、D 远端/社交/Watch/系统监控已
 - 不因本机 Firefox 启动失败阻止其他工作；已有 Linux/Windows 跨浏览器成功证据。本机限制保留记录，不宣称本机通过。
 - 缺失的设备、账号或登录单独列出依赖，不把整个范围标成开发未完成。发现数据丢失、权限越界、崩溃或发布检查失败时，修复并重新验证后再发布。
 
-当前下一步是批次 1。本规划完成不代表 A/B 已验收或已发布。
+当前批次 1 的产品修复与本地回归已完成，下一步确认最终 CI，然后进入批次 2/3 的剩余验收。本规划完成不代表 A/B 已验收或已发布。
