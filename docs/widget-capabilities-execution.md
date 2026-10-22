@@ -790,3 +790,17 @@ Web Studio 新增 Connected services 面板、健康默认资料、字段/JSON �
 浏览器专项验证可见 Mock Data 面板中的计数改为 47 后更新预览、各种场景、等待保存完成后重载保留，最后恢复默认健康样例。测试使用真实鼠标打开 Gallery/Mock 页签，并断言编辑期间面板仍可见；避免 Radix forceMount 隐藏面板造成假通过。全量后仅增强烟测的鼠标入口与可选截图取景，再独立运行整套 Chrome smoke 通过，没有修改产品源码或重复业务测试。[完整 Web 界面](images/github-profile-web-studio.png)来自该测试；IAB 交互尝试未能触发入口，不计为手工通过。
 
 这些证据完成本批原生/API/模板/Mock 开发验证，不代表 M4/M5 已完成：真实 GitHub 用户授权、签名 App/Widget Keychain 共享、物理组件、OAuth 登录/刷新、Apple Music/播放收据和 M5 可视化编辑仍需继续。Spotify 状态明确为 unavailable，不能用已有 PKCE 类型或 Web 假数据宣称接入成功。没有部署、上传或提交审核；后续仍在同一分支完成并统一发布。
+
+## 2026-10-22：M4 Music app 只读快照与 Web Mock
+
+仍在 `codex/release-m1-m2` / PR #62 统一交付。Runtime 1.4 新增 `$music.isAvailable()`、`authorizationStatus()`、`await current()` 和 `music` 包权限；原生 Settings 由人主动请求 Music library 授权，脚本不能弹出授权或扩大权限。iOS app/widget 都包含用途说明，macOS 明确返回 unavailable。实际提供层使用公开的 `MPMusicPlayerController.systemMusicPlayer`，不是全系统音频播放器接口，也没有扫描媒体库或操作播放队列。
+
+同步 WidgetKit host 会占用主线程等待 JSC，因此只在声明 music 的执行中，先在主线程捕获安装身份与播放快照，再进入等待；未预捕获的 managed entry 也覆盖。后台编辑器预览则将一次读取调度到主线程。每次执行只保留一个内存快照，仍受八次共享系统查询预算、当前安装身份、权限撤销、取消和未来时间线/Live Activity 禁止查询约束。返回九个有界字段；`playing` 与 `hasItem:false` 可以同时成立，未知时长/位置保持 null，不推断订阅资格。
+
+新增内置/Gallery Music Playback 模板及说明，六状态 × 八尺寸的 48 组树由实际原生 JavaScriptCore 导出，再与 Web 引擎逐一比较。17 张原生夹具截图检查了成功、授权提示与信息隐藏；示例曲目是固定测试数据。Web Mock Data 提供可编辑字段及 playing/paused/stopped/withheld/denied/unavailable 预设，遵守包权限、查询预算和严格快照结构。Chrome smoke 实际操作 Gallery/Mock Data 页签、修改歌名、切换六状态并等待保存后重载，全部通过。预览引擎语义版本为 0.12.0；schema、AI 指引、completion、生成文档和两端 editor bundle 同步。
+
+聚焦原生八项测试通过；增加树对照/截图后的十项也通过。首次通用 corpus 检查暴露新模板漏写必填 `networkDomains:[]`，修正后原生 corpus 通过；只有两个新增 live-data 标记，所有旧树和元数据保持一致。首次完整 gate 在 Mac 原生目录测试发现新模板使用了不存在的 `lifestyle` 分类（650 通过、1 失败、31 跳过），已改用现有 system 分类，并让快速 release validator 从原生枚举读取合法分类，避免只在 Xcode 阶段才发现。失败证据保留在 `__Release/capabilities/music/`；完整重跑结果另记，不把失败轮算通过。
+
+本增量仍不是 M4 完成：真实 Music 授权/撤权、Music app/WidgetKit 共享状态、签名物理组件、订阅/后台与播放操作尚未验收；Spotify OAuth UI、刷新与平台资格及 M5 继续开发。没有部署、上传或送审，不将夹具截图或 SDK 编译当作真实账户/设备通过。公开范围及截图见 [Music API](music-api.md)。
+
+最终固定产品源的 `./Scripts/release-readiness.sh` 重跑退出 0：Mac 651 通过 / 0 失败 / 31 跳过，iPhone 17 Simulator 661 通过 / 0 失败 / 30 跳过；两端结果包 `runtimeWarnings=[]`。Editor 35、预览引擎 158、Web Studio 83 项测试、TypeScript 生产构建、浏览器 smoke、89 个模板、20 个 curated Gallery 包、两端应用构建及独立原生服务/存储/运行时探针均通过。SDK/link、测试闭包并发和 Xcode 版本解析诊断原样保留，不能把无 runtimeWarnings 描述成没有编译诊断。最终成功日志与结果汇总为 `__Release/capabilities/music/release-readiness.log`、`macos-summary.json`、`ios-summary.json`；该目录也保留首次失败记录、浏览器输出及验证清单。完整检查后只补充本段结果与证据，不更改产品源。没有执行物理设备、真实账户、签名共享容器或扩展内存验收。

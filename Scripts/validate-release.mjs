@@ -11,6 +11,10 @@ const skillSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRun
 const pluginSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/Resource/plugin.schema.json"), "utf8"));
 const failures = [];
 const names = (await readdir(templateRoot)).sort();
+const metadataSource = await readFile(join(root, "Shared/ScriptWidgetRuntime/Common/ScriptMetadata.swift"), "utf8");
+const categoryDeclaration = metadataSource.match(/enum ScriptCategory:[\s\S]*?\{([\s\S]*?)\n\s*var id:/)?.[1] ?? "";
+const categories = new Set([...categoryDeclaration.matchAll(/\bcase (\w+)/g)].map(match => match[1]));
+if (!categories.size) failures.push("Cannot read the native template category contract");
 
 for (const communityFile of ["README_CN.md", "CODE_OF_CONDUCT.md", "GOVERNANCE.md", "CHANGELOG.md", ".github/CODEOWNERS", ".github/dependabot.yml", ".github/ISSUE_TEMPLATE/gallery_submission.yml"]) {
   try { await stat(join(root, communityFile)); }
@@ -29,6 +33,7 @@ for (const name of names) {
   for (const key of ["description", "category", "difficulty", "icon"]) {
     if (!meta[key]) failures.push(`${name}: missing ${key}`);
   }
+  if (!categories.has(meta.category)) failures.push(`${name}: unknown template category ${meta.category}`);
   if (source.includes("fetch(") && !["weather", "finance", "productivity"].includes(meta.category)) {
     failures.push(`${name}: network template must use a network-related category`);
   }
@@ -99,9 +104,11 @@ for (const required of ["widget.json", "32 MiB", "64 MiB", "symbolic links", "le
 }
 
 const iosInfo = await readFile(join(root, "iOS/ScriptWidget/Info.plist"), "utf8");
-for (const key of ["NSHealthShareUsageDescription", "NSHealthUpdateUsageDescription", "NSLocationWhenInUseUsageDescription"]) {
+for (const key of ["NSHealthShareUsageDescription", "NSHealthUpdateUsageDescription", "NSLocationWhenInUseUsageDescription", "NSAppleMusicUsageDescription"]) {
   if (!iosInfo.includes(`<key>${key}</key>`)) failures.push(`iOS Info.plist is missing ${key}`);
 }
+const widgetMusicInfo = await readFile(join(root, "iOS/ScriptWidgetWidget/Info.plist"), "utf8");
+if (!widgetMusicInfo.includes("<key>NSAppleMusicUsageDescription</key>")) failures.push("iOS widget Info.plist is missing NSAppleMusicUsageDescription");
 
 // Service credentials share a dedicated group; the first/default group must
 // remain app-specific so existing AI items never default into the shared group.

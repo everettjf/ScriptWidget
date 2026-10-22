@@ -8,6 +8,9 @@ Existing data-method return formats are unchanged. Present manifests now undergo
 
 | API | Minimum native API | Native platforms | Execution | Authorization | Operation |
 | --- | --- | --- | --- | --- | --- |
+| `$music.isAvailable()` | 1.4 | ios | Synchronous | musicRead | availability |
+| `$music.authorizationStatus()` | 1.4 | ios | Synchronous | musicRead | availability |
+| `$music.current()` | 1.4 | ios | Promise | musicRead | read |
 | `$services.status(service)` | 1.4 | ios, macos | Promise | serviceAccount | read |
 | `$services.profile(service)` | 1.4 | ios, macos | Promise | serviceAccount | read |
 | `$device.screen()` | 1.0 | ios, macos | Synchronous | none | read |
@@ -68,6 +71,44 @@ Existing data-method return formats are unchanged. Present manifests now undergo
 | `$location.isAuthorizedForWidgetUpdates()` | 1.3 | ios | Synchronous | locationWhenInUse | availability |
 | `$location.requestAuthorization(options?)` | 1.0 | ios | Promise | locationWhenInUse | authorization |
 | `$location.current(options?)` | 1.0 | ios | Promise | locationWhenInUse | read |
+
+## music
+
+Runtime 1.4. Read-only Music app playback, not every audio player. Requires an installed owner, music permission and Music library approval in native Settings. current() is asynchronous and returns provider, state, hasItem, nullable title/artist/album/duration/position and capturedAt. State may be playing while details are absent (Home Sharing). Native player access is main-thread-only: synchronous hosts prepare one snapshot before JSC waits; background previews capture on the main queue. No playback/queue mutation, scans, artwork, credential or subscription inference. No live queries in future entries/Live Activities. Main system-player API is unavailable on macOS; Web supplies editable samples, never actual device access.
+
+### `$music.isAvailable`
+
+Default editable preview sample:
+
+```json
+true
+```
+
+### `$music.authorizationStatus`
+
+Default editable preview sample:
+
+```json
+"authorized"
+```
+
+### `$music.current`
+
+Default editable preview sample:
+
+```json
+{
+  "provider": "appleMusic",
+  "state": "playing",
+  "hasItem": true,
+  "title": "Morning Light",
+  "artist": "ScriptWidget Sessions",
+  "album": "Focus",
+  "duration": 224,
+  "position": 86,
+  "capturedAt": "2026-01-01T12:00:00Z"
+}
+```
 
 ## services
 

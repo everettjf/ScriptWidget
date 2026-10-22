@@ -1,0 +1,13 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.music-playback",
+  "name": "Music Playback",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.4",
+  "entry": "main.jsx",
+  "supportedFamilies": ["systemSmall", "systemMedium", "systemLarge", "systemExtraLarge", "systemExtraLargePortrait", "accessoryCircular", "accessoryRectangular", "accessoryInline"],
+  "permissions": ["music"],
+  "networkDomains": [],
+  "description": "A read-only snapshot of the iOS Music app, with honest permission, platform and missing-metadata states. Web Studio uses editable samples."
+}

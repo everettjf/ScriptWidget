@@ -282,6 +282,7 @@ private struct ScriptWidgetMacSettingsView: View {
                 Section("Calendar") { CalendarAccessSettingsView() }
                 Section("Reminders") { RemindersAccessSettingsView() }
                 Section("Photos") { PhotosAccessSettingsView() }
+                Section("Music") { ScriptWidgetMusicAccessSettingsView() }
                 if sharedScriptManager.storageContext != nil {
                     Section("Records") { Button("Review Older Records") { showingStorageReview = true } }
                 }

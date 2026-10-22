@@ -82,7 +82,7 @@ enum ScriptWidgetRuntimeContract {
     static let globalAPIs = [
         "$calendar", "$component", "$console", "$device", "$dynamic_island", "$element",
         "$error", "$fetch", "$file", "$getenv", "$health", "$http", "$import",
-        "$location", "$photos", "$reminders", "$render", "$runtime", "$services", "$storage", "$system", "$xml", "console", "fetch",
+        "$location", "$music", "$photos", "$reminders", "$render", "$runtime", "$services", "$storage", "$system", "$xml", "console", "fetch",
     ]
 
     static func validateSource(_ source: String) -> ScriptWidgetError? {
@@ -509,6 +509,7 @@ class ScriptWidgetRuntime {
             runtimeContext["$calendar"] = ScriptWidgetRuntimeCalendar.self
             runtimeContext["$photos"] = ScriptWidgetRuntimePhotos.self
             runtimeContext["$services"] = ScriptWidgetRuntimeServices.self
+            runtimeContext["$music"] = ScriptWidgetRuntimeMusic.self
             runtimeContext["$reminders"] = ScriptWidgetRuntimeReminders.self
             runtimeContext["$health"] = ScriptWidgetRuntimeHealth.self
             runtimeContext["$location"] = ScriptWidgetRuntimeLocation.self
@@ -767,6 +768,20 @@ extension ScriptWidgetRuntime {
             runningState?.executionSession.finish()
             trace.finish()
             performanceTrace = nil
+        }
+        // A synchronous host can occupy the main thread while JSC runs on the
+        // publisher lane. Capture its installed identity and Music snapshot
+        // before waiting; never enqueue a Music read behind that same wait.
+        if Thread.isMainThread, let state = runningState,
+           state.package.readManifest()?.permissions.contains(.music) == true {
+            do {
+                try state.captureManagedEntry(JSX)
+                if let captured = state.executionSnapshot { package = captured.package }
+            } catch {
+                return (nil, .scriptError("[package:identity_changed] Reload the managed widget before running again."))
+            }
+            if let error = packagePreflightError() { return (nil, error) }
+            ScriptWidgetRuntimeMusic.prepareForSynchronousHost(state)
         }
         let result = ScriptWidgetSynchronousResult<ScriptWidgetRuntimeElement>(publisherLane: publisherLane)
         publisherLane.queue.async {

@@ -52,6 +52,18 @@ export function parseMocks(text: string): MockObject {
     if ("error" in response && typeof response.error !== "string") throw new Error(`${name} error must be text.`);
   }
   if (isObject(value.api)) {
+    const musicStatus = value.api["$music.authorizationStatus"], music = value.api["$music.current"];
+    if (isObject(musicStatus) && "value" in musicStatus && !["authorized", "denied", "restricted", "notDetermined", "unavailable"].includes(String(musicStatus.value))) throw new Error("Invalid Music authorization status.");
+    if (isObject(music) && "value" in music) {
+      const item = music.value, keys = ["provider", "state", "hasItem", "title", "artist", "album", "duration", "position", "capturedAt"];
+      const text = (raw: MockValue | undefined) => raw === null || (typeof raw === "string" && new TextEncoder().encode(raw).length <= 512 && !/\p{Cc}/u.test(raw));
+      const seconds = (raw: MockValue | undefined, minimum: number) => raw === null || (typeof raw === "number" && Number.isFinite(raw) && raw >= minimum && raw <= 604800);
+      if (!isObject(item) || Object.keys(item).length !== keys.length || Object.keys(item).some(key => !keys.includes(key)) || item.provider !== "appleMusic" ||
+          !["playing", "paused", "stopped", "interrupted", "seeking", "unknown"].includes(String(item.state)) || typeof item.hasItem !== "boolean" ||
+          !["title", "artist", "album"].every(key => text(item[key])) || !seconds(item.duration, Number.MIN_VALUE) || !seconds(item.position, 0) ||
+          (!item.hasItem && ["title", "artist", "album", "duration"].some(key => item[key] !== null)) || typeof item.capturedAt !== "string" ||
+          !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/.test(item.capturedAt) || !Number.isFinite(Date.parse(item.capturedAt))) throw new Error("Music playback needs the documented fields, nullable metadata and bounded seconds. Missing track details do not mean playback stopped.");
+    }
     const status = value.api["$services.status"], profile = value.api["$services.profile"];
     if (isObject(status) && "value" in status && !["connected", "notConnected", "notGranted", "unavailable"].includes(String(status.value))) throw new Error("Service status must be connected, notConnected, notGranted or unavailable.");
     if (isObject(profile) && "value" in profile) {
@@ -156,4 +168,14 @@ export function serviceScenario(text: string, scenario: ServiceScenario): string
   const errors: Partial<Record<ServiceScenario,string>> = {expired:"[service_expired] Reconnect GitHub in the app.",rateLimited:"[service_rate_limit] GitHub is rate limited. Try later.",offline:"[service_unavailable] Service unavailable. Try again when online."};
   const value = scenario === "empty" ? {...sample,publicRepositories:0,privateRepositories:0,followers:0,following:0} : scenario === "publicOnly" ? {...sample,privateRepositories:null} : sample;
   return setResponse(result, "$services.profile", errors[scenario] ? {error:errors[scenario]!} : {value});
+}
+
+export type MusicScenario = "playing" | "paused" | "stopped" | "withheld" | "denied" | "unavailable";
+export function musicScenario(text: string, scenario: MusicScenario): string {
+  const sample = mockAPIs.find(api => api.id === "$music.current")!.value as MockObject;
+  let result = setResponse(text, "$music.isAvailable", {value: scenario !== "unavailable"});
+  result = setResponse(result, "$music.authorizationStatus", {value: scenario === "unavailable" ? "unavailable" : scenario === "denied" ? "denied" : "authorized"});
+  const missing = scenario === "withheld" || scenario === "stopped";
+  return setResponse(result, "$music.current", {value: {...sample, state: scenario === "withheld" ? "playing" : ["paused", "stopped"].includes(scenario) ? scenario : "playing", capturedAt: new Date().toISOString(),
+    ...(missing ? {hasItem:false,title:null,artist:null,album:null,duration:null,position:null} : {})}});
 }

@@ -245,6 +245,47 @@ async function connectedServices(): Promise<void> {
   } finally { await chrome.close(); }
 }
 
+async function musicPlayback(): Promise<void> {
+  const chrome = await launchChrome({width:1400,height:1000,scale:1});
+  try {
+    const page = await chrome.newPage();
+    await page.call("Emulation.setEmulatedMedia",{features:[{name:"prefers-color-scheme",value:"light"}]});
+    const click = async (expression: string) => {
+      const point = await page.evaluate<{x:number;y:number}>(`(() => {const r=(${expression}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
+      await page.call("Input.dispatchMouseEvent",{type:"mousePressed",...point,button:"left",clickCount:1});
+      await page.call("Input.dispatchMouseEvent",{type:"mouseReleased",...point,button:"left",clickCount:1});
+    };
+    const select = async (id: string, value: string) => page.evaluate(`(() => {const input=document.getElementById(${JSON.stringify(id)});Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+    await page.goto(studioURL);
+    await page.waitFor("!!document.querySelector('.sw-widget')",20000);
+    await click("document.getElementById('open-templates')");
+    await page.waitFor("[...document.querySelectorAll('.template-card')].some(card=>card.textContent.includes('Music Playback'))");
+    await page.evaluate("[...document.querySelectorAll('.template-card')].find(card=>card.textContent.includes('Music Playback')).click()");
+    await page.waitFor("!!document.getElementById('template-copy')");
+    await page.evaluate("document.getElementById('template-copy').click()");
+    await page.waitFor("document.getElementById('project-name').value==='Music Playback' && document.querySelector('.sw-widget')?.textContent.includes('Morning Light')",20000);
+    await click("[...document.querySelectorAll('[role=tab]')].find(tab=>tab.textContent==='Mock Data')");
+    await page.waitFor("document.querySelector('[role=tab][aria-selected=true]')?.textContent==='Mock Data' && document.getElementById('mock-data-panel').offsetParent!==null");
+    await select("mock-group","music"); await select("mock-api","$music.current");
+    await page.waitFor("!!document.getElementById('mock-result.title')");
+    await page.evaluate("(() => {const input=document.getElementById('mock-result.title');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'Evening Walk');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
+    await page.waitFor("document.querySelector('.sw-widget')?.textContent.includes('Evening Walk')",20000);
+    for (const [label,expected] of [["Paused","Paused"],["Stopped","No current track"],["Track details withheld","Track details unavailable"],["Permission denied","Allow Music access"],["Unavailable","Music unavailable"],["Playing","Morning Light"]]) {
+      await page.evaluate(`[...document.getElementById('mock-data-panel').querySelectorAll('button')].find(button=>button.textContent===${JSON.stringify(label)}).click()`);
+      await page.waitFor(`document.querySelector('.sw-widget')?.textContent.includes(${JSON.stringify(expected)})`,20000);
+    }
+    await page.waitFor("document.getElementById('save-state').textContent==='Saved in this browser'");
+    if (process.env.SCRIPTWIDGET_MUSIC_SCREENSHOT) {
+      await page.evaluate("document.getElementById('mock-result.title').scrollIntoView({block:'end'})");
+      fs.writeFileSync(process.env.SCRIPTWIDGET_MUSIC_SCREENSHOT,await page.screenshot());
+    }
+    await page.goto(studioURL);
+    await page.waitFor("document.getElementById('project-name').value==='Music Playback' && document.querySelector('.sw-widget')?.textContent.includes('Morning Light')",20000);
+    if (exceptions(page).length) throw new Error(exceptions(page).join("\n"));
+    console.log("music: editable track, six playback/permission states and persisted mocks passed");
+  } finally { await chrome.close(); }
+}
+
 try {
   await desktop();
   await phone();
@@ -252,6 +293,7 @@ try {
   await scheduledTheme();
   await calendarScope();
   await connectedServices();
+  await musicPlayback();
 } catch (error) {
   console.error((error as Error).message);
   failed = true;

@@ -15,6 +15,7 @@ const curated = [
   ["Hydration Goal", "hydration-goal"],
   ["Local Weather (Location)", "local-weather"],
   ["Mood Check-in", "mood-check-in"],
+  ["Music Playback", "music-playback"],
   ["Packing Checklist", "packing-checklist"],
   ["Photo Card", "photo-card"],
   ["Photo Album Rotator", "photo-album-rotator"],

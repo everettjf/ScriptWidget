@@ -1,0 +1,7 @@
+{
+  "description": "Read-only Music app playback with permission and missing-track states.",
+  "category": "system",
+  "difficulty": "beginner",
+  "icon": "music.note",
+  "tags": ["music", "playback", "system"]
+}

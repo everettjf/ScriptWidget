@@ -170,6 +170,13 @@ enum PromptBuilder {
             or AI context. Preserve null private counts; do not turn errors into
             zero data. Spotify login/control is not yet available. Service reads
             cannot run in future entries or Live Activity presentations.
+            Music app playback uses $music.isAvailable(), authorizationStatus()
+            and await $music.current(), with music permission and native Settings
+            approval. This is a read-only iOS Music app snapshot, unavailable on
+            macOS and unrelated to other audio players. State can remain playing
+            while track details are withheld. Preserve nullable metadata/seconds,
+            show permission/unavailable states and never infer subscription.
+            No playback/queue changes, library scans or live future-entry reads.
             Reminders needs the reminders package permission and system approval.
             Use lists() for permitted IDs; items() is read-only with listIDs,
             start/end (up to 31 days), limit (up to 50) and completed Boolean.

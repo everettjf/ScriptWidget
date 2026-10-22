@@ -14,6 +14,7 @@
 		155DC3E76F1A4A83A8C7D04B /* ScriptWidgetRuntimePhotos.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8FE22EE523481B91C412C1 /* ScriptWidgetRuntimePhotos.swift */; };
 		3D9403C50FBDCB35B7AB4736 /* ScriptWidgetServiceAccessPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118EC1E97B8E0399B0727988 /* ScriptWidgetServiceAccessPolicy.swift */; };
 		D7AFFEC7BB056AC9E5E9EC92 /* ScriptWidgetRuntimeServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC4F181552CF0A86A0B71C63 /* ScriptWidgetRuntimeServices.swift */; };
+		A3518FE55D6B2D16A5AD6431 /* ScriptWidgetRuntimeMusic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 619B3C47BD82ABC14AE9D601 /* ScriptWidgetRuntimeMusic.swift */; };
 		466B69478B2FAB146F6E509E /* ScriptWidgetServiceAccountsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9299298C17946A55D7D4A6A4 /* ScriptWidgetServiceAccountsView.swift */; };
 		B4256257380B4FEB90928745 /* ScriptWidgetServiceConnections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1405DC9048373403E34E49 /* ScriptWidgetServiceConnections.swift */; };
 		4B6F6E9528F854865E06C173 /* ScriptWidgetServiceTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEA991E41FEE2813D3A076C0 /* ScriptWidgetServiceTransport.swift */; };
@@ -36,6 +37,7 @@
 		AFE97E2864DB4C5AA0BE77DB /* ScriptWidgetRuntimePhotos.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8FE22EE523481B91C412C1 /* ScriptWidgetRuntimePhotos.swift */; };
 		72D2A24119D7F86666BB6AB6 /* ScriptWidgetServiceAccessPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118EC1E97B8E0399B0727988 /* ScriptWidgetServiceAccessPolicy.swift */; };
 		B1CF653276641F64A15CD414 /* ScriptWidgetRuntimeServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC4F181552CF0A86A0B71C63 /* ScriptWidgetRuntimeServices.swift */; };
+		0CC43FD2DA69933893416F67 /* ScriptWidgetRuntimeMusic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 619B3C47BD82ABC14AE9D601 /* ScriptWidgetRuntimeMusic.swift */; };
 		C967BA9697F9B8125A3A3D48 /* ScriptWidgetServiceAccountsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9299298C17946A55D7D4A6A4 /* ScriptWidgetServiceAccountsView.swift */; };
 		EFDE73E5B06D9D761899D428 /* ScriptWidgetServiceConnections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1405DC9048373403E34E49 /* ScriptWidgetServiceConnections.swift */; };
 		0C560AC9110EF346CF34B2C7 /* ScriptWidgetServiceTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEA991E41FEE2813D3A076C0 /* ScriptWidgetServiceTransport.swift */; };
@@ -45,6 +47,7 @@
 		235B36592F47C0FF57547F5E /* ServiceAccessPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A268224FAE0BE130C6D0BAC0 /* ServiceAccessPolicyTests.swift */; };
 		F5046998F140FC11B5AA2AB7 /* ServiceTransportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13265805ACA0D99EB8352534 /* ServiceTransportTests.swift */; };
 		76409911C3FF0AA60F14E482 /* ServicesRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB630542E0D41B7049AB9781 /* ServicesRuntimeTests.swift */; };
+		FF97B6F42B2F9FD062E180A4 /* MusicRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 880954A9A31F966B9B0039D8 /* MusicRuntimeTests.swift */; };
 		08E9EBBD3D89654C58295FB9 /* ServiceAuthorizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3691AEA892C0F60DB0825F64 /* ServiceAuthorizationTests.swift */; };
 		AF2855D5A6088CB6840FD84A /* RuntimeDeliveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DBFC205E7AE664442A28C84 /* RuntimeDeliveryTests.swift */; };
 		855878C6168D59CE4C6CB13C /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E3B593386F820DCF99C631E /* ScriptWidgetRuntimeSystem.swift */; };
@@ -314,6 +317,7 @@
 		A268224FAE0BE130C6D0BAC0 /* ServiceAccessPolicyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ServiceAccessPolicyTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/ServiceAccessPolicyTests.swift; sourceTree = "<group>"; };
 		13265805ACA0D99EB8352534 /* ServiceTransportTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ServiceTransportTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/ServiceTransportTests.swift; sourceTree = "<group>"; };
 		FB630542E0D41B7049AB9781 /* ServicesRuntimeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ServicesRuntimeTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/ServicesRuntimeTests.swift; sourceTree = "<group>"; };
+		880954A9A31F966B9B0039D8 /* MusicRuntimeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MusicRuntimeTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/MusicRuntimeTests.swift; sourceTree = "<group>"; };
 		3691AEA892C0F60DB0825F64 /* ServiceAuthorizationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ServiceAuthorizationTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/ServiceAuthorizationTests.swift; sourceTree = "<group>"; };
 		6DBFC205E7AE664442A28C84 /* RuntimeDeliveryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RuntimeDeliveryTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/RuntimeDeliveryTests.swift; sourceTree = "<group>"; };
 		8CAE66D10656192ADC2F9019 /* ScriptWidgetRuntimeStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeStorage.swift; sourceTree = "<group>"; };
@@ -352,6 +356,7 @@
 		9F8FE22EE523481B91C412C1 /* ScriptWidgetRuntimePhotos.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimePhotos.swift; sourceTree = "<group>"; };
 		118EC1E97B8E0399B0727988 /* ScriptWidgetServiceAccessPolicy.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetServiceAccessPolicy.swift; sourceTree = "<group>"; };
 		FC4F181552CF0A86A0B71C63 /* ScriptWidgetRuntimeServices.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeServices.swift; sourceTree = "<group>"; };
+		619B3C47BD82ABC14AE9D601 /* ScriptWidgetRuntimeMusic.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeMusic.swift; sourceTree = "<group>"; };
 		9299298C17946A55D7D4A6A4 /* ScriptWidgetServiceAccountsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetServiceAccountsView.swift; sourceTree = "<group>"; };
 		1E1405DC9048373403E34E49 /* ScriptWidgetServiceConnections.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetServiceConnections.swift; sourceTree = "<group>"; };
 		BEA991E41FEE2813D3A076C0 /* ScriptWidgetServiceTransport.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetServiceTransport.swift; sourceTree = "<group>"; };
@@ -610,6 +615,7 @@
 				A268224FAE0BE130C6D0BAC0 /* ServiceAccessPolicyTests.swift */,
 				13265805ACA0D99EB8352534 /* ServiceTransportTests.swift */,
 				FB630542E0D41B7049AB9781 /* ServicesRuntimeTests.swift */,
+				880954A9A31F966B9B0039D8 /* MusicRuntimeTests.swift */,
 				3691AEA892C0F60DB0825F64 /* ServiceAuthorizationTests.swift */,
 				6DBFC205E7AE664442A28C84 /* RuntimeDeliveryTests.swift */,
 				28F68F47C00CF93E4CBA1F1E /* AIGenerationTests.swift */,
@@ -791,6 +797,7 @@
 				9F8FE22EE523481B91C412C1 /* ScriptWidgetRuntimePhotos.swift */,
 				118EC1E97B8E0399B0727988 /* ScriptWidgetServiceAccessPolicy.swift */,
 				FC4F181552CF0A86A0B71C63 /* ScriptWidgetRuntimeServices.swift */,
+				619B3C47BD82ABC14AE9D601 /* ScriptWidgetRuntimeMusic.swift */,
 				9299298C17946A55D7D4A6A4 /* ScriptWidgetServiceAccountsView.swift */,
 				1E1405DC9048373403E34E49 /* ScriptWidgetServiceConnections.swift */,
 				BEA991E41FEE2813D3A076C0 /* ScriptWidgetServiceTransport.swift */,
@@ -1246,6 +1253,7 @@
 				235B36592F47C0FF57547F5E /* ServiceAccessPolicyTests.swift in Sources */,
 				F5046998F140FC11B5AA2AB7 /* ServiceTransportTests.swift in Sources */,
 				76409911C3FF0AA60F14E482 /* ServicesRuntimeTests.swift in Sources */,
+				FF97B6F42B2F9FD062E180A4 /* MusicRuntimeTests.swift in Sources */,
 				08E9EBBD3D89654C58295FB9 /* ServiceAuthorizationTests.swift in Sources */,
 				AF2855D5A6088CB6840FD84A /* RuntimeDeliveryTests.swift in Sources */,
 			);
@@ -1370,6 +1378,7 @@
 				AFE97E2864DB4C5AA0BE77DB /* ScriptWidgetRuntimePhotos.swift in Sources */,
 				72D2A24119D7F86666BB6AB6 /* ScriptWidgetServiceAccessPolicy.swift in Sources */,
 				B1CF653276641F64A15CD414 /* ScriptWidgetRuntimeServices.swift in Sources */,
+				0CC43FD2DA69933893416F67 /* ScriptWidgetRuntimeMusic.swift in Sources */,
 				C967BA9697F9B8125A3A3D48 /* ScriptWidgetServiceAccountsView.swift in Sources */,
 				EFDE73E5B06D9D761899D428 /* ScriptWidgetServiceConnections.swift in Sources */,
 				0C560AC9110EF346CF34B2C7 /* ScriptWidgetServiceTransport.swift in Sources */,
@@ -1439,6 +1448,7 @@
 				155DC3E76F1A4A83A8C7D04B /* ScriptWidgetRuntimePhotos.swift in Sources */,
 				3D9403C50FBDCB35B7AB4736 /* ScriptWidgetServiceAccessPolicy.swift in Sources */,
 				D7AFFEC7BB056AC9E5E9EC92 /* ScriptWidgetRuntimeServices.swift in Sources */,
+				A3518FE55D6B2D16A5AD6431 /* ScriptWidgetRuntimeMusic.swift in Sources */,
 				466B69478B2FAB146F6E509E /* ScriptWidgetServiceAccountsView.swift in Sources */,
 				B4256257380B4FEB90928745 /* ScriptWidgetServiceConnections.swift in Sources */,
 				4B6F6E9528F854865E06C173 /* ScriptWidgetServiceTransport.swift in Sources */,

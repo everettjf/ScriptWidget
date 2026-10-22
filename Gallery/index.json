@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-22T10:46:07.233Z",
+  "generatedAt": "2026-10-22T11:30:30.243Z",
   "items": [
     {
       "author": "ScriptWidget Community",
@@ -1017,6 +1017,42 @@
       "symbol": "person.crop.rectangle",
       "tags": [
         "productivity"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 3444,
+          "path": "main.jsx",
+          "sha256": "c28b645408169b2b794684c015fe2587de62710aaa071f4c0e0e251606b215b3",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/music-playback/main.jsx"
+        },
+        {
+          "bytes": 213,
+          "path": "meta.json",
+          "sha256": "ee1626a8d25d94a1cc6628b4886c0f554c03c6a83bc47cd92f07d1945f55286c",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/music-playback/meta.json"
+        },
+        {
+          "bytes": 605,
+          "path": "widget.json",
+          "sha256": "7882bb3b66a4c4056a46e0231e2a240fa658d2fc024b3f9630f8718b1daaf872",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/music-playback/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.music-playback",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Music Playback",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/music-playback",
+      "summary": "Requires Runtime API 1.4. A read-only snapshot of the iOS Music app, with honest permission, platform and missing-metadata states. Web Studio uses editable samples.",
+      "symbol": "music.note",
+      "tags": [
+        "system"
       ],
       "version": "1.0.0"
     }

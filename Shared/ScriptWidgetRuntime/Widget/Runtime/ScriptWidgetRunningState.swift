@@ -220,6 +220,7 @@ class ScriptWidgetRunningState {
     var logger: ScriptWidgetConsoleLogger
     private(set) var package: ScriptWidgetPackage
     let executionSession: ScriptWidgetExecutionSession
+    let musicReadCache = ScriptWidgetMusicReadCache()
 
     #if DEBUG
     var storageContainerForTesting: URL?
@@ -227,6 +228,7 @@ class ScriptWidgetRunningState {
     var fetchManagerForTesting: ScriptWidgetFetchManager?
     var expandedHealthProviderForTesting: (any ScriptWidgetExpandedHealthProviding)?
     var calendarProviderForTesting: ScriptWidgetCalendarProvider?
+    var musicProviderForTesting: (any ScriptWidgetMusicProviding)?
     var serviceConnectionsForTesting: ScriptWidgetServiceConnections?
     var serviceReaderForTesting: ScriptWidgetServiceReader?
     var photosProviderForTesting: (any ScriptWidgetPhotosProviding)?

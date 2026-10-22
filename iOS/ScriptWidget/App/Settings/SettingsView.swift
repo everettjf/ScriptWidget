@@ -83,6 +83,7 @@ struct SettingsView: View {
                 Section("Calendar") { CalendarAccessSettingsView() }
                 Section("Reminders") { RemindersAccessSettingsView() }
                 Section("Photos") { PhotosAccessSettingsView() }
+                Section("Music") { ScriptWidgetMusicAccessSettingsView() }
                 Section("Health") { SettingsHealthView() }
                 Section("Location") { SettingsLocationView() }
 

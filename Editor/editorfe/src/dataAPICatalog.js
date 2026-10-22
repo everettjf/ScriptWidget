@@ -5,6 +5,9 @@ const sampleEnd = "2026-01-01T12:00:00Z";
 const measure = (value, unit) => ({ value, unit, hasSamples: true, start: sampleStart, end: sampleEnd });
 const group = (name, values, legacy) => Object.entries(values).map(([method, value]) => ({ id: `$${name}.${method}`, group: name, value, legacy: [legacy, method] }));
 const samples = [
+  { id: "$music.isAvailable", group: "music", value: true },
+  { id: "$music.authorizationStatus", group: "music", value: "authorized" },
+  { id: "$music.current", group: "music", value: {provider:"appleMusic",state:"playing",hasItem:true,title:"Morning Light",artist:"ScriptWidget Sessions",album:"Focus",duration:224,position:86,capturedAt:sampleEnd} },
   { id: "$services.status", group: "services", value: "connected" },
   { id: "$services.profile", group: "services", value: {service:"github",subject:"42",username:"octocat",displayName:"Mona",publicRepositories:32,privateRepositories:8,followers:128,following:24} },
   ...group("device", {
@@ -54,6 +57,7 @@ const samples = [
 ];
 
 const groupPolicy = {
+  music: { platforms: ["ios"], authorization: "musicRead", notes: "Runtime 1.4. Read-only Music app playback, not every audio player. Requires an installed owner, music permission and Music library approval in native Settings. current() is asynchronous and returns provider, state, hasItem, nullable title/artist/album/duration/position and capturedAt. State may be playing while details are absent (Home Sharing). Native player access is main-thread-only: synchronous hosts prepare one snapshot before JSC waits; background previews capture on the main queue. No playback/queue mutation, scans, artwork, credential or subscription inference. No live queries in future entries/Live Activities. Main system-player API is unavailable on macOS; Web supplies editable samples, never actual device access." },
   services: { platforms: ["ios", "macos"], authorization: "serviceAccount", notes: "Runtime 1.4: status(service) and profile(service) are asynchronous. First provider: github; spotify status is unavailable and profile rejects until native login/refresh integration. Requires an installed owner and services permission. profile additionally requires network and api.github.com in networkDomains, a native connected GitHub account and explicit owner grant. Native Settings handles credentials; scripts cannot log in or obtain tokens. profile returns service, subject, username, displayName, publicRepositories, privateRepositories, followers and following (missing values are null). No live queries in future entries or Live Activities. Eight shared data queries; native requests also share the eight concurrent/32 total network budget, while Web uses its existing preview network budget. Web uses editable best-state samples only; it never authenticates or sends these requests." },
   photos: { platforms: ["ios", "macos"], authorization: "photosRead", notes: "Requires photos permission and explicit native photo/album selection (none by default). Limited Photos authorization is supported. items({limit:1..4,offset:0..63,maxAgeSeconds:0..86400}) returns bounded, metadata-stripped JPEG thumbnails as image data URLs. Four 768px / 128KiB thumbnails at most; private snapshots expire after 24h and are rechecked against current access, selected sources and asset revisions. Cloud-only items report unavailableCount; download them in Photos first. Future timeline/Live Activity presentations read matching snapshots only. Web uses editable sample data and photosSelection IDs; no actual library access." },
   reminders: { platforms: ["ios", "macos"], authorization: "remindersRead", notes: "Requires reminders in widget.json and full system Reminders access. Reads require native Settings selected lists. create/update/setCompleted additionally require remindersWrite and a native declared action, stable requestID, durable replay receipts and an unchanged selected list. Web writes update preview-only items/receipts; receipt identities are derived from that state, with configurable API errors. Use lists() for IDs. items() selects pending due dates or completed completion dates in a positive window of at most 31 days, up to 50 items. Undated pending reminders are excluded. remindersSelection mocks the user scope without granting permission." },
@@ -65,13 +69,13 @@ const groupPolicy = {
 };
 export const dataAPICatalog = samples.map((sample) => {
   const method = sample.id.split(".")[1];
-  const asynchronous = sample.group === "services" || (["calendar", "reminders", "photos"].includes(sample.group) && !["isAvailable", "authorizationStatus"].includes(method)) || (sample.group === "health" && !["isAvailable", "authorizationStatus"].includes(method)) ||
+  const asynchronous = (sample.group === "music" && method === "current") || sample.group === "services" || (["calendar", "reminders", "photos"].includes(sample.group) && !["isAvailable", "authorizationStatus"].includes(method)) || (sample.group === "health" && !["isAvailable", "authorizationStatus"].includes(method)) ||
     (sample.group === "location" && ["current", "requestAuthorization"].includes(method));
   const options = (sample.group === "health" && ["sleepSummary", "activitySummary", "workouts"].includes(method)) || (sample.group === "location" && ["current", "requestAuthorization"].includes(method)) || (["calendar", "reminders", "photos"].includes(sample.group) && ["events", "items"].includes(method));
   return {
     ...sample,
     ...groupPolicy[sample.group],
-    minimumRuntimeVersion: ["services", "reminders", "photos"].includes(sample.group) || (sample.group === "health" && ["sleepSummary", "activitySummary", "workouts"].includes(method)) ? "1.4" : ["calendar"].includes(sample.group) || ["$health.authorizationStatus", "$location.isAuthorizedForWidgetUpdates"].includes(sample.id) ? "1.3" : "1.0",
+    minimumRuntimeVersion: ["music", "services", "reminders", "photos"].includes(sample.group) || (sample.group === "health" && ["sleepSummary", "activitySummary", "workouts"].includes(method)) ? "1.4" : ["calendar"].includes(sample.group) || ["$health.authorizationStatus", "$location.isAuthorizedForWidgetUpdates"].includes(sample.id) ? "1.3" : "1.0",
     arguments: sample.group === "services" ? ["service"] : sample.group === "reminders" && ["create", "update", "setCompleted"].includes(method) ? ["options"] : options ? ["options?"] : [],
     ...(sample.group === "reminders" && ["create", "update", "setCompleted"].includes(method) ? { authorization: "remindersWrite" } : {}),
     asynchronous,

@@ -518,6 +518,10 @@ export function scriptWidgetKernel(global, host, configJSON) {
       events: unavailablePromise("calendar.events"),
     },
     $services: {},
+    $music: {
+      isAvailable: () => false, authorizationStatus: () => "unavailable",
+      current: unavailablePromise("music.current"),
+    },
     $photos: {
       isAvailable: () => false, authorizationStatus: () => "unavailable",
       requestAuthorization: unavailablePromise("photos.authorization"), items: unavailablePromise("photos.items"),
@@ -654,13 +658,13 @@ export function scriptWidgetKernel(global, host, configJSON) {
   // imports, runtime contracts and network policy continue to execute normally.
   // Fresh bridged values prevent a script from modifying later mock responses.
   const apiMocks = fixtures.api ?? {};
-  for (const namespace of ["$device", "$system", "$health", "$location", "$calendar", "$reminders", "$photos"]) {
+  for (const namespace of ["$device", "$system", "$health", "$location", "$calendar", "$reminders", "$photos", "$music"]) {
     for (const method of ObjectKeys(apis[namespace])) {
       const mock = apiMocks[`${namespace}.${method}`];
       if (!mock || typeof mock !== "object" || ArrayIsArray(mock)) continue;
       const hasError = Object.prototype.hasOwnProperty.call(mock, "error");
       if (!hasError && !Object.prototype.hasOwnProperty.call(mock, "value")) continue;
-      const asynchronous = (["$calendar", "$reminders", "$photos"].includes(namespace) && !["isAvailable", "authorizationStatus"].includes(method)) || (namespace === "$health" && !["isAvailable", "authorizationStatus"].includes(method)) ||
+      const asynchronous = (["$calendar", "$reminders", "$photos", "$music"].includes(namespace) && !["isAvailable", "authorizationStatus"].includes(method)) || (namespace === "$health" && !["isAvailable", "authorizationStatus"].includes(method)) ||
         (namespace === "$location" && (method === "current" || method === "requestAuthorization"));
       apis[namespace][method] = asynchronous
         ? () => nativePromise((resolve, reject) => hasError ? reject(nativeString(mock.error)) : resolve(bridgeValue(mock.value, 0)))
@@ -669,6 +673,35 @@ export function scriptWidgetKernel(global, host, configJSON) {
   }
   // Apply policy after fixture replacement: mocks cannot grant package access.
   let dataQueries = 0;
+  const musicDeclared = () => config.hasManifest && config.manifest?.permissions?.includes("music") === true;
+  const musicAvailable = apis.$music.isAvailable, musicStatus = apis.$music.authorizationStatus;
+  apis.$music.isAvailable = () => musicDeclared() && musicAvailable() === true;
+  apis.$music.authorizationStatus = () => {
+    if (!musicDeclared()) return "undeclared";
+    const value = musicStatus();
+    if (!["authorized", "denied", "restricted", "notDetermined", "unavailable"].includes(value)) throw new Error("[mock_invalid] Invalid Music authorization status");
+    return value;
+  };
+  apis.$music.current = () => nativePromise((resolve, reject) => {
+    try {
+      if (!musicDeclared()) throw new Error("[music_permission] Declare music in widget.json");
+      if (timelineProjection || liveActivityPresentation) throw new Error("[timeline_read_only] Prepare Music display data in the current entry");
+      if (++dataQueries > contract.maximumDataQueries) throw new Error("[query_limit] Too many system data queries");
+      if (!apis.$music.isAvailable()) throw new Error("[music_unavailable] Current Music app playback is unavailable on this platform");
+      if (apis.$music.authorizationStatus() !== "authorized") throw new Error("[music_permission] Allow Music access in native Settings");
+      const mock = apiMocks["$music.current"];
+      if (mock?.error !== undefined) throw new Error(nativeString(mock.error));
+      const value = mock?.value, keys = ["provider", "state", "hasItem", "title", "artist", "album", "duration", "position", "capturedAt"];
+      const text = input => input === null || (typeof input === "string" && utf8ByteLength(input) <= 512 && !/\p{Cc}/u.test(input));
+      const seconds = (input, minimum) => input === null || (typeof input === "number" && Number.isFinite(input) && input >= minimum && input <= 604800);
+      if (!value || typeof value !== "object" || ArrayIsArray(value) || ObjectKeys(value).length !== keys.length || ObjectKeys(value).some(key => !keys.includes(key)) ||
+          value.provider !== "appleMusic" || !["playing", "paused", "stopped", "interrupted", "seeking", "unknown"].includes(value.state) || typeof value.hasItem !== "boolean" ||
+          !["title", "artist", "album"].every(key => text(value[key])) || !seconds(value.duration, Number.MIN_VALUE) || !seconds(value.position, 0) ||
+          (!value.hasItem && ["title", "artist", "album", "duration"].some(key => value[key] !== null)) ||
+          typeof value.capturedAt !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?Z$/.test(value.capturedAt) || !Number.isFinite(datePrototypeGetTime.call(new DateCtor(value.capturedAt)))) throw new Error("[music_snapshot] Invalid Music playback snapshot");
+      resolve(bridgeValue(value, 0));
+    } catch (error) { reject(nativeString(error)); }
+  });
   const serviceProfileKeys = ["service", "subject", "username", "displayName", "publicRepositories", "privateRepositories", "followers", "following"];
   const serviceError = (code, text) => `[service_${code}] ${text}`;
   const serviceStatus = () => {
