@@ -28,6 +28,7 @@
 		4D21588E2F7E493698CC46A2 /* ScriptWidgetRuntimeReminders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB3908F42CF43D1BB4964B5 /* ScriptWidgetRuntimeReminders.swift */; };
 		AFE97E2864DB4C5AA0BE77DB /* ScriptWidgetRuntimePhotos.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8FE22EE523481B91C412C1 /* ScriptWidgetRuntimePhotos.swift */; };
 		7B77915046C30834D191319E /* RuntimeUnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A078A98942A275CF9F25103 /* RuntimeUnitTests.swift */; };
+		AF2855D5A6088CB6840FD84A /* RuntimeDeliveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DBFC205E7AE664442A28C84 /* RuntimeDeliveryTests.swift */; };
 		855878C6168D59CE4C6CB13C /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E3B593386F820DCF99C631E /* ScriptWidgetRuntimeSystem.swift */; };
 		966888252E454500AEA7852C /* ScriptWidgetRuntimeLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124FAA64786342F5A3432631 /* ScriptWidgetRuntimeLocation.swift */; };
 		A10633E3A2F1C708E2078A33 /* AIGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28F68F47C00CF93E4CBA1F1E /* AIGenerationTests.swift */; };
@@ -80,7 +81,9 @@
 		D1995CA029536BB800D1BD94 /* ScriptWidgetRunningState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C5E29536BB800D1BD94 /* ScriptWidgetRunningState.swift */; };
 		D1995CA129536BB800D1BD94 /* ScriptWidgetRunningState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C5E29536BB800D1BD94 /* ScriptWidgetRunningState.swift */; };
 		D1995CA229536BB800D1BD94 /* ScriptWidgetRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C5F29536BB800D1BD94 /* ScriptWidgetRuntime.swift */; };
+		83CD783177BAF842DB99B56C /* ScriptWidgetRuntimeDelivery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E73FD323A92CC10E53A554C /* ScriptWidgetRuntimeDelivery.swift */; };
 		D1995CA329536BB800D1BD94 /* ScriptWidgetRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C5F29536BB800D1BD94 /* ScriptWidgetRuntime.swift */; };
+		27DD7C409899E9A59B55F607 /* ScriptWidgetRuntimeDelivery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E73FD323A92CC10E53A554C /* ScriptWidgetRuntimeDelivery.swift */; };
 		D1995CA429536BB800D1BD94 /* DeepLinkDefine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C6029536BB800D1BD94 /* DeepLinkDefine.swift */; };
 		D1995CA529536BB800D1BD94 /* DeepLinkDefine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C6029536BB800D1BD94 /* DeepLinkDefine.swift */; };
 		D1995CA629536BB800D1BD94 /* ScriptWidgetAppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C6129536BB800D1BD94 /* ScriptWidgetAppState.swift */; };
@@ -290,6 +293,7 @@
 		7CF0C59766F5837DEC033FB9 /* PackageCacheTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PackageCacheTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/PackageCacheTests.swift; sourceTree = "<group>"; };
 		8445DB90E4A34EB19697BAEB /* ReloadWidgetAppIntent.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReloadWidgetAppIntent.swift; sourceTree = "<group>"; };
 		8A078A98942A275CF9F25103 /* RuntimeUnitTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RuntimeUnitTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/RuntimeUnitTests.swift; sourceTree = "<group>"; };
+		6DBFC205E7AE664442A28C84 /* RuntimeDeliveryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RuntimeDeliveryTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/RuntimeDeliveryTests.swift; sourceTree = "<group>"; };
 		8CAE66D10656192ADC2F9019 /* ScriptWidgetRuntimeStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeStorage.swift; sourceTree = "<group>"; };
 		429BB5A88E97FC3C529D6006 /* ScriptWidgetStorageLock.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageLock.swift; sourceTree = "<group>"; };
 		8E3B593386F820DCF99C631E /* ScriptWidgetRuntimeSystem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeSystem.swift; sourceTree = "<group>"; };
@@ -331,6 +335,7 @@
 		D1995C5B29536BB800D1BD94 /* MineRingView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MineRingView.swift; sourceTree = "<group>"; };
 		D1995C5E29536BB800D1BD94 /* ScriptWidgetRunningState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRunningState.swift; sourceTree = "<group>"; };
 		D1995C5F29536BB800D1BD94 /* ScriptWidgetRuntime.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntime.swift; sourceTree = "<group>"; };
+		0E73FD323A92CC10E53A554C /* ScriptWidgetRuntimeDelivery.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeDelivery.swift; sourceTree = "<group>"; };
 		D1995C6029536BB800D1BD94 /* DeepLinkDefine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeepLinkDefine.swift; sourceTree = "<group>"; };
 		D1995C6129536BB800D1BD94 /* ScriptWidgetAppState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAppState.swift; sourceTree = "<group>"; };
 		D1995C6329536BB800D1BD94 /* ScriptWidgetElementView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementView.swift; sourceTree = "<group>"; };
@@ -573,6 +578,7 @@
 			isa = PBXGroup;
 			children = (
 				8A078A98942A275CF9F25103 /* RuntimeUnitTests.swift */,
+				6DBFC205E7AE664442A28C84 /* RuntimeDeliveryTests.swift */,
 				28F68F47C00CF93E4CBA1F1E /* AIGenerationTests.swift */,
 				1492D936BBC23E9D0195DE26 /* RuntimeExecutionTests.swift */,
 				A43E23B1BB04A5AC18DEC1B1 /* BrowserPreviewParityTests.swift */,
@@ -626,6 +632,7 @@
 				D1995C5E29536BB800D1BD94 /* ScriptWidgetRunningState.swift */,
 				A230000100000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift */,
 				D1995C5F29536BB800D1BD94 /* ScriptWidgetRuntime.swift */,
+				0E73FD323A92CC10E53A554C /* ScriptWidgetRuntimeDelivery.swift */,
 				D1995C6029536BB800D1BD94 /* DeepLinkDefine.swift */,
 				D1995C6129536BB800D1BD94 /* ScriptWidgetAppState.swift */,
 			);
@@ -1196,6 +1203,7 @@
 				EBAE7DF1351F9A6ECE2E2AE2 /* RuntimeExecutionTests.swift in Sources */,
 				CD29AE3DAA240E9D6FF92EA4 /* BrowserPreviewParityTests.swift in Sources */,
 				7B77915046C30834D191319E /* RuntimeUnitTests.swift in Sources */,
+				AF2855D5A6088CB6840FD84A /* RuntimeDeliveryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1263,6 +1271,7 @@
 				D1995CA429536BB800D1BD94 /* DeepLinkDefine.swift in Sources */,
 				F29118C52791DCC400B860B0 /* GradientColorData.swift in Sources */,
 				D1995CA229536BB800D1BD94 /* ScriptWidgetRuntime.swift in Sources */,
+				83CD783177BAF842DB99B56C /* ScriptWidgetRuntimeDelivery.swift in Sources */,
 				A230000200000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift in Sources */,
 				D1995CE029536BB800D1BD94 /* ScriptWidgetElementTagGauge.swift in Sources */,
 				F2F90FC427970E3E003095A9 /* CreateGuideView.swift in Sources */,
@@ -1391,6 +1400,7 @@
 				D1995CC529536BB800D1BD94 /* ScriptWidgetAttributeGeneral.swift in Sources */,
 				D1995CDB29536BB800D1BD94 /* ScriptWidgetElementTagText.swift in Sources */,
 				D1995CA329536BB800D1BD94 /* ScriptWidgetRuntime.swift in Sources */,
+				27DD7C409899E9A59B55F607 /* ScriptWidgetRuntimeDelivery.swift in Sources */,
 				A230000300000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift in Sources */,
 				D1995CC329536BB800D1BD94 /* ScriptWidgetAttributeImageModifier.swift in Sources */,
 				D1995CFF29536BC700D1BD94 /* ScriptManager.swift in Sources */,

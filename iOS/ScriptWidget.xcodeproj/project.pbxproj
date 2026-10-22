@@ -26,6 +26,7 @@
 		742D49A1274DF1AC35D6D0A9 /* ScriptWidgetRuntimeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CAE338C670B4A70B52A6CFD /* ScriptWidgetRuntimeStorage.swift */; };
 		45F894481FA8237CEB659E63 /* ScriptWidgetStorageLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99619D8E19192386E982EC46 /* ScriptWidgetStorageLock.swift */; };
 		74884F234581499E712CA059 /* RuntimeUnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3652233A3AB5536745D0BC47 /* RuntimeUnitTests.swift */; };
+		22DB65B932DFC140D45E1132 /* RuntimeDeliveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B54AAAD0C7EFDF340B91B82 /* RuntimeDeliveryTests.swift */; };
 		774D548855AA4BF0BF1E9DBA /* ScriptWidgetRuntimeLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC40ED375515427089251479 /* ScriptWidgetRuntimeLocation.swift */; };
 		7D960C5FE159D8D1CB823654 /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AE63BF6B17D4C800EFF80E9 /* ScriptWidgetRuntimeSystem.swift */; };
 		84C1353FBC065F971E23478C /* PackageCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99DD0AE0F4C799D5DFEE8E76 /* PackageCacheTests.swift */; };
@@ -226,7 +227,9 @@
 		F29119422793035E00B860B0 /* ScriptWidgetAppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29119072793035E00B860B0 /* ScriptWidgetAppState.swift */; };
 		F29119432793035E00B860B0 /* ScriptWidgetAppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29119072793035E00B860B0 /* ScriptWidgetAppState.swift */; };
 		F29119462793035E00B860B0 /* ScriptWidgetRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29119092793035E00B860B0 /* ScriptWidgetRuntime.swift */; };
+		2BEE44FD788BC0ECF6E1D74D /* ScriptWidgetRuntimeDelivery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95F1DF58BF07955A19C5D468 /* ScriptWidgetRuntimeDelivery.swift */; };
 		F29119472793035E00B860B0 /* ScriptWidgetRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29119092793035E00B860B0 /* ScriptWidgetRuntime.swift */; };
+		3DDAB85E7A78E9FAA8078100 /* ScriptWidgetRuntimeDelivery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95F1DF58BF07955A19C5D468 /* ScriptWidgetRuntimeDelivery.swift */; };
 		F29119482793035E00B860B0 /* DeepLinkDefine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F291190A2793035E00B860B0 /* DeepLinkDefine.swift */; };
 		F29119492793035E00B860B0 /* DeepLinkDefine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F291190A2793035E00B860B0 /* DeepLinkDefine.swift */; };
 		F291194A2793035E00B860B0 /* ScriptWidgetElementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F291190C2793035E00B860B0 /* ScriptWidgetElementView.swift */; };
@@ -447,6 +450,7 @@
 		0EF0E97360155CC5F44875F7 /* ScriptWidgetRuntimeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ScriptWidgetRuntimeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1AE63BF6B17D4C800EFF80E9 /* ScriptWidgetRuntimeSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeSystem.swift; sourceTree = "<group>"; };
 		3652233A3AB5536745D0BC47 /* RuntimeUnitTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RuntimeUnitTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/RuntimeUnitTests.swift; sourceTree = "<group>"; };
+		8B54AAAD0C7EFDF340B91B82 /* RuntimeDeliveryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RuntimeDeliveryTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/RuntimeDeliveryTests.swift; sourceTree = "<group>"; };
 		5116262BE362901C3EAD93A5 /* ScriptWidgetElementTagExtras.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagExtras.swift; sourceTree = "<group>"; };
 		5281E73D1780ED2020D931F0 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		5A89B7932F0FACFA008B90A2 /* SwingAnimationModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwingAnimationModifier.swift; sourceTree = "<group>"; };
@@ -627,6 +631,7 @@
 		F29119052793035E00B860B0 /* MineRingView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MineRingView.swift; sourceTree = "<group>"; };
 		F29119072793035E00B860B0 /* ScriptWidgetAppState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAppState.swift; sourceTree = "<group>"; };
 		F29119092793035E00B860B0 /* ScriptWidgetRuntime.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntime.swift; sourceTree = "<group>"; };
+		95F1DF58BF07955A19C5D468 /* ScriptWidgetRuntimeDelivery.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeDelivery.swift; sourceTree = "<group>"; };
 		F291190A2793035E00B860B0 /* DeepLinkDefine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeepLinkDefine.swift; sourceTree = "<group>"; };
 		F291190C2793035E00B860B0 /* ScriptWidgetElementView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementView.swift; sourceTree = "<group>"; };
 		F291190D2793035E00B860B0 /* ScriptWidgetRuntimeElement.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeElement.swift; sourceTree = "<group>"; };
@@ -828,6 +833,7 @@
 			children = (
 				A120000700000000000000B0 /* WebStudioServerTests.swift */,
 				3652233A3AB5536745D0BC47 /* RuntimeUnitTests.swift */,
+				8B54AAAD0C7EFDF340B91B82 /* RuntimeDeliveryTests.swift */,
 				6A6FE5687E8CD01E2ED9C23C /* AIGenerationTests.swift */,
 				E9ABF8F095487FE21DB73700 /* RuntimeExecutionTests.swift */,
 				4504B2C47E011F6AE74734CD /* BrowserPreviewParityTests.swift */,
@@ -1287,6 +1293,7 @@
 				A130000100000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift */,
 				F29119072793035E00B860B0 /* ScriptWidgetAppState.swift */,
 				F29119092793035E00B860B0 /* ScriptWidgetRuntime.swift */,
+				95F1DF58BF07955A19C5D468 /* ScriptWidgetRuntimeDelivery.swift */,
 				F291190A2793035E00B860B0 /* DeepLinkDefine.swift */,
 			);
 			path = Runtime;
@@ -1903,6 +1910,7 @@
 				CE64AF58A011259D931CFF8F /* RuntimeExecutionTests.swift in Sources */,
 				264B37FB1BB1BFADE1A20B70 /* BrowserPreviewParityTests.swift in Sources */,
 				74884F234581499E712CA059 /* RuntimeUnitTests.swift in Sources */,
+				22DB65B932DFC140D45E1132 /* RuntimeDeliveryTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2053,6 +2061,7 @@
 				F29119482793035E00B860B0 /* DeepLinkDefine.swift in Sources */,
 				F29119762793035E00B860B0 /* ScriptWidgetElementTagGauge.swift in Sources */,
 				F29119462793035E00B860B0 /* ScriptWidgetRuntime.swift in Sources */,
+				2BEE44FD788BC0ECF6E1D74D /* ScriptWidgetRuntimeDelivery.swift in Sources */,
 				F2433F6025D6F94B00AE4097 /* AppHelper.swift in Sources */,
 				F291194A2793035E00B860B0 /* ScriptWidgetElementView.swift in Sources */,
 				F240AC7827B2CE1C00D249EA /* TabBarAccessor.swift in Sources */,
@@ -2086,6 +2095,7 @@
 				D1CBAEDA28D5DA9700DE4E65 /* ScriptWidgetDataObject.swift in Sources */,
 				D1CBAED628D5B1DE00DE4E65 /* ScriptLiveActivityWidget.swift in Sources */,
 				F29119472793035E00B860B0 /* ScriptWidgetRuntime.swift in Sources */,
+				3DDAB85E7A78E9FAA8078100 /* ScriptWidgetRuntimeDelivery.swift in Sources */,
 				A130000300000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift in Sources */,
 				F291193D2793035E00B860B0 /* ScriptWidgetElementPoint.swift in Sources */,
 				F291194F2793035E00B860B0 /* ScriptWidgetAttributeBackgroundModifier.swift in Sources */,

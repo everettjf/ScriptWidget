@@ -66,51 +66,6 @@ enum ScriptWidgetMemoryPressure {
     }
 }
 
-enum ScriptWidgetError: Error {
-    case undefinedRender(String)
-
-    case internalError(String)
-    case transformError(String)
-    case scriptError(String)
-    case scriptException(String)
-    case resourceLimit(String)
-
-    /// The underlying message, used both for logging and for surfacing the
-    /// failure to the user in the widget/preview instead of a blank view.
-    var displayMessage: String {
-        switch self {
-        case .undefinedRender(let msg),
-             .internalError(let msg),
-             .transformError(let msg),
-             .scriptError(let msg),
-             .scriptException(let msg),
-             .resourceLimit(let msg):
-            return msg
-        }
-    }
-
-    var category: String {
-        switch self {
-        case .undefinedRender: return "Render"
-        case .internalError: return "Internal"
-        case .transformError: return "Syntax"
-        case .scriptError, .scriptException: return "Runtime"
-        case .resourceLimit: return "Resource Limit"
-        }
-    }
-
-    var recoverySuggestion: String {
-        switch self {
-        case .undefinedRender: return "Call $render(...) once from the main script."
-        case .internalError: return "Retry. If this persists, export the package and report the diagnostic."
-        case .transformError: return "Check the highlighted JSX syntax and property values."
-        case .scriptError, .scriptException: return "Use the reported line and stack trace to inspect the script."
-        case .resourceLimit: return "Reduce source size, imported work, network data, or execution time."
-        }
-    }
-
-    var diagnosticMessage: String { "[\(category)] \(displayMessage)\n\(recoverySuggestion)" }
-}
 
 enum ScriptWidgetRuntimeContract {
     static let apiVersion = ScriptWidgetBuildContract.nativeRuntimeAPIVersion
@@ -473,62 +428,11 @@ enum ScriptWidgetPrecompiler {
     }
 }
 
-/// A single terminal result crosses the worker/caller boundary. In particular,
-/// timeout may race with synchronous subscription completion/installation.
-// All mutable state is locked; the completed value is handed to one waiter.
-final class ScriptWidgetSynchronousResult<Value>: @unchecked Sendable {
-    private let lock = NSLock()
-    private let semaphore = DispatchSemaphore(value: 0)
-    private var value: Value?
-    private var result: Result<Value, ScriptWidgetError>?
-    private var subscription: AnyCancellable?
-
-    func receive(_ value: Value) {
-        lock.lock(); defer { lock.unlock() }
-        if result == nil { self.value = value }
-    }
-
-    func finish(_ completion: Subscribers.Completion<ScriptWidgetError>) {
-        lock.lock()
-        guard result == nil else { lock.unlock(); return }
-        switch completion {
-        case .failure(let error): result = .failure(error)
-        case .finished:
-            if let value { result = .success(value) }
-            else { result = .failure(.internalError("Execution completed without producing a result")) }
-        }
-        lock.unlock()
-        semaphore.signal()
-    }
-
-    func install(_ subscription: AnyCancellable) {
-        lock.lock()
-        if result != nil { lock.unlock(); subscription.cancel() }
-        else { self.subscription = subscription; lock.unlock() }
-    }
-
-    func wait(until deadline: DispatchTime, onTimeout: () -> Void = {}) -> (Value?, ScriptWidgetError?) {
-        _ = semaphore.wait(timeout: deadline)
-        lock.lock()
-        let timedOut = result == nil
-        if timedOut { result = .failure(.resourceLimit("Script exceeded the 5-second execution limit")) }
-        let terminal = result!
-        let token = subscription
-        subscription = nil
-        value = nil
-        lock.unlock()
-        if timedOut { onTimeout() }
-        token?.cancel()
-        switch terminal {
-        case .success(let value): return (value, nil)
-        case .failure(let error): return (nil, error)
-        }
-    }
-}
 
 class ScriptWidgetRuntime {
     
     private let runtimeContext = JSContext()!
+    private let publisherLane = ScriptWidgetPublisherLane()
     
     private var environments : [String:String]
     private var package : ScriptWidgetPackage
@@ -863,8 +767,8 @@ extension ScriptWidgetRuntime {
             trace.finish()
             performanceTrace = nil
         }
-        let result = ScriptWidgetSynchronousResult<ScriptWidgetRuntimeElement>()
-        DispatchQueue.global().async {
+        let result = ScriptWidgetSynchronousResult<ScriptWidgetRuntimeElement>(publisherLane: publisherLane)
+        publisherLane.queue.async {
             let token = self.internalExecuteJSXForWidget(JSX)
                 .sink(receiveCompletion: { result.finish($0) }, receiveValue: { result.receive($0) })
             result.install(token)
@@ -892,7 +796,8 @@ extension ScriptWidgetRuntime {
      }
      */
     private func internalExecuteJavaScriptForWidget(_ JavaScript: String) -> AnyPublisher<ScriptWidgetRuntimeElement, ScriptWidgetError> {
-        return Future<ScriptWidgetRuntimeElement, ScriptWidgetError> { [self] promise in
+        return Future<ScriptWidgetRuntimeElement, ScriptWidgetError> { [self] rawPromise in
+            let promise = publisherLane.fulfill(rawPromise)
             guard let supportJS = self.readSupportScript("util.js") else {
                 promise(.failure(.internalError("scriptwidget not found")))
                 return
@@ -1059,8 +964,8 @@ extension ScriptWidgetRuntime {
             trace.finish()
             performanceTrace = nil
         }
-        let result = ScriptWidgetSynchronousResult<ScriptWidgetDynamicIslandRuntimeElement>()
-        DispatchQueue.global().async {
+        let result = ScriptWidgetSynchronousResult<ScriptWidgetDynamicIslandRuntimeElement>(publisherLane: publisherLane)
+        publisherLane.queue.async {
             let token = self.internalExecuteJSXForDynamicIsland(JSX)
                 .sink(receiveCompletion: { result.finish($0) }, receiveValue: { result.receive($0) })
             result.install(token)
@@ -1088,7 +993,8 @@ extension ScriptWidgetRuntime {
      }
      */
     private func internalExecuteJavaScriptForDynamicIsland(_ JavaScript: String) -> AnyPublisher<ScriptWidgetDynamicIslandRuntimeElement, ScriptWidgetError> {
-        return Future<ScriptWidgetDynamicIslandRuntimeElement, ScriptWidgetError> { [self] promise in
+        return Future<ScriptWidgetDynamicIslandRuntimeElement, ScriptWidgetError> { [self] rawPromise in
+            let promise = publisherLane.fulfill(rawPromise)
             guard let supportJS = self.readSupportScript("util.js") else {
                 promise(.failure(.internalError("scriptwidget not found")))
                 return
@@ -1308,8 +1214,8 @@ extension ScriptWidgetRuntime {
             trace.finish()
             performanceTrace = nil
         }
-        let result = ScriptWidgetSynchronousResult<String>()
-        DispatchQueue.global().async {
+        let result = ScriptWidgetSynchronousResult<String>(publisherLane: publisherLane)
+        publisherLane.queue.async {
             let token = self.internalExecuteJSXForFunction(JSX, functionName)
                 .sink(receiveCompletion: { result.finish($0) }, receiveValue: { result.receive($0) })
             result.install(token)
@@ -1335,7 +1241,8 @@ extension ScriptWidgetRuntime {
      }
      */
     private func internalExecuteJavaScriptForFunction(_ JavaScript: String) -> AnyPublisher<String, ScriptWidgetError> {
-        return Future<String, ScriptWidgetError> { [self] promise in
+        return Future<String, ScriptWidgetError> { [self] rawPromise in
+            let promise = publisherLane.fulfill(rawPromise)
             guard let supportJS = self.readSupportScript("util.js") else {
                 promise(.failure(.internalError("scriptwidget not found")))
                 return

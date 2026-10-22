@@ -4395,6 +4395,7 @@ final class SynchronousRuntimeResultTests: XCTestCase {
         XCTAssertTrue(timedOut)
         result.receive(42); result.finish(.finished)
         result.install(AnyCancellable { cancelled = true })
+        result.publisherLane.queue.sync {}
         XCTAssertTrue(cancelled)
     }
 
