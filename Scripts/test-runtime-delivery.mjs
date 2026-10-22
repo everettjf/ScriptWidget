@@ -18,6 +18,10 @@ for (const key of ["APPLE_ID", "APPLE_SPECIFIC_PASSWORD", "APPLE_TEAM_ID"]) dele
 try {
   const platform = (await exec("xcrun", ["--sdk", "macosx", "--show-sdk-platform-path"])).stdout.trim();
   const frameworks = join(platform, "Developer/Library/Frameworks"), libraries = join(platform, "Developer/usr/lib");
+  // Standalone XCTest executables do not receive Xcode's test-runner search paths.
+  // Xcode 26.6's Swift support library also needs XCTestCore from this directory.
+  // These paths belong only to the disposable test probe, never to shipped apps.
+  const privateFrameworks = join(platform, "Developer/Library/PrivateFrameworks");
   const main = join(temporary, "main.swift"), binary = join(temporary, "probe");
   await writeFile(main, `import Foundation
 import XCTest
@@ -30,7 +34,8 @@ print(String(data: try JSONSerialization.data(withJSONObject: result, options: [
 guard run.hasSucceeded, run.executionCount == 4 else { exit(1) }
 `);
   const flags = ["-D", "SCRIPTWIDGET_DELIVERY_STANDALONE_TESTS", "-F", frameworks, "-I", libraries, "-L", libraries,
-    "-Xlinker", "-rpath", "-Xlinker", frameworks, "-Xlinker", "-rpath", "-Xlinker", libraries];
+    "-Xlinker", "-rpath", "-Xlinker", frameworks, "-Xlinker", "-rpath", "-Xlinker", libraries,
+    "-Xlinker", "-rpath", "-Xlinker", privateFrameworks];
   const compile = await exec("xcrun", ["swiftc", ...flags, implementation, tests, main, "-o", binary], {timeout: 60000, env: environment});
   const run = await exec(binary, [], {timeout: 60000, env: environment, maxBuffer: 1024 * 1024});
   const result = JSON.parse(run.stdout.trim().split("\n").at(-1));

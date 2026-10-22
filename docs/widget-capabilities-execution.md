@@ -1033,3 +1033,9 @@ N01 整体流程审核继续，N02 旧私有动画替代及 Web/native 周期一
 本机 Firefox 在导航前启动退出，普通和私有临时 profile 均提示 Could not find profile folder；与上游 [Playwright #42768](https://github.com/microsoft/playwright/issues/42768) 及 [Mozilla 2062988](https://bugzilla.mozilla.org/show_bug.cgi?id=2062988) 描述相符，但未改隐私设置或访问真实 profile。它不算应用测试通过；现有 Linux/Windows CI 将继续验证三引擎，结果待实际 run 核对。
 
 证据目录：`__Release/capabilities/public-animation/`，包含 verified summaries、日志、运行分类清单、源码哈希、128-case corpus、原生像素及整模板截图/差异报告和失败记录。当前 N01/N03、A 真机/发布验收继续，未部署、上传或提交 App Review，整体目标保持进行中。
+
+## 2026-10-22：独立 XCTest 探针运行路径修复
+
+`03fe86d` 的 Release Readiness CI（运行 39860010673）在 `test-runtime-delivery.mjs` 编译后的探针启动阶段失败：`libXCTestSwiftSupport.dylib` 找不到 `@rpath/XCTestCore.framework/Versions/A/XCTestCore`，测试尚未执行。两个独立 XCTest 脚本原先仅为公开 Frameworks 和 `usr/lib` 写入 rpath，遗漏当前 Xcode 平台的 `Developer/Library/PrivateFrameworks`。补齐探针搜索路径；不改应用链接设置，不把 XCTest 打入产品。
+
+本机现有 Xcode 支持库自带该搜索路径，所以修复前本机也通过；不声称本机复现远端故障。修复后独立 delivery 4 项/100000 引用结果、故意错误取消实现的负对照，以及 service 24 项均通过。证据为 `/tmp/scriptwidget-probe-after.json`、`/tmp/scriptwidget-services-probe-after.json` 及对应日志；实际远端修复结果待后续 CI 验证。
