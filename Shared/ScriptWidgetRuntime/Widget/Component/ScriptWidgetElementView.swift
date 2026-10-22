@@ -12,6 +12,7 @@ class ScriptWidgetElementContext {
     let scriptName: String
     let scriptParameter: String
     let package: ScriptWidgetPackage
+    let animationDate: Date?
     let executionSnapshot: ScriptWidgetExecutionSnapshot?
     var canExecuteActions: Bool { executionSnapshot?.hasUnsavedEntry != true && (executionSnapshot != nil || !package.readonly) }
     var actionCatalog: ScriptWidgetActionCatalog {
@@ -22,6 +23,7 @@ class ScriptWidgetElementContext {
     weak var runtime: ScriptWidgetRuntime?
         
     init(runtime: ScriptWidgetRuntime? ,debugMode: Bool, scriptName: String, scriptParameter: String, package: ScriptWidgetPackage, containerBackgroundElement: ScriptWidgetRuntimeElement? = nil) {
+        self.animationDate = runtime?.presentationDate ?? ScriptWidgetRenderClock.fixedNow
         self.runtime = runtime
         self.debugMode = debugMode
         self.scriptName = scriptName

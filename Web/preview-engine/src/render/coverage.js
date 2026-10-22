@@ -18,7 +18,7 @@ export const generalProps = Object.freeze({
   corner: s(),
   clip: s(),
   opacity: s(),
-  animation: a("Legacy clock/swing effects use CSS here; continuous WidgetKit animation is not a public-API guarantee. Reduce Motion freezes the preview."),
+  animation: a("Public scheduled native clock/swing effects use CSS approximations here. Signed custom half-turn periods and fixed poses match native. Reduce Motion freezes the preview; WidgetKit cadence is system-controlled."),
   rotation: s(),
   rotation3d: a("CSS perspective differs from SwiftUI's"),
   shadow: a("Blur radius mapped to CSS drop-shadow; edges may differ slightly"),

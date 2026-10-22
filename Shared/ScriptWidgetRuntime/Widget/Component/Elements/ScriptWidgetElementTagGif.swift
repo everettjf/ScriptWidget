@@ -14,7 +14,15 @@ final class ScriptWidgetGifSequence {
     init(frames: [CGImage], delays: [Double], decodedBytes: Int, frameLimitFallback: Bool) {
         self.frames = frames; self.delays = delays; self.decodedBytes = decodedBytes; self.frameLimitFallback = frameLimitFallback
     }
-    func angle(at index: Int) -> Double { 360 * delays.prefix(index).reduce(0,+) / duration }
+    func frameIndex(elapsed: Double) -> Int {
+        guard elapsed.isFinite, elapsed > 0, duration > 0 else { return 0 }
+        var time = elapsed.truncatingRemainder(dividingBy: duration)
+        for (index, delay) in delays.enumerated() {
+            if time < delay { return index }
+            time -= delay
+        }
+        return 0
+    }
 }
 
 /// GIF bytes and source canvas are checked before any pixel decode. Only bounded
@@ -75,53 +83,33 @@ enum ScriptWidgetGifPipeline {
     }
 }
 
-#if !os(macOS)
-struct DynamicGifArcView: Shape {
-    var arcStartAngle: Double
-    var arcEndAngle: Double
-    var arcRadius: Double
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.addArc(center:CGPoint(x:rect.midX,y:rect.midY),radius:arcRadius,startAngle:.degrees(arcStartAngle),endAngle:.degrees(arcEndAngle),clockwise:false)
-        return path
-    }
-}
-#endif
-
 struct DynamicGifView: View {
     let gifPath: URL
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.isLuminanceReduced) private var luminanceReduced
     @Environment(\.scriptWidgetVisualAccessibility) private var preview
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.scriptWidgetAnimationPreview) private var animationPreview
     private var animated: Bool {
         #if os(macOS)
         return false
         #else
-        return !(preview.reduceMotion ?? reduceMotion) && !luminanceReduced
+        return !(preview.reduceMotion ?? reduceMotion) && !luminanceReduced && referenceDate == nil && (animationPreview.live ?? (scenePhase == .active))
         #endif
     }
+    var referenceDate: Date? = nil
     var body: some View {
         if let sequence = ScriptWidgetGifPipeline.sequence(at:gifPath,animated:animated), let first = sequence.frames.first {
-            #if os(macOS)
-            Image(decorative:first,scale:1).resizable().aspectRatio(contentMode:.fit)
-            #else
             if sequence.frames.count == 1 {
                 Image(decorative:first,scale:1).resizable().aspectRatio(contentMode:.fit)
             } else {
                 GeometryReader { proxy in
-                    let width = proxy.size.width, height = proxy.size.height
-                    let arcWidth = max(width,height), arcRadius = arcWidth * arcWidth
-                    ZStack {
-                        ForEach(0..<sequence.frames.count,id: \.self) { index in
-                            Image(decorative:sequence.frames[index],scale:1).resizable().aspectRatio(contentMode:.fit).frame(width:width,height:height)
-                                .mask(DynamicGifArcView(arcStartAngle:sequence.angle(at:index),arcEndAngle:sequence.angle(at:index+1),arcRadius:arcRadius)
-                                    .stroke(style:.init(lineWidth:arcWidth,lineCap:.square,lineJoin:.miter)).frame(width:width,height:height)
-                                    .clockHandRotationEffect(period:.custom(sequence.duration/2)).offset(y:arcRadius))
-                        }
-                    }.frame(width:width,height:height)
+                    ScriptWidgetAnimationFrame(referenceDate: referenceDate) { _, elapsed in
+                        Image(decorative:sequence.frames[sequence.frameIndex(elapsed:elapsed)],scale:1).resizable().aspectRatio(contentMode:.fit)
+                            .frame(width:proxy.size.width,height:proxy.size.height)
+                    }
                 }
             }
-            #endif
         } else { Text("GIF unavailable") }
     }
 }
@@ -132,7 +120,7 @@ class ScriptWidgetElementTagGif {
         if let file = element.getPropString("file") {
             if let path = context.package.getGifFile(file) {
                 return AnyView(
-                    DynamicGifView(gifPath: path)
+                    DynamicGifView(gifPath: path, referenceDate: context.animationDate)
                         .modifier(ScriptWidgetAttributeImageModifier(element, context))
                         .modifier(ScriptWidgetAttributeFontModifier(element))
                         .modifier(ScriptWidgetAttributeGeneralModifier(element, context))

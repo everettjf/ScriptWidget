@@ -8,6 +8,7 @@ import {
   parsePadding, parsePaint, parseRotation3D, platform, propReader, setPlatform, styleFont, swiftDouble, systemBackground,
 } from "./props.js";
 import { prepareGif } from "./gif.js";
+import { clockPeriods, clockPeriod, clockPhase, swingDuration, swingDistance, swingPhase } from "./animation.js";
 import { coverage, generalProps, ignoredProp } from "./coverage.js";
 import { deviceProfiles, widgetSize } from "./profiles.js";
 import { symbolMetrics } from "./symbolMetrics.generated.js";
@@ -166,7 +167,7 @@ async function naturalSizes(urls, doc) {
 /// Must run in a document with layout (text is measured by the browser).
 export async function renderWidget(treeJSON, {
   family = "medium", profile = "iphone-393", appearance = "light", renderingMode = "fullColor", lockScreen = true, resources = {}, document: doc = globalThis.document,
-  now = null, animations = "live", reduceTransparency = false, reduceMotion = false,
+  now = null, animations = "live", animationElapsed = null, reduceTransparency = false, reduceMotion = false,
 } = {}) {
   // Milliseconds since 1970 for a fixed clock (snapshot tests), or null.
   const fixedNow = typeof now === "number" && Number.isFinite(now) ? now : null;
@@ -198,7 +199,7 @@ export async function renderWidget(treeJSON, {
   // Decode only used GIFs, sequentially. Freeze failures never retain animation.
   for (const [url, use] of gifUses) {
     try {
-      const value = await prepareGif(url,{document:doc,firstFrame:reduceMotion || deviceProfiles[profile]?.platform === "macos",legacyStill:animations === "firstFrame",needImage:use.image});
+      const value = await prepareGif(url,{document:doc,firstFrame:reduceMotion || animations === "firstFrame" || deviceProfiles[profile]?.platform === "macos",needImage:use.image});
       preparedGifs.set(url,value);
       if (value.firstFrame) urls.add(value.firstFrame);
       if (value.info.frameLimit || value.memoryFallback) report("warning","gif.static_fallback","GIF uses its first frame because the preview animation budget was exceeded");
@@ -574,9 +575,10 @@ export async function renderWidget(treeJSON, {
     const opacity = reader.double("opacity");
     if (opacity !== null) decoration.opacity = Math.max(0, Math.min(1, opacity));
     // The macOS widget compiles ScriptWidgetAttributeAnimationModifier to a
-    // no-op, so animations (and their JSON errors) do not apply there.
-    const animation = platform() === "macos" ? null : parseAnimation(reader.string("animation"));
-    if (platform() === "macos" && reader.string("animation") !== null) report("info", "animation.macos", "Animations do not run in macOS widgets");
+    // static standard-clock poses; custom effects and JSON errors stay no-op.
+    const parsedAnimation = parseAnimation(reader.string("animation"));
+    const animation = platform() === "macos" ? (clockPeriods[parsedAnimation?.type] ? parsedAnimation : null) : parsedAnimation;
+    if (platform() === "macos" && reader.string("animation") !== null) report("info", "animation.macos", "Mac shows static clock poses; other animations remain at rest");
     if (animation?.type === "error") return text("animation json error", defaultFont(), null);
     if (animation) {
       // The animation modifier sits between opacity and rotation, so it
@@ -621,29 +623,18 @@ export async function renderWidget(treeJSON, {
     if (value === null) return null;
     if (value.startsWith("animation:")) {
       let json;
-      try { json = JSON.parse(value.slice("animation:".length)); } catch { return { type: "error" }; }
+      try { json = JSON.parse(value.slice("animation:".length), (_, value) => { if (typeof value === "number" && !Number.isFinite(value)) throw new Error("Invalid animation number"); return value; }); } catch { return { type: "error" }; }
       const type = typeof json?.type === "string" ? json.type : "";
       if (type === "clock") {
-        return { type, timezone: typeof json.timezone === "string" ? json.timezone : "current", anchor: typeof json.anchor === "string" ? json.anchor : "center", interval: typeof json.interval === "number" ? Math.max(1, json.interval) : 10 };
+        return { type, timezone: typeof json.timezone === "string" ? json.timezone : "current", anchor: typeof json.anchor === "string" ? json.anchor : "center", interval: typeof json.interval === "number" ? clockPeriod(json.interval) : 10 };
       }
-      if (type === "swing") return { type, duration: typeof json.duration === "number" ? json.duration : 1, direction: json.direction === "horizontal" ? "horizontal" : json.direction === undefined ? "horizontal" : "vertical", distance: typeof json.distance === "number" ? json.distance : 10 };
-      return clockPeriods[type] ? { type, timezone: "current", anchor: "center" } : null;
+      if (type === "swing") return { type, duration: swingDuration(json.duration), direction: json.direction === "horizontal" ? "horizontal" : json.direction === undefined ? "horizontal" : "vertical", distance: swingDistance(json.distance) };
+      return clockPeriods[type] ? { type, timezone: typeof json.timezone === "string" ? json.timezone : "current", anchor: typeof json.anchor === "string" ? json.anchor : "center" } : null;
     }
     const parts = value.split(",").filter((part) => part !== "");
     if (parts.length === 1) return clockPeriods[value] || value === "swing" ? (value === "swing" ? { type: "swing", duration: 1, direction: "horizontal", distance: 10 } : { type: value, timezone: "current", anchor: "center" }) : null;
-    if (parts.length === 2 && parts[0].trim() === "clockCustom" && swiftDouble(parts[1].trim()) !== null) return { type: "clock", timezone: "current", anchor: "center", interval: Math.max(1, swiftDouble(parts[1].trim())) };
+    if (parts.length === 2 && parts[0].trim() === "clockCustom" && swiftDouble(parts[1].trim()) !== null) return { type: "clock", timezone: "current", anchor: "center", interval: clockPeriod(swiftDouble(parts[1].trim())) };
     return null;
-  }
-
-  const clockPeriods = { clockSecond: 60, clockMinute: 3600, clockMiniute: 3600, clockHour: 43200 };
-
-  function secondsSinceMidnight(timezone) {
-    const options = { hour: "numeric", minute: "numeric", second: "numeric", hourCycle: "h23" };
-    let parts;
-    try { parts = new Intl.DateTimeFormat("en-US", timezone === "current" ? options : { ...options, timeZone: timezone }).formatToParts(new Date()); }
-    catch { parts = new Intl.DateTimeFormat("en-US", options).formatToParts(new Date()); }
-    const get = (type) => Number(parts.find((part) => part.type === type)?.value ?? 0);
-    return get("hour") * 3600 + get("minute") * 60 + get("second") + new Date().getMilliseconds() / 1000;
   }
 
   // MARK: Tags
@@ -1173,23 +1164,26 @@ export async function renderWidget(treeJSON, {
   function applyDecoration(element, decoration, width, height) {
     const style = element.style;
     if (decoration.material) paintMaterial(element, decoration.material, decoration.materialFallback, width, height);
-    if (decoration.animation && animations === "firstFrame") {
-      // What ImageRenderer captures: clock hands at rest, and the swing
-      // overlay's nested frames at angle 0, which leave the content where
-      // its own layout put it (measured with Animation Aquarium).
-      void decoration.animation;
-    } else if (decoration.animation) {
+    if (decoration.animation && (!reduceMotion || clockPeriods[decoration.animation.type])) {
       const animation = decoration.animation;
+      const frozen = reduceMotion || platform() === "macos" || animations === "firstFrame" || fixedNow !== null || Number.isFinite(animationElapsed);
       if (animation.type === "swing") {
         const axis = animation.direction === "horizontal" ? "X" : "Y";
-        style.animation = `sw-swing-${axis} ${Math.max(0.1, animation.duration)}s ease-in-out infinite alternate`;
-        style.setProperty("--sw-swing", `${animation.distance}px`);
+        style.setProperty("--sw-swing", `${swingDistance(animation.distance)}px`);
+        style.transform = `translate${axis}(${swingPhase(Number.isFinite(animationElapsed) ? animationElapsed : 0, animation.duration, animation.distance)}px)`;
+        if (!frozen) style.animation = `sw-swing-${axis} ${2 * swingDuration(animation.duration)}s linear infinite`;
       } else {
-        const period = animation.type === "clock" ? animation.interval : clockPeriods[animation.type];
+        const angle = clockPhase({ type: animation.type, interval: animation.interval, timezone: animation.timezone, date: fixedNow ?? Date.now() });
         const [ax, ay] = alignments[animation.anchor] ? { center: [0.5, 0.5], leading: [0, 0.5], trailing: [1, 0.5], top: [0.5, 0], bottom: [0.5, 1], topLeading: [0, 0], topTrailing: [1, 0], bottomLeading: [0, 1], bottomTrailing: [1, 1] }[animation.anchor] : [0.5, 0.5];
         style.transformOrigin = `${ax * 100}% ${ay * 100}%`;
-        style.animation = `sw-clock ${period}s linear infinite`;
-        style.animationDelay = `${-(secondsSinceMidnight(animation.timezone) % period)}s`;
+        style.setProperty("--sw-start-angle", `${angle}deg`); style.transform = `rotate(${angle}deg)`;
+        const period = animation.type === "clock" ? 2 * Math.abs(clockPeriod(animation.interval)) : clockPeriods[animation.type];
+        // Extreme periods have no useful visible motion; retain the exact pose
+        // rather than emitting an infinite or out-of-range CSS duration.
+        if (!frozen && Number.isFinite(period) && period <= 31536000) {
+          style.animation = `sw-clock ${period}s linear infinite`;
+          if (animation.type === "clock" && animation.interval < 0) style.animationDirection = "reverse";
+        }
       }
     }
     if (decoration.background?.color) style.backgroundColor = cssColor(decoration.background.color);
@@ -1263,7 +1257,8 @@ export async function renderWidget(treeJSON, {
       if (renderingMode !== "fullColor") report("info", "mode.approximated", `${renderingMode} rendering mode is approximated`);
     }
     const keyframes = doc.createElement("style");
-    keyframes.textContent = "@keyframes sw-clock{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}@keyframes sw-swing-X{from{transform:translateX(calc(-1*var(--sw-swing)))}to{transform:translateX(var(--sw-swing))}}@keyframes sw-swing-Y{from{transform:translateY(calc(-1*var(--sw-swing)))}to{transform:translateY(var(--sw-swing))}}";
+    const swingFrames = axis => Array.from({length: 41}, (_, index) => `${index * 2.5}%{transform:translate${axis}(calc(${Math.sin(index / 40 * 2 * Math.PI)} * var(--sw-swing)))}`).join("");
+    keyframes.textContent = `@keyframes sw-clock{from{transform:rotate(var(--sw-start-angle))}to{transform:rotate(calc(var(--sw-start-angle) + 360deg))}}@keyframes sw-swing-X{${swingFrames("X")}}@keyframes sw-swing-Y{${swingFrames("Y")}}`;
     widget.appendChild(keyframes);
     draw(rootNode, widget);
     return { element: widget, size, diagnostics };

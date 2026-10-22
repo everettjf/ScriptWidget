@@ -1009,3 +1009,27 @@ Mac 聚焦的新增排序和既有跨文档/只读两项实际 WKWebView 测试�
 - iOS：`/tmp/scriptwidget-runtime-delivery/ios-tests/Logs/Test/Test-ScriptWidgetRuntimeTests-2026.10.22_13-43-41--0700.xcresult`
 
 N01 整体流程审核继续，N02 旧私有动画替代及 Web/native 周期一致性仍待实现，N03 与 A 发布/真机验收尚未整体勾选。没有部署、上传或送审，A/B 目标仍进行中。
+
+### 2026-10-22：N02 公开动画实现与跨端时相验证
+
+移除私有 clock-hand 类型查找/解码、三重摆动旋转和 GIF arc/mask 序列。原生采用 Foundation 解析、公开 SwiftUI TimelineView/rotationEffect/offset 及有界 ImageIO；不在动画帧重新执行脚本或查询数据。修复标准钟针 JSON 时区/锚点未读取的问题；标准钟针在 Mac/减少动态效果下显示选定时间的静态姿态，custom/swing 保留静态休止回退。Swing 不再依赖 SwiftyJSON，也未引入第三方 SDK。定时条目和既有可信截图时钟捕获到 element context；指定条目日期优先，避免日期文本和指针使用不同截图时刻。
+
+保留属性/tag 字符串与 Runtime 1.4 / Package 编译契约 1.0，明确记录先前实验性私有实现的兼容变化。preview engine 0.18.0 对齐 signed 半圈周期、最小绝对值、时区/DST、摆动正负方向、数值界限和快照第一 GIF 帧；不再保留 Web 对负周期的错误截断或 weighted rest frame。UI 文档、AI 指引、两端生成 editor bundle、相关模板说明和不保证 Home Screen 常驻动画的描述同步。release validator 防止这三条组件路径重新引入已知私有桥接。
+
+原生新增纯时相/日期捕获/参数解析、真实像素移动和实际窗口 TimelineView 前进/静止测试；GIF 测试包含非首帧像素和 inactive 回退。原生生成 128 组时相，Web 逐组对照。Chrome 专项验证实际反向播放、时区/锚点、双轴摆动、非法数字及静态模式。CI 跨浏览器脚本补充实际 computed-transform/方向/静态检查，不只看树；本地 Chromium/WebKit 包含这些检查以及 127/127 原生树、导入和隔离均通过。
+
+首轮原生像素夹具使用系统 Color.red，Mac 的语义色非纯 RGB 导致严格像素断言失败；改为明确 RGB，未放宽生产/像素界限。一次 engine 检查因 0.18.0 coverage 文档未生成失败，已生成并重跑。中途发现标准钟针 JSON 配置未接通时，核对 owned Xcode 父子进程和 cwd 后中止了一次检查（exit 75，非通过），修复后重新从头运行。失败、中止和最终通过记录均保留，不混算。
+
+最终 `./Scripts/release-readiness.sh` 退出 0：Mac **671 通过 / 0 失败 / 32 跳过**，iPhone 17 Simulator **681 通过 / 0 失败 / 31 跳过**；最终确定性 iPad/iCloud-state 检查为 iPad Pro 13-inch (M5) Simulator **681 通过 / 0 失败 / 31 跳过**，三端 xcresult runtimeWarnings 均为空。Editor 52、预览引擎 172、Web Studio 96、Gallery 同步 2、服务 probe 24、91 模板/22 curated 包、保留及新增浏览器流程、TypeScript/生产构建、两端 app build 和独立运行时/存储/路由检查通过。最终缓存构建矩阵（iPhone/iPad Simulator + Mac）通过。SDK/link/Sendable/Xcode 诊断仍存在。完整 gate 后仅补文档、截图、证据及另行实际执行的 CI 跨浏览器测试检查，没有再改产品实现。
+
+实际完整 xcresult：
+
+- Mac：`/tmp/scriptwidget-runtime-delivery/macos-tests/Logs/Test/Test-ScriptWidgetRuntimeTests-2026.10.22_14-30-46--0700.xcresult`
+- iPhone Simulator：`/tmp/scriptwidget-runtime-delivery/ios-tests/Logs/Test/Test-ScriptWidgetRuntimeTests-2026.10.22_14-33-29--0700.xcresult`
+- iPad Simulator：`/tmp/scriptwidget-ab-ipad-tests/ipad/Logs/Test/Test-ScriptWidgetRuntimeTests-2026.10.22_14-34-43--0700.xcresult`
+
+最终源码另导出 Clock/Aquarium/Orbital 三个模板 × 三个尺寸共 9 张实际原生截图并和 Web 比较：中位差异 0.48%，8 张低于 2%；小号 Aquarium 为 14.35%，原生/Web 均出现空格拼接 emoji 的脆弱换行/截断。这项未当作通过，也未排除或调整阈值，留在 N01 继续修复。Clock 截图中指针和日期文字已一致。实际物理 WidgetKit/AOD/扩展内存与真实 iCloud 未执行，不能由这些 App-hosted/Simulator 结果代替。
+
+本机 Firefox 在导航前启动退出，普通和私有临时 profile 均提示 Could not find profile folder；与上游 [Playwright #42768](https://github.com/microsoft/playwright/issues/42768) 及 [Mozilla 2062988](https://bugzilla.mozilla.org/show_bug.cgi?id=2062988) 描述相符，但未改隐私设置或访问真实 profile。它不算应用测试通过；现有 Linux/Windows CI 将继续验证三引擎，结果待实际 run 核对。
+
+证据目录：`__Release/capabilities/public-animation/`，包含 verified summaries、日志、运行分类清单、源码哈希、128-case corpus、原生像素及整模板截图/差异报告和失败记录。当前 N01/N03、A 真机/发布验收继续，未部署、上传或提交 App Review，整体目标保持进行中。

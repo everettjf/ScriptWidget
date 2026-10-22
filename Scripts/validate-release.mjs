@@ -10,6 +10,12 @@ const packageSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetR
 const skillSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/Resource/skill.schema.json"), "utf8"));
 const pluginSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/Resource/plugin.schema.json"), "utf8"));
 const failures = [];
+// These component paths must stay on public APIs for distribution. General
+// JavaScriptCore bridging elsewhere has a different contract and is not banned.
+for (const file of ["Attributes/Animation/ClockHandRotationEffect.swift", "Attributes/Animation/SwingAnimationModifier.swift", "Elements/ScriptWidgetElementTagGif.swift"]) {
+  const source = await readFile(join(root, "Shared/ScriptWidgetRuntime/Widget/Component", file), "utf8");
+  if (/_typeByName|_ClockHandRotationEffect|unsafeBitCast/.test(source)) failures.push(`${file}: private animation bridge must not be reintroduced`);
+}
 const names = (await readdir(templateRoot)).sort();
 const metadataSource = await readFile(join(root, "Shared/ScriptWidgetRuntime/Common/ScriptMetadata.swift"), "utf8");
 const categoryDeclaration = metadataSource.match(/enum ScriptCategory:[\s\S]*?\{([\s\S]*?)\n\s*var id:/)?.[1] ?? "";

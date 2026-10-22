@@ -25,6 +25,7 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 - [Modern WidgetKit features](widgetkit-modern-features.md) — rendering modes, Live Activities, controls, intents, and push updates.
 - [Local Live Activities](live-activities.md) — start, update, restore and finish installation-bound activities; local demo and platform limits.
 - [Local plants and pets](local-companions.md) — explicit care, saved history, personal schedules and original JSX companions.
+- [Public animation scheduling](public-animations.md) — clock/swing/GIF timing, static fallbacks and system scheduling limits.
 - [Wallpaper Match](wallpaper-match.md) — crop calibration, size/appearance backgrounds and PNG export.
 - [Package files](file-api.md) — text reads and bounded local binary-resource presence.
 

@@ -480,6 +480,15 @@ class ScriptWidgetRuntime {
         runningState?.executionSession.cancel(reason)
     }
     
+    /// Display-only fixed date used by scheduled native renders. This does not
+    /// grant execution authority or change query permissions.
+    var presentationDate: Date? {
+        guard let text = environments["timeline-date"], text.utf8.count <= 128 else { return nil }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.date(from: text) ?? ISO8601DateFormatter().date(from: text)
+    }
+
     public func setEnvironment(_ key: String, _ value: String) {
         self.environments[key] = value
     }

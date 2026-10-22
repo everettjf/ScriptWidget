@@ -81,10 +81,10 @@ export async function readGifBytes(url, fetcher = globalThis.fetch) {
   }
 }
 
-export async function prepareGif(url, { document: doc, firstFrame = false, legacyStill = false, needImage = false } = {}) {
+export async function prepareGif(url, { document: doc, firstFrame = false, needImage = false } = {}) {
   const bytes = await readGifBytes(url), info = inspectGif(bytes), blob = new Blob([bytes], { type: "image/gif" });
-  const memoryFallback = !legacyStill && info.estimatedDecodedBytes > gifLimits.decodedBytes;
-  const freeze = firstFrame || legacyStill || info.frameLimit || memoryFallback;
+  const memoryFallback = info.estimatedDecodedBytes > gifLimits.decodedBytes;
+  const freeze = firstFrame || info.frameLimit || memoryFallback;
   let decoder, primary = null, still = null;
   const edge = firstFrame || info.frameLimit || memoryFallback ? gifLimits.edge : Math.min(gifLimits.edge, Math.floor(Math.sqrt(gifLimits.decodedBytes / (4 * info.count)) / 16) * 16);
   try {
@@ -107,13 +107,7 @@ export async function prepareGif(url, { document: doc, firstFrame = false, legac
     };
     if (firstFrame || info.frameLimit || memoryFallback || needImage) still = await frame(0);
     if (freeze) {
-      let index = 0;
-      if (legacyStill && !firstFrame && !info.frameLimit && !memoryFallback) {
-        const target = info.delays.reduce((a, b) => a + b, 0) * 0.75;
-        let elapsed = 0;
-        for (; index < info.delays.length - 1; index++) { elapsed += info.delays[index]; if (elapsed >= target) break; }
-      }
-      primary = index === 0 && still ? still : await frame(index);
+      primary = still ?? await frame(0);
     } else primary = await new Promise((resolve, reject) => {
       const reader = new FileReader(); reader.onerror = () => reject(new Error("GIF conversion failed")); reader.onload = () => resolve(reader.result); reader.readAsDataURL(blob);
     });

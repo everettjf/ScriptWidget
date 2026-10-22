@@ -1,7 +1,10 @@
 {
-  "description": "A smooth animated analog clock.",
+  "description": "Analog clock with public scheduled previews; WidgetKit controls update cadence.",
   "category": "fun",
-  "tags": ["animation","clock"],
+  "tags": [
+    "animation",
+    "clock"
+  ],
   "difficulty": "advanced",
   "icon": "clock.badge.fill"
 }

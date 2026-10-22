@@ -1,7 +1,10 @@
 {
-  "description": "Animated fish swimming across your home screen.",
+  "description": "Fish aquarium with public scheduled previews; WidgetKit controls motion and refresh.",
   "category": "fun",
-  "tags": ["animation","fun"],
+  "tags": [
+    "animation",
+    "fun"
+  ],
   "difficulty": "advanced",
   "icon": "fish.fill"
 }

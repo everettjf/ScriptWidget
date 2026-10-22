@@ -28,7 +28,7 @@ try {
   assert.match(reduced.src,/^data:image\/png/); assert.ok(reduced.pixel[0]>200&&reduced.pixel[2]<40);
   if (await page.evaluate("!!window.ActualDecoder")) {
     const legacy = await page.evaluate("window.renderGif({animations:'firstFrame'})");
-    assert.ok(legacy.pixel[2]>200&&legacy.pixel[0]<40,"ordinary snapshot retains the legacy weighted rest frame");
+    assert.ok(legacy.pixel[0]>200&&legacy.pixel[2]<40,"ordinary snapshot retains the same first frame as native");
   }
   await page.evaluate("window.gifDataURL="+JSON.stringify("data:image/gif;base64,"+fs.readFileSync(path.join(root,"Web/preview-engine/test/fixtures/gif/sample.gif")).toString("base64")));
   const local = await page.evaluate("window.renderGif({reduceMotion:true,resources:{'image/sample.gif':window.gifDataURL}})");
@@ -45,5 +45,5 @@ try {
   await page.evaluate("window.renderGif({reduceMotion:true})");
   if(process.env.SCRIPTWIDGET_GIF_WEB)fs.writeFileSync(process.env.SCRIPTWIDGET_GIF_WEB,await page.screenshot());
   assert.deepEqual(page.consoleMessages.filter(line=>line.startsWith('exception')||line.startsWith('error')),[]);
-  console.log("✓ GIF: bounded browser decoding under Studio CSP, local data URLs, first-frame Reduce Motion/Mac/image fallback, weighted legacy snapshot, live playback, frame cap, decoder failure and no-ImageDecoder fallback passed");
+  console.log("✓ GIF: bounded browser decoding under Studio CSP, local data URLs, first-frame Reduce Motion/Mac/image fallback, public first-frame snapshot, live playback, frame cap, decoder failure and no-ImageDecoder fallback passed");
 } finally { await chrome.close(); server.close(); }

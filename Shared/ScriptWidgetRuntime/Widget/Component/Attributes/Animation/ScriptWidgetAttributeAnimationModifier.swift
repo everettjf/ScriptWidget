@@ -1,245 +1,158 @@
-//
-//  ScriptWidgetAttributeAnimationModifier.swift
-//  ScriptWidget
-//
-//  Created by everettjf on 2021/3/15.
-//
-
+import Foundation
+import CoreFoundation
 import SwiftUI
-#if IsWidgetTarget
-import SwiftyJSON
 
-/*
+/// Pure timing shared with the browser. Signed custom intervals retain the
+/// legacy half-turn convention; all time arithmetic remains finite.
+enum ScriptWidgetAnimationPhase {
+    static func period(_ value: Double) -> Double {
+        guard value.isFinite else { return 10 }
+        return abs(value) < 0.25 ? (value < 0 ? -0.25 : 0.25) : value
+    }
+    static func swingDuration(_ value: Double) -> Double {
+        value.isFinite && value > 0 ? min(86_400, max(0.1, value)) : 1
+    }
+    static func swingDistance(_ value: Double) -> Double {
+        value.isFinite ? min(10_000, max(-10_000, value)) : 10
+    }
+    static func clockAngle(type: String, interval: Double = 10, date: Date, timeZone: TimeZone = .current) -> Double {
+        guard date.timeIntervalSince1970.isFinite, (-62_135_596_800...253_402_300_799).contains(date.timeIntervalSince1970) else { return 0 }
+        if type == "clock" {
+            // Divide before taking the remainder: doubling a very large valid
+            // interval must not overflow. The epoch makes midnight continuous.
+            return ((date.timeIntervalSinceReferenceDate + Double(timeZone.secondsFromGMT(for: date))) / period(interval)).truncatingRemainder(dividingBy: 2) * 180
+        }
+        let cycle: Double
+        switch type {
+        case "clockSecond": cycle = 60
+        case "clockMinute", "clockMiniute": cycle = 3600
+        case "clockHour": cycle = 43200
+        default: return 0
+        }
+        var calendar = Calendar(identifier: .gregorian); calendar.timeZone = timeZone
+        let parts = calendar.dateComponents([.hour, .minute, .second, .nanosecond], from: date)
+        let seconds = Double((parts.hour ?? 0) * 3600 + (parts.minute ?? 0) * 60 + (parts.second ?? 0)) + Double(parts.nanosecond ?? 0) / 1_000_000_000
+        return seconds.truncatingRemainder(dividingBy: cycle) / cycle * 360
+    }
+    static func swing(elapsed: Double, duration: Double, distance: Double) -> Double {
+        guard elapsed.isFinite else { return 0 }
+        return sin(elapsed.truncatingRemainder(dividingBy: 2 * swingDuration(duration)) / swingDuration(duration) * .pi) * swingDistance(distance)
+    }
+}
 
- animation:<json>
+/// Native host/test controls, never exposed to scripts or package manifests.
+struct ScriptWidgetAnimationPreview: Sendable {
+    var date: Date? = nil
+    var elapsed: Double? = nil
+    var live: Bool? = nil
+}
+private struct ScriptWidgetAnimationPreviewKey: EnvironmentKey {
+    static let defaultValue = ScriptWidgetAnimationPreview()
+}
+extension EnvironmentValues {
+    var scriptWidgetAnimationPreview: ScriptWidgetAnimationPreview {
+        get { self[ScriptWidgetAnimationPreviewKey.self] }
+        set { self[ScriptWidgetAnimationPreviewKey.self] = newValue }
+    }
+}
 
- let animationSecond = {
- type: "clockSecond",  // clockMinute , clockHour
- timezone: "current",
- anchor: "center"
- }
-
-
- let animationCustom = {
- type: "clockCustom",
- interval: 10, // 10 seconds
- timezone: "current",
- anchor: "center"
- }
- */
-
-
-//
-//@available(iOS 14.0, macOS 11, *)
-//@available(tvOS, unavailable)
-//@available(watchOS, unavailable)
-////public struct _ClockHandRotationEffect : SwiftUI.ViewModifier, SwiftUI._ArchivableViewModifier {
-//public struct _ClockHandRotationEffect{
-//  public enum Period {
-//    case hourHand
-//    case minuteHand
-//    case secondHand
-//    case custom(Foundation.TimeInterval)
-//  }
-////  public init(from decoder: Swift.Decoder) throws
-////  public func encode(to encoder: Swift.Encoder) throws
-////  @_Concurrency.MainActor(unsafe) public func body(content: WidgetKit._ClockHandRotationEffect.Content) -> some SwiftUI.View
-//
-////  public typealias Body = @_opaqueReturnTypeOf("$s9WidgetKit24_ClockHandRotationEffectV4body7contentQr7SwiftUI21_ViewModifier_ContentVyACG_tF", 0) __
-//}
-//extension SwiftUI.View {
-//  @available(iOS 14.0, macOS 11, *)
-//  @available(tvOS, unavailable)
-//  @available(watchOS, unavailable)
-//  public func _clockHandRotationEffect(_ period:_ClockHandRotationEffect.Period, in timeZone: Foundation.TimeZone, anchor: SwiftUI.UnitPoint = .center) -> some SwiftUI.View
-//
-//}
-
+/// Uses only public SwiftUI scheduling. The OS may freeze a widget at any
+/// point; snapshots, inactive scenes and accessibility settings use rest state.
+struct ScriptWidgetAnimationFrame<Content: View>: View {
+    var referenceDate: Date? = nil
+    @ViewBuilder let content: (Date, Double) -> Content
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isLuminanceReduced) private var luminanceReduced
+    @Environment(\.scriptWidgetVisualAccessibility) private var accessibility
+    @Environment(\.scriptWidgetAnimationPreview) private var preview
+    @State private var start = Date()
+    private var fixedDate: Date? { preview.date ?? referenceDate }
+    private var live: Bool {
+        fixedDate == nil && preview.elapsed == nil && !(accessibility.reduceMotion ?? reduceMotion) && !luminanceReduced &&
+            (preview.live ?? (scenePhase == .active))
+    }
+    var body: some View {
+        if live {
+            TimelineView(.animation(minimumInterval: 1.0 / 30)) { frame in
+                content(frame.date, max(0, frame.date.timeIntervalSince(start)))
+            }
+        } else {
+            content(fixedDate ?? Date(), preview.elapsed.flatMap { $0.isFinite ? $0 : nil } ?? 0)
+        }
+    }
+}
 
 struct ScriptWidgetAttributeAnimationModifier: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.isLuminanceReduced) private var luminanceReduced
     @Environment(\.scriptWidgetVisualAccessibility) private var preview
-
+    let referenceDate: Date?
     let animationType: String
-
-    // original clock animation
     let clockTimezone: TimeZone
     let clockAnchor: UnitPoint
     let clockCustomInterval: TimeInterval
-
-    // swing animation
     let swingDuration: CGFloat
     let swingDirection: SwingAnimationModifier.Direction
     let swingDistance: CGFloat
 
-
-    init(_ element: ScriptWidgetRuntimeElement) {
-
-        var animationType = ""
-
-        var clockTimezone: TimeZone = .current
-        var clockAnchor: UnitPoint = .center
-        var clockCustomInterval: TimeInterval = 10
-
-        var swingDuration: CGFloat = 1
-        var swingDirection: SwingAnimationModifier.Direction = .horizontal
-        var swingDistance: CGFloat = 10
-
-
-        if let animationTypeValue = element.getPropString("animation") {
-
-            if animationTypeValue.starts(with: "animation:") {
-                // json support
-                let jsonString = animationTypeValue.dropFirst("animation:".count)
-                if let jsonData = jsonString.data(using: .utf8)  {
-                    do {
-                        let json = try JSON(data: jsonData)
-
-                        let type = json["type"].stringValue
-                        animationType = type
-
-                        /*
-                         let animationDefinition = {
-                           type: "clock",
-                           timezone: "current", // "America/New_York" , "America/Los_Angeles" ,  "Asia/Shanghai"
-                           anchor: "center",
-                           interval: 30,
-                         }
-                         */
-                        if animationType == "clock" {
-                            if let timezoneValue = json["timezone"].string {
-                                clockTimezone = ScriptWidgetAttributeAnimationModifier.getTimezone(timezone: timezoneValue)
-                            }
-                            if let anchorValue = json["anchor"].string {
-                                clockAnchor = ScriptWidgetElementPoint.getPointFromPointValue(anchorValue)
-                            }
-                            if let intervalValue = json["interval"].double {
-                                clockCustomInterval = Self.normalizedInterval(intervalValue)
-                            }
-                        }
-
-                        /*
-                         let animationHorizontalDefinition = {
-                           type: "swing",
-                           duration: 2,
-                           direction: "horizontal", // "horizontal", "vertical"
-                           distance: 100,
-                         }
-                         */
-                        if animationType == "swing" {
-                            if let duration = json["duration"].double {
-                                swingDuration = CGFloat(duration)
-                            }
-                            if let direction = json["direction"].string {
-                                if direction == "horizontal" {
-                                    swingDirection = .horizontal
-                                } else {
-                                    swingDirection = .vertical
-                                }
-                            }
-                            if let distance = json["distance"].double {
-                                swingDistance = CGFloat(distance)
-                            }
-                        }
-                    } catch {
-                        print("animation json parse error : \(error)")
-                        animationType = "error"
+    private static func number(_ object: [String:Any], _ key: String) -> Double? {
+        guard let value = object[key] as? NSNumber, CFGetTypeID(value) != CFBooleanGetTypeID() else { return nil }
+        return value.doubleValue
+    }
+    init(_ element: ScriptWidgetRuntimeElement, referenceDate: Date? = nil) {
+        self.referenceDate = referenceDate
+        var type = "", zone = TimeZone.current, anchor = UnitPoint.center, interval = 10.0
+        var duration = 1.0, distance = 10.0, direction = SwingAnimationModifier.Direction.horizontal
+        if let value = element.getPropString("animation") {
+            if value.hasPrefix("animation:") {
+                do {
+                    let decoded = try JSONSerialization.jsonObject(with:Data(value.dropFirst("animation:".count).utf8),options:.fragmentsAllowed)
+                    let json = decoded as? [String:Any] ?? [:]
+                    type = json["type"] as? String ?? ""
+                    if ["clock","clockSecond","clockMinute","clockMiniute","clockHour"].contains(type) {
+                        if let name = json["timezone"] as? String { zone = Self.getTimezone(timezone:name) }
+                        if let name = json["anchor"] as? String { anchor = ScriptWidgetElementPoint.getPointFromPointValue(name) }
+                        interval = ScriptWidgetAnimationPhase.period(Self.number(json,"interval") ?? 10)
+                    } else if type == "swing" {
+                        duration = ScriptWidgetAnimationPhase.swingDuration(Self.number(json,"duration") ?? 1)
+                        distance = ScriptWidgetAnimationPhase.swingDistance(Self.number(json,"distance") ?? 10)
+                        if let value = json["direction"] as? String { direction = value == "horizontal" ? .horizontal : .vertical }
                     }
-                }
+                } catch { type = "error" }
             } else {
-                // quick format
-                let parts = animationTypeValue.split(separator: ",")
-                if parts.count == 1 {
-                    // clockSecond
-                    // clockMiniute
-                    // clockHour
-                    animationType = animationTypeValue
-                } else if parts.count == 2,
-                          parts[0].trimmingCharacters(in: .whitespaces) == "clockCustom",
-                          let interval = Double(parts[1].trimmingCharacters(in: .whitespaces)) {
-                    animationType = "clock"
-                    clockCustomInterval = Self.normalizedInterval(interval)
+                let parts = value.split(separator:",")
+                if parts.count == 1 { type = value }
+                else if parts.count == 2, parts[0].trimmingCharacters(in:.whitespaces) == "clockCustom",
+                        let number = Double(parts[1].trimmingCharacters(in:.whitespaces)), number.isFinite {
+                    type = "clock"; interval = ScriptWidgetAnimationPhase.period(number)
                 }
             }
         }
-
-        self.animationType = animationType
-
-        self.clockTimezone = clockTimezone
-        self.clockAnchor = clockAnchor
-        self.clockCustomInterval = clockCustomInterval
-
-        self.swingDuration = swingDuration
-        self.swingDirection = swingDirection
-        self.swingDistance = swingDistance
+        animationType = type; clockTimezone = zone; clockAnchor = anchor; clockCustomInterval = interval
+        swingDuration = CGFloat(duration); swingDirection = direction; swingDistance = CGFloat(distance)
     }
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if (preview.reduceMotion ?? reduceMotion) || luminanceReduced {
+    @ViewBuilder func body(content: Content) -> some View {
+        #if os(macOS)
+        if ["clockSecond","clockMinute","clockMiniute","clockHour"].contains(animationType) {
+            content.rotationEffect(.degrees(ScriptWidgetAnimationPhase.clockAngle(type:animationType,date:referenceDate ?? Date(),timeZone:clockTimezone)),anchor:clockAnchor)
+        } else { content }
+        #else
+        if ((preview.reduceMotion ?? reduceMotion) || luminanceReduced) && ["clock","swing"].contains(animationType) {
             content
         } else if animationType == "clockSecond" {
-            content
-                .clockHandRotationEffect(period: .secondHand, in: self.clockTimezone, anchor: self.clockAnchor)
+            content.clockHandRotationEffect(period:.secondHand,in:clockTimezone,anchor:clockAnchor,referenceDate:referenceDate)
         } else if animationType == "clockMinute" || animationType == "clockMiniute" {
-            content
-                .clockHandRotationEffect(period: .minuteHand, in: self.clockTimezone, anchor: self.clockAnchor)
+            content.clockHandRotationEffect(period:.minuteHand,in:clockTimezone,anchor:clockAnchor,referenceDate:referenceDate)
         } else if animationType == "clockHour" {
-            content
-                .clockHandRotationEffect(period: .hourHand, in: self.clockTimezone, anchor: self.clockAnchor)
+            content.clockHandRotationEffect(period:.hourHand,in:clockTimezone,anchor:clockAnchor,referenceDate:referenceDate)
         } else if animationType == "clock" {
-            content
-                .clockHandRotationEffect(period: .custom(self.clockCustomInterval), in: self.clockTimezone, anchor: self.clockAnchor)
+            content.clockHandRotationEffect(period:.custom(clockCustomInterval),in:clockTimezone,anchor:clockAnchor,referenceDate:referenceDate)
         } else if animationType == "swing" {
-            content
-                .swingAnimation(duration: self.swingDuration, direction: self.swingDirection, distance: self.swingDistance)
-        } else if animationType == "error" {
-            Text("animation json error")
-        } else {
-            content
-        }
+            content.swingAnimation(duration:swingDuration,direction:swingDirection,distance:swingDistance,referenceDate:referenceDate)
+        } else if animationType == "error" { Text("animation json error") }
+        else { content }
+        #endif
     }
-
-
-    static func getTimezone(timezone: String) -> TimeZone {
-        if timezone == "current" {
-            return .current
-        }
-
-        if let timezone = TimeZone(identifier: timezone) {
-            return timezone
-        }
-
-        // default
-        return .current
-    }
-
-    /// WidgetKit accepts signed custom periods. A negative value reverses the
-    /// rotation, which makes epicycles and counter-rotating systems possible.
-    private static func normalizedInterval(_ interval: Double) -> TimeInterval {
-        guard interval.isFinite else {
-            return 10
-        }
-
-        if abs(interval) < 0.25 {
-            return interval < 0 ? -0.25 : 0.25
-        }
-        return TimeInterval(interval)
-    }
+    static func getTimezone(timezone: String) -> TimeZone { TimeZone(identifier:timezone) ?? .current }
 }
-
-#else
-
-struct ScriptWidgetAttributeAnimationModifier: ViewModifier {
-
-    init(_ element: ScriptWidgetRuntimeElement) {
-    }
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        content
-    }
-}
-
-#endif

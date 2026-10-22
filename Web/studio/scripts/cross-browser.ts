@@ -90,7 +90,40 @@ for (const name of requested) {
     result.warmEditMs = report.timing.warmEditMedianMilliseconds;
     const probes = result.probes;
     const blocked = (key: string, pattern: RegExp) => pattern.test(probes[key] ?? "");
+    // Exercise actual rendering in every CI browser, not just model/tree parity.
+    const animationChecks = await page.evaluate(async () => {
+      const rendererPath = "/src/render/renderer.js";
+      const { renderWidget } = await import(rendererPath);
+      const host = document.createElement("div"); document.body.append(host);
+      async function pose(animation: string, options: Record<string, unknown> = {}) {
+        const result = await renderWidget(JSON.stringify({ tag: "rect", props: { color: "#ff0000", frame: "4,40", animation }, children: [] }), options);
+        host.replaceChildren(result.element);
+        const target = [...host.querySelectorAll<HTMLElement>("*")].find(element => element.style.getPropertyValue("--sw-start-angle") || element.style.getPropertyValue("--sw-swing"));
+        if (!target) return { angle: NaN, x: NaN, y: NaN, name: "none", direction: "normal", duration: "0s", text: host.textContent };
+        const style = getComputedStyle(target), matrix = new DOMMatrixReadOnly(style.transform);
+        return { angle: Math.atan2(matrix.b, matrix.a) * 180 / Math.PI, x: matrix.e, y: matrix.f, name: style.animationName, direction: style.animationDirection, duration: style.animationDuration, text: host.textContent };
+      }
+      try {
+        const fixed = { now: 978307215000, animations: "firstFrame" };
+        const clock = await pose("clockSecond", fixed);
+        const zone = await pose('animation:{"type":"clockHour","timezone":"Asia/Kathmandu","anchor":"topLeading"}', { now: 978307200000, animations: "firstFrame" });
+        const backwards = await pose("clockCustom,-10");
+        const horizontal = await pose('animation:{"type":"swing","duration":1,"distance":10,"direction":"horizontal"}', { animations: "firstFrame", animationElapsed: 0.5 });
+        const vertical = await pose('animation:{"type":"swing","duration":1,"distance":10,"direction":"vertical"}', { animations: "firstFrame", animationElapsed: 0.5 });
+        const reduced = await pose("clockSecond", { now: 978307215000, reduceMotion: true });
+        const mac = await pose("clockSecond", { now: 978307215000, profile: "macos" });
+        const invalid = await pose('animation:{"type":"clock","interval":1e309}');
+        return {
+          animationPoses: Math.abs(clock.angle - 90) < 0.001 && Math.abs(zone.angle - 172.5) < 0.001,
+          animationReverse: backwards.name === "sw-clock" && backwards.direction === "reverse" && backwards.duration === "20s",
+          animationSwing: Math.abs(horizontal.x - 10) < 0.001 && Math.abs(vertical.y - 10) < 0.001,
+          animationStatic: Math.abs(reduced.angle - 90) < 0.001 && reduced.name === "none" && Math.abs(mac.angle - 90) < 0.001 && mac.name === "none",
+          animationInvalid: invalid.text?.includes("animation json error") === true,
+        };
+      } finally { host.remove(); }
+    });
     const checks = {
+      ...animationChecks,
       parity: report.parity.matches === report.parity.total,
       globals: blocked("scrubbed globals", /^undefined(,undefined)+$/),
       fetch: blocked("prototype fetch is blocked by CSP", /BLOCKED/),
@@ -115,8 +148,8 @@ for (const name of requested) {
 studio.close();
 engineServer.close();
 if (process.env.GITHUB_STEP_SUMMARY) {
-  const rows = results.map((r) => `| ${r.browser} | ${r.platform} | ${r.error ? `❌ ${r.error}` : r.parity} | ${r.templates ?? "-"} | ${r.import ?? "-"} | ${r.checks ? Object.entries(r.checks).filter(([, ok]) => !ok).map(([k]) => k).join(", ") || "all blocked" : "-"} |`);
-  fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, ["| Browser | OS | Tree parity | Templates | Import | Isolation |", "| --- | --- | --- | --- | --- | --- |", ...rows, ""].join("\n"));
+  const rows = results.map((r) => `| ${r.browser} | ${r.platform} | ${r.error ? `❌ ${r.error}` : r.parity} | ${r.templates ?? "-"} | ${r.import ?? "-"} | ${r.checks ? Object.entries(r.checks).filter(([, ok]) => !ok).map(([k]) => k).join(", ") || "all passed" : "-"} |`);
+  fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, ["| Browser | OS | Tree parity | Templates | Import | Checks |", "| --- | --- | --- | --- | --- | --- |", ...rows, ""].join("\n"));
 }
 if (failed) process.exit(1);
 console.log(`✓ ${requested.join(", ")} passed on ${process.platform}`);

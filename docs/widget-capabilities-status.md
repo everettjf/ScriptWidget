@@ -10,7 +10,7 @@
 | M3：个人数据 | 指定来源日历；指定列表提醒事项读取及显式写入、操作回执；选定照片/相册快照与轮换；健康睡眠、活动、运动摘要 | 只使用授权范围内的数据；真实授权/撤权和有限照片选择仍需真机验收 |
 | M4：GitHub 和 Music | 原生 GitHub 连接、Keychain 凭据、逐组件授权和受限资料代理；iOS Apple Music 只读播放快照、设置与模板 | macOS Music 明确不可用；没有播放控制 |
 | M5：创作工具 | iOS/macOS/Web Layout、Theme、Assets；JSX 支持子集内编辑、撤销和源码保留；公开材质与回退；壁纸裁切和可导出配置 | 动态 JavaScript 继续通过 Code 编辑；Web 材质是有说明的近似效果 |
-| M5：GIF 收尾 | 系统 ImageIO 有界解码、帧数/内存/文件限制、内容缓存、Mac/辅助功能静态回退；Web 有界解码与静态回退 | 普通 iOS 时钟动画仍保留既有私有桥接；没有宣称已替换或完成真实扩展内存验收 |
+| M5：公开动画与 GIF | 私有桥接已移除，改用公开时间轴/旋转/位移、有界 ImageIO；原生/Web 时相与静态回退对齐，固定快照时钟统一 | 系统调度不保证永久动画；小号水族箱排版与真实扩展内存/WidgetKit/AOD 验收仍待完成 |
 | Web Studio 对齐 | 已新增 API 的可编辑默认样例、授权/空数据/错误场景，服务独立 fixture；浏览器编辑、保存重载和导出验证 | Web 不访问手机私人数据、不连接真实服务，mock 不作为原生真实数据导出 |
 
 ## 本轮移除
@@ -19,6 +19,6 @@ Spotify 条件接入、授权/刷新、播放读取及内部写操作记录已�
 
 ## 验证与交付状态
 
-Spotify 移除并修复原生资源刷新竞争后的最新 `./Scripts/release-readiness.sh` 通过：Mac **662 通过 / 0 失败 / 32 跳过**，iPhone 17 Simulator **672 通过 / 0 失败 / 31 跳过**，runtimeWarnings 均为空。Editor 52、预览引擎 168、Web Studio 96、服务 probe 24、91 模板/22 curated 包、浏览器流程及两端 app build 通过。SDK/link/Sendable/Xcode 诊断保留。证据见 [实施记录末尾](widget-capabilities-execution.md)。这不是 A/B 全部完成或真机发布验收结论。
+公开动画最终实现的 `./Scripts/release-readiness.sh` 通过：Mac **671 / 0 失败 / 32 跳过**，iPhone 17 Simulator **681 / 0 失败 / 31 跳过**。iPad Pro 13-inch (M5) Simulator **681 / 0 失败 / 31 跳过**，三端 runtimeWarnings 均为空。Editor 52、预览引擎 172、Web Studio 96、服务 probe 24、91 模板/22 curated 包、保留的浏览器流程及两端 app build 通过；构建矩阵通过。实际跨浏览器动画、127 树及隔离检查在 Chromium/WebKit 通过，本机 Firefox 启动失败，不计通过；Linux/Windows CI 待核对。整模板比较 9 张，中位差异 0.48%，小号水族箱 14.35% 仍为 N01 待修。SDK/link/Sendable/Xcode 诊断保留。证据见 [实施记录](widget-capabilities-execution.md)。A/B 仍未全部完成。
 
 当前是本地开发与验证成果：没有执行本轮 Web 部署、原生商店构建上传或 App Review 提交。App Review 仍由用户操作。真机、签名 Keychain/iCloud、WidgetKit 调度、Always On 和扩展内存验收未完成，不能称作已满足全部发版门槛。完整门槛见 [发布检查](release-readiness.md)。

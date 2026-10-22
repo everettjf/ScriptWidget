@@ -6216,7 +6216,8 @@ final class GifPipelineTests: XCTestCase {
     func testFrameTimingAndStaticFirstFrameWithoutThirdPartyDecoder() throws {
         let bytes = try gif(), sequence = try XCTUnwrap(ScriptWidgetGifPipeline.sequence(data:bytes,animated:true))
         XCTAssertEqual(sequence.frames.count,2); XCTAssertEqual(sequence.duration,0.3,accuracy:0.001)
-        XCTAssertEqual(sequence.angle(at:1),120,accuracy:0.01); XCTAssertEqual(sequence.angle(at:2),360,accuracy:0.01)
+        XCTAssertEqual(sequence.frameIndex(elapsed:0.05),0); XCTAssertEqual(sequence.frameIndex(elapsed:0.15),1)
+        XCTAssertEqual(sequence.frameIndex(elapsed:0.35),0); XCTAssertEqual(sequence.frameIndex(elapsed:Double.infinity),0)
         let still = try XCTUnwrap(ScriptWidgetGifPipeline.sequence(data:bytes,animated:false))
         XCTAssertEqual(still.frames.count,1); XCTAssertFalse(still.frameLimitFallback)
         XCTAssertEqual(still.frames[0].width,32); XCTAssertEqual(still.frames[0].height,16)
@@ -6246,6 +6247,26 @@ final class GifPipelineTests: XCTestCase {
         try Data("not a GIF".utf8).write(to:file); XCTAssertNil(ScriptWidgetGifPipeline.sequence(at:file,animated:true))
         XCTAssertNil(ScriptWidgetGifPipeline.sequence(at:URL(string:"https://example.test/sample.gif")!,animated:true))
     }
+    @MainActor func testPublicGifTimingAndInactiveFallbackRenderActualPixels() throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString+".gif")
+        try gif().write(to:file); defer { try? FileManager.default.removeItem(at:file) }
+        for (elapsed, live) in [(0.0,true),(0.15,true),(0.15,false)] {
+            let content = DynamicGifView(gifPath:file)
+                .environment(\.scriptWidgetVisualAccessibility,.init(reduceMotion:false))
+                .environment(\.scriptWidgetAnimationPreview,.init(elapsed:elapsed,live:live)).frame(width:120,height:60)
+            let renderer = ImageRenderer(content:content), image = try XCTUnwrap(renderer.cgImage)
+            var pixel = [UInt8](repeating:0,count:4)
+            let context = try XCTUnwrap(CGContext(data:&pixel,width:1,height:1,bitsPerComponent:8,bytesPerRow:4,space:CGColorSpaceCreateDeviceRGB(),bitmapInfo:CGImageAlphaInfo.premultipliedLast.rawValue))
+            context.draw(image,in:CGRect(x:0,y:0,width:1,height:1))
+            #if os(macOS)
+            let blue = false
+            #else
+            let blue = elapsed > 0.1 && live
+            #endif
+            XCTAssertGreaterThan(pixel[blue ? 2 : 0],200)
+            XCTAssertLessThan(pixel[blue ? 0 : 2],40)
+        }
+    }
     @MainActor func testReducedMotionViewActuallyRendersTheFirstFrame() throws {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString+".gif")
         try gif().write(to:file); defer { try? FileManager.default.removeItem(at:file) }
@@ -6268,5 +6289,171 @@ final class GifPipelineTests: XCTestCase {
             try gif().write(to:directory.appendingPathComponent("sample.gif"))
             try gif(frames:61).write(to:directory.appendingPathComponent("many-frames.gif"))
         }
+    }
+}
+
+final class PublicAnimationTests: XCTestCase {
+    private let epoch = Date(timeIntervalSinceReferenceDate: 0)
+    func testSignedIntervalsRemainFiniteAndKeepTheLegacyHalfTurnConvention() {
+        let utc = TimeZone(secondsFromGMT: 0)!
+        for (interval, angle): (Double, Double) in [(10,90),(-10,-90),(0,0),(0.1,0)] {
+            XCTAssertEqual(ScriptWidgetAnimationPhase.clockAngle(type:"clock",interval:interval,date:epoch.addingTimeInterval(5),timeZone:utc),angle,accuracy:0.00001)
+        }
+        XCTAssertEqual(ScriptWidgetAnimationPhase.period(-0.01),-0.25)
+        for value in [Double.nan, .infinity, -.infinity] { XCTAssertEqual(ScriptWidgetAnimationPhase.period(value),10) }
+        XCTAssertTrue(ScriptWidgetAnimationPhase.clockAngle(type:"clock",interval:1e308,date:Date(),timeZone:utc).isFinite)
+        XCTAssertEqual(ScriptWidgetAnimationPhase.clockAngle(type:"clock",date:Date(timeIntervalSince1970:1e308)),0)
+    }
+    func testClockTimezoneDSTAndMinuteTypoAlias() {
+        let utc = TimeZone(secondsFromGMT:0)!, kathmandu = TimeZone(identifier:"Asia/Kathmandu")!
+        XCTAssertEqual(ScriptWidgetAnimationPhase.clockAngle(type:"clockMinute",date:epoch,timeZone:kathmandu),270,accuracy:0.00001)
+        XCTAssertEqual(ScriptWidgetAnimationPhase.clockAngle(type:"clockHour",date:epoch,timeZone:kathmandu),172.5,accuracy:0.00001)
+        XCTAssertEqual(ScriptWidgetAnimationPhase.clockAngle(type:"clockSecond",date:epoch.addingTimeInterval(15),timeZone:utc),90,accuracy:0.00001)
+        let ny = TimeZone(identifier:"America/New_York")!, formatter = ISO8601DateFormatter()
+        let before = formatter.date(from:"2026-03-08T06:59:59Z")!, after = formatter.date(from:"2026-03-08T07:00:00Z")!
+        XCTAssertLessThan(ScriptWidgetAnimationPhase.clockAngle(type:"clockHour",date:before,timeZone:ny),60)
+        XCTAssertEqual(ScriptWidgetAnimationPhase.clockAngle(type:"clockHour",date:after,timeZone:ny),90,accuracy:0.00001)
+        XCTAssertEqual(ScriptWidgetAnimationPhase.clockAngle(type:"clockMiniute",date:after,timeZone:ny),ScriptWidgetAnimationPhase.clockAngle(type:"clockMinute",date:after,timeZone:ny))
+    }
+    func testSwingFiniteLimitsSignedDistanceAndRestPose() {
+        for (time, expected): (Double,Double) in [(0,0),(0.5,10),(1,0),(1.5,-10),(2,0)] {
+            XCTAssertEqual(ScriptWidgetAnimationPhase.swing(elapsed:time,duration:1,distance:10),expected,accuracy:0.00001)
+        }
+        XCTAssertEqual(ScriptWidgetAnimationPhase.swing(elapsed:0.5,duration:1,distance:-10),-10,accuracy:0.00001)
+        for value in [Double.nan, .infinity, -.infinity] { XCTAssertEqual(ScriptWidgetAnimationPhase.swing(elapsed:value,duration:1,distance:10),0) }
+        XCTAssertTrue(ScriptWidgetAnimationPhase.swing(elapsed:1e308,duration:0.1,distance:1e308).isFinite)
+        XCTAssertEqual(ScriptWidgetAnimationPhase.swingDistance(1e308),10_000)
+        XCTAssertEqual(ScriptWidgetAnimationPhase.swingDuration(-1),1)
+    }
+    func testNativeAnimationPhaseCorpusForBrowser() throws {
+        let repository = URL(fileURLWithPath:#filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        try skipUnlessRepositoryCheckout(repository)
+        let formatter = ISO8601DateFormatter()
+        var cases: [[String:Any]] = []
+        for instant in ["2001-01-01T00:00:05Z","2026-03-08T06:59:59Z","2026-03-08T07:00:00Z","2026-11-01T06:30:15Z"] {
+            let date = formatter.date(from:instant)!
+            for zone in ["UTC","Asia/Kathmandu","America/New_York","America/Los_Angeles"] {
+                for type in ["clockSecond","clockMinute","clockMiniute","clockHour","clock"] {
+                    for interval: Double in (type == "clock" ? [10,-10,0.1,1e308] : [10]) {
+                        cases.append(["type":type,"date":date.timeIntervalSince1970*1000,"timezone":zone,"interval":interval,
+                            "angle":ScriptWidgetAnimationPhase.clockAngle(type:type,interval:interval,date:date,timeZone:TimeZone(identifier:zone)!)])
+                    }
+                }
+            }
+        }
+        let fixture = repository.appendingPathComponent("Web/preview-engine/test/parity/public-animation-phases.json")
+        let encoded = try JSONSerialization.data(withJSONObject:cases,options:[.prettyPrinted,.sortedKeys])
+        if ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_ANIMATION_PHASES"] == "1" { try encoded.write(to:fixture,options:.atomic) }
+        else {
+            let saved = try JSONSerialization.jsonObject(with:Data(contentsOf:fixture)) as? NSArray
+            XCTAssertEqual(saved,try JSONSerialization.jsonObject(with:encoded) as? NSArray)
+        }
+        XCTAssertEqual(cases.count,128)
+    }
+    @MainActor func testScheduledPresentationDateIsCapturedAndInvalidDatesDoNotOverrideViews() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("animation-date-"+UUID().uuidString)
+        try FileManager.default.createDirectory(at:root,withIntermediateDirectories:true)
+        defer { try? FileManager.default.removeItem(at:root) }
+        let package = ScriptWidgetPackage(path:root,readonly:true)
+        let runtime = ScriptWidgetRuntime(package:package,environments:["timeline-date":"2026-11-01T06:30:15.000Z"])
+        let expected = ISO8601DateFormatter().date(from:"2026-11-01T06:30:15Z")!
+        XCTAssertEqual(runtime.presentationDate,expected)
+        let context = ScriptWidgetElementContext(runtime:runtime,debugMode:false,scriptName:"Fixture",scriptParameter:"",package:package)
+        XCTAssertEqual(context.animationDate,expected)
+        runtime.setEnvironment("timeline-date","invalid")
+        XCTAssertNil(runtime.presentationDate); XCTAssertEqual(context.animationDate,expected)
+        let previousClock = ScriptWidgetRenderClock.fixedNow
+        ScriptWidgetRenderClock.fixedNow = epoch
+        defer { ScriptWidgetRenderClock.fixedNow = previousClock }
+        let snapshot = ScriptWidgetElementContext(runtime:runtime,debugMode:false,scriptName:"Snapshot",scriptParameter:"",package:package)
+        XCTAssertEqual(snapshot.animationDate,epoch)
+        runtime.setEnvironment("timeline-date","2026-11-01T06:30:15.000Z")
+        let planned = ScriptWidgetElementContext(runtime:runtime,debugMode:false,scriptName:"Planned",scriptParameter:"",package:package)
+        XCTAssertEqual(planned.animationDate,expected)
+    }
+    func testNativeAnimationParsingKeepsSignedPeriodsAndRejectsNonfiniteJSON() {
+        func modifier(_ value: String) -> ScriptWidgetAttributeAnimationModifier {
+            .init(ScriptWidgetRuntimeElement(tagString:"rect",props:["animation":value],children:nil))
+        }
+        let configured = modifier("animation:{\"type\":\"clockHour\",\"timezone\":\"Asia/Kathmandu\",\"anchor\":\"topLeading\"}")
+        XCTAssertEqual(configured.clockTimezone.identifier,"Asia/Kathmandu")
+        XCTAssertEqual(configured.clockAnchor.x,0); XCTAssertEqual(configured.clockAnchor.y,0)
+        XCTAssertEqual(modifier("clockCustom,-0.1").clockCustomInterval,-0.25)
+        XCTAssertEqual(modifier("clockCustom,nan").animationType,"")
+        XCTAssertEqual(modifier("animation:{\"type\":\"clock\",\"interval\":1e309}").animationType,"error")
+        XCTAssertEqual(modifier("animation:{\"type\":\"swing\",\"duration\":-1,\"distance\":1e8}").swingDuration,1)
+        XCTAssertEqual(modifier("animation:{\"type\":\"swing\",\"duration\":-1,\"distance\":1e8}").swingDistance,10_000)
+    }
+    @MainActor func testPublicTimelineSchedulesVisibleFramesAndStaticModeDoesNotAdvance() async throws {
+        final class Probe {
+            private let lock = NSLock(); private var values: [Double] = []
+            func record(_ value: Double) { lock.lock(); defer { lock.unlock() }; if values.count < 256 { values.append(value) } }
+            var samples: [Double] { lock.lock(); defer { lock.unlock() }; return values }
+        }
+        let live = Probe(), frozen = Probe()
+        func content(_ probe: Probe, _ preview: ScriptWidgetAnimationPreview) -> AnyView {
+            AnyView(ScriptWidgetAnimationFrame { _, elapsed in
+                let _ = probe.record(elapsed)
+                Color(red:1,green:0,blue:0)
+            }.environment(\.scriptWidgetAnimationPreview,preview).environment(\.scriptWidgetVisualAccessibility,.init(reduceMotion:false)).frame(width:80,height:40))
+        }
+        #if os(macOS)
+        let host = NSHostingView(rootView:content(live,.init(live:true)))
+        let window = NSWindow(contentRect:NSRect(x:0,y:0,width:80,height:40),styleMask:[.borderless],backing:.buffered,defer:false)
+        window.contentView = host; window.orderFront(nil); host.layoutSubtreeIfNeeded()
+        defer { window.orderOut(nil) }
+        #else
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }, window = UIWindow(windowScene:scene)
+        let host = UIHostingController(rootView:content(live,.init(live:true)))
+        window.frame = CGRect(x:0,y:0,width:80,height:40); window.rootViewController = host; window.makeKeyAndVisible(); host.view.layoutIfNeeded()
+        defer { window.isHidden = true; previous?.makeKey() }
+        #endif
+        let deadline = Date().addingTimeInterval(3)
+        while live.samples.count < 3 && Date() < deadline { try await Task.sleep(nanoseconds:50_000_000) }
+        XCTAssertGreaterThanOrEqual(live.samples.count,3)
+        XCTAssertGreaterThan(live.samples.max() ?? 0,0.02)
+        host.rootView = content(frozen,.init(live:false))
+        try await Task.sleep(nanoseconds:200_000_000)
+        XCTAssertFalse(frozen.samples.isEmpty)
+        XCTAssertTrue(frozen.samples.allSatisfy { $0 == 0 })
+    }
+    @MainActor func testPublicSwingAndClockRenderActualPosesAndExport() throws {
+        func centroid<V:View>(_ content:V, name:String) throws -> Double {
+            let renderer = ImageRenderer(content:content); renderer.scale = 1
+            let image = try XCTUnwrap(renderer.cgImage)
+            let width = image.width, height = image.height
+            var pixels = [UInt8](repeating:0,count:width*height*4)
+            let context = try XCTUnwrap(CGContext(data:&pixels,width:width,height:height,bitsPerComponent:8,bytesPerRow:width*4,space:CGColorSpaceCreateDeviceRGB(),bitmapInfo:CGImageAlphaInfo.premultipliedLast.rawValue))
+            context.draw(image,in:CGRect(x:0,y:0,width:width,height:height))
+            var sum = 0.0, count = 0
+            for y in 0..<height { for x in 0..<width { let p = (y*width+x)*4; if pixels[p]>200 && pixels[p+1]<40 && pixels[p+2]<40 && pixels[p+3]>200 { sum += Double(x); count += 1 } } }
+            XCTAssertGreaterThan(count,10)
+            if let output = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_PUBLIC_ANIMATION"] {
+                #if os(macOS)
+                let platform = "macos"
+                #else
+                let platform = "ios"
+                #endif
+                let root = URL(fileURLWithPath:output); try FileManager.default.createDirectory(at:root,withIntermediateDirectories:true)
+                let bytes = NSMutableData(), destination = try XCTUnwrap(CGImageDestinationCreateWithData(bytes,"public.png" as CFString,1,nil))
+                CGImageDestinationAddImage(destination,image,nil); XCTAssertTrue(CGImageDestinationFinalize(destination))
+                try (bytes as Data).write(to:root.appendingPathComponent(platform+"-"+name+".png"))
+            }
+            return sum / Double(max(count,1))
+        }
+        func swing(_ elapsed: Double) -> some View {
+            ScriptWidgetAnimationFrame { _, time in Color(red:1,green:0,blue:0).frame(width:4,height:12).offset(x:ScriptWidgetAnimationPhase.swing(elapsed:time,duration:1,distance:10)) }
+                .environment(\.scriptWidgetAnimationPreview,.init(elapsed:elapsed)).frame(width:80,height:40)
+        }
+        let rest = try centroid(swing(0),name:"swing-rest"), peak = try centroid(swing(0.5),name:"swing-peak")
+        XCTAssertEqual(peak-rest,10,accuracy:0.5)
+        let hand = ZStack { Color.clear; Color(red:1,green:0,blue:0).frame(width:4,height:16).offset(y:-8) }.frame(width:40,height:40)
+        let element = ScriptWidgetRuntimeElement(tagString:"rect",props:["animation":"animation:{\"type\":\"clockSecond\",\"timezone\":\"UTC\"}"],children:nil)
+        let zero = try centroid(hand.modifier(ScriptWidgetAttributeAnimationModifier(element,referenceDate:epoch)),name:"clock-zero")
+        let quarterView = hand.modifier(ScriptWidgetAttributeAnimationModifier(element,referenceDate:epoch.addingTimeInterval(15)))
+        let quarter = try centroid(quarterView,name:"clock-quarter")
+        let reduced = try centroid(quarterView.environment(\.scriptWidgetVisualAccessibility,.init(reduceMotion:true)),name:"clock-reduced")
+        XCTAssertEqual(quarter-zero,8,accuracy:0.5); XCTAssertEqual(reduced,quarter,accuracy:0.5)
     }
 }

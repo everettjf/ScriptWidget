@@ -186,7 +186,9 @@ enum PromptBuilder {
             promise device-motion parallax, continuous widget animation or system
             wallpaper control. Web CSS material is an approximation.
             GIF input/canvas/frame/decoded-pixel limits apply. Mac and Reduce Motion
-            use a bounded static first frame; a browser mock is not proof of native
+            use a bounded static first frame. Active previews use public SwiftUI timing;
+            snapshots/inactive scenes stay static. Signed clockCustom intervals are
+            half-turn durations; no private clock modifier is used. A mock is not proof of native
             continuous animation. Prefer small original assets; no decoder SDK is needed.
             Reminders needs the reminders package permission and system approval.
             Use lists() for permitted IDs; items() is read-only with listIDs,

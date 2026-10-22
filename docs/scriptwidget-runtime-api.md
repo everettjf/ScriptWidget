@@ -25,7 +25,7 @@ Arrange children vertically.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `spacing` | `number` | No |  |
@@ -51,7 +51,7 @@ Arrange children horizontally.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `spacing` | `number` | No |  |
@@ -77,7 +77,7 @@ Overlay children.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 
@@ -102,7 +102,7 @@ Vertical lazy grid.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `columns` | `string` | Yes |  |
@@ -129,7 +129,7 @@ Horizontal lazy grid.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `columns` | `string` | Yes |  |
@@ -156,7 +156,7 @@ Display text content.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `text` | `string` | No |  |
@@ -182,7 +182,7 @@ Display a formatted date.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `date` | `date|number` | Yes |  |
@@ -209,7 +209,7 @@ Display a bundled, remote, or SF Symbol image.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `systemName` | `string` | No |  |
@@ -223,7 +223,7 @@ Display a bundled, remote, or SF Symbol image.
 
 ### `<Gif>`
 
-Display a bounded package GIF using system decoding: up to 8 MiB input and 1,048,576 canvas pixels. iOS retains at most 60 downsampled frames / 4 MiB decoded pixels; more frames fall back to the first frame. Mac, Reduce Motion and reduced luminance use a static first frame. Ordinary iOS timing still uses the legacy clock bridge; continuous WidgetKit animation is not guaranteed.
+Display a bounded package GIF using system decoding: up to 8 MiB input and 1,048,576 canvas pixels. iOS retains at most 60 downsampled frames / 4 MiB decoded pixels; more frames fall back to the first frame. Mac, Reduce Motion and reduced luminance use a static first frame. Active iOS previews use public SwiftUI timing with variable frame delays. Snapshots, inactive scenes, Mac and accessibility fallbacks use the first frame. No private clock bridge or continuous WidgetKit guarantee.
 
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -242,7 +242,7 @@ Display a bounded package GIF using system decoding: up to 8 MiB input and 1,048
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `file` | `string` | Yes |  |
@@ -268,7 +268,7 @@ Flexible layout space.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `minLength` | `number` | No |  |
@@ -294,7 +294,7 @@ Rectangle shape.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `trim` | `number|string` | No |  |
@@ -321,7 +321,7 @@ Filled rounded rectangle.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `radius` | `number` | No |  |
@@ -347,7 +347,7 @@ Capsule shape.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `trim` | `number|string` | No |  |
@@ -374,7 +374,7 @@ Ellipse shape.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `trim` | `number|string` | No |  |
@@ -401,7 +401,7 @@ Circle shape.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `trim` | `number|string` | No |  |
@@ -428,7 +428,7 @@ Display a gauge or instrument.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `type` | `string` | No |  |
@@ -466,7 +466,7 @@ Render chart data.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `type` | `enum` | No | Values: `bar`, `bar-x`, `bar-y`, `bar-gantt`, `line`, `point`, `line-point`, `area`, `rect`, `rule-x` |
@@ -497,7 +497,7 @@ Open a URL when selected.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `url` | `url` | Yes |  |
@@ -523,7 +523,7 @@ Horizontal or vertical separator.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `thickness` | `number` | No |  |
@@ -550,7 +550,7 @@ Fixed-length line.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `thickness` | `number` | No |  |
@@ -578,7 +578,7 @@ SF Symbol icon.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `systemName` | `string` | Yes |  |
@@ -605,7 +605,7 @@ Text paired with an SF Symbol.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `title` | `string` | No |  |
@@ -632,7 +632,7 @@ Linear or circular progress.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `value` | `number` | Yes |  |
@@ -663,7 +663,7 @@ Circular progress ring.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `value` | `number` | Yes |  |
@@ -691,7 +691,7 @@ Compact status badge.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `text` | `string` | No |  |
@@ -718,7 +718,7 @@ Outlined metadata chip.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `text` | `string` | No |  |
@@ -746,7 +746,7 @@ Title, value, and subtitle statistic.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `title` | `string` | No |  |
@@ -775,7 +775,7 @@ Interactive widget button. Use actionID to share a declared Package 2.0 action w
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `action` | `enum` | No | Values: `reload` |
@@ -803,7 +803,7 @@ Interactive widget toggle. A declared actionID requires a package-relative stora
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
+| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `on` | `boolean` | Yes |  |

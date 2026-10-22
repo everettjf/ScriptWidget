@@ -14,10 +14,12 @@ export function renderWidget(treeJSON: string, options?: {
   lockScreen?: boolean;
   resources?: Record<string, string>;
   document?: Document;
-  /// A fixed clock for absolute <date> styles, in milliseconds since 1970.
+  /// A fixed clock for absolute <date> styles and clock animation poses, in milliseconds since 1970.
   now?: number | null;
   /// "live" animates with CSS; "firstFrame" draws what ImageRenderer captures.
   animations?: "live" | "firstFrame";
+  /// Display-only fixed elapsed seconds for deterministic swing poses.
+  animationElapsed?: number | null;
   reduceTransparency?: boolean;
   reduceMotion?: boolean;
 }): Promise<RenderedWidget>;
