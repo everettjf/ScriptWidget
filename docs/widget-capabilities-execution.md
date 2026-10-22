@@ -654,3 +654,12 @@ Hydration、Mood、Checklist、Habit Streak、Heatmap 的已有命名 handler �
 
 
 M1/M2 裁剪后的新构建目录验证 `./Scripts/release-readiness.sh` 已退出 0：Mac 548 passed / 0 failed / 28 skipped，iPhone Simulator 558 passed / 0 failed / 23 skipped；84 个模板、Gallery、Web 测试/构建、Chrome smoke、存储独立进程探针、项目/文档检查通过。证据保存于发布 worktree 的 `__Release/release-m1-m2/automated-gate.json`，两平台完整 xcresult 已归档，检查期间 451 份文件哈希未变。随后仅更新版本/构建元数据至 27.1.3（27013）、补充更新说明；元数据与文档检查重跑通过。用户要求先完成构建、稍后登录 App Store Connect；当前未上传或送审。设备矩阵和物理 UI/权限/iCloud/性能仍未整体验收，不能将候选构建标为完成全部设备发布门槛。
+
+
+### 2026-10-21：修复 macOS 文件库启动依赖旧偏好设置同步的问题
+
+在同一台 Mac、同一个现有库上，旧归档点击重试 1 次、完整重启 2 次均显示 Library Unavailable。临时诊断定位到 `ScriptWidgetStorageNamespaces.save`：文件元数据已写入后，`ScriptWidgetFileStorageBackend.synchronize()` 却把结果绑定到只读旧 `UserDefaults.synchronize()`；旧偏好设置返回 false 导致文件库的启动准备失败。不是依据笼统界面推断权限、证书或数据损坏。
+
+文件后端写操作本来就在返回前完成或抛错；现解除它与只读旧偏好设置刷盘状态的耦合，保持文件/目录身份、边界、锁和错误检查。回归测试覆盖旧同步始终失败时的应用打开、旧值复制、新值保存、重新打开与原始偏好值保留。临时诊断代码已移除。
+
+修复前新增测试失败；修复后存储聚焦 75 passed / 0 failed / 1 skipped，同一 Mac/库的 Release 应用连续两次正常启动并进入引导与模板主界面。固定代码完整 `./Scripts/release-readiness.sh` 退出 0：Mac 549 passed / 0 failed / 28 skipped，iPhone Simulator 559 passed / 0 failed / 23 skipped。证据见发布 worktree 的 `__Release/release-m1-m2/legacy-sync-fix/`，原生前后截图保存于 `__Release/Apple/27.1.3-27013/`。旧归档已标为包含此问题、需要重建；本项没有声称更新后的 iPad、物理组件、真实 iCloud 或分发签名验收通过，没有上传或送审。

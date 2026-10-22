@@ -8,6 +8,7 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 - Add configurable countdown, photo, weather, basic health, public GitHub data, launcher, local Live Activity, plant, pet and wallpaper templates.
 - Expand verified Gallery packages and editable Web Studio sample data.
 - Improve owner-scoped record storage, offline caches, Calendar source selection and bounded timeline generation.
+- Fix library opening when read-only legacy preferences cannot synchronize after a successful file-backed storage write.
 - Defer Reminders, further personal-data APIs, authenticated services/music and visual editing to later releases.
 
 ## Unreleased

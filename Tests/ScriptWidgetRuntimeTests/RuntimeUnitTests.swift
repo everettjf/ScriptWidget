@@ -5193,6 +5193,10 @@ extension NativeStorageFileTests {
     }
 }
 
+private final class ReadOnlyLegacyDefaults: UserDefaults, @unchecked Sendable {
+    override func synchronize() -> Bool { false }
+}
+
 final class NativeStorageProfileTests: XCTestCase {
     private var root: URL!, first: URL!, second: URL!, container: URL!, cache: URL!
     private var suite: String!, legacy: UserDefaults!, service: ScriptWidgetStorageProfiles!
@@ -5225,6 +5229,26 @@ final class NativeStorageProfileTests: XCTestCase {
             try context.validateLibraryRoot()
             try staged.writeValue(value, forKey: prefix + key); return true
         })
+    }
+
+    func testApplicationOpenAndFileRecordsDoNotRequireLegacyPreferencesSynchronization() throws {
+        legacy.set("7", forKey: "script.Read.count")
+        let readOnlyLegacy = try XCTUnwrap(ReadOnlyLegacyDefaults(suiteName: suite))
+        XCTAssertFalse(readOnlyLegacy.synchronize())
+        let profiles = try ScriptWidgetStorageProfiles(container: container, legacy: readOnlyLegacy)
+        let application = ScriptWidgetApplicationLibraryService(profiles: profiles, initialRoot: first,
+            initialIsUsingICloud: false, alternatives: [])
+        let opened = try application.open()
+        let context = try XCTUnwrap(opened.sourceManager?.storageContext)
+        let captured = try snapshot(context)
+        XCTAssertEqual(try context.defaults.readValue(forKey: captured.storageNamespace + "count") as? String, "7")
+        try set("8", context: context)
+        let reopened = try application.open()
+        XCTAssertEqual(opened.selection, reopened.selection)
+        let reopenedContext = try XCTUnwrap(reopened.sourceManager?.storageContext)
+        XCTAssertEqual(try reopenedContext.defaults.readValue(forKey: captured.storageNamespace + "count") as? String, "8")
+        XCTAssertEqual(readOnlyLegacy.string(forKey: "script.Read.count"), "7")
+        XCTAssertNil(readOnlyLegacy.object(forKey: ScriptWidgetStorageNamespaces.registryKey))
     }
 
     func testInitialActivationMigratesOnlyInventoriedRecordsAndPreservesOriginals() throws {

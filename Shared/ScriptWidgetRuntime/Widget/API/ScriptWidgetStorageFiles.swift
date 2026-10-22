@@ -513,7 +513,10 @@ final class ScriptWidgetFileStorageBackend: ScriptWidgetStorageBackend {
     }
 
     func legacyValues() -> [String: Any] { includesLegacy ? legacy.dictionaryRepresentation().filter { $0.key.hasPrefix("script.") } : [:] }
-    func synchronize() -> Bool { !includesLegacy || legacy.synchronize() }
+    // File mutations finish (or throw) before returning. The legacy preferences
+    // are read-only migration input, so their flush status cannot determine
+    // whether this backend's file transaction succeeded.
+    func synchronize() -> Bool { true }
     func values(in namespace: String) throws -> [(String, Any)] {
         let owner = try owner(namespace)
         return try files.readNamespace(ownerID: owner).values.map { (namespace + $0.0, $0.1) }
