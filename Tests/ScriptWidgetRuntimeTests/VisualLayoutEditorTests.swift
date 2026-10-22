@@ -412,6 +412,26 @@ final class VisualLayoutEditorTests: XCTestCase {
         _ = try await evaluate(web,"[...document.querySelectorAll('.sw-layout button')].find(b=>b.textContent==='Assets').click();[...document.querySelectorAll('.sw-layout button')].find(b=>b.textContent==='Insert Pebble friend').dispatchEvent(new MouseEvent('click'));")
         let unchanged = try await content(web); XCTAssertEqual(unchanged,source)
     }
+    @MainActor func testNativeResourceRefreshLatestRequestWinsAndStaleFailuresStaySilent() async throws {
+        let web = try await editor()
+        try await open(web, source: source, id: "refresh-order")
+        _ = try await evaluate(web, "window.__resourceReplies=[];window.__originalCall=window.WKWebViewJavascriptBridge.callHandler;window.WKWebViewJavascriptBridge.callHandler=(name,data,callback)=>{if(name==='document.resources')window.__resourceReplies.push(callback);else window.__originalCall(name,data,callback);};[...document.querySelectorAll('.sw-layout button')].find(b=>b.textContent==='Assets').click();")
+        let refresh = "[...document.querySelectorAll('.sw-layout button')].find(b=>b.textContent==='Refresh images').click();"
+        _ = try await evaluate(web, refresh + refresh + "window.__resourceReplies[1]({result:'ok',documentID:'refresh-order',resources:['image/New.png']});")
+        try await wait(web, "document.querySelector('select[aria-label=\"Package image\"]').value==='image/New.png'")
+        _ = try await evaluate(web, "window.__resourceReplies[0]({result:'ok',documentID:'refresh-order',resources:['image/Old.png']});")
+        try await Task.sleep(nanoseconds: 100_000_000)
+        let newest = try await evaluate(web, "document.querySelector('select[aria-label=\"Package image\"]').value") as? String
+        XCTAssertEqual(newest, "image/New.png")
+        _ = try await evaluate(web, refresh + refresh + "window.__resourceReplies[3]({result:'ok',documentID:'refresh-order',resources:['image/Latest.png']});")
+        try await wait(web, "document.querySelector('select[aria-label=\"Package image\"]').value==='image/Latest.png'")
+        _ = try await evaluate(web, "window.__resourceReplies[2]({result:'failed'});")
+        try await Task.sleep(nanoseconds: 100_000_000)
+        let hidden = try await evaluate(web, "document.querySelector('.sw-layout-error').hidden") as? Bool
+        XCTAssertEqual(hidden, true)
+        let unchanged = try await content(web)
+        XCTAssertEqual(unchanged, source)
+    }
     func testStudioImageResourcesRejectLinksDirectoriesUnsupportedTypesAndBoundTheList() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("AssetList-"+UUID().uuidString)
         try FileManager.default.createDirectory(at:root.appendingPathComponent("image"),withIntermediateDirectories:true)

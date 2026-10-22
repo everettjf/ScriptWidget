@@ -996,3 +996,16 @@ Web 只对使用到的 GIF 顺序预检，有界流读取或直接解码 data UR
 - iOS：`/tmp/scriptwidget-runtime-delivery/ios-tests/Logs/Test/Test-ScriptWidgetRuntimeTests-2026.10.22_13-33-39--0700.xcresult`
 
 N01–N03 和 R01–R07 继续进行；已定位同文档并发资源刷新顺序待验证点，下一增量先以实际 WKWebView 重现再修复。设备清单确认 iPhone/iPad 已连接，iPad 已配对且 developer mode 启用，但尚未执行签名设备或真实权限验收。没有部署、上传或送审；A/B 整体尚未完成。
+
+### 2026-10-22：N01 修复同文档图片刷新竞争
+
+实际 bundled WKWebView 新回归在修复前失败：第二次请求先返回 `image/New.png`，第一次迟到响应把它覆盖为 `image/Old.png`；另一次旧请求失败使新成功后的错误提示变为可见。两条失败均保存在 before test-details。生产修复为面板请求序号 + CodeMirror source document 身份检查，已销毁、旧请求和源文本已改变的结果不再更新图片或错误。既有原生 document generation、跨文件、路径过滤和只读写入检查保留。两端生成 editor bundle 同步，不增加新 API 或依赖。
+
+Mac 聚焦的新增排序和既有跨文档/只读两项实际 WKWebView 测试通过，随后完整 `./Scripts/release-readiness.sh` 退出 0：Mac **662 通过 / 0 失败 / 32 跳过**，iPhone 17 Simulator **672 通过 / 0 失败 / 31 跳过**，两端 runtimeWarnings 为空。Editor 52、预览引擎 168、Web Studio 96、服务 probe 24、Gallery 同步 2、91 模板/22 curated 包、所有保留的浏览器流程、生产构建、两端 app build 及独立运行时/存储/路由检查通过。SDK/link/Sendable/Xcode 诊断仍保留。最终 gate 后只更新文档、证据和 PR。
+
+证据目录：`__Release/capabilities/asset-refresh-order/`，含修复前失败 summary/detail、Mac 两项专项、最终两端 summary、完整日志和源文件哈希。实际最终 xcresult：
+
+- Mac：`/tmp/scriptwidget-runtime-delivery/macos-tests/Logs/Test/Test-ScriptWidgetRuntimeTests-2026.10.22_13-41-23--0700.xcresult`
+- iOS：`/tmp/scriptwidget-runtime-delivery/ios-tests/Logs/Test/Test-ScriptWidgetRuntimeTests-2026.10.22_13-43-41--0700.xcresult`
+
+N01 整体流程审核继续，N02 旧私有动画替代及 Web/native 周期一致性仍待实现，N03 与 A 发布/真机验收尚未整体勾选。没有部署、上传或送审，A/B 目标仍进行中。

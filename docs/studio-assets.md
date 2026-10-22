@@ -53,3 +53,5 @@ Tests use the actual bundled WKWebView for insertion/save/Undo/Redo, image-list 
 The same controls in the actual native WKWebView:
 
 ![Native Assets controls](images/assets-native-editor.png)
+
+Native **Refresh images** accepts only the latest request for the current source document. Out-of-order results and stale failures cannot replace a newer image list or show an error after a successful refresh. Existing document-identity, read-only and package-path checks remain in force. Actual bundled WKWebView tests cover this ordering and source preservation on both platforms.

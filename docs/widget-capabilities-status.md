@@ -19,6 +19,6 @@ Spotify 条件接入、授权/刷新、播放读取及内部写操作记录已�
 
 ## 验证与交付状态
 
-移除后的最终 `./Scripts/release-readiness.sh` 通过：Mac **661 通过 / 0 失败 / 32 跳过**，iPhone 17 Simulator **671 通过 / 0 失败 / 31 跳过**，runtimeWarnings 均为空。Editor 52、预览引擎 168、Web Studio 96、服务 probe 24、91 模板/22 curated 包、浏览器流程及两端 app build 通过；计数变化对应 Spotify 的删除。SDK/link/Sendable/Xcode 诊断仍保留，不称作无编译警告。证据见 [实施记录末尾](widget-capabilities-execution.md)。这不是 A/B 全部完成或真机发布验收结论。
+Spotify 移除并修复原生资源刷新竞争后的最新 `./Scripts/release-readiness.sh` 通过：Mac **662 通过 / 0 失败 / 32 跳过**，iPhone 17 Simulator **672 通过 / 0 失败 / 31 跳过**，runtimeWarnings 均为空。Editor 52、预览引擎 168、Web Studio 96、服务 probe 24、91 模板/22 curated 包、浏览器流程及两端 app build 通过。SDK/link/Sendable/Xcode 诊断保留。证据见 [实施记录末尾](widget-capabilities-execution.md)。这不是 A/B 全部完成或真机发布验收结论。
 
 当前是本地开发与验证成果：没有执行本轮 Web 部署、原生商店构建上传或 App Review 提交。App Review 仍由用户操作。真机、签名 Keychain/iCloud、WidgetKit 调度、Always On 和扩展内存验收未完成，不能称作已满足全部发版门槛。完整门槛见 [发布检查](release-readiness.md)。

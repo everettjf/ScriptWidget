@@ -11,7 +11,7 @@ function element(tag, className, text) {
 function layoutPanel(view, options) {
   const dom = element("section", "sw-layout"), header = element("div", "sw-layout-header"), body = element("div", "sw-layout-body");
   dom.setAttribute("aria-label", "Visual layout editor");
-  let open = false, mode = "layout", model = null, selectedID = null, propertyName = "", dragging = null, destroyed = false;
+  let open = false, mode = "layout", model = null, selectedID = null, propertyName = "", dragging = null, destroyed = false, resourceRequest = 0;
   const token = String(Math.random());
   const button = (label, action, disabled = false) => {
     const value = element("button", "sw-layout-button", label); value.type = "button"; value.disabled = disabled;
@@ -59,10 +59,12 @@ function layoutPanel(view, options) {
     panel.append(images, button("Insert package image", () => insert("photo", images.value), disabled || !resources.length));
     if (!resources.length) panel.append(element("p", "sw-layout-notice", "No supported images in image/. Add a PNG, JPEG or WebP to the package, then refresh or reopen the editor."));
     if (options.refreshResources) panel.append(button("Refresh images", async () => {
+      const request = ++resourceRequest, document = view.state.doc;
+      const current = () => !destroyed && request === resourceRequest && view.state.doc === document;
       try {
         const paths = await options.refreshResources();
-        if (!destroyed) { error.hidden = true; setVisualLayoutResources(view, paths); }
-      } catch { if (!destroyed) { error.textContent = "Images could not be refreshed. Reopen this document and try again."; error.hidden = false; } }
+        if (current()) { error.hidden = true; setVisualLayoutResources(view, paths); }
+      } catch { if (current()) { error.textContent = "Images could not be refreshed. Reopen this document and try again."; error.hidden = false; } }
     }));
     panel.append(element("p", "sw-layout-notice", "Bloom mark, Leaf mark and Pebble friend: original ScriptWidget geometry, MIT licensed. Package photos retain their own rights. See the Studio assets documentation."));
   }
