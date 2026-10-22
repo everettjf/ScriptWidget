@@ -292,6 +292,10 @@ private struct ScriptWidgetMacSettingsView: View {
             .frame(minWidth: 520, minHeight: 320)
             .tabItem { Label("Data Access", systemImage: "lock.shield") }
 
+            NavigationStack { ScriptWidgetServiceAccountsView() }
+                .frame(minWidth: 540, minHeight: 480)
+                .tabItem { Label("Services", systemImage: "person.crop.circle.badge.checkmark") }
+
             Form {
                 Section("More Apps") {
                     Link(destination: URL(string: "https://xnu.app/grapecompare/")!) {

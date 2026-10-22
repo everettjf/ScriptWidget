@@ -77,6 +77,9 @@ struct SettingsView: View {
                     }
                 }
                 Section("iCloud") { SettingsICloudView() }
+                Section("Services") {
+                    NavigationLink(destination: ScriptWidgetServiceAccountsView()) { Label("Service Accounts", systemImage: "person.crop.circle.badge.checkmark") }
+                }
                 Section("Calendar") { CalendarAccessSettingsView() }
                 Section("Reminders") { RemindersAccessSettingsView() }
                 Section("Photos") { PhotosAccessSettingsView() }

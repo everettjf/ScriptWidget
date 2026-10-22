@@ -1,5 +1,6 @@
 // Actual native credential/PKCE types and XCTest methods. No real Keychain
-// items, service accounts, authorization dialogs or network calls are used.
+// items, service accounts or authorization dialogs are used. URLSession tests
+// use a private URLProtocol fixture and never reach an external network.
 import {execFile} from "node:child_process";
 import {promisify} from "node:util";
 import {mkdtemp, mkdir, readFile, rm, writeFile} from "node:fs/promises";
@@ -10,7 +11,7 @@ import {createHash} from "node:crypto";
 const exec = promisify(execFile);
 const repository = fileURLToPath(new URL("../", import.meta.url));
 const temporary = await mkdtemp(join(tmpdir(), "scriptwidget-services-"));
-const relativeSources = ["Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetServiceAuthorization.swift", "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetServiceCredentialVault.swift", "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetServiceAccessPolicy.swift", "Tests/ScriptWidgetRuntimeTests/ServiceAuthorizationTests.swift", "Tests/ScriptWidgetRuntimeTests/ServiceAccessPolicyTests.swift"];
+const relativeSources = ["Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetServiceAuthorization.swift", "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetServiceCredentialVault.swift", "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetServiceAccessPolicy.swift", "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetServiceTransport.swift", "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetServiceConnections.swift", "Tests/ScriptWidgetRuntimeTests/ServiceAuthorizationTests.swift", "Tests/ScriptWidgetRuntimeTests/ServiceAccessPolicyTests.swift", "Tests/ScriptWidgetRuntimeTests/ServiceTransportTests.swift"];
 const sources = relativeSources.map(path => join(repository, path));
 const output = resolve(process.argv[2] ?? join(repository, "__Release/capabilities/services/authorization-verification.json"));
 const environment = {...process.env};
@@ -24,12 +25,13 @@ import XCTest
 let suite = XCTestSuite(name: "Service authorization and native access policy")
 suite.addTest(XCTestSuite(forTestCaseClass: ServiceAuthorizationTests.self))
 suite.addTest(XCTestSuite(forTestCaseClass: ServiceAccessPolicyTests.self))
-guard suite.testCaseCount == 24 else { fatalError("Expected twenty-four service authorization and policy tests") }
+suite.addTest(XCTestSuite(forTestCaseClass: ServiceTransportTests.self))
+guard suite.testCaseCount == 37 else { fatalError("Expected thirty-seven native service tests") }
 suite.run()
 guard let run = suite.testRun else { fatalError("Missing XCTest run") }
-let result: [String: Any] = ["passed": run.hasSucceeded, "testCount": run.executionCount, "failureCount": run.totalFailureCount, "realKeychain": false, "realServiceAuthorization": false, "networkRequests": 0, "applicationHost": false]
+let result: [String: Any] = ["passed": run.hasSucceeded, "testCount": run.executionCount, "failureCount": run.totalFailureCount, "realKeychain": false, "realServiceAuthorization": false, "externalNetworkRequests": 0, "applicationHost": false]
 print(String(data: try JSONSerialization.data(withJSONObject: result, options: [.sortedKeys]), encoding: .utf8)!)
-guard run.hasSucceeded, run.executionCount == 24 else { exit(1) }
+guard run.hasSucceeded, run.executionCount == 37 else { exit(1) }
 `);
   const flags = ["-D", "SCRIPTWIDGET_SERVICE_STANDALONE_TESTS", "-F", frameworks, "-I", libraries, "-L", libraries,
     "-Xlinker", "-rpath", "-Xlinker", frameworks, "-Xlinker", "-rpath", "-Xlinker", libraries];

@@ -13,6 +13,9 @@
 		23478208C51144BFBBDBF54D /* ScriptWidgetRuntimeReminders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB3908F42CF43D1BB4964B5 /* ScriptWidgetRuntimeReminders.swift */; };
 		155DC3E76F1A4A83A8C7D04B /* ScriptWidgetRuntimePhotos.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8FE22EE523481B91C412C1 /* ScriptWidgetRuntimePhotos.swift */; };
 		3D9403C50FBDCB35B7AB4736 /* ScriptWidgetServiceAccessPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118EC1E97B8E0399B0727988 /* ScriptWidgetServiceAccessPolicy.swift */; };
+		466B69478B2FAB146F6E509E /* ScriptWidgetServiceAccountsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9299298C17946A55D7D4A6A4 /* ScriptWidgetServiceAccountsView.swift */; };
+		B4256257380B4FEB90928745 /* ScriptWidgetServiceConnections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1405DC9048373403E34E49 /* ScriptWidgetServiceConnections.swift */; };
+		4B6F6E9528F854865E06C173 /* ScriptWidgetServiceTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEA991E41FEE2813D3A076C0 /* ScriptWidgetServiceTransport.swift */; };
 		CA8055CC7119A213BAB147D3 /* ScriptWidgetServiceCredentialVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB701C550774F01847CB0F1A /* ScriptWidgetServiceCredentialVault.swift */; };
 		D05D4A58DC34D2FB8E1087AB /* ScriptWidgetServiceAuthorization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2023A09B0378A7CEB4D1FB5D /* ScriptWidgetServiceAuthorization.swift */; };
 		1DA43989AC34C73FB448AB0B /* ScriptWidgetRuntimeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CAE66D10656192ADC2F9019 /* ScriptWidgetRuntimeStorage.swift */; };
@@ -31,10 +34,14 @@
 		4D21588E2F7E493698CC46A2 /* ScriptWidgetRuntimeReminders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB3908F42CF43D1BB4964B5 /* ScriptWidgetRuntimeReminders.swift */; };
 		AFE97E2864DB4C5AA0BE77DB /* ScriptWidgetRuntimePhotos.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8FE22EE523481B91C412C1 /* ScriptWidgetRuntimePhotos.swift */; };
 		72D2A24119D7F86666BB6AB6 /* ScriptWidgetServiceAccessPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118EC1E97B8E0399B0727988 /* ScriptWidgetServiceAccessPolicy.swift */; };
+		C967BA9697F9B8125A3A3D48 /* ScriptWidgetServiceAccountsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9299298C17946A55D7D4A6A4 /* ScriptWidgetServiceAccountsView.swift */; };
+		EFDE73E5B06D9D761899D428 /* ScriptWidgetServiceConnections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1405DC9048373403E34E49 /* ScriptWidgetServiceConnections.swift */; };
+		0C560AC9110EF346CF34B2C7 /* ScriptWidgetServiceTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEA991E41FEE2813D3A076C0 /* ScriptWidgetServiceTransport.swift */; };
 		A78E13CAC42BD40E723F0257 /* ScriptWidgetServiceCredentialVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB701C550774F01847CB0F1A /* ScriptWidgetServiceCredentialVault.swift */; };
 		22D2145FB77A1585CE505860 /* ScriptWidgetServiceAuthorization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2023A09B0378A7CEB4D1FB5D /* ScriptWidgetServiceAuthorization.swift */; };
 		7B77915046C30834D191319E /* RuntimeUnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A078A98942A275CF9F25103 /* RuntimeUnitTests.swift */; };
 		235B36592F47C0FF57547F5E /* ServiceAccessPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A268224FAE0BE130C6D0BAC0 /* ServiceAccessPolicyTests.swift */; };
+		F5046998F140FC11B5AA2AB7 /* ServiceTransportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13265805ACA0D99EB8352534 /* ServiceTransportTests.swift */; };
 		08E9EBBD3D89654C58295FB9 /* ServiceAuthorizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3691AEA892C0F60DB0825F64 /* ServiceAuthorizationTests.swift */; };
 		AF2855D5A6088CB6840FD84A /* RuntimeDeliveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DBFC205E7AE664442A28C84 /* RuntimeDeliveryTests.swift */; };
 		855878C6168D59CE4C6CB13C /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E3B593386F820DCF99C631E /* ScriptWidgetRuntimeSystem.swift */; };
@@ -302,6 +309,7 @@
 		8445DB90E4A34EB19697BAEB /* ReloadWidgetAppIntent.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReloadWidgetAppIntent.swift; sourceTree = "<group>"; };
 		8A078A98942A275CF9F25103 /* RuntimeUnitTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RuntimeUnitTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/RuntimeUnitTests.swift; sourceTree = "<group>"; };
 		A268224FAE0BE130C6D0BAC0 /* ServiceAccessPolicyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ServiceAccessPolicyTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/ServiceAccessPolicyTests.swift; sourceTree = "<group>"; };
+		13265805ACA0D99EB8352534 /* ServiceTransportTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ServiceTransportTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/ServiceTransportTests.swift; sourceTree = "<group>"; };
 		3691AEA892C0F60DB0825F64 /* ServiceAuthorizationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ServiceAuthorizationTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/ServiceAuthorizationTests.swift; sourceTree = "<group>"; };
 		6DBFC205E7AE664442A28C84 /* RuntimeDeliveryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RuntimeDeliveryTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/RuntimeDeliveryTests.swift; sourceTree = "<group>"; };
 		8CAE66D10656192ADC2F9019 /* ScriptWidgetRuntimeStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeStorage.swift; sourceTree = "<group>"; };
@@ -339,6 +347,9 @@
 		1AB3908F42CF43D1BB4964B5 /* ScriptWidgetRuntimeReminders.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeReminders.swift; sourceTree = "<group>"; };
 		9F8FE22EE523481B91C412C1 /* ScriptWidgetRuntimePhotos.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimePhotos.swift; sourceTree = "<group>"; };
 		118EC1E97B8E0399B0727988 /* ScriptWidgetServiceAccessPolicy.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetServiceAccessPolicy.swift; sourceTree = "<group>"; };
+		9299298C17946A55D7D4A6A4 /* ScriptWidgetServiceAccountsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetServiceAccountsView.swift; sourceTree = "<group>"; };
+		1E1405DC9048373403E34E49 /* ScriptWidgetServiceConnections.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetServiceConnections.swift; sourceTree = "<group>"; };
+		BEA991E41FEE2813D3A076C0 /* ScriptWidgetServiceTransport.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetServiceTransport.swift; sourceTree = "<group>"; };
 		AB701C550774F01847CB0F1A /* ScriptWidgetServiceCredentialVault.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetServiceCredentialVault.swift; sourceTree = "<group>"; };
 		2023A09B0378A7CEB4D1FB5D /* ScriptWidgetServiceAuthorization.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetServiceAuthorization.swift; sourceTree = "<group>"; };
 		D1995C5729536BB800D1BD94 /* MineGaugeView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MineGaugeView.swift; sourceTree = "<group>"; };
@@ -592,6 +603,7 @@
 			children = (
 				8A078A98942A275CF9F25103 /* RuntimeUnitTests.swift */,
 				A268224FAE0BE130C6D0BAC0 /* ServiceAccessPolicyTests.swift */,
+				13265805ACA0D99EB8352534 /* ServiceTransportTests.swift */,
 				3691AEA892C0F60DB0825F64 /* ServiceAuthorizationTests.swift */,
 				6DBFC205E7AE664442A28C84 /* RuntimeDeliveryTests.swift */,
 				28F68F47C00CF93E4CBA1F1E /* AIGenerationTests.swift */,
@@ -772,6 +784,9 @@
 				1AB3908F42CF43D1BB4964B5 /* ScriptWidgetRuntimeReminders.swift */,
 				9F8FE22EE523481B91C412C1 /* ScriptWidgetRuntimePhotos.swift */,
 				118EC1E97B8E0399B0727988 /* ScriptWidgetServiceAccessPolicy.swift */,
+				9299298C17946A55D7D4A6A4 /* ScriptWidgetServiceAccountsView.swift */,
+				1E1405DC9048373403E34E49 /* ScriptWidgetServiceConnections.swift */,
+				BEA991E41FEE2813D3A076C0 /* ScriptWidgetServiceTransport.swift */,
 				AB701C550774F01847CB0F1A /* ScriptWidgetServiceCredentialVault.swift */,
 				2023A09B0378A7CEB4D1FB5D /* ScriptWidgetServiceAuthorization.swift */,
 				124FAA64786342F5A3432631 /* ScriptWidgetRuntimeLocation.swift */,
@@ -1222,6 +1237,7 @@
 				CD29AE3DAA240E9D6FF92EA4 /* BrowserPreviewParityTests.swift in Sources */,
 				7B77915046C30834D191319E /* RuntimeUnitTests.swift in Sources */,
 				235B36592F47C0FF57547F5E /* ServiceAccessPolicyTests.swift in Sources */,
+				F5046998F140FC11B5AA2AB7 /* ServiceTransportTests.swift in Sources */,
 				08E9EBBD3D89654C58295FB9 /* ServiceAuthorizationTests.swift in Sources */,
 				AF2855D5A6088CB6840FD84A /* RuntimeDeliveryTests.swift in Sources */,
 			);
@@ -1345,6 +1361,9 @@
 				4D21588E2F7E493698CC46A2 /* ScriptWidgetRuntimeReminders.swift in Sources */,
 				AFE97E2864DB4C5AA0BE77DB /* ScriptWidgetRuntimePhotos.swift in Sources */,
 				72D2A24119D7F86666BB6AB6 /* ScriptWidgetServiceAccessPolicy.swift in Sources */,
+				C967BA9697F9B8125A3A3D48 /* ScriptWidgetServiceAccountsView.swift in Sources */,
+				EFDE73E5B06D9D761899D428 /* ScriptWidgetServiceConnections.swift in Sources */,
+				0C560AC9110EF346CF34B2C7 /* ScriptWidgetServiceTransport.swift in Sources */,
 				A78E13CAC42BD40E723F0257 /* ScriptWidgetServiceCredentialVault.swift in Sources */,
 				22D2145FB77A1585CE505860 /* ScriptWidgetServiceAuthorization.swift in Sources */,
 				F2D2B24EA420469CBA72564F /* ReloadWidgetAppIntent.swift in Sources */,
@@ -1410,6 +1429,9 @@
 				23478208C51144BFBBDBF54D /* ScriptWidgetRuntimeReminders.swift in Sources */,
 				155DC3E76F1A4A83A8C7D04B /* ScriptWidgetRuntimePhotos.swift in Sources */,
 				3D9403C50FBDCB35B7AB4736 /* ScriptWidgetServiceAccessPolicy.swift in Sources */,
+				466B69478B2FAB146F6E509E /* ScriptWidgetServiceAccountsView.swift in Sources */,
+				B4256257380B4FEB90928745 /* ScriptWidgetServiceConnections.swift in Sources */,
+				4B6F6E9528F854865E06C173 /* ScriptWidgetServiceTransport.swift in Sources */,
 				CA8055CC7119A213BAB147D3 /* ScriptWidgetServiceCredentialVault.swift in Sources */,
 				D05D4A58DC34D2FB8E1087AB /* ScriptWidgetServiceAuthorization.swift in Sources */,
 				00F55E8ADF6744239EDB3E69 /* ReloadWidgetAppIntent.swift in Sources */,

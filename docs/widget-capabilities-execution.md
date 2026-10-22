@@ -761,3 +761,18 @@ Gallery 回归发现旧测试假定全部模板都需要 Runtime 1.3 和记录�
 这些类型仍是内部基础：连接设置、真实 HTTP 执行与字段提取、刷新/撤销事务、持久化重放收据、公开运行时接口、Apple Music、原生模板和 Web Mock 尚未交付。本增量没有把服务账户对象注入 JavaScript，也不能称为 M4 已完成。实现边界与下一步约束见 [服务账户基础](service-accounts-foundation.md)。
 
 本增量完整 `./Scripts/release-readiness.sh` 退出 0：Mac 644 项中 616 通过、0 失败、28 跳过；iPhone 17 模拟器 653 项中 626 通过、0 失败、27 跳过，两份 xcresult 的 runtime warnings 均为空。两端应用构建、编辑器 35、引擎 158、Web Studio 73、87 个模板、18 个精选 Gallery、浏览器烟测和独立进程探针通过。完整日志与结果摘要在 `__Release/capabilities/services/foundation-release-readiness.log`、`macos-foundation-summary.json`、`ios-foundation-summary.json`。跳过项不计通过；真实服务登录、签名 Keychain 共享与物理设备未验收。
+
+
+## 2026-10-22：M4 GitHub 连接设置和有界请求读取
+
+本批继续统一分支，接通 iOS Settings 的 Service Accounts 和 Mac Settings 的 Services。原生安全输入框提交后即清空，通过固定 `GET api.github.com/user` 验证 token；保存前再次比较账户设置 revision。连接后默认没有组件获权，用户在同页按原生 owner UUID 选择读取权限；重连创建新账户/连接且不继承授权，本机断开删除 Keychain 中该服务的连接。离开或取消会作废在途验证；旧屏幕不能覆盖另一屏刚连接的账户，过期草稿需重新加载。被移除/替换的组件及切换后的库不能以原名字获取授权。
+
+新增只读 HTTP broker：ephemeral URLSession、无 Cookie/认证存储/URL 缓存、五秒请求/六秒资源超时、128 KiB 流式上限、拒绝所有跳转、精确响应 URL、HTTP/MIME 检查与固定错误。GitHub/Spotify profile 和 Spotify playback 仅提取有限字段；不返回原响应、头、email、location 或设备 ID。被选字符串若包含当前 token/refresh token 则拒绝，包括 JSON 转义后的回显。缺失 private repo 数保持 null，与零区分；播放 204 与损坏的空 200 也区分。读 broker 在发出前、解析后复核连接授权，写操作即使拥有 action plan 仍被拒绝，等待持久化收据接入。
+
+服务凭据、连接/策略及最小账户标签现在在每服务一个 16 KiB Keychain 项中原子保存；使用同一跨进程文件锁协调，但不在网络期间持锁，也不把 token 或私有策略写入 app-group 文件。断开/重连/授权修改会使之前捕获的连接失效。新增真实 URLSession+URLProtocol、字段/秘密回显、撤权、并发首次连接、Keychain 写失败和控制器取消/冲突回归。独立探针 37 项通过（内存 Keychain、零外部请求）；两端界面截图为隔离的 octocat 样例，不是用户真实账号授权或签名共享证据。
+
+仍没有公开 `$services` 全局；脚本执行身份/manifest/query budget、服务账户 profile 返回、原生模板及 Web Mock 要继续接通。Spotify 的真实登录/刷新、音乐写操作及 Apple Music、M5 和物理设备验收未完成。不会以连接设置已能保存原生账户替代 M4 的完整出口。完整 gate 结果按实际运行另记。
+
+本批完整 `./Scripts/release-readiness.sh` 退出 0：Mac 662 项中 634 通过、0 失败、28 跳过；iPhone 17 模拟器 671 项中 644 通过、0 失败、27 跳过，两端 xcresult 的 runtime warnings 均为空。编辑器 35、引擎 158、Web Studio 73、87 模板、18 个精选 Gallery、浏览器烟测、独立进程探针和两端应用构建通过。SDK 链接/版本诊断仍保留，不把跳过项算通过。证据为 `__Release/capabilities/services/transport-release-readiness.log` 和 `transport-macos-full-summary.json` / `transport-ios-full-summary.json`。
+
+全量后人工查图发现 iOS 截图导出器未绑定 UIWindowScene，虽测试返回成功但 PNG 为空白，不能作为 UI 证据。随后仅修正截图测试窗口/等待绘制、加非空像素断言，并从设置界面的错误文字中隐藏内部错误码；重新运行 iOS 请求/控制器专项 18 项以及最终两平台控制器/截图各 5 项均通过，零失败/跳过/运行时警告。最终在 `screenshots/final/{ios,macos}/` 导出并逐图核对，文档收录了[连接前](images/service-accounts-ios-disconnected.png)、[连接后](images/service-accounts-ios-connected.png)和 [Mac](images/service-accounts-macos-connected.png) 示例。没有为这两处测试采集/错误展示调整重复完整业务测试；它们的后续专项摘要单独保存为 `ios-accounts-final-summary.json` / `macos-accounts-final-summary.json`。真实服务账户、签名 Keychain 共享、物理设备及 Web 部署/新原生上传均未执行。
