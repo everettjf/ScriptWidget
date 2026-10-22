@@ -904,3 +904,7 @@ Connection store 新增整项原子刷新保存，保留账户 subject/label、�
 发现 callback scheme 问题时，已确认工作目录和 live handle 后主动终止当时完整 gate（退出 143，不算通过），修改后重新从头执行；中止日志保留于 `__Release/capabilities/service-token-client/release-readiness-interrupted.log`。本增量没有启用原生 Spotify 登录、公开 Spotify runtime API、播放写入或新的 Web 凭据能力；M4-1/2/3/5 和整体目标继续保持未完成。
 
 随后一轮 iOS 结果为 684 通过 / 1 失败 / 31 跳过：新增的 policy 保留断言误把 JSON 编码字节当作语义等价证明，iOS 的键顺序不同导致字节不等。改为逐字段比较 format/account/service/connection/revision/active 及每个 owner 的 operation Set，保留完整权限检查，不修改生产编码来满足测试。失败后 Xcode 又卡在 simulator diagnostics collection：对当前自有 xcodebuild 的采样定位到 `collectSimulatorDiagnostics → simCtlDiagnose`，确认子进程父 PID 与 cwd 后，仅中止该 simctl 诊断子进程，使原运行返回真实 exit 65 和失败 xcresult。未以诊断中止或缺失报告推断通过。该失败日志与 summary 单独保留，测试修正后完整重跑。
+
+最终修正后的完整 `./Scripts/release-readiness.sh` 退出 0：Mac **675 通过 / 0 失败 / 32 跳过**；iPhone 17 Simulator **685 通过 / 0 失败 / 31 跳过**，两端 xcresult runtimeWarnings 均为空。Editor 52、预览引擎 163、Web Studio 96、Gallery 同步 2、服务独立 probe 44、91 内置模板/22 curated 包、全部浏览器流程、TypeScript/生产构建、两端 app build 和独立运行时/存储探针通过。SDK/link/Sendable/Xcode 版本解析诊断保留，不称为无编译警告。日志、最终 summary、44 项源文件哈希和前述失败证据位于 `__Release/capabilities/service-token-client/`。完整 gate 后仅更新文档/证据和 PR，不再改源码；实现提交为 b37c346。
+
+未启用新登录窗口、未连接任何真实 Spotify 账户，未修改 Web mock/公开 runtime 合约或原有动画默认行为，没有部署、构建上传或送审。后续继续原生系统授权会话、刷新协调、provider 配置与验收、Apple Music 动作和 M3/M5 设备专项；不把私有 token client 的检查当作这些功能已完成。

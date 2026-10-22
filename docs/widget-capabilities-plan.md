@@ -154,6 +154,7 @@ Apple 的 [EventKit 授权](https://developer.apple.com/documentation/eventkit/a
 
 - [ ] M4-1 设计原生授权账户与凭据引用：Keychain 保存、按服务/用户隔离、刷新、注销、撤销和删除。OAuth 流程验证 state、PKCE、回调与服务域名。
   - 原生凭据、PKCE、账户/连接绑定、Keychain owner 操作授权和固定请求计划已开发；两个平台保留各自默认 Keychain 组，服务使用独立共享组。GitHub 原生连接/逐组件授权/本机断开界面与有界只读 HTTP 代理已接入；账户/凭据/策略使用原子 Keychain 项，过期草稿与在途撤权会失效。独立 37 项基础回归通过；现已接通 `$services` 的 GitHub 状态/资料、真实 owner 授权检查、共享执行预算与取消、原生 GitHub Profile 模板及可编辑 Web Mock。72 组实际原生/Web 树对照已通过。OAuth 登录/刷新协调、持久化音乐写收据及真实账户/签名容器验收仍待完成。详见 [服务账户基础](service-accounts-foundation.md)，M4-1/M4-2 保持未勾选。
+  - 后续原生 TokenClient 和原子 credential rotation 已接通：专用 callback scheme、取消/重复回调与 16 KiB 流式预算的独立 44 项回归及完整 gate Mac 675 / iPhone Simulator 685 均通过。系统登录窗口、刷新协调和真实 provider 配置/验收仍待完成，M4-1 不勾选。
 - [ ] M4-2 请求代理在原生侧注入凭据；脚本、包、插件、AI 提示、日志和导出文件均不能取得令牌。补恶意域名、跨账户、撤权和重定向测试。
 - [ ] M4-3 做 Apple Music 最小原型：授权、可读取曲目范围、允许的播放操作、订阅和后台限制。基于 [MusicKit](https://developer.apple.com/documentation/musickit) 的实际验证结果定公开 API。
   - iOS Music app 只读快照增量已接入 `$music`、原生系统授权入口、main-thread 读取及同步组件预捕获、内置/Gallery Music Playback 模板与可编辑 Web Mock。六状态 × 八尺寸的 48 组实际原生/Web 树对照已通过；公开 system player 不能代表所有播放器，macOS 明确不可用。播放操作、订阅能力、真实授权/组件与后台验收仍未完成，M4-3 保持未勾选。见 [Music API](music-api.md)。
