@@ -12,6 +12,7 @@ import {
 import { scriptWidgetCompletions } from "../../../Editor/editorfe/src/scriptWidgetCompletions.js";
 import { scriptWidgetDiagnostics, scriptWidgetHover } from "../../../Editor/editorfe/src/scriptWidgetLanguage.js";
 import { studioTheme } from "../../../Editor/editorfe/src/studioTheme.js";
+import { visualLayoutEditor } from "../../../Editor/editorfe/src/visualLayoutEditor.js";
 
 export interface StudioEditor {
   readonly view: EditorView;
@@ -39,6 +40,7 @@ export function createEditor(parent: HTMLElement, onChange: (path: string, text:
       crosshairCursor(), highlightActiveLine(), highlightSelectionMatches(), EditorView.lineWrapping,
       javascript({ jsx: /\.jsx$/i.test(path) || !/\.json$/i.test(path), typescript: false }),
       ...(script ? [autocompletion({ override: [scriptWidgetCompletions] }), linter(scriptWidgetDiagnostics, { delay: 300 }), lintGutter(), hoverTooltip(scriptWidgetHover)] : []),
+      ...(script ? [visualLayoutEditor()] : []),
       keymap.of([...closeBracketsKeymap, ...defaultKeymap, ...searchKeymap, ...historyKeymap, ...foldKeymap, ...completionKeymap, indentWithTab]),
       theme.of(studioTheme(themeMode)),
       EditorView.contentAttributes.of({ "aria-label": `Edit ${path}` }),

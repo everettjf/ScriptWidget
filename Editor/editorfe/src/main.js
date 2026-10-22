@@ -34,6 +34,7 @@ import { STUDIO_PROTOCOL_VERSION, StudioMessage } from "./studioProtocol.js";
 import { scriptWidgetCompletions } from "./scriptWidgetCompletions.js";
 import { scriptWidgetDiagnostics, scriptWidgetHover } from "./scriptWidgetLanguage.js";
 import { studioTheme } from "./studioTheme.js";
+import { visualLayoutEditor } from "./visualLayoutEditor.js";
 import { loadDocumentState, saveDocumentState } from "./documentState.js";
 import { DocumentSaveCoordinator, initialStudioState, recoverableDraft, reduceStudioState, removeDraft, shouldWarnBeforeLeaving, writeDraft } from "./webStudioState.js";
 import { WebStudioAPI } from "./webStudioAPI.js";
@@ -104,6 +105,7 @@ const extensions = [
   highlightActiveLineGutter(),
   highlightSpecialChars(),
   history(),
+  visualLayoutEditor(),
   foldGutter(),
   drawSelection(),
   dropCursor(),
@@ -144,14 +146,21 @@ function replaceDocument(content, nextDocumentID = documentID, version = 0) {
   const previousSelection = view.state.selection.main;
   saveDocumentState(window.localStorage, documentID, { anchor: previousSelection.anchor, head: previousSelection.head, scrollTop: view.scrollDOM.scrollTop });
   suppressChanges = true;
+  const changedDocument = nextDocumentID !== documentID;
   documentID = nextDocumentID;
   documentVersion = version;
   const restored = loadDocumentState(window.localStorage, documentID, (content ?? "").length);
-  view.dispatch({
-    changes: { from: 0, to: view.state.doc.length, insert: content ?? "" },
-    selection: restored ? { anchor: restored.anchor, head: restored.head } : { anchor: 0 },
-    scrollIntoView: true,
-  });
+  const selection = restored ? { anchor: restored.anchor, head: restored.head } : { anchor: 0 };
+  if (changedDocument) {
+    // A native document.open must not make Undo restore another file's source.
+    // Keep configured theme/access, but start this document's history clean.
+    const appearance = theme.get(view.state), wasReadOnly = view.state.readOnly;
+    let nextState = EditorState.create({ doc: content ?? "", extensions, selection });
+    nextState = nextState.update({ effects: [theme.reconfigure(appearance), readOnly.reconfigure(EditorState.readOnly.of(wasReadOnly))] }).state;
+    view.setState(nextState);
+  } else {
+    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: content ?? "" }, selection, scrollIntoView: true });
+  }
   if (restored) window.requestAnimationFrame(() => { view.scrollDOM.scrollTop = restored.scrollTop; });
   suppressChanges = false;
   setSaveStatus("Saved", "saved");

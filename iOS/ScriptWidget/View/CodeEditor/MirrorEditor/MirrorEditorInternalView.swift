@@ -90,7 +90,7 @@ class MirrorEditorInternalView: WKWebView {
     init() {
         let configuration = WKWebViewConfiguration()
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
-        configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+        configuration.setURLSchemeHandler(StudioEditorBundleSchemeHandler(), forURLScheme: StudioEditorBundleSchemeHandler.scheme)
         super.init(frame: .zero, configuration: configuration)
         
         self.isOpaque = false
@@ -137,16 +137,7 @@ class MirrorEditorInternalView: WKWebView {
             callback?(["result": "ok"])
         })
         
-        guard let bundlePath = Bundle.main.url(forResource: "StudioEditor", withExtension: "bundle") else {
-            fatalError("StudioEditor.bundle is missing")
-        }
-        guard let bundle = Bundle(url: bundlePath) else {
-            fatalError("StudioEditor.bundle is invalid")
-        }
-        guard let indexURL = bundle.url(forResource: "index", withExtension: "html") else {
-            fatalError("StudioEditor.bundle/index.html is missing")
-        }
-        self.loadFileURL(indexURL, allowingReadAccessTo: bundle.resourceURL!)
+        self.load(URLRequest(url: StudioEditorBundleSchemeHandler.indexURL))
         
         let saveNoti = NotificationCenter.default.publisher(for: MirrorEditorService.saveNotification, object: nil).sink { [weak self] noti in
             guard let self else { return }

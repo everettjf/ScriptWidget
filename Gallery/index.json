@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-22T11:30:30.243Z",
+  "generatedAt": "2026-10-22T12:20:56.647Z",
   "items": [
     {
       "author": "ScriptWidget Community",
@@ -1053,6 +1053,42 @@
       "symbol": "music.note",
       "tags": [
         "system"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 603,
+          "path": "main.jsx",
+          "sha256": "196ad38a141b5111a253c0687c96736cd1c296dc7d6ecb862ea1d0d57950debc",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/layout-starter/main.jsx"
+        },
+        {
+          "bytes": 243,
+          "path": "meta.json",
+          "sha256": "462b5e30c955f8946ee69808167ebca4a3bd2b51dea06dce2a274a9f0d7ad8a7",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/layout-starter/meta.json"
+        },
+        {
+          "bytes": 518,
+          "path": "widget.json",
+          "sha256": "54e254bab8b726d9ec021dad6fc7cc99976457891dae587c67e2ee9b15074083",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/layout-starter/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.layout-starter",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Layout Starter",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/layout-starter",
+      "summary": "Requires Runtime API 1.0. A literal JSX canvas for the shared native/Web Layout editor. Select layers, change text and properties, reorder and undo without replacing your JavaScript.",
+      "symbol": "square.stack.3d.up",
+      "tags": [
+        "starter"
       ],
       "version": "1.0.0"
     }

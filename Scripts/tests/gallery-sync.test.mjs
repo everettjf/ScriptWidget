@@ -10,6 +10,18 @@ import { promisify } from "node:util";
 const exec = promisify(execFile);
 const repository = fileURLToPath(new URL("../../", import.meta.url));
 
+test("baseline templates retain the optional minimum API requirement without undefined Gallery metadata", async () => {
+  const root = join(repository,"Shared/ScriptWidgetRuntime/Resource/Script.bundle/template/Layout Starter");
+  const manifest = JSON.parse(await readFile(join(root,"widget.json"),"utf8"));
+  assert.equal(manifest.minimumRuntimeVersion,undefined);
+  assert.equal(manifest.runtimeVersion,"1.0");
+  const index = JSON.parse(await readFile(join(repository,"Gallery/index.json"),"utf8"));
+  const item = index.items.find(item=>item.id===manifest.id);
+  assert.ok(item); assert.equal(item.minimumRuntimeVersion,"1.0");
+  assert.match(item.summary,/^Requires Runtime API 1\.0\./);
+  assert.ok(!item.summary.includes("undefined"));
+});
+
 test("curated Gallery synchronization detects drift and refuses unsafe or stale destinations", async () => {
   const root = await mkdtemp(join(tmpdir(), "scriptwidget-gallery-sync-"));
   try {

@@ -14,6 +14,7 @@ const curated = [
   ["Health Overview", "health-overview"],
   ["Hydration Goal", "hydration-goal"],
   ["Local Weather (Location)", "local-weather"],
+  ["Layout Starter", "layout-starter"],
   ["Mood Check-in", "mood-check-in"],
   ["Music Playback", "music-playback"],
   ["Packing Checklist", "packing-checklist"],
@@ -83,7 +84,7 @@ for (const [name, slug] of curated) {
     // The independently verified package retains its actual minimum API requirement (1.3).
     minimumRuntimeVersion: manifest.runtimeVersion, name: manifest.name,
     sourceURL: sourceRoot + `widgets/${slug}`,
-    summary: `Requires Runtime API ${manifest.minimumRuntimeVersion}. ${manifest.description ?? metadata.description}`,
+    summary: `Requires Runtime API ${manifest.minimumRuntimeVersion ?? manifest.runtimeVersion}. ${manifest.description ?? metadata.description}`,
     symbol: manifest.icon ?? metadata.icon, tags: manifest.tags ?? [metadata.category], version: manifest.version,
   };
   if (item.summary.length > 240) throw new Error(`${slug}: summary exceeds Gallery limits`);

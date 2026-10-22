@@ -34,6 +34,7 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 - [Runtime API contract](scriptwidget-runtime-api.md) — versioning and compatibility policy.
 - [Connected Services API](services-api.md) — authenticated GitHub profiles, per-widget access and editable Web mocks.
 - [Music playback API](music-api.md) — read-only iOS Music app snapshots and editable Web samples.
+- [Visual Layout editing](visual-layout.md) — shared native/Web layer editing, properties, dragging and source preservation.
 - [Service account foundation](service-accounts-foundation.md) — native credentials, connection transactions, PKCE and remaining music integration.
 - [Studio architecture](scriptwidget-studio-plan.md) — editor and bridge design.
 - [Browser widget preview research](browser-widget-preview-research.md) — browser-first fast preview proposal, fidelity model, and staged validation plan.

@@ -1704,9 +1704,12 @@ final class GalleryTests: XCTestCase {
                     let originalURL = repositoryRoot.appendingPathComponent("Shared/ScriptWidgetRuntime/Resource/Script.bundle/template").appendingPathComponent(item.name).appendingPathComponent("widget.json")
                     let original = try JSONDecoder().decode(WidgetPackageManifest.self, from: Data(contentsOf: originalURL))
                     XCTAssertEqual(manifest.minimumRuntimeVersion, original.minimumRuntimeVersion)
-                    let requirement = try XCTUnwrap(original.minimumRuntimeVersion)
+                    let requirement = original.minimumRuntimeVersion ?? original.runtimeVersion
                     XCTAssertTrue(item.summary.contains("Requires Runtime API \(requirement)"))
-                    XCTAssertFalse(WidgetRuntimeRequirement.supports(requirement, current: "1.2"))
+                    XCTAssertTrue(WidgetRuntimeRequirement.supports(requirement, current: ScriptWidgetBuildContract.nativeRuntimeAPIVersion))
+                    if original.minimumRuntimeVersion == nil {
+                        XCTAssertTrue(WidgetRuntimeRequirement.supports(requirement, current: "1.0"))
+                    }
                     if item.files.contains(where: { $0.path == "record-template.json" }) {
                         _ = try ScriptWidgetRecordKind.load(package: package)
                     }

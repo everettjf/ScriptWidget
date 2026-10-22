@@ -804,3 +804,17 @@ Web Studio 新增 Connected services 面板、健康默认资料、字段/JSON �
 本增量仍不是 M4 完成：真实 Music 授权/撤权、Music app/WidgetKit 共享状态、签名物理组件、订阅/后台与播放操作尚未验收；Spotify OAuth UI、刷新与平台资格及 M5 继续开发。没有部署、上传或送审，不将夹具截图或 SDK 编译当作真实账户/设备通过。公开范围及截图见 [Music API](music-api.md)。
 
 最终固定产品源的 `./Scripts/release-readiness.sh` 重跑退出 0：Mac 651 通过 / 0 失败 / 31 跳过，iPhone 17 Simulator 661 通过 / 0 失败 / 30 跳过；两端结果包 `runtimeWarnings=[]`。Editor 35、预览引擎 158、Web Studio 83 项测试、TypeScript 生产构建、浏览器 smoke、89 个模板、20 个 curated Gallery 包、两端应用构建及独立原生服务/存储/运行时探针均通过。SDK/link、测试闭包并发和 Xcode 版本解析诊断原样保留，不能把无 runtimeWarnings 描述成没有编译诊断。最终成功日志与结果汇总为 `__Release/capabilities/music/release-readiness.log`、`macos-summary.json`、`ios-summary.json`；该目录也保留首次失败记录、浏览器输出及验证清单。完整检查后只补充本段结果与证据，不更改产品源。没有执行物理设备、真实账户、签名共享容器或扩展内存验收。
+
+## 2026-10-22：M5-1 共享 Layout 编辑、源码往返和原生资源加载
+
+继续在 `codex/release-m1-m2` / PR #62 统一提交。新增内部 v1 布局模型，以真实 JSX 的源码区间为基础；不通过执行脚本来猜布局，也不生成一份替代源码的项目格式。两端 editor bundle 与 Web Studio 使用同一个 CodeMirror 面板：图层/Code 选择、文字与字面量属性、对齐配色、真实图层拖拽、同 render scope 跨容器移动、添加文字/stack/spacer/icon、删除与独立 Undo/Redo 事务。动态属性、展开/重复属性、custom component 和非字面量子结构明确保留在 Code；禁止跨渲染分支或词法 scope 移动，过期的编辑/拖拽被拒绝。
+
+修改仍经过原有保存/版本/恢复及预览回调。Web 保留逐文件历史；原生 document.open 切换 document ID 时重置历史，防止 Undo 把另一文件内容写回当前文件。只读在 UI 和执行命令时再次检查。新增 Layout Starter 内置模板/Gallery 包，使用基础 Runtime API 1.0，提供五种 system 尺寸组成，不宣称该布局适合锁屏配件尺寸。Gallery 同步脚本现在正确处理省略 minimumRuntimeVersion 的基础包，摘要回退到 runtimeVersion；原有安装测试去掉了“所有模板都要求高于 1.2”的错误假设，仍验证真实安装、编译、缓存、版本保存及基础兼容。
+
+原生验证使用实际 WKWebView、打包后的 JS 和固定测试桥接；确认 save/version/document ID、Undo/Redo、只读、文件切换和 unsupported root 原样保留。Layout Starter 的同一次文字/对齐编辑在原生 JSC/SwiftUI 中执行、截图，再与 Web 树及共享 model 的编辑源码逐一比较。Package 2.0 测试确认其他源码和 binary 资源均原样导出/导入，没有额外 model 或 selection 文件。Chrome 脚本实际捕获鼠标拖拽 payload 并完成 drop，验证所有操作、沙盒预览、保存后重载、unsupported source 和手机无横向溢出。90 个内置模板均能解析出图层，语法问题为 0；动态字段不因此变为可编辑。
+
+默认 file:// WKWebView 夹具无法加载带 CORS 的模块；旧 iOS host 通过额外的私有 file-access preference 处理，不能据此声称旧产品完全不可用。现改为 iOS/Mac 共用公开 WKURLSchemeHandler，固定 `scriptwidget-editor://studio/`，只读取 bundle 内有界 regular 资源，验证类型、origin/method、路径、编码分隔符、软硬链接和大小，移除私有 file-access 设置。该 origin 改动只重置旧 iOS origin 的 cursor/scroll 状态，原生恢复草稿仍走已有 host。测试 Promise 使用 callAsyncJavaScript 显式等待桥接结果；失败的非匹配加载/Promise 夹具结果保留。本次 iOS 首次失败后的 Xcode 结果收集发生停滞，确认测试 host 已退出后中止该进程；后续带结果流的独立失败诊断和最终成功运行均有独立证据，不将中止轮视为通过。
+
+首轮完整 gate 在 Gallery 基础模板的可选版本读取上失败：Mac 655 通过、1 失败、32 跳过。修正默认版本处理后完整重跑退出 0：Mac **656 通过 / 0 失败 / 32 跳过**，iPhone 17 Simulator **666 通过 / 0 失败 / 31 跳过**，两个结果包 runtimeWarnings 均为空。Editor 44、预览引擎 158、Web Studio 86 项，以及 Gallery 同步 2 项、90 模板/21 curated Gallery、TypeScript 构建、两端 app build、原有 browser smoke、新 layout smoke、独立服务/存储/运行时探针均通过。SDK/link、并发和版本解析诊断仍保留。成功记录为 `__Release/capabilities/layout/release-readiness.log`、`macos-summary.json`、`ios-summary.json`；首轮失败、专项汇总和浏览器证据也保留在该目录。完整 gate 后只补文档/证据，不改产品代码。
+
+M5-1 首个支持子集据此勾选；M5-2 主题/资产、M5-3 效果与 M5-4 完整创作流程/分发验收仍继续。M4 OAuth/刷新/播放操作与 M3/M4/M5 的真实设备、账户和签名容器验收仍未完成。没有部署、上传构建或送审；App Review 由用户提交。截图和源码边界见 [Layout 编辑](visual-layout.md)。

@@ -48,6 +48,7 @@
 		F5046998F140FC11B5AA2AB7 /* ServiceTransportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13265805ACA0D99EB8352534 /* ServiceTransportTests.swift */; };
 		76409911C3FF0AA60F14E482 /* ServicesRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB630542E0D41B7049AB9781 /* ServicesRuntimeTests.swift */; };
 		FF97B6F42B2F9FD062E180A4 /* MusicRuntimeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 880954A9A31F966B9B0039D8 /* MusicRuntimeTests.swift */; };
+		ACE8A68315984C5542953AE7 /* VisualLayoutEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24154CC3D7E501CF8ABA11AD /* VisualLayoutEditorTests.swift */; };
 		08E9EBBD3D89654C58295FB9 /* ServiceAuthorizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3691AEA892C0F60DB0825F64 /* ServiceAuthorizationTests.swift */; };
 		AF2855D5A6088CB6840FD84A /* RuntimeDeliveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DBFC205E7AE664442A28C84 /* RuntimeDeliveryTests.swift */; };
 		855878C6168D59CE4C6CB13C /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E3B593386F820DCF99C631E /* ScriptWidgetRuntimeSystem.swift */; };
@@ -76,6 +77,7 @@
 		A204000300000000000000B0 /* SkillManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A203000300000000000000B0 /* SkillManagerView.swift */; };
 		A206000300000000000000B0 /* SwiftOpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = A206000200000000000000B0 /* SwiftOpenAI */; };
 		A207000200000000000000B0 /* EditorSchemeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A207000100000000000000B0 /* EditorSchemeHandler.swift */; };
+		B0423D8C2B57C62BEC3F3483 /* StudioEditorBundleSchemeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845252C200359AB13440A3E7 /* StudioEditorBundleSchemeHandler.swift */; };
 		A208000200000000000000B0 /* FirstRunOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A208000100000000000000B0 /* FirstRunOnboardingView.swift */; };
 		A209000300000000000000B0 /* ScriptWidgetGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = A209000100000000000000B0 /* ScriptWidgetGallery.swift */; };
 		A209000400000000000000B0 /* ScriptWidgetGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A209000200000000000000B0 /* ScriptWidgetGalleryView.swift */; };
@@ -318,6 +320,7 @@
 		13265805ACA0D99EB8352534 /* ServiceTransportTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ServiceTransportTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/ServiceTransportTests.swift; sourceTree = "<group>"; };
 		FB630542E0D41B7049AB9781 /* ServicesRuntimeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ServicesRuntimeTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/ServicesRuntimeTests.swift; sourceTree = "<group>"; };
 		880954A9A31F966B9B0039D8 /* MusicRuntimeTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MusicRuntimeTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/MusicRuntimeTests.swift; sourceTree = "<group>"; };
+		24154CC3D7E501CF8ABA11AD /* VisualLayoutEditorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VisualLayoutEditorTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/VisualLayoutEditorTests.swift; sourceTree = "<group>"; };
 		3691AEA892C0F60DB0825F64 /* ServiceAuthorizationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ServiceAuthorizationTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/ServiceAuthorizationTests.swift; sourceTree = "<group>"; };
 		6DBFC205E7AE664442A28C84 /* RuntimeDeliveryTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RuntimeDeliveryTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/RuntimeDeliveryTests.swift; sourceTree = "<group>"; };
 		8CAE66D10656192ADC2F9019 /* ScriptWidgetRuntimeStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeStorage.swift; sourceTree = "<group>"; };
@@ -344,6 +347,7 @@
 		A203000200000000000000B0 /* AIGenerateWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGenerateWindowView.swift; sourceTree = "<group>"; };
 		A203000300000000000000B0 /* SkillManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillManagerView.swift; sourceTree = "<group>"; };
 		A207000100000000000000B0 /* EditorSchemeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSchemeHandler.swift; sourceTree = "<group>"; };
+		845252C200359AB13440A3E7 /* StudioEditorBundleSchemeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ../Editor/native/StudioEditorBundleSchemeHandler.swift; sourceTree = SOURCE_ROOT; };
 		A208000100000000000000B0 /* FirstRunOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunOnboardingView.swift; sourceTree = "<group>"; };
 		A209000100000000000000B0 /* ScriptWidgetGallery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetGallery.swift; sourceTree = "<group>"; };
 		A209000200000000000000B0 /* ScriptWidgetGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetGalleryView.swift; sourceTree = "<group>"; };
@@ -616,6 +620,7 @@
 				13265805ACA0D99EB8352534 /* ServiceTransportTests.swift */,
 				FB630542E0D41B7049AB9781 /* ServicesRuntimeTests.swift */,
 				880954A9A31F966B9B0039D8 /* MusicRuntimeTests.swift */,
+				24154CC3D7E501CF8ABA11AD /* VisualLayoutEditorTests.swift */,
 				3691AEA892C0F60DB0825F64 /* ServiceAuthorizationTests.swift */,
 				6DBFC205E7AE664442A28C84 /* RuntimeDeliveryTests.swift */,
 				28F68F47C00CF93E4CBA1F1E /* AIGenerationTests.swift */,
@@ -922,6 +927,7 @@
 				F29118C72791DEC800B860B0 /* EditorWebView.swift */,
 				F29118D32792B32900B860B0 /* EditorWebSevice.swift */,
 				A207000100000000000000B0 /* EditorSchemeHandler.swift */,
+				845252C200359AB13440A3E7 /* StudioEditorBundleSchemeHandler.swift */,
 			);
 			path = Editor;
 			sourceTree = "<group>";
@@ -1254,6 +1260,7 @@
 				F5046998F140FC11B5AA2AB7 /* ServiceTransportTests.swift in Sources */,
 				76409911C3FF0AA60F14E482 /* ServicesRuntimeTests.swift in Sources */,
 				FF97B6F42B2F9FD062E180A4 /* MusicRuntimeTests.swift in Sources */,
+				ACE8A68315984C5542953AE7 /* VisualLayoutEditorTests.swift in Sources */,
 				08E9EBBD3D89654C58295FB9 /* ServiceAuthorizationTests.swift in Sources */,
 				AF2855D5A6088CB6840FD84A /* RuntimeDeliveryTests.swift in Sources */,
 			);
@@ -1267,6 +1274,7 @@
 				A27000122F270001008B90A2 /* AppConfigFrequency.swift in Sources */,
 				A210000700000000000000B0 /* DataSourceLabView.swift in Sources */,
 				A207000200000000000000B0 /* EditorSchemeHandler.swift in Sources */,
+				B0423D8C2B57C62BEC3F3483 /* StudioEditorBundleSchemeHandler.swift in Sources */,
 				A202000900000000000000B0 /* AIExamplePrompts.swift in Sources */,
 				A202001000000000000000B0 /* AIWidgetSkills.swift in Sources */,
 				A209000300000000000000B0 /* ScriptWidgetGallery.swift in Sources */,

@@ -106,7 +106,7 @@ export default defineConfig({
   },
   resolve: {
     alias: { "@": path.join(root, "src") },
-    dedupe: ["@codemirror/language", "@codemirror/state", "@codemirror/view", "@lezer/common", "@lezer/highlight"],
+    dedupe: ["@codemirror/commands", "@codemirror/lang-javascript", "@codemirror/language", "@codemirror/state", "@codemirror/view", "@lezer/common", "@lezer/highlight"],
   },
   optimizeDeps: {
     exclude: ["@codemirror/autocomplete", "@codemirror/commands", "@codemirror/lang-javascript", "@codemirror/language", "@codemirror/lint", "@codemirror/search", "@codemirror/state", "@codemirror/view", "@lezer/common", "@lezer/highlight", "@lezer/javascript", "@lezer/lr"],
