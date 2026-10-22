@@ -1,8 +1,8 @@
 # Widget 能力实施与验收记录
 
-最新范围确认：用户已要求继续完成 M3–M5，并明确全部在 `codex/release-m1-m2` 分支及 PR #62 提交，与 M1/M2 一起发布。此前仅发布 M1/M2 的安排已被取代。Watch、远端更新和社交共享不在本次范围；最终 App Review 由用户提交。下方保留各阶段历史，当前状态以最新记录为准。
+最新范围确认（2026-10-22）：用户要求本轮阶段收尾，完成已开始的内容，未开始的记入 TODO 后暂不开发。仍统一在 `codex/release-m1-m2` / PR #62 提交；不以全部 M3–M5 实现作为本轮收尾条件。当前成果见 [阶段交付清单](widget-capabilities-status.md)，延期项见 [TODO](widget-capabilities-todo.md)。最终 App Review 由用户提交。
 
-本记录区分已有基础、本次完成、待验收和未实现。已有模板、Web Mock 和绿色基线不能证明新增功能完成。当前整体目标仍在进行，不能发布为“M1–M5 全部完成”。
+下方任务表和逐次验证是实施过程快照，保留原始状态和证据；当前范围以上述清单为准，最后一轮验证见文末。已有模板、Web Mock 和绿色测试不能替代真实账户、物理设备或签名容器验收。
 
 ## M1 基础能力
 
@@ -960,3 +960,18 @@ Web 只对使用到的 GIF 顺序预检，有界流读取或直接解码 data UR
 初次 native 专项的 throws 标注编译失败已修正。一次完整检查中复核发现原有 Studio CSP 不允许 fetch(data URL)，确认自有父子进程和 cwd 后主动中止（exit 143，非通过）；改为长度/格式预检后本地 base64 解码，并增加原有 CSP 条件下的实际浏览器用例。CSP 未放宽，中止日志保留。ImageIO 对篡改为 65535×65535 逻辑画布的实际两帧样例在元数据阶段拒绝，另保留检查日志；不据此推断全部物理设备内存行为。
 
 最终完整 `./Scripts/release-readiness.sh` 退出 0：Mac **699 通过 / 0 失败 / 33 跳过**，iPhone 17 Simulator **709 通过 / 0 失败 / 32 跳过**，两端 xcresult runtimeWarnings 均为空。Editor 52、预览引擎 168、Web Studio 104、Gallery 同步 2、独立服务 probe 44、91 模板/22 curated 包、全部 browser 流程及新增 GIF smoke、TypeScript/生产构建、两端 app build 及独立运行时/存储/路由检查通过。GIF 原生实际渲染/截图在本次完整 gate 执行；Spotify 可选账户截图本次恢复默认跳过，其历史 opt-in 结果保留。SDK/link/Sendable/Xcode 解析诊断仍保留。最终日志、summary、source hashes、专项、图片和中止记录在 `__Release/capabilities/gif-bounds/`；最后 gate 后只改文档、图片和证据。未移除普通私有时钟桥接，未做物理 WidgetKit/Always On/扩展内存验收，M5 与整体目标仍未完成；没有部署、上传或送审。
+
+### 2026-10-22：冻结范围与阶段收尾
+
+用户最新要求停止扩展，完成已开始的内容，未开始的记入 TODO。本轮范围现以 [阶段成果](widget-capabilities-status.md) 为准，[TODO](widget-capabilities-todo.md) 分开记录未开发功能与待配置/真机验收。历史全量 M3–M5 目标暂缓，不声称全部实现。分支和 PR 保持 `codex/release-m1-m2` / #62。
+
+冻结时刚开始的服务写操作历史已完成内部实现：独立有界 Keychain 记录、准备后才返回派发许可、requestID 与账户/连接/组件/操作绑定、接受结果重放、明确拒绝留存、未知结果不淘汰、七天已完成记录保留、损坏/容量/写失败与撤权保护。新增七项确定性测试覆盖持久化重读、竞争、绑定、错误、容量与保留边界。没有接入 HTTP writer、公开控制 API、控制授权界面或 Web 控制 mock；现有只读代理继续拒绝写入。该基础只提供本地重放保护，不承诺服务端 exactly-once。
+
+最终 `./Scripts/release-readiness.sh` 退出 0：Mac **706 通过 / 0 失败 / 33 跳过**；iPhone 17 Simulator **716 通过 / 0 失败 / 32 跳过**，两端 xcresult runtimeWarnings 均为空。Editor 52、预览引擎 168、Web Studio 104、Gallery 同步 2、独立服务 probe **51**、91 模板/22 curated 包、全部 browser 流程、TypeScript/生产构建、两端 app scheme build、独立运行时/存储/路由探针均通过。既有 SDK/link/Sendable/Xcode 版本诊断仍存在；跳过项未计作通过，历史 opt-in 设备/账户截图不算本轮新执行。
+
+本地证据目录：`__Release/capabilities/staged-closeout/`，包含完整日志、服务 probe、两端 summary 与最终实现源文件哈希。实际 xcresult：
+
+- Mac：`/tmp/scriptwidget-runtime-delivery/macos-tests/Logs/Test/Test-ScriptWidgetRuntimeTests-2026.10.22_11-01-15--0700.xcresult`
+- iOS：`/tmp/scriptwidget-runtime-delivery/ios-tests/Logs/Test/Test-ScriptWidgetRuntimeTests-2026.10.22_11-04-09--0700.xcresult`
+
+最终 gate 后仅补文档、验证记录及 PR 说明。没有进行真实服务登录、物理设备或签名 Keychain/iCloud 验收；没有部署 Web、上传原生构建或提交审核。Spotify 未配置提示保留，App Review 仍由用户操作。本轮开发阶段收尾不替代发布门槛。

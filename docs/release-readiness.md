@@ -8,6 +8,10 @@ This document is the ship gate for iOS 16+ and macOS 26+. A release candidate is
 ./Scripts/ipad-icloud-tests.sh
 ```
 
+## Current staged scope
+
+The 2026-10-22 scope freeze is recorded in the [staged delivery list](widget-capabilities-status.md), with deferred features and outstanding device/configuration acceptance in the [TODO](widget-capabilities-todo.md). Completing this development stage does not waive the ship gate above. No deployment, store upload or review submission is implied.
+
 ## Automated gates
 
 - All public runtime unit, execution, error, cache, security and template compatibility tests pass.

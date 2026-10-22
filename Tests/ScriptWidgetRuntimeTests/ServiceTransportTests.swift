@@ -286,6 +286,137 @@ final class ServiceTransportTests: XCTestCase {
         XCTAssertEqual(memory.values, before); XCTAssertNoThrow(try store.revalidate(connected))
     }
 
+    private func writeFixture(_ memory: Memory) throws -> (ScriptWidgetServiceConnections, ScriptWidgetServiceConnection, UUID) {
+        let store = connections(memory), owner = UUID()
+        let profile = ScriptWidgetServiceProfile(service: .spotify, subject: "sample-user", username: nil, displayName: "Sample listener", publicRepositories: nil, privateRepositories: nil, followers: nil, following: nil)
+        let connected = try store.connect(credential(.spotify), verifiedProfile: profile, expectedRevision: nil)
+        let granted = try store.setGrant(service: .spotify, ownerID: owner, operations: [.spotifyPause, .spotifyResume], expectedRevision: connected.revision)
+        return (store, granted, owner)
+    }
+    private func writePlan(_ connection: ScriptWidgetServiceConnection, owner: UUID, id: UUID = UUID(), operation: ScriptWidgetServiceOperation = .spotifyPause) throws -> ScriptWidgetServiceRequestPlan {
+        try .init(operation: operation, credential: connection.credential, policy: connection.policy, ownerID: owner,
+            expectedConnectionID: connection.policy.connectionID, isUserInitiatedAction: true, requestID: id,
+            hasNetworkPermission: true, allowsHost: { _ in true })
+    }
+    private func writePermit(_ store: ScriptWidgetServiceConnections, _ plan: ScriptWidgetServiceRequestPlan, _ connection: ScriptWidgetServiceConnection) throws -> ScriptWidgetServiceWritePermit {
+        guard case let .dispatch(permit) = try store.prepareWrite(plan, expected: connection) else {
+            throw ScriptWidgetServiceError.requestConflict
+        }
+        return permit
+    }
+
+    @objc func testWriteLedgerPersistsUnknownBeforeDispatchAndReplaysAcceptedAfterReload() throws {
+        let memory = Memory(), (store, connection, owner) = try writeFixture(memory)
+        let plan = try writePlan(connection, owner: owner), permit = try writePermit(store, plan, connection)
+        let reloaded = connections(memory)
+        XCTAssertThrowsError(try reloaded.prepareWrite(plan, expected: connection)) { XCTAssertEqual($0 as? ScriptWidgetServiceError, .outcomeUnknown) }
+        let receipt = try store.completeWrite(permit, plan: plan, expected: connection, outcome: .accepted)
+        XCTAssertFalse(receipt.replayed)
+        guard case let .replay(replay) = try reloaded.prepareWrite(plan, expected: connection) else { return XCTFail("Accepted action dispatched again") }
+        XCTAssertTrue(replay.replayed); XCTAssertEqual(replay.requestID, plan.requestID)
+        let bytes = try XCTUnwrap(memory.values["writes:spotify"]), text = String(decoding: bytes, as: UTF8.self)
+        for secret in ["sample-private", "sample-user", "Sample listener", owner.uuidString] { XCTAssertFalse(text.contains(secret)) }
+        XCTAssertFalse(String(reflecting: receipt).contains("sample-private"))
+    }
+
+    @objc func testWriteLedgerBindsRequestIDToOperationOwnerAndConnection() throws {
+        let memory = Memory(), (store, connection, owner) = try writeFixture(memory), id = UUID()
+        let plan = try writePlan(connection, owner: owner, id: id), permit = try writePermit(store, plan, connection)
+        _ = try store.completeWrite(permit, plan: plan, expected: connection, outcome: .accepted)
+        let different = try writePlan(connection, owner: owner, id: id, operation: .spotifyResume)
+        XCTAssertThrowsError(try store.prepareWrite(different, expected: connection)) { XCTAssertEqual($0 as? ScriptWidgetServiceError, .requestConflict) }
+        let otherOwner = UUID(), changed = try store.setGrant(service: .spotify, ownerID: otherOwner, operations: [.spotifyPause], expectedRevision: connection.revision)
+        let other = try writePlan(changed, owner: otherOwner, id: id)
+        XCTAssertThrowsError(try store.prepareWrite(other, expected: changed)) { XCTAssertEqual($0 as? ScriptWidgetServiceError, .requestConflict) }
+        try store.disconnect(.spotify, expectedRevision: changed.revision)
+        let (_, reconnected, newOwner) = try writeFixture(memory)
+        let next = try writePlan(reconnected, owner: newOwner, id: id)
+        XCTAssertThrowsError(try store.prepareWrite(next, expected: reconnected)) { XCTAssertEqual($0 as? ScriptWidgetServiceError, .requestConflict) }
+    }
+
+    @objc func testWriteLedgerKeepsDefinitiveRejectionsAndRejectsStaleAuthority() throws {
+        for (outcome, error): (ScriptWidgetServiceWriteOutcome, ScriptWidgetServiceError) in [(.permission, .permissionDenied), (.expired, .expiredAuthorization), (.rateLimited, .rateLimited)] {
+            let memory = Memory(), (store, connection, owner) = try writeFixture(memory)
+            let plan = try writePlan(connection, owner: owner), permit = try writePermit(store, plan, connection)
+            XCTAssertThrowsError(try store.completeWrite(permit, plan: plan, expected: connection, outcome: outcome)) { XCTAssertEqual($0 as? ScriptWidgetServiceError, error) }
+            XCTAssertThrowsError(try connections(memory).prepareWrite(plan, expected: connection)) { XCTAssertEqual($0 as? ScriptWidgetServiceError, error) }
+            XCTAssertThrowsError(try store.completeWrite(permit, plan: plan, expected: connection, outcome: .accepted)) { XCTAssertEqual($0 as? ScriptWidgetServiceError, .requestConflict) }
+            _ = try store.setGrant(service: .spotify, ownerID: owner, operations: [], expectedRevision: connection.revision)
+            XCTAssertThrowsError(try store.completeWrite(permit, plan: plan, expected: connection, outcome: outcome)) { XCTAssertEqual($0 as? ScriptWidgetServiceError, .permissionDenied) }
+        }
+    }
+
+    @objc func testWriteLedgerStorageFailuresNeverYieldDispatchOrFalseSuccess() throws {
+        let memory = Memory(), (store, connection, owner) = try writeFixture(memory)
+        let plan = try writePlan(connection, owner: owner)
+        memory.failWrites = true
+        XCTAssertThrowsError(try store.prepareWrite(plan, expected: connection))
+        XCTAssertNil(memory.values["writes:spotify"])
+        memory.failWrites = false
+        let permit = try writePermit(store, plan, connection)
+        memory.failWrites = true
+        XCTAssertThrowsError(try store.completeWrite(permit, plan: plan, expected: connection, outcome: .accepted)) { XCTAssertEqual($0 as? ScriptWidgetServiceError, .outcomeUnknown) }
+        memory.failWrites = false
+        XCTAssertThrowsError(try store.prepareWrite(plan, expected: connection)) { XCTAssertEqual($0 as? ScriptWidgetServiceError, .outcomeUnknown) }
+        memory.failed = true
+        XCTAssertThrowsError(try store.prepareWrite(plan, expected: connection)) { XCTAssertEqual($0 as? ScriptWidgetServiceError, .locked) }
+    }
+
+    @objc func testWriteLedgerRejectsCorruptionUnknownFieldsAndOversizedHistory() throws {
+        let memory = Memory(), (store, connection, owner) = try writeFixture(memory)
+        let plan = try writePlan(connection, owner: owner)
+        _ = try writePermit(store, plan, connection)
+        let original = try XCTUnwrap(memory.values["writes:spotify"])
+        let object = try JSONSerialization.jsonObject(with: original) as! [String: Any]
+        for patch: [String: Any] in [["formatVersion": 2], ["unexpected": true], ["entries": [] as [Any], "token": "private"]] {
+            memory.values["writes:spotify"] = try JSONSerialization.data(withJSONObject: object.merging(patch, uniquingKeysWith: { _, new in new }))
+            XCTAssertThrowsError(try store.prepareWrite(plan, expected: connection)) { XCTAssertEqual($0 as? ScriptWidgetServiceError, .writeHistoryInvalid) }
+        }
+        for bytes in [Data("{}".utf8), Data(repeating: 32, count: ScriptWidgetServiceConnections.maximumWriteBytes + 1)] {
+            memory.values["writes:spotify"] = bytes
+            XCTAssertThrowsError(try store.prepareWrite(plan, expected: connection)) { XCTAssertEqual($0 as? ScriptWidgetServiceError, .writeHistoryInvalid) }
+        }
+        memory.values["writes:spotify"] = original
+        XCTAssertThrowsError(try store.prepareWrite(plan, expected: connection)) { XCTAssertEqual($0 as? ScriptWidgetServiceError, .outcomeUnknown) }
+    }
+
+    @objc func testWriteLedgerNeverEvictsUncertainAttemptsAndExpiresOnlyCompletedRecords() throws {
+        let memory = Memory(), (store, connection, owner) = try writeFixture(memory)
+        let plan = try writePlan(connection, owner: owner)
+        _ = try writePermit(store, plan, connection)
+        var object = try JSONSerialization.jsonObject(with: XCTUnwrap(memory.values["writes:spotify"])) as! [String: Any]
+        var entry = (object["entries"] as! [[String: Any]])[0]
+        entry["createdAt"] = Date().timeIntervalSince1970 - ScriptWidgetServiceConnections.writeRetention - 60
+        object["entries"] = (0..<ScriptWidgetServiceConnections.maximumWriteEntries).map { _ -> [String: Any] in
+            var copy = entry; copy["requestID"] = UUID().uuidString; copy["nonce"] = UUID().uuidString; return copy
+        }
+        memory.values["writes:spotify"] = try JSONSerialization.data(withJSONObject: object)
+        XCTAssertThrowsError(try store.prepareWrite(plan, expected: connection)) { XCTAssertEqual($0 as? ScriptWidgetServiceError, .writeHistoryFull) }
+        object["entries"] = (object["entries"] as! [[String: Any]]).map { value -> [String: Any] in
+            var copy = value; copy["outcome"] = "accepted"; return copy
+        }
+        memory.values["writes:spotify"] = try JSONSerialization.data(withJSONObject: object)
+        XCTAssertNoThrow(try store.prepareWrite(plan, expected: connection))
+        let saved = try JSONSerialization.jsonObject(with: XCTUnwrap(memory.values["writes:spotify"])) as! [String: Any]
+        XCTAssertEqual((saved["entries"] as? [Any])?.count, 1)
+    }
+
+    @objc func testConcurrentWritePreparationAllowsOnlyOneDispatch() throws {
+        let memory = Memory(), (store, connection, owner) = try writeFixture(memory)
+        let plan = try writePlan(connection, owner: owner), lock = NSLock()
+        var dispatches = 0, unknowns = 0
+        DispatchQueue.concurrentPerform(iterations: 16) { _ in
+            do {
+                guard case .dispatch = try store.prepareWrite(plan, expected: connection) else { return XCTFail("Unexpected replay") }
+                lock.lock(); dispatches += 1; lock.unlock()
+            } catch {
+                XCTAssertEqual(error as? ScriptWidgetServiceError, .outcomeUnknown)
+                lock.lock(); unknowns += 1; lock.unlock()
+            }
+        }
+        XCTAssertEqual(dispatches, 1); XCTAssertEqual(unknowns, 15)
+    }
+
     @objc func testTokenResponseBudgetRejectsChunkedDataBeforeTheGeneralAPILimit() throws {
         let transport = ScriptWidgetServiceURLTransport(protocolClasses: [FixtureProtocol.self], maximumResponseBytes: 16 * 1024)
         let done = expectation(description: "Token streaming budget")

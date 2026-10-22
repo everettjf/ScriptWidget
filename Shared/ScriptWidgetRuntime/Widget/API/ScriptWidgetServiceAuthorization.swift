@@ -27,6 +27,7 @@ enum ScriptWidgetServiceError: LocalizedError, Equatable {
     case invalidConfiguration, invalidCallback, expiredAuthorization, consumedAuthorization
     case cancelled, authorizationFailed, invalidCredential, locked, storageUnavailable
     case notConnected, permissionDenied, unsupportedOperation, rateLimited, unavailable, conflict, networkLimit
+    case writeHistoryInvalid, writeHistoryFull, requestConflict, outcomeUnknown
 
     var errorDescription: String? {
         switch self {
@@ -43,6 +44,10 @@ enum ScriptWidgetServiceError: LocalizedError, Equatable {
         case .notConnected: "[service_not_connected] Connect a service in the app."
         case .permissionDenied: "[service_permission] Allow this service operation in the app."
         case .unsupportedOperation: "[service_operation] This service operation is unsupported."
+        case .writeHistoryInvalid: "[service_history_invalid] Service action history could not be validated."
+        case .writeHistoryFull: "[service_history_full] Service action history has reached its bound."
+        case .requestConflict: "[request_conflict] This requestID belongs to a different service action."
+        case .outcomeUnknown: "[outcome_unknown] This action may have been accepted. Inspect the player; do not retry with a new requestID automatically."
         case .networkLimit: "[network_limit] Too many concurrent or total network requests."
         case .rateLimited: "[service_rate_limit] The service is rate limited. Try again later."
         case .unavailable: "[service_unavailable] The service is currently unavailable."

@@ -26,12 +26,12 @@ let suite = XCTestSuite(name: "Service authorization and native access policy")
 suite.addTest(XCTestSuite(forTestCaseClass: ServiceAuthorizationTests.self))
 suite.addTest(XCTestSuite(forTestCaseClass: ServiceAccessPolicyTests.self))
 suite.addTest(XCTestSuite(forTestCaseClass: ServiceTransportTests.self))
-guard suite.testCaseCount == 44 else { fatalError("Expected forty-four native service tests") }
+guard suite.testCaseCount == 51 else { fatalError("Expected fifty-one native service tests") }
 suite.run()
 guard let run = suite.testRun else { fatalError("Missing XCTest run") }
 let result: [String: Any] = ["passed": run.hasSucceeded, "testCount": run.executionCount, "failureCount": run.totalFailureCount, "realKeychain": false, "realServiceAuthorization": false, "externalNetworkRequests": 0, "applicationHost": false]
 print(String(data: try JSONSerialization.data(withJSONObject: result, options: [.sortedKeys]), encoding: .utf8)!)
-guard run.hasSucceeded, run.executionCount == 44 else { exit(1) }
+guard run.hasSucceeded, run.executionCount == 51 else { exit(1) }
 `);
   const flags = ["-D", "SCRIPTWIDGET_SERVICE_STANDALONE_TESTS", "-F", frameworks, "-I", libraries, "-L", libraries,
     "-Xlinker", "-rpath", "-Xlinker", frameworks, "-Xlinker", "-rpath", "-Xlinker", libraries];

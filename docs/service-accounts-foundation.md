@@ -59,3 +59,9 @@ Native screenshots use only in-memory sample credentials and the octocat fixture
 ![Mac Spotify settings with injected test configuration](images/service-spotify-macos-ready.png)
 
 ![Mac Spotify profile grant with isolated sample account](images/service-spotify-macos-connected.png)
+
+## Staged closeout: private action ledger
+
+The native connection store now has an internal, bounded Keychain action ledger, with deterministic tests for concurrent preparation, accepted replay after reload, operation/owner/connection binding, definitive rejection, stale authority, corruption, capacity and storage failure. Preparation persists an uncertain entry before yielding a private dispatch permit. Accepted/rejected entries expire after seven days; uncertain entries are never evicted automatically and capacity exhaustion fails closed. Stored data contains no tokens, account labels or provider payloads. This provides local replay protection within retention, not provider-level exactly-once execution.
+
+No HTTP writer, public control API, control authorization UI or Web control mock is connected. The read broker still rejects writes. These features are deferred in the [TODO](widget-capabilities-todo.md); the internal ledger must not be advertised as working playback control.
