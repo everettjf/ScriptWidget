@@ -53,6 +53,7 @@ enum WidgetPackagePermission: String, Codable, CaseIterable, Identifiable {
     case location
     case health
     case calendar
+    case reminders
     case storage
     case files
 

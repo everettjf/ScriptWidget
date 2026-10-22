@@ -23,6 +23,11 @@ const samples = [
   { id: "$calendar.requestAuthorization", group: "calendar", value: true },
   { id: "$calendar.calendars", group: "calendar", value: [{ id: "sample.personal", title: "Personal" }] },
   { id: "$calendar.events", group: "calendar", value: { status: "ready", items: [{ id: "sample.event", calendarID: "sample.personal", title: "Read and recharge", start: "2026-01-01T15:00:00Z", end: "2026-01-01T15:30:00Z", allDay: false }], fetchedAt: sampleEnd, source: "system", stale: false, truncated: false } },
+  { id: "$reminders.isAvailable", group: "reminders", value: true },
+  { id: "$reminders.authorizationStatus", group: "reminders", value: "authorized" },
+  { id: "$reminders.requestAuthorization", group: "reminders", value: true },
+  { id: "$reminders.lists", group: "reminders", value: [{ id: "sample.reminders", title: "Personal" }] },
+  { id: "$reminders.items", group: "reminders", value: { status: "ready", items: [{ id: "sample.reminder", listID: "sample.reminders", title: "Read a chapter", due: "2026-01-01T16:00:00Z", hasTime: true, completed: false, completedAt: null, priority: 0 }], fetchedAt: sampleEnd, source: "system", stale: false, truncated: false } },
   { id: "$health.authorizationStatus", group: "health", value: "notDisclosed" },
   { id: "$health.isAvailable", group: "health", value: true },
   { id: "$health.requestAuthorization", group: "health", value: true, legacy: ["health"] },
@@ -37,6 +42,7 @@ const samples = [
 ];
 
 const groupPolicy = {
+  reminders: { platforms: ["ios", "macos"], authorization: "remindersRead", notes: "Requires reminders in widget.json and full system Reminders access. Scripts have read-only access to native Settings selected lists; they cannot create, edit or complete reminders. Use lists() for IDs. items() selects pending due dates or completed completion dates in a positive window of at most 31 days, up to 50 items. Undated pending reminders are excluded. remindersSelection mocks the user scope without granting permission." },
   calendar: { platforms: ["ios", "macos"], authorization: "calendarRead", notes: "Requires calendar in widget.json and full system Calendar access. The user's native Settings source selection limits metadata, events and cached snapshots; scripts cannot enlarge it. Use calendars() for permitted IDs and show setup when no sources are selected. Queries are read-only, limited to 31 days and 50 items. Preview calendarSelection simulates this scope without granting package permission." },
   device: { platforms: ["ios", "macos"], authorization: "none", notes: "Device values depend on hardware. Some legacy Mac values are placeholders; inspect the API documentation before using them as measurements." },
   system: { platforms: ["ios", "macos"], authorization: "none", notes: "System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable." },
@@ -45,13 +51,13 @@ const groupPolicy = {
 };
 export const dataAPICatalog = samples.map((sample) => {
   const method = sample.id.split(".")[1];
-  const asynchronous = (sample.group === "calendar" && !["isAvailable", "authorizationStatus"].includes(method)) || (sample.group === "health" && !["isAvailable", "authorizationStatus"].includes(method)) ||
+  const asynchronous = (["calendar", "reminders"].includes(sample.group) && !["isAvailable", "authorizationStatus"].includes(method)) || (sample.group === "health" && !["isAvailable", "authorizationStatus"].includes(method)) ||
     (sample.group === "location" && ["current", "requestAuthorization"].includes(method));
-  const options = (sample.group === "location" && ["current", "requestAuthorization"].includes(method)) || (sample.group === "calendar" && method === "events");
+  const options = (sample.group === "location" && ["current", "requestAuthorization"].includes(method)) || (["calendar", "reminders"].includes(sample.group) && ["events", "items"].includes(method));
   return {
     ...sample,
     ...groupPolicy[sample.group],
-    minimumRuntimeVersion: sample.group === "calendar" || ["$health.authorizationStatus", "$location.isAuthorizedForWidgetUpdates"].includes(sample.id) ? "1.3" : "1.0",
+    minimumRuntimeVersion: sample.group === "reminders" ? "1.4" : ["calendar"].includes(sample.group) || ["$health.authorizationStatus", "$location.isAuthorizedForWidgetUpdates"].includes(sample.id) ? "1.3" : "1.0",
     arguments: options ? ["options?"] : [],
     asynchronous,
     nativeSource: `Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntime${sample.group[0].toUpperCase()}${sample.group.slice(1)}.swift`,

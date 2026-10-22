@@ -389,7 +389,7 @@ final class ScriptWidgetErrorTests: XCTestCase {
 
 final class RuntimeContractTests: XCTestCase {
     func testPublicAPIVersionAndGlobalsAreFixed() {
-        XCTAssertEqual(ScriptWidgetRuntimeContract.apiVersion, "1.3")
+        XCTAssertEqual(ScriptWidgetRuntimeContract.apiVersion, "1.4")
         XCTAssertEqual(ScriptWidgetRuntimeContract.globalAPIs, ScriptWidgetRuntimeContract.globalAPIs.sorted())
         XCTAssertTrue(ScriptWidgetRuntimeContract.globalAPIs.contains("$render"))
         XCTAssertTrue(ScriptWidgetRuntimeContract.globalAPIs.contains("$runtime"))
@@ -2056,8 +2056,8 @@ final class CalendarSourceSelectionTests: XCTestCase {
 
 final class WidgetRuntimeRequirementTests: XCTestCase {
     func testOnlyCanonicalSameMajorRequirementsAreSupported() {
-        for value in ["1.0", "1.1", "1.2", "1.3"] { XCTAssertTrue(WidgetRuntimeRequirement.supports(value), value) }
-        for value in ["1.4", "1.10", "2.0", "0.9", "01.3", "1.03", "1.3.0", "1", "1.9999", ">=1.3", " 1.3"] {
+        for value in ["1.0", "1.1", "1.2", "1.3", "1.4"] { XCTAssertTrue(WidgetRuntimeRequirement.supports(value), value) }
+        for value in ["1.5", "1.10", "2.0", "0.9", "01.3", "1.03", "1.3.0", "1", "1.9999", ">=1.3", " 1.3"] {
             XCTAssertFalse(WidgetRuntimeRequirement.supports(value), value)
         }
         XCTAssertTrue(WidgetRuntimeRequirement.supports("1.9", current: "1.10"))
@@ -2075,7 +2075,7 @@ final class WidgetRuntimeRequirementTests: XCTestCase {
             try JSONEncoder().encode(manifest).write(to: directory.appendingPathComponent("widget.json"))
             XCTAssertEqual(package.readManifest()?.minimumRuntimeVersion, value)
             let report = WidgetPackageManifestValidator.validate(manifest, package: package, checkEntryExists: false)
-            XCTAssertEqual(report.isValid, value == nil || value == "1.0" || value == "1.3", value ?? "absent")
+            XCTAssertEqual(report.isValid, value == nil || value == "1.0" || value == "1.3" || value == "1.4", value ?? "absent")
         }
         var object = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(manifest)) as? [String: Any])
         object["minimumRuntimeVersion"] = true
@@ -5821,11 +5821,163 @@ final class ScriptWidgetActivityKitIntegrationTests:XCTestCase {
 }
 #endif
 
-final class UnitTestStorageIsolationTests: XCTestCase {
+final class RemindersPolicyTests: XCTestCase {
+    private let options: [String: Any] = ["start": "2026-02-03T00:00:00Z", "end": "2026-02-04T00:00:00Z"]
+
+    func testQueryValidationAndSeparateCompletionIdentity() throws {
+        let query = try ScriptWidgetRemindersQuery(options)
+        let completed = try ScriptWidgetRemindersQuery(options.merging(["completed": true]) { _, b in b })
+        XCTAssertFalse(query.completed); XCTAssertTrue(completed.completed)
+        XCTAssertNotEqual(query.identity, completed.identity)
+        var utc = Calendar(identifier: .gregorian); utc.timeZone = TimeZone(secondsFromGMT: 0)!
+        var losAngeles = utc; losAngeles.timeZone = TimeZone(identifier: "America/Los_Angeles")!
+        XCTAssertNotEqual(try ScriptWidgetRemindersQuery(options, calendar: utc).identity, try ScriptWidgetRemindersQuery(options, calendar: losAngeles).identity)
+
+        for extra: [String: Any] in [["completed": 1], ["completed": "true"], ["completed": NSNull()], ["listIDs": []], ["listIDs": ["a", "a"]], ["calendarIDs": ["a"]], ["limit": true], ["limit": 51], ["end": "2026-04-03T00:00:00Z"], ["start": "2026-02-03"]] {
+            XCTAssertThrowsError(try ScriptWidgetRemindersQuery(options.merging(extra) { _, b in b }))
+        }
+        let a = "caf\u{00e9}", b = "cafe\u{0301}"
+        let ids = try ScriptWidgetRemindersQuery(options.merging(["listIDs": [a, b]]) { _, b in b })
+        XCTAssertEqual(ids.window.calendarIDs.count, 2)
+    }
+
+    func testFloatingDueDatesCompletionWindowsAndOpaqueListIDs() throws {
+        let query = try ScriptWidgetRemindersQuery(options)
+        func item(due: String?, timed: Bool = true, completed: Bool = false, at: String? = nil, list: String = "personal") -> ScriptWidgetReminderItem {
+            .init(id: "1", listID: list, title: "Reading", due: due, hasTime: timed, completed: completed, completedAt: at, priority: 0)
+        }
+        XCTAssertTrue(item(due: "2026-02-03T10:00:00Z").matches(query, selection: .all))
+        XCTAssertFalse(item(due: "2026-02-04T00:00:00Z").matches(query, selection: .all))
+        XCTAssertTrue(item(due: "2026-02-03", timed: false).matches(query, selection: .all))
+        XCTAssertFalse(item(due: "2026-02-30", timed: false).matches(query, selection: .all))
+        XCTAssertFalse(item(due: nil, timed: false).matches(query, selection: .all))
+        let done = try ScriptWidgetRemindersQuery(options.merging(["completed": true]) { _, b in b })
+        XCTAssertTrue(item(due: nil, timed: false, completed: true, at: "2026-02-03T12:00:00Z").matches(done, selection: .all))
+        XCTAssertFalse(item(due: nil, timed: false, completed: true).matches(done, selection: .all))
+        XCTAssertFalse(item(due: "2026-02-03T10:00:00Z", list: "cafe\u{0301}").matches(query, selection: .init(calendarIDs: ["caf\u{00e9}"])))
+        let floating = ScriptWidgetReminderItem.dueValue(DateComponents(year: 2026, month: 2, day: 3))
+        XCTAssertEqual(floating.text, "2026-02-03"); XCTAssertFalse(floating.hasTime)
+        XCTAssertNil(ScriptWidgetReminderItem.dueValue(DateComponents(year: 2026, month: 2, day: 30)).text)
+    }
+
+    func testCacheRejectsWrongScopeQueryStatusAndMalformedRows() throws {
+        let query = try ScriptWidgetRemindersQuery(options), now = Date()
+        let row = ScriptWidgetReminderItem(id: "1", listID: "personal", title: "Reading", due: "2026-02-03T12:00:00Z", hasTime: true, completed: false, completedAt: nil, priority: 0).dictionary
+        let value: [String: Any] = ["status": "ready", "items": [row], "fetchedAt": ISO8601DateFormatter().string(from: now), "source": "system", "stale": false, "truncated": false]
+        var object: [String: Any] = ["query": query.identity, "selection": ScriptWidgetCalendarSelection.all.identity, "timestamp": now.timeIntervalSince1970, "value": value]
+        func decode(_ selection: ScriptWidgetCalendarSelection = .all) throws -> [String: Any]? {
+            ScriptWidgetRemindersCache.decode(try JSONSerialization.data(withJSONObject: object), query: query, selection: selection, now: now)
+        }
+        XCTAssertEqual(try decode()?["source"] as? String, "cache")
+        XCTAssertNil(try decode(.init(calendarIDs: ["personal"])))
+        object["query"] = "other"; XCTAssertNil(try decode()); object["query"] = query.identity
+        object["timestamp"] = now.addingTimeInterval(1).timeIntervalSince1970; XCTAssertNil(try decode()); object["timestamp"] = now.timeIntervalSince1970
+        for bad: [String: Any] in [["priority": true], ["priority": 10], ["completed": true], ["due": "invalid"], ["listID": ""], ["extra": "sensitive"]] {
+            var changed = value; changed["items"] = [row.merging(bad) { _, b in b }]; object["value"] = changed
+            XCTAssertNil(try decode())
+        }
+    }
+
+    func testCalendarAndReminderSelectionsAreIndependentAndFailClosed() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("ReminderScope-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try ScriptWidgetCalendarSelection(calendarIDs: ["calendar"]).save(container: root)
+        XCTAssertEqual(try ScriptWidgetCalendarSelection.load(container: root, kind: .reminders), .all)
+        let selection = ScriptWidgetCalendarSelection(calendarIDs: ["reminder"])
+        try selection.save(container: root, kind: .reminders)
+        XCTAssertEqual(try ScriptWidgetCalendarSelection.load(container: root).calendarIDs, ["calendar"])
+        XCTAssertEqual(try ScriptWidgetCalendarSelection.load(container: root, kind: .reminders), selection)
+        XCTAssertThrowsError(try ScriptWidgetCalendarSelection.all.save(container: root, replacing: .all, kind: .reminders))
+        let file = root.appendingPathComponent(ScriptWidgetEventSourceKind.reminders.fileName)
+        try Data("{}".utf8).write(to: file)
+        XCTAssertThrowsError(try ScriptWidgetCalendarSelection.load(container: root, kind: .reminders))
+        XCTAssertEqual(try ScriptWidgetCalendarSelection.load(container: root).calendarIDs, ["calendar"])
+        try FileManager.default.removeItem(at: file)
+        try FileManager.default.createSymbolicLink(at: file, withDestinationURL: root.appendingPathComponent(ScriptWidgetEventSourceKind.calendar.fileName))
+        XCTAssertThrowsError(try ScriptWidgetCalendarSelection.load(container: root, kind: .reminders))
+    }
+}
+
+
+extension RemindersPolicyTests {
+    func testFileBackendAllowsOnlyBoundedHashedPrivateSnapshotKeys() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("ReminderMetadata-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let suite = "app.scriptwidget.reminder-metadata." + UUID().uuidString, legacy = UserDefaults(suiteName: suite)!
+        defer { legacy.removePersistentDomain(forName: suite); try? FileManager.default.removeItem(at: root) }
+        let backend = try ScriptWidgetFileStorageBackend(container: root, legacy: legacy)
+        for prefix in ["ScriptWidget.CalendarCache.v1.", "ScriptWidget.RemindersCache.v1."] {
+            let valid = prefix + String(repeating: "a", count: 64)
+            try backend.writeValue(Data([1, 2, 3]), forKey: valid)
+            XCTAssertEqual(try backend.readValue(forKey: valid) as? Data, Data([1, 2, 3]))
+            for suffix in ["", String(repeating: "a", count: 63), String(repeating: "a", count: 65), String(repeating: "G", count: 64), "../personal"] {
+                XCTAssertThrowsError(try backend.writeValue(Data([4]), forKey: prefix + suffix))
+            }
+        }
+    }
+}
+
+
+extension RemindersPolicyTests {
     func testDeterministicCacheUsesTemporaryRootInsteadOfHostAppGroup() throws {
         XCTAssertTrue(ScriptManager.usesIsolatedUnitTestBuildCache)
         let root = try XCTUnwrap(ScriptManager.getSandboxBuildDirectoryURL())
         XCTAssertEqual(root.standardizedFileURL, ScriptManager.localFallbackDirectoryURL("__Build").standardizedFileURL)
         XCTAssertTrue(root.path.contains("ScriptWidgetTests"))
+    }
+}
+
+
+final class RemindersMutationTests: XCTestCase {
+    private let requestID = "550e8400-e29b-41d4-a716-446655440000"
+    private func options(_ changes: [String: Any] = [:]) -> [String: Any] {
+        ["requestID": requestID, "listID": "personal", "title": "Read a chapter"].merging(changes) { _, new in new }
+    }
+    func testCreationRejectsMalformedDatesTypesAndUnknownFields() throws {
+        let request = try ScriptWidgetReminderMutation(kind: .create, options: options(["due": "2028-02-29", "priority": 4]))
+        XCTAssertEqual(request.due, "2028-02-29"); XCTAssertEqual(request.priority, 4); XCTAssertNil(request.id)
+        for changes: [String: Any] in [["title": " "], ["title": String(repeating: "é", count: 513)], ["title": "a\nb"], ["due": "2026-02-29"], ["due": "bad"], ["priority": true], ["priority": 1.5], ["priority": 10], ["listID": ""], ["requestID": "unstable"], ["requestID": requestID.uppercased()], ["completed": true], ["id": "foreign"]] {
+            XCTAssertThrowsError(try ScriptWidgetReminderMutation(kind: .create, options: options(changes)))
+        }
+    }
+    func testUpdatesDistinguishAbsentAndClearedDueDatesAndRejectEmptyChanges() throws {
+        let base: [String: Any] = ["requestID": requestID, "listID": "personal", "id": "reminder", "title": "Read"]
+        let preserve = try ScriptWidgetReminderMutation(kind: .update, options: base)
+        let clear = try ScriptWidgetReminderMutation(kind: .update, options: base.merging(["due": NSNull()]) { _, b in b })
+        XCTAssertFalse(preserve.changesDue); XCTAssertTrue(clear.changesDue); XCTAssertNil(clear.due)
+        XCTAssertNotEqual(preserve.fingerprint, clear.fingerprint)
+        var empty = base; empty.removeValue(forKey: "title")
+        XCTAssertThrowsError(try ScriptWidgetReminderMutation(kind: .update, options: empty))
+    }
+    func testCompletionRequiresDesiredBooleanAndFingerprintsBindThePayload() throws {
+        let base: [String: Any] = ["requestID": requestID, "listID": "personal", "id": "reminder", "completed": true]
+        let first = try ScriptWidgetReminderMutation(kind: .setCompleted, options: base)
+        let replay = try ScriptWidgetReminderMutation(kind: .setCompleted, options: base.merging(["requestID": UUID().uuidString.lowercased()]) { _, b in b })
+        XCTAssertEqual(first.fingerprint, replay.fingerprint)
+        XCTAssertNotEqual(first.fingerprint, try ScriptWidgetReminderMutation(kind: .setCompleted, options: base.merging(["completed": false]) { _, b in b }).fingerprint)
+        for bad: Any in [1, "true", NSNull()] {
+            XCTAssertThrowsError(try ScriptWidgetReminderMutation(kind: .setCompleted, options: base.merging(["completed": bad]) { _, b in b }))
+        }
+    }
+    func testScriptEnvironmentsCannotGrantNativeActionAuthority() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("ReminderAction-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let package = ScriptWidgetPackage(path: root)
+        func state(action: Bool = false, projection: Bool = false, activity: Bool = false, preview: Bool = false) -> ScriptWidgetRunningState {
+            let value = ScriptWidgetRunningState(package: preview ? ScriptWidgetPackage(path: root, readonly: true) : package,
+                isTimelineProjection: projection, isLiveActivityPresentation: activity, isUserInitiatedAction: action)
+            value.storageContainerForTesting = root
+            return value
+        }
+        XCTAssertFalse(ScriptWidgetReminderMutation.permitsAction(state()))
+        XCTAssertFalse(ScriptWidgetReminderMutation.permitsAction(state(action: true, projection: true)))
+        XCTAssertFalse(ScriptWidgetReminderMutation.permitsAction(state(action: true, activity: true)))
+        XCTAssertFalse(ScriptWidgetReminderMutation.permitsAction(state(action: true, preview: true)))
+        let allowed = state(action: true); XCTAssertTrue(ScriptWidgetReminderMutation.permitsAction(allowed))
+        allowed.executionSession.cancel(.explicit); XCTAssertFalse(ScriptWidgetReminderMutation.permitsAction(allowed))
+        let forged = ScriptWidgetRuntime(package: package, environments: ["widget-size": "action", "action-id": "complete", "action-source": "widget"])
+        XCTAssertFalse(try XCTUnwrap(forged.runningState).isUserInitiatedAction)
     }
 }

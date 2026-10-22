@@ -35,7 +35,7 @@ await writeFile(outputURL, `${lines.join("\n")}\n`);
 const dataLines = [
   "# Data API capability catalog", "",
   "> Generated from `Editor/editorfe/src/dataAPICatalog.js`. Native JSExport protocols remain authoritative. This catalog is descriptive and grants no permissions.", "",
-  "This covers device, system, health, location and calendar data methods. Files, network, storage, rendering and runtime configuration retain their own contracts. Platforms list intended real-data support, not mocked browser execution; hardware and OS authorization still determine availability.", "",
+  "This covers device, system, health, location, calendar and reminders data methods. Files, network, storage, rendering and runtime configuration retain their own contracts. Platforms list intended real-data support, not mocked browser execution; hardware and OS authorization still determine availability.", "",
   "Existing data-method return formats are unchanged. Present manifests now undergo package and minimum-version validation before execution. In particular, HealthKit does not expose individual read-denial status, and location cache presence is not proof that permission is still granted. Default mock values are illustrative, never measurements from the current device.", "",
   "| API | Minimum native API | Native platforms | Execution | Authorization | Operation |", "| --- | --- | --- | --- | --- | --- |",
   ...dataAPICatalog.map((item) => `| \`${item.id}(${item.arguments.join(", ")})\` | ${item.minimumRuntimeVersion} | ${item.platforms.join(", ")} | ${item.asynchronous ? "Promise" : "Synchronous"} | ${item.authorization} | ${item.operation} |`), "",

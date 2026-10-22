@@ -2,7 +2,7 @@
 
 > Generated from `Editor/editorfe/src/dataAPICatalog.js`. Native JSExport protocols remain authoritative. This catalog is descriptive and grants no permissions.
 
-This covers device, system, health, location and calendar data methods. Files, network, storage, rendering and runtime configuration retain their own contracts. Platforms list intended real-data support, not mocked browser execution; hardware and OS authorization still determine availability.
+This covers device, system, health, location, calendar and reminders data methods. Files, network, storage, rendering and runtime configuration retain their own contracts. Platforms list intended real-data support, not mocked browser execution; hardware and OS authorization still determine availability.
 
 Existing data-method return formats are unchanged. Present manifests now undergo package and minimum-version validation before execution. In particular, HealthKit does not expose individual read-denial status, and location cache presence is not proof that permission is still granted. Default mock values are illustrative, never measurements from the current device.
 
@@ -40,6 +40,11 @@ Existing data-method return formats are unchanged. Present manifests now undergo
 | `$calendar.requestAuthorization()` | 1.3 | ios, macos | Promise | calendarRead | authorization |
 | `$calendar.calendars()` | 1.3 | ios, macos | Promise | calendarRead | read |
 | `$calendar.events(options?)` | 1.3 | ios, macos | Promise | calendarRead | read |
+| `$reminders.isAvailable()` | 1.4 | ios, macos | Synchronous | remindersRead | availability |
+| `$reminders.authorizationStatus()` | 1.4 | ios, macos | Synchronous | remindersRead | availability |
+| `$reminders.requestAuthorization()` | 1.4 | ios, macos | Promise | remindersRead | authorization |
+| `$reminders.lists()` | 1.4 | ios, macos | Promise | remindersRead | read |
+| `$reminders.items(options?)` | 1.4 | ios, macos | Promise | remindersRead | read |
 | `$health.authorizationStatus()` | 1.3 | ios | Synchronous | healthRead | availability |
 | `$health.isAvailable()` | 1.0 | ios | Synchronous | healthRead | availability |
 | `$health.requestAuthorization()` | 1.0 | ios | Promise | healthRead | authorization |
@@ -356,6 +361,73 @@ Default editable preview sample:
       "start": "2026-01-01T15:00:00Z",
       "end": "2026-01-01T15:30:00Z",
       "allDay": false
+    }
+  ],
+  "fetchedAt": "2026-01-01T12:00:00Z",
+  "source": "system",
+  "stale": false,
+  "truncated": false
+}
+```
+
+## reminders
+
+Requires reminders in widget.json and full system Reminders access. Scripts have read-only access to native Settings selected lists; they cannot create, edit or complete reminders. Use lists() for IDs. items() selects pending due dates or completed completion dates in a positive window of at most 31 days, up to 50 items. Undated pending reminders are excluded. remindersSelection mocks the user scope without granting permission.
+
+### `$reminders.isAvailable`
+
+Default editable preview sample:
+
+```json
+true
+```
+
+### `$reminders.authorizationStatus`
+
+Default editable preview sample:
+
+```json
+"authorized"
+```
+
+### `$reminders.requestAuthorization`
+
+Default editable preview sample:
+
+```json
+true
+```
+
+### `$reminders.lists`
+
+Default editable preview sample:
+
+```json
+[
+  {
+    "id": "sample.reminders",
+    "title": "Personal"
+  }
+]
+```
+
+### `$reminders.items`
+
+Default editable preview sample:
+
+```json
+{
+  "status": "ready",
+  "items": [
+    {
+      "id": "sample.reminder",
+      "listID": "sample.reminders",
+      "title": "Read a chapter",
+      "due": "2026-01-01T16:00:00Z",
+      "hasTime": true,
+      "completed": false,
+      "completedAt": null,
+      "priority": 0
     }
   ],
   "fetchedAt": "2026-01-01T12:00:00Z",

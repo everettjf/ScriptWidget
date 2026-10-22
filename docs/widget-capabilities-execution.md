@@ -663,3 +663,14 @@ M1/M2 裁剪后的新构建目录验证 `./Scripts/release-readiness.sh` 已退�
 文件后端写操作本来就在返回前完成或抛错；现解除它与只读旧偏好设置刷盘状态的耦合，保持文件/目录身份、边界、锁和错误检查。回归测试覆盖旧同步始终失败时的应用打开、旧值复制、新值保存、重新打开与原始偏好值保留。临时诊断代码已移除。
 
 修复前新增测试失败；修复后存储聚焦 75 passed / 0 failed / 1 skipped，同一 Mac/库的 Release 应用连续两次正常启动并进入引导与模板主界面。固定代码完整 `./Scripts/release-readiness.sh` 退出 0：Mac 549 passed / 0 failed / 28 skipped，iPhone Simulator 559 passed / 0 failed / 23 skipped。证据见发布 worktree 的 `__Release/release-m1-m2/legacy-sync-fix/`，原生前后截图保存于 `__Release/Apple/27.1.3-27013/`。旧归档已标为包含此问题、需要重建；本项没有声称更新后的 iPad、物理组件、真实 iCloud 或分发签名验收通过，没有上传或送审。
+
+
+### 2026-10-21：恢复 M3–M5 开发并统一发布分支
+
+用户先要求继续完成 M3、M4、M5，随后明确全部在当前 `codex/release-m1-m2` 分支与 PR #62 提交，M1–M5 一起发布；之前 M1/M2 单独发布安排由本次决定取代。已将保留的 Reminders 只读实现、来源选择、Web Mock、模板和测试接回当前分支，保留库启动修复。临时后续工作目录的改动已并回，后续不另拆发布分支。
+
+新增 M3 写操作的内部参数模型：创建、修改与显式完成状态分别采用封闭字段，验证请求 UUID、来源/事项 ID、UTF-8 标题预算、有效日期、严格布尔与优先级；稳定负载指纹用于后续持久化重复执行检查。新增原生动作执行标识，由已验证的动作分发器赋予，脚本环境参数不能授权，预览、时间线投影、Live Activity 和取消执行不得进入写操作。当前这些是内部基础，不是已完成或公开的系统写 API；EventKit 写入、独立权限、持久化重放日志、Mock 与用户流程仍须接通。
+
+新 API 开发版本为 Runtime 1.4，保持 Package 编译契约 1.0 和既有模板最低版本；Reminders 模板与元数据更新为 1.4。编辑器文档和两端 bundle 已生成。聚焦原生参数/动作边界、来源策略和版本检查已通过；完整 gate 结果随后按实际记录。M3/M4/M5 均未整体验收，不上传或送审。
+
+统一分支固定代码的 `./Scripts/release-readiness.sh` 已退出 0：macos 563 passed / 0 failed / 28 skipped，ios 573 passed / 0 failed / 24 skipped。Web、目录/存储独立进程探针、85 个模板及两端应用构建通过。完整日志和 xcresult 保存于 `__Release/capabilities/m3-resume/`。没有将本批内部参数校验与原生动作标识计为 EventKit 写操作已经实现；M3–M5 继续开发，实际权限/设备/服务验收仍待完成。

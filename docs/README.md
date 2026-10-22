@@ -10,6 +10,7 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 - [Web Studio in the browser](web-studio-browser.md) — design and preview on Windows, macOS, or Linux, then install on iPhone.
 - [Runtime API](runtime-api.md) — supported components, properties, globals, and limits.
 - [Package storage](storage-api.md) — saved records, bounded compare-and-set updates, and contention handling.
+- [Reminders API](reminders-api.md) — read-only reminders, list selection and bounded due/completion windows.
 - [Calendar API](calendar-api.md) — real read-only events, package permission, bounded queries, and cache behavior.
 - [Location API](location-api.md) — app/widget authorization, precision-aware snapshots, and revocation.
 - [Scheduled widget states](timeline-api.md) — daily transitions, planned dates, read-only future entries and preview.

@@ -213,8 +213,11 @@ class ScriptWidgetRunningState {
     var storageDefaultsForTesting: UserDefaults?
     var fetchManagerForTesting: ScriptWidgetFetchManager?
     var calendarProviderForTesting: ScriptWidgetCalendarProvider?
+    var remindersProviderForTesting: (any ScriptWidgetRemindersProviding)?
     #endif
 
+    /// Native action dispatch authority; never derived from script environments.
+    let isUserInitiatedAction: Bool
     let isDarkMode: Bool?
     let isTimelineProjection: Bool
     let isLiveActivityPresentation: Bool
@@ -230,7 +233,8 @@ class ScriptWidgetRunningState {
         return sharedFetchManager
     }
 
-    init(package: ScriptWidgetPackage, isDarkMode: Bool? = nil, isTimelineProjection: Bool = false, isLiveActivityPresentation: Bool = false, executionSnapshot: ScriptWidgetExecutionSnapshot? = nil) {
+    init(package: ScriptWidgetPackage, isDarkMode: Bool? = nil, isTimelineProjection: Bool = false, isLiveActivityPresentation: Bool = false, executionSnapshot: ScriptWidgetExecutionSnapshot? = nil, isUserInitiatedAction: Bool = false) {
+        self.isUserInitiatedAction = isUserInitiatedAction
         self.isDarkMode = isDarkMode
         self.isTimelineProjection = isTimelineProjection
         self.isLiveActivityPresentation = isLiveActivityPresentation

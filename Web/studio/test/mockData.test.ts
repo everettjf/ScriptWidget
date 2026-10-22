@@ -8,7 +8,7 @@ import type { WidgetManifest } from "../../preview-engine/src/types.js";
 import { createProject } from "../src/project.ts";
 import { dataAPICatalog } from "../../../Editor/editorfe/src/dataAPICatalog.js";
 const execute = (source: string, fixtures = parseMocks(defaultFixtures)) => {
-  const manifest: WidgetManifest = { ...newManifest("API Mocks"), permissions: ["calendar", "location"] };
+  const manifest: WidgetManifest = { ...newManifest("API Mocks"), permissions: ["calendar", "reminders", "location"] };
   return executePackageInNode({ files: { "main.jsx": source, "widget.json": JSON.stringify(manifest) }, fixtures, manifest });
 };
 

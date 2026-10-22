@@ -149,12 +149,17 @@ enum PromptBuilder {
             $device.isdarkmode().
         14. Preserve the requested labels and values. Do not invent
             meeting locations, extra events, or live data. For fixed
-            demo data do not call network, location, Health or Calendar APIs.
+            demo data do not call network, location, Health, Calendar or Reminders APIs.
         15. Calendar needs the calendar package permission and system approval
             in ScriptWidget Settings. Preview mocks do not grant access.
             Native Settings source selection also limits calendar metadata,
             events and cached snapshots. Obtain permitted IDs with calendars();
             scripts cannot enlarge this selection. Show setup for no sources.
+            Reminders needs the reminders package permission and system approval.
+            Use lists() for permitted IDs; items() is read-only with listIDs,
+            start/end (up to 31 days), limit (up to 50) and completed Boolean.
+            Pending items use due dates (undated items excluded); completed items
+            use completion dates. Never claim create/edit/complete is supported.
             Health read permissions are private: authorizationStatus returns
             notDisclosed, and completing consent review is not proof of access.
             Empty Health results may mean no records or data not shared.

@@ -502,6 +502,13 @@ export function scriptWidgetKernel(global, host, configJSON) {
       processorCount: constant(system.processorCount ?? 6),
       activeProcessorCount: constant(system.activeProcessorCount ?? 6),
     },
+    $reminders: {
+      isAvailable: () => false,
+      authorizationStatus: () => "unavailable",
+      requestAuthorization: unavailablePromise("reminders.authorization"),
+      lists: unavailablePromise("reminders.lists"),
+      items: unavailablePromise("reminders.items"),
+    },
     $calendar: {
       isAvailable: () => false,
       authorizationStatus: () => "unavailable",
@@ -637,13 +644,13 @@ export function scriptWidgetKernel(global, host, configJSON) {
   // imports, runtime contracts and network policy continue to execute normally.
   // Fresh bridged values prevent a script from modifying later mock responses.
   const apiMocks = fixtures.api ?? {};
-  for (const namespace of ["$device", "$system", "$health", "$location", "$calendar"]) {
+  for (const namespace of ["$device", "$system", "$health", "$location", "$calendar", "$reminders"]) {
     for (const method of ObjectKeys(apis[namespace])) {
       const mock = apiMocks[`${namespace}.${method}`];
       if (!mock || typeof mock !== "object" || ArrayIsArray(mock)) continue;
       const hasError = Object.prototype.hasOwnProperty.call(mock, "error");
       if (!hasError && !Object.prototype.hasOwnProperty.call(mock, "value")) continue;
-      const asynchronous = (["$calendar"].includes(namespace) && !["isAvailable", "authorizationStatus"].includes(method)) || (namespace === "$health" && !["isAvailable", "authorizationStatus"].includes(method)) ||
+      const asynchronous = (["$calendar", "$reminders"].includes(namespace) && !["isAvailable", "authorizationStatus"].includes(method)) || (namespace === "$health" && !["isAvailable", "authorizationStatus"].includes(method)) ||
         (namespace === "$location" && (method === "current" || method === "requestAuthorization"));
       apis[namespace][method] = asynchronous
         ? () => nativePromise((resolve, reject) => hasError ? reject(nativeString(mock.error)) : resolve(bridgeValue(mock.value, 0)))
@@ -736,6 +743,87 @@ export function scriptWidgetKernel(global, host, configJSON) {
         if (!value || !ArrayIsArray(value.items)) { reject("[mock_invalid] Calendar events need an items array"); return; }
         const items = value.items.filter((item) => allowed(item?.calendarID) && (!calendarQuery.calendarIDs || calendarQuery.calendarIDs.includes(item.calendarID)));
         const limit = calendarQuery.limit ?? 10;
+        resolve({ ...value, items: items.slice(0, limit), status: items.length ? "ready" : "empty", truncated: value.truncated === true || items.length > limit });
+      }, reject);
+    });
+  }
+  const rawReminderSelection = fixtures.remindersSelection;
+  const reminderSelectionValid = rawReminderSelection == null || (ArrayIsArray(rawReminderSelection) && rawReminderSelection.length <= 64 && new Set(rawReminderSelection).size === rawReminderSelection.length && rawReminderSelection.every((id) => typeof id === "string" && id.length > 0 && utf8ByteLength(id) <= 256));
+  const selectedLists = rawReminderSelection == null ? null : reminderSelectionValid ? new Set(rawReminderSelection) : new Set();
+  const remindersDeclared = () => config.manifest?.permissions?.includes("reminders") === true;
+  const remindersStatus = apis.$reminders.authorizationStatus;
+  apis.$reminders.authorizationStatus = () => remindersDeclared() ? remindersStatus() : "undeclared";
+  for (const method of ["requestAuthorization", "lists", "items"]) {
+    const implementation = apis.$reminders[method];
+    apis.$reminders[method] = (options) => nativePromise((resolve, reject) => {
+      if (!remindersDeclared()) { reject("[permission_denied] Declare reminders in widget.json"); return; }
+      let reminderQuery = {};
+      if (method === "items") {
+        try {
+          const query = options == null ? {} : bridgeDictionary(options, 0);
+          reminderQuery = query;
+          if (ObjectKeys(query).some((key) => !["start", "end", "limit", "listIDs", "maxAgeSeconds", "completed"].includes(key))) throw new Error("Unknown reminder query option");
+          const parseDate = (value) => {
+            if (typeof value !== "string" || value.length > 64 || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/.test(value) || !Number.isFinite(new DateCtor(value).getTime())) throw new Error("Invalid reminder date");
+            return new DateCtor(value);
+          };
+          const start = query.start === undefined ? new DateCtor(new DateCtor().setHours(0, 0, 0, 0)) : parseDate(query.start);
+          const end = query.end === undefined ? new DateCtor(new DateCtor(start).setDate(start.getDate() + 1)) : parseDate(query.end);
+          if (!(end > start) || end - start > 31 * 86400000) throw new Error("Reminder range must be positive and at most 31 days");
+          if (query.limit !== undefined && (!Number.isInteger(query.limit) || query.limit < 1 || query.limit > 50)) throw new Error("Invalid limit");
+          if (query.maxAgeSeconds !== undefined && (typeof query.maxAgeSeconds !== "number" || !Number.isFinite(query.maxAgeSeconds) || query.maxAgeSeconds < 0 || query.maxAgeSeconds > 86400)) throw new Error("Invalid maxAgeSeconds");
+          if (query.completed !== undefined && typeof query.completed !== "boolean") throw new Error("completed must be a Boolean");
+          reminderQuery = { ...query, start: start.toISOString(), end: end.toISOString() };
+          const ids = query.listIDs;
+          if (ids !== undefined && (!ArrayIsArray(ids) || ids.length < 1 || ids.length > 16 || new Set(ids).size !== ids.length || ids.some((id) => typeof id !== "string" || !id || utf8ByteLength(id) > 256))) throw new Error("Invalid listIDs");
+        } catch (error) { reject(`[invalid_options] ${StringCtor(error.message)}`); return; }
+      }
+      if (method !== "requestAuthorization" && ++dataQueries > contract.maximumDataQueries) { reject("[query_limit] Too many system data queries"); return; }
+      if (method !== "requestAuthorization" && !apis.$reminders.isAvailable()) { reject("[unavailable] Reminder is unavailable"); return; }
+      if (method !== "requestAuthorization" && apis.$reminders.authorizationStatus() !== "authorized") { reject("[permission_denied] Allow reminders access in ScriptWidget"); return; }
+      if (method !== "requestAuthorization") {
+        if (!reminderSelectionValid) { reject("[permission_denied] Reminder source settings are unavailable"); return; }
+        if (method === "items" && selectedLists?.size === 0) { reject("[permission_denied] No Reminder lists are selected in ScriptWidget Settings"); return; }
+        const available = apiMocks["$reminders.calendars"]?.value;
+        if (method === "items" && selectedLists !== null && ArrayIsArray(available) && !available.some((item) => selectedLists.has(item?.id))) {
+          reject("[invalid_options] A requested Reminder source is unavailable or outside your selection"); return;
+        }
+        if (method === "items" && reminderQuery.listIDs?.some((id) => (selectedLists !== null && !selectedLists.has(id)) || (ArrayIsArray(available) && !available.some((item) => item?.id === id)))) {
+          reject("[invalid_options] A requested Reminder source is unavailable or outside your selection"); return;
+        }
+      }
+      if (timelineProjection || liveActivityPresentation) {
+        if (method === "requestAuthorization") { resolve(apis.$reminders.authorizationStatus() === "authorized"); return; }
+        const snapshot = apiMocks["$reminders.events"]?.value;
+        if (method === "lists" || snapshot?.source !== "cache") { reject("[timeline_read_only] No matching Reminder snapshot is available"); return; }
+      }
+      implementation(options).then((value) => {
+        if (method === "requestAuthorization") { resolve(value); return; }
+        const available = apiMocks["$reminders.calendars"]?.value;
+        const allowed = (id) => typeof id === "string" && (selectedLists === null || selectedLists.has(id)) && (!ArrayIsArray(available) || available.some((item) => item?.id === id));
+        if (method === "lists") {
+          if (!ArrayIsArray(value)) { reject("[mock_invalid] Reminder sources must be an array"); return; }
+          resolve(value.filter((item) => allowed(item?.id)).slice(0,64)); return;
+        }
+        if (!value || !ArrayIsArray(value.items)) { reject("[mock_invalid] Reminder events need an items array"); return; }
+        const inWindow = (item) => {
+          if (item?.completed !== (reminderQuery.completed ?? false)) return false;
+          const start = new DateCtor(reminderQuery.start).getTime(), end = new DateCtor(reminderQuery.end).getTime();
+          const date = item.completed ? item.completedAt : item.due;
+          if (typeof date !== "string") return false;
+          if (!item.completed && item.hasTime === false && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            const [year, month, day] = date.split("-").map(Number);
+            const midnight = new DateCtor(year, month - 1, day);
+            if (midnight.getFullYear() !== year || midnight.getMonth() !== month - 1 || midnight.getDate() !== day) return false;
+            const next = new DateCtor(midnight); next.setDate(next.getDate() + 1);
+            return midnight.getTime() < end && next.getTime() > start;
+          }
+          if (!/^\d{4}-\d{2}-\d{2}T/.test(date)) return false;
+          const time = new DateCtor(date).getTime();
+          return Number.isFinite(time) && time >= start && time < end;
+        };
+        const items = value.items.filter((item) => allowed(item?.listID) && (!reminderQuery.listIDs || reminderQuery.listIDs.includes(item.listID)) && inWindow(item));
+        const limit = reminderQuery.limit ?? 10;
         resolve({ ...value, items: items.slice(0, limit), status: items.length ? "ready" : "empty", truncated: value.truncated === true || items.length > limit });
       }, reject);
     });

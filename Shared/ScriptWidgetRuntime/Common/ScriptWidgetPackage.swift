@@ -253,7 +253,7 @@ struct ScriptWidgetBuildManifest: Codable, Equatable {
 
 enum ScriptWidgetBuildContract {
     static let runtimeAPIVersion = "1.0"
-    static let nativeRuntimeAPIVersion = "1.3"
+    static let nativeRuntimeAPIVersion = "1.4"
     static let compilerFingerprint = "scriptwidget-babel-v3"
 }
 

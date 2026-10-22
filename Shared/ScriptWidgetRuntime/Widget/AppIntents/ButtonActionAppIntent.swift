@@ -221,7 +221,7 @@ struct ScriptWidgetActionExecutor {
     let catalog: ScriptWidgetActionCatalog
     var runAction: (ResolvedScriptWidgetAction, [String: String]) -> ScriptWidgetActionExecutionError? = { resolved, environments in
         guard let script = resolved.executionSnapshot?.source ?? resolved.package.readFile(relativePath: resolved.manifest.entry).0 else { return .sourceMissing }
-        let runtime = ScriptWidgetRuntime(package: resolved.package, environments: environments, executionSnapshot: resolved.executionSnapshot)
+        let runtime = ScriptWidgetRuntime(package: resolved.package, environments: environments, executionSnapshot: resolved.executionSnapshot, isUserInitiatedAction: true)
         let (_, error) = runtime.executeJSXSyncForFunction(script, resolved.action.function)
         return error.map { .runtime(String(describing: $0)) }
     }

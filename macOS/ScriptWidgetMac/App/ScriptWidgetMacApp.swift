@@ -280,6 +280,7 @@ private struct ScriptWidgetMacSettingsView: View {
                     Button("Choose Widget Library") { showingLibraries = true }
                 }
                 Section("Calendar") { CalendarAccessSettingsView() }
+                Section("Reminders") { RemindersAccessSettingsView() }
                 if sharedScriptManager.storageContext != nil {
                     Section("Records") { Button("Review Older Records") { showingStorageReview = true } }
                 }

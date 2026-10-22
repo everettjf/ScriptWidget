@@ -1,0 +1,12 @@
+{
+  "description": "Reminders due today, with explicit access and list selection.",
+  "category": "productivity",
+  "tags": [
+    "reminders",
+    "agenda",
+    "real-data"
+  ],
+  "difficulty": "intermediate",
+  "icon": "checklist",
+  "featured": true
+}

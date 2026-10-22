@@ -77,11 +77,11 @@ struct ScriptWidgetCalendarQuery {
 }
 
 enum ScriptWidgetEventSourceKind: String, Sendable {
-    case calendar
-    var fileName: String { "calendar-access.v1.json" }
-    var label: String { "Calendar sources" }
-    var plural: String { "calendars" }
-    var lockName: String { "ScriptWidget.CalendarAccess.Selection.v1" }
+    case calendar, reminders
+    var fileName: String { self == .calendar ? "calendar-access.v1.json" : "reminders-access.v1.json" }
+    var label: String { self == .calendar ? "Calendar sources" : "Reminder lists" }
+    var plural: String { self == .calendar ? "calendars" : "reminder lists" }
+    var lockName: String { self == .calendar ? "ScriptWidget.CalendarAccess.Selection.v1" : "ScriptWidget.RemindersAccess.Selection.v1" }
 }
 
 /// App-owned scope, separate from a script's requested calendar IDs. Missing
@@ -524,8 +524,8 @@ final class ScriptWidgetCalendarSourcesModel: ObservableObject {
          loadSources: (@Sendable () -> [ScriptWidgetCalendarSource])? = nil,
          onSaved: @escaping () -> Void = { WidgetCenter.shared.reloadAllTimelines() }) {
         self.kind = kind; self.container = container; self.onSaved = onSaved
-        self.authorization = authorization ?? { ScriptWidgetRuntimeCalendar.systemAuthorizationStatus() }
-        self.loadSources = loadSources ?? { ScriptWidgetCalendarProvider.system().sources() }
+        self.authorization = authorization ?? { kind == .calendar ? ScriptWidgetRuntimeCalendar.systemAuthorizationStatus() : ScriptWidgetRuntimeReminders.systemAuthorizationStatus() }
+        self.loadSources = loadSources ?? { kind == .calendar ? ScriptWidgetCalendarProvider.system().sources() : ScriptWidgetRemindersSystemProvider().sources() }
     }
     var draft: ScriptWidgetCalendarSelection { .init(calendarIDs: useAll ? nil : Array(selectedIDs)) }
     var hasChanges: Bool { original != draft }
@@ -581,7 +581,7 @@ struct CalendarSourcesSettingsView: View {
     @ObservedObject var model: ScriptWidgetCalendarSourcesModel
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Sources available to widgets").font(.subheadline.bold())
+            Text(model.kind == .calendar ? "Sources available to widgets" : "Reminder lists available to widgets").font(.subheadline.bold())
             Toggle("All \(model.kind.plural), including newly added ones", isOn: $model.useAll)
                 .disabled(model.loading)
             if !model.useAll {
@@ -607,7 +607,7 @@ struct CalendarSourcesSettingsView: View {
             }
             HStack {
                 Button("Reload Sources") { Task { await model.reload(discardDraft: true) } }.disabled(model.loading)
-                Button("Save Calendar Sources") { model.save() }.disabled(model.loading || !model.hasChanges)
+                Button(model.kind == .calendar ? "Save Calendar Sources" : "Save Reminder Lists") { model.save() }.disabled(model.loading || !model.hasChanges)
             }
             if let message = model.message { Text(message).font(.footnote).foregroundStyle(model.isError ? .red : .secondary) }
         }
@@ -678,15 +678,18 @@ struct CalendarAccessSettingsView: View {
 
 struct CalendarAccessPresentationModifier: ViewModifier {
     @State private var showingAccess = false
+    @State private var showingReminders = false
 
     func body(content: Content) -> some View {
         content
             .onOpenURL { url in
                 if url.scheme == "scriptwidget", url.host == "calendar-access" { showingAccess = true }
+                if url.scheme == "scriptwidget", url.host == "reminders-access" { showingReminders = true }
             }
             .sheet(isPresented: $showingAccess) {
                 CalendarAccessSheet()
             }
+            .sheet(isPresented: $showingReminders) { RemindersAccessSheet() }
     }
 }
 

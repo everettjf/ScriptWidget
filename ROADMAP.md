@@ -21,7 +21,7 @@ ScriptWidget aims to be the best open-source way for anyone to build native Appl
 
 ## Current release scope
 
-The next release closes M1/M2: reliable records, bounded timelines, editable preview mocks, complete native templates and Gallery installation. Calendar is retained as the M1 read-only data reference. M3–M5 personal-data expansion, authenticated services and visual editing are deferred to later releases; reminder development is preserved separately and excluded from this release.
+The next release targets M1–M5 together on `codex/release-m1-m2` (PR #62). M1/M2 foundations and templates are retained; M3 personal-data expansion, M4 authenticated services/music and M5 visual editing are in progress, not complete. The Reminders checkpoint is restored on this same branch. Watch and remote/social updates remain outside scope.
 
 ## Now — prove reliability and contributor experience
 

@@ -12,10 +12,10 @@ export function sampleFixtures(): MockObject {
     timeseries:Array.from({length:24},(_,index)=>({time:new Date(start+index*3600000).toISOString(),data:{instant:{details:{air_temperature:21+index/4,relative_humidity:62,wind_speed:2}},next_1_hours:{summary:{symbol_code:"partlycloudy_day"}}}}))}};
   const dayStart = new Date(now); dayStart.setHours(0,0,0,0);
   return {
-    api: Object.fromEntries(mockAPIs.filter((api) => api.id !== "$device.isdarkmode").map((api) => [api.id, { value: api.group === "health" && api.value !== null && typeof api.value === "object" && !Array.isArray(api.value) && "unit" in api.value ? {...api.value,start:dayStart.toISOString(),end:new Date(now).toISOString()} : api.value }])),
+    api: Object.fromEntries(mockAPIs.filter((api) => api.id !== "$device.isdarkmode").map((api) => [api.id, { value: api.group === "health" && api.value !== null && typeof api.value === "object" && !Array.isArray(api.value) && "unit" in api.value ? {...api.value,start:dayStart.toISOString(),end:new Date(now).toISOString()} : api.group === "reminders" && api.id.endsWith(".items") ? {...api.value as MockObject, fetchedAt: new Date(now).toISOString(), items: [{id:"sample.reminder",listID:"sample.reminders",title:"Read a chapter",due:new Date(dayStart.getTime()+16*3600000).toISOString(),hasTime:true,completed:false,completedAt:null,priority:0}]} : api.value }])),
     fetch: [{url:"https://api.github.com/repos/everettjf/scriptwidget",method:"GET",status:200,body:JSON.stringify({full_name:"everettjf/ScriptWidget",private:false,stargazers_count:1280,forks_count:96,open_issues_count:18}),headers:{"content-type":"application/json","cache-control":"public, max-age=3600"}}, { url: "https://api.example.com/data", method: "GET", body: '{"value":42}', status: 200, headers: {"content-type":"application/json"} },
       {url:"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=37.33&lon=-122.01",method:"GET",status:200,body:JSON.stringify(weather),headers:{"content-type":"application/json",expires:new Date(now+3600000).toUTCString(),"last-modified":new Date(start).toUTCString()}}],
-    storage: {}, storageAtomicAvailable: true, dataSource: [], calendarSelection: null,
+    storage: {}, storageAtomicAvailable: true, dataSource: [], calendarSelection: null, remindersSelection: null,
   };
 }
 export const defaultFixtures = JSON.stringify(sampleFixtures(), null, 2);
@@ -26,10 +26,10 @@ export function parseMocks(text: string): MockObject {
   for (const key of ["api", "device", "system", "storage"]) {
     if (value[key] !== undefined && !isObject(value[key])) throw new Error(`${key} must be a JSON object.`);
   }
-  for (const key of ["calendarSelection"]) if (value[key] !== undefined && value[key] !== null) {
+  for (const key of ["calendarSelection", "remindersSelection"]) if (value[key] !== undefined && value[key] !== null) {
     const ids = value[key];
     if (!Array.isArray(ids) || ids.length > 64 || new Set(ids).size !== ids.length || ids.some((id) => typeof id !== "string" || !id || new TextEncoder().encode(id).length > 256)) {
-      throw new Error(`Calendar selection must be null (all sources) or up to 64 unique source IDs; [] selects none.`);
+      throw new Error(`${key === "calendarSelection" ? "Calendar" : "Reminder"} selection must be null (all sources) or up to 64 unique source IDs; [] selects none.`);
     }
   }
   if (value.storageAtomicAvailable !== undefined && typeof value.storageAtomicAvailable !== "boolean") throw new Error("storageAtomicAvailable must be true or false.");
@@ -58,6 +58,10 @@ export function responseFor(data: MockObject, api: MockAPI): MockObject {
   let legacy: MockValue | undefined = data;
   for (const key of api.legacy ?? []) legacy = isObject(legacy) ? legacy[key] : undefined;
   if (api.legacy && legacy !== undefined) return { value: legacy };
+  if (api.id === "$reminders.items") {
+    const sample = (sampleFixtures().api as MockObject)[api.id];
+    if (isObject(sample)) return sample;
+  }
   return { value: api.value };
 }
 export function setResponse(text: string, id: string, response: MockObject): string {
@@ -77,9 +81,10 @@ export function addSampleMocks(text: string): string {
   data.storageAtomicAvailable ??= true;
   data.dataSource ??= [];
   data.calendarSelection ??= null;
+  data.remindersSelection ??= null;
   return JSON.stringify(data, null, 2);
 }
-export function permissionScenario(text: string, group: "health" | "location" | "calendar", mode: "granted" | "denied" | "unavailable" | "empty" | "widgetDenied"): string {
+export function permissionScenario(text: string, group: "health" | "location" | "calendar" | "reminders", mode: "granted" | "denied" | "unavailable" | "empty" | "widgetDenied"): string {
   if (mode === "widgetDenied") {
     if (group !== "location") throw new Error("Widget location authorization applies only to Location.");
     const granted = permissionScenario(text, "location", "granted");
@@ -91,17 +96,17 @@ export function permissionScenario(text: string, group: "health" | "location" | 
   const scenario = group === "health" && mode === "denied" ? "empty" : mode;
   for (const api of mockAPIs.filter((item) => item.group === group)) {
     let response: MockObject;
-    if (scenario === "granted") response = { value: api.value };
+    if (scenario === "granted") response = api.id === "$reminders.items" ? responseFor(sampleFixtures(), api) : { value: api.value };
     else if (api.id.endsWith("isAvailable")) response = { value: scenario !== "unavailable" };
     else if (api.id.endsWith("isAuthorizedForWidgetUpdates")) response = { value: scenario === "empty" };
-    else if (api.id.endsWith("requestAuthorization")) response = scenario === "unavailable" && group !== "calendar"
+    else if (api.id.endsWith("requestAuthorization")) response = scenario === "unavailable" && !["calendar", "reminders"].includes(group)
       ? { error: `${group} is unavailable` } : { value: scenario === "empty" };
     else if (group === "health" && api.id.endsWith("authorizationStatus")) response = { value: scenario === "unavailable" ? "unavailable" : "notDisclosed" };
     else if (api.id.endsWith("authorizationStatus")) response = { value: scenario === "empty" ? (group === "location" ? "authorizedWhenInUse" : "authorized")
       : scenario === "unavailable" ? (group === "location" ? "disabled" : "unavailable") : "denied" };
     else if (scenario === "empty" && group === "health") response = { value: { ...(isObject(api.value) ? api.value : {}), value: 0, hasSamples: false,
       ...(api.id.endsWith("heartRateLatest") ? { start: "", end: "" } : {}) } };
-    else if (scenario === "empty" && group === "calendar") response = { value: api.id.endsWith("calendars") ? []
+    else if (scenario === "empty" && ["calendar", "reminders"].includes(group)) response = { value: ["calendars", "lists"].includes(api.id.split(".")[1]!) ? []
       : { ...(isObject(api.value) ? api.value : {}), status: "empty", items: [], truncated: false } };
     else response = { error: scenario === "empty" ? "[no_data] No location fix is available"
       : scenario === "unavailable" ? `${group} is unavailable` : `${group} permission denied` };

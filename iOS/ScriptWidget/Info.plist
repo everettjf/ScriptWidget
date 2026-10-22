@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Allow ScriptWidget to read reminders from lists you choose for your widgets.</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>Allow ScriptWidget to read reminders from lists you choose for your widgets.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>Allow ScriptWidget to read events for calendar widgets you choose.</string>
 	<key>NSCalendarsUsageDescription</key>

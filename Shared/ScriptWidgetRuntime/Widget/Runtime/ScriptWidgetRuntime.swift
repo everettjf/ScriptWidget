@@ -127,7 +127,7 @@ enum ScriptWidgetRuntimeContract {
     static let globalAPIs = [
         "$calendar", "$component", "$console", "$device", "$dynamic_island", "$element",
         "$error", "$fetch", "$file", "$getenv", "$health", "$http", "$import",
-        "$location", "$render", "$runtime", "$storage", "$system", "$xml", "console", "fetch",
+        "$location", "$reminders", "$render", "$runtime", "$storage", "$system", "$xml", "console", "fetch",
     ]
 
     static func validateSource(_ source: String) -> ScriptWidgetError? {
@@ -534,7 +534,7 @@ class ScriptWidgetRuntime {
     private var package : ScriptWidgetPackage
     private var performanceTrace: ScriptWidgetRuntimeTrace?
     
-    init(package: ScriptWidgetPackage, environments: [String:String], executionSnapshot: ScriptWidgetExecutionSnapshot? = nil, isDarkMode: Bool? = nil) {
+    init(package: ScriptWidgetPackage, environments: [String:String], executionSnapshot: ScriptWidgetExecutionSnapshot? = nil, isDarkMode: Bool? = nil, isUserInitiatedAction: Bool = false) {
         let executionPackage = executionSnapshot?.package ?? package
         self.package = executionPackage
         var resolvedEnvironment = environments
@@ -550,7 +550,7 @@ class ScriptWidgetRuntime {
         let runningState = ScriptWidgetRunningState(
             package: executionPackage, isDarkMode: isDarkMode ?? ScriptWidgetRuntimeDevice.systemIsDarkMode,
             isTimelineProjection: resolvedEnvironment["timeline-is-projection"] == "true",
-            isLiveActivityPresentation: ["live-activity","dynamic-island"].contains(resolvedEnvironment["widget-size"] ?? ""), executionSnapshot: executionSnapshot
+            isLiveActivityPresentation: ["live-activity","dynamic-island"].contains(resolvedEnvironment["widget-size"] ?? ""), executionSnapshot: executionSnapshot, isUserInitiatedAction: isUserInitiatedAction
         )
         runtimeContext.scriptWidgetRunningState = runningState
         ScriptWidgetExecutionGuard.install(on: runtimeContext, session: runningState.executionSession)
@@ -603,6 +603,7 @@ class ScriptWidgetRuntime {
             runtimeContext["$file"] = ScriptWidgetRuntimeFile.self
             runtimeContext["$system"] = ScriptWidgetRuntimeSystem.self
             runtimeContext["$calendar"] = ScriptWidgetRuntimeCalendar.self
+            runtimeContext["$reminders"] = ScriptWidgetRuntimeReminders.self
             runtimeContext["$health"] = ScriptWidgetRuntimeHealth.self
             runtimeContext["$location"] = ScriptWidgetRuntimeLocation.self
             runtimeContext["$storage"] = ScriptWidgetRuntimeStorage.self

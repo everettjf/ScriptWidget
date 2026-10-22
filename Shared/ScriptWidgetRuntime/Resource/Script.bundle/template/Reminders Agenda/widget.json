@@ -1,0 +1,24 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.reminders-agenda",
+  "name": "Reminders Agenda",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait",
+    "accessoryCircular",
+    "accessoryRectangular",
+    "accessoryInline"
+  ],
+  "permissions": [
+    "reminders"
+  ],
+  "networkDomains": [],
+  "description": "Read-only reminders due today from lists selected in ScriptWidget Settings.",
+  "minimumRuntimeVersion": "1.4"
+}

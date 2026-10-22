@@ -1831,6 +1831,66 @@ final class RuntimeExecutionTests: XCTestCase {
     #endif
 
 
+    private func remindersTemplateFixture(mode: String) throws -> String {
+        let source = try XCTUnwrap(ScriptManager.readBundleFile(bundle: "Script", fileName: "template/Reminders Agenda/main.jsx"))
+        let item = #"{"id":"sample","listID":"personal","title":"Read and recharge","due":"2026-01-01T15:00:00Z","hasTime":true,"completed":false,"completedAt":null,"priority":0}"#
+        let status = mode == "denied" ? "denied" : "authorized"
+        let items = mode == "empty" ? "[]" : "[" + item + "]"
+        let response = mode == "selection" ? "reject('[permission_denied] No Reminder lists are selected')" : "resolve({items: \(items), stale: false})"
+        return """
+            const $reminders = {
+                isAvailable: () => true, authorizationStatus: () => '\(status)',
+                items: () => ({then(resolve,reject) {\(response)}})
+            };
+            """ + source
+    }
+
+    func testRemindersTemplateRendersReadyEmptyAndDeniedAcrossFamilies() throws {
+        for mode in ["ready", "empty", "denied", "selection"] {
+            let source = try remindersTemplateFixture(mode: mode)
+            for family in ["small", "medium", "large", "xlarge", "extraLargePortrait", "accessoryCircular", "accessoryRectangular", "accessoryInline"] {
+                let result = makeRuntime(environments: ["widget-size": family, "widget-param": ""]).executeJSXSyncForWidget(source)
+                XCTAssertNil(result.1, "\(mode) \(family)")
+                let text = collectText(try XCTUnwrap(result.0))
+                if mode == "ready" && family != "accessoryCircular" { XCTAssertTrue(text.contains("Read and recharge"), family) }
+                if mode == "denied" { XCTAssertFalse(text.contains("Read and recharge"), family) }
+                if mode == "selection" {
+                    XCTAssertTrue(text.contains("Choose") || text.contains("Check") || text.contains("Review list access"), family)
+                    XCTAssertFalse(text.contains("Nothing due") || text.contains("0 items"), family)
+                }
+                if mode == "empty" && family != "accessoryCircular" { XCTAssertTrue(text.contains("No reminders due") || text.contains("Nothing due"), family) }
+            }
+        }
+    }
+
+    #if os(iOS)
+    @MainActor
+    func testExportRemindersTemplateFixtureSnapshots() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_REMINDERS"], !directory.isEmpty else {
+            throw XCTSkip("Set TEST_RUNNER_SCRIPTWIDGET_EXPORT_REMINDERS to export isolated native layout fixtures")
+        }
+        let output = URL(fileURLWithPath: directory, isDirectory: true)
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        for mode in ["ready", "empty", "denied", "selection"] {
+            let source = try remindersTemplateFixture(mode: mode)
+            for (family, size) in [("small", CGSize(width: 158, height: 158)), ("medium", CGSize(width: 338, height: 158)), ("large", CGSize(width: 338, height: 354))] {
+                let runtime = makeRuntime(environments: ["widget-size": family, "widget-param": ""])
+                let result = await Task.detached { runtime.executeJSXSyncForWidget(source) }.value
+                XCTAssertNil(result.1)
+                let element = try XCTUnwrap(result.0)
+                let package = makeTempPackage()
+                defer { try? FileManager.default.removeItem(at: package.path) }
+                let context = ScriptWidgetElementContext(runtime: runtime, debugMode: false, scriptName: "Reminders fixture", scriptParameter: "", package: package, containerBackgroundElement: element)
+                let renderer = ImageRenderer(content: BrowserPreviewSnapshotView(element: element, context: context, size: size).environment(\.colorScheme, .light))
+                renderer.scale = 2
+                let png = try XCTUnwrap(renderer.uiImage?.pngData())
+                try png.write(to: output.appendingPathComponent("\(mode)-\(family).png"), options: .atomic)
+            }
+        }
+    }
+    #endif
+
+
     func testTimelineProjectionIsReadOnlyEvenWhenScriptReplacesGetenv() throws {
         let runtime = makeRuntime(environments: ["timeline-date": "2026-01-01T12:00:00.000Z", "timeline-is-projection": "true"])
         let store = try XCTUnwrap(runtime.runningState?.storageDefaultsForTesting)
@@ -2072,7 +2132,7 @@ final class RuntimeExecutionTests: XCTestCase {
     }
 
     func testPackagePreflightRejectsFutureRuntimeBeforeAllExecutionSurfaces() throws {
-        for minimum in ["1.4", "2.0", "01.3"] {
+        for minimum in ["1.5", "2.0", "01.3"] {
             let package = makeTempPackage()
             defer { try? FileManager.default.removeItem(at: package.path) }
             var manifest = WidgetPackageManifest.newProject(name: package.name)
@@ -4969,5 +5029,98 @@ final class IsolatedPersonalDataPreviewTests: XCTestCase {
         let probe: @convention(block) () -> Bool = { ScriptWidgetRuntimeCalendar.permittedState() != nil }
         context["probe"] = unsafeBitCast(probe, to: JSValue.self)
         XCTAssertFalse(try XCTUnwrap(context.evaluateScript("probe()")).toBool())
+    }
+}
+
+private final class RemindersFixtureProvider: ScriptWidgetRemindersProviding {
+    var status = "authorized"
+    var onFetch: (() -> Void)?
+    var fetches = 0
+    var onStatus: (() -> Void)?
+    func authorizationStatus() -> String { onStatus?(); return status }
+    func sources() -> [ScriptWidgetCalendarSource] { [.init(id: "personal", title: "Personal"), .init(id: "work", title: "private-list")] }
+    func fetch(_ query: ScriptWidgetRemindersQuery, ids: [String], session: ScriptWidgetExecutionSession,
+               completion: @escaping (Result<(items: [ScriptWidgetReminderItem], truncated: Bool), Error>) -> Void) {
+        fetches += 1; onFetch?()
+        completion(.success((["personal", "work"].map { id in
+            .init(id: id, listID: id, title: id == "work" ? "private-reminder" : "Read a chapter", due: ISO8601DateFormatter().string(from: query.window.start.addingTimeInterval(3600)), hasTime: true, completed: false, completedAt: nil, priority: 0)
+        }, false)))
+    }
+}
+
+extension RuntimeExecutionTests {
+    private func remindersRuntime(_ f: (root: URL, package: ScriptWidgetPackage, defaults: UserDefaults, suite: String), provider: RemindersFixtureProvider, declared: Bool = true, environments: [String: String] = ["widget-size": "medium"]) throws -> ScriptWidgetRuntime {
+        var manifest = try XCTUnwrap(f.package.readManifest())
+        manifest.permissions = declared ? [.reminders] : []
+        try JSONEncoder().encode(manifest).write(to: f.package.path.appendingPathComponent("widget.json"))
+        let runtime = ScriptWidgetRuntime(package: f.package, environments: environments)
+        runtime.runningState?.storageContainerForTesting = f.root
+        runtime.runningState?.storageDefaultsForTesting = f.defaults
+        runtime.runningState?.remindersProviderForTesting = provider
+        return runtime
+    }
+
+    func testRemindersReadFiltersListsCachesAndRejectsOutsideScope() throws {
+        let f = try calendarSelectionFixture(), provider = RemindersFixtureProvider()
+        defer { f.defaults.removePersistentDomain(forName: f.suite); try? FileManager.default.removeItem(at: f.root) }
+        try ScriptWidgetCalendarSelection(calendarIDs: ["personal"]).save(container: f.root, kind: .reminders)
+        let result = try remindersRuntime(f, provider: provider).executeJSXSyncForWidget("""
+            const options={start:'2026-02-03T00:00:00Z',end:'2026-02-04T00:00:00Z'};
+            const lists=await $reminders.lists(),first=await $reminders.items(options),cache=await $reminders.items(options);
+            let blocked=false;try{await $reminders.items({...options,listIDs:['work']});}catch(e){blocked=String(e).includes('invalid_options');}
+            $render(<text>{JSON.stringify({lists,first,source:cache.source,blocked})}</text>);
+        """)
+        XCTAssertNil(result.1); let xml = result.0.map { collectText($0) } ?? ""
+        XCTAssertTrue(xml.contains("Read a chapter")); XCTAssertTrue(xml.contains("cache")); XCTAssertTrue(xml.contains("true"))
+        XCTAssertFalse(xml.contains("private-reminder")); XCTAssertFalse(xml.contains("private-list")); XCTAssertEqual(provider.fetches, 1)
+    }
+
+    func testRemindersRevocationAndScopeChangesFenceResponsesAndPurgeCaches() throws {
+        for revoke in [false, true] {
+            let f = try calendarSelectionFixture(), provider = RemindersFixtureProvider()
+            defer { f.defaults.removePersistentDomain(forName: f.suite); try? FileManager.default.removeItem(at: f.root) }
+            let runtime = try remindersRuntime(f, provider: provider)
+            provider.onFetch = {
+                if revoke { provider.status = "denied" }
+                else { try? ScriptWidgetCalendarSelection(calendarIDs: []).save(container: f.root, kind: .reminders) }
+            }
+            let result = runtime.executeJSXSyncForWidget("try{const r=await $reminders.items();$render(<text>{JSON.stringify(r)}</text>);}catch(e){$render(<text>{String(e)}</text>);}")
+            XCTAssertNil(result.1); let xml = result.0.map { collectText($0) } ?? ""
+            XCTAssertTrue(xml.contains("permission_denied")); XCTAssertFalse(xml.contains("Read a chapter"))
+            XCTAssertFalse(f.defaults.dictionaryRepresentation().keys.contains { $0.hasPrefix("ScriptWidget.RemindersCache.") })
+        }
+    }
+
+    func testRemindersUndeclaredNoListsAndInvalidOptionsNeverQueryProvider() throws {
+        let f = try calendarSelectionFixture(), provider = RemindersFixtureProvider()
+        defer { f.defaults.removePersistentDomain(forName: f.suite); try? FileManager.default.removeItem(at: f.root) }
+        let undeclared = try remindersRuntime(f, provider: provider, declared: false).executeJSXSyncForWidget("let denied=0;for(const call of [()=>$reminders.items(),()=>$reminders.lists(),()=>$reminders.requestAuthorization()])try{await call();}catch(e){if(String(e).includes('permission_denied'))denied++;}$render(<text>{$reminders.authorizationStatus()+':'+denied}</text>);")
+        XCTAssertNil(undeclared.1); XCTAssertTrue(undeclared.0.map { collectText($0).contains("undeclared:3") } == true)
+        try ScriptWidgetCalendarSelection(calendarIDs: []).save(container: f.root, kind: .reminders)
+        let none = try remindersRuntime(f, provider: provider).executeJSXSyncForWidget("const lists=await $reminders.lists();let denied=false;try{await $reminders.items();}catch(e){denied=String(e).includes('permission_denied');}$render(<text>{lists.length+':'+denied}</text>);")
+        XCTAssertNil(none.1); XCTAssertTrue(none.0.map { collectText($0).contains("0:true") } == true)
+        XCTAssertEqual(provider.fetches, 0)
+    }
+}
+
+
+extension RuntimeExecutionTests {
+    func testRemindersProjectionUsesSnapshotAndRechecksScopeBeforeCachedDelivery() throws {
+        let f = try calendarSelectionFixture(), provider = RemindersFixtureProvider()
+        defer { f.defaults.removePersistentDomain(forName: f.suite); try? FileManager.default.removeItem(at: f.root) }
+        let source = "const r=await $reminders.items({start:'2026-02-03T00:00:00Z',end:'2026-02-04T00:00:00Z'});$render(<text>{JSON.stringify(r)}</text>);"
+        XCTAssertNil(try remindersRuntime(f, provider: provider).executeJSXSyncForWidget(source).1)
+        let env = ["widget-size": "medium", "timeline-date": "2026-02-03T12:00:00Z", "timeline-is-projection": "true"]
+        let projected = try remindersRuntime(f, provider: provider, environments: env).executeJSXSyncForWidget(source)
+        XCTAssertNil(projected.1); XCTAssertTrue(collectText(try XCTUnwrap(projected.0)).contains("cache")); XCTAssertEqual(provider.fetches, 1)
+        var checks = 0
+        provider.onStatus = {
+            checks += 1
+            if checks == 2 { try? ScriptWidgetCalendarSelection(calendarIDs: []).save(container: f.root, kind: .reminders) }
+        }
+        let guarded = try remindersRuntime(f, provider: provider, environments: env).executeJSXSyncForWidget("try{" + source + "}catch(e){$render(<text>{String(e)}</text>);}")
+        XCTAssertNil(guarded.1); let text = collectText(try XCTUnwrap(guarded.0))
+        XCTAssertTrue(text.contains("permission_denied")); XCTAssertFalse(text.contains("Read a chapter")); XCTAssertEqual(provider.fetches, 1)
+        XCTAssertFalse(f.defaults.dictionaryRepresentation().keys.contains { $0.hasPrefix("ScriptWidget.RemindersCache.") })
     }
 }

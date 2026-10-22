@@ -2,7 +2,7 @@
 
 Notable user-visible changes are recorded here. ScriptWidget follows semantic versioning for public package/runtime contracts even when App Store marketing versions use another cadence.
 
-## 27.1.3 — M1/M2 release candidate
+## 27.1.3 — release candidate (M1–M5 development in progress)
 
 - Save real habit, hydration, mood and checklist records with history, undo and backup/recovery.
 - Add configurable countdown, photo, weather, basic health, public GitHub data, launcher, local Live Activity, plant, pet and wallpaper templates.
