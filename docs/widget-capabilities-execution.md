@@ -24,7 +24,7 @@
 | --- | --- | --- |
 | M2 | M2-1 记录模板、M2-2 数据卡片、M2-3 动作目录、M2-4 本地 Live Activity、M2-5 主题/宠物/时段、M2-6 配置与 Gallery | 未完成；复用已有基础继续实现 |
 | M3 | M3-1 日历、M3-2 提醒事项、M3-3 自动照片、M3-4 更多健康类型、M3-5 跨平台/Mock/文档/验收 | 日历、提醒事项、相册和扩展健康已接入开发；真机授权/撤权及系统入口验收仍待完成 |
-| M4 | M4-1 原生凭据、M4-2 请求代理、M4-3 Apple Music、M4-4 其他服务核验、M4-5 授权面板与音乐模板 | GitHub 原生连接/受限请求和只读 Music 快照、模板与 Web Mock 已接通；OAuth 登录/刷新、播放动作和真实账户/签名设备验收待完成 |
+| M4 | M4-1 原生凭据、M4-2 请求代理、M4-3 Apple Music、M4-4 其他服务核验、M4-5 授权面板与音乐模板 | GitHub 原生连接/受限请求和只读 Music 快照、模板/Web Mock 已接通；Spotify 系统授权/前台刷新已开发，注册配置、公开 Spotify API/播放动作及真实账户/签名设备验收仍待完成 |
 | M5 | M5-1 可视化 JSX 子集、M5-2 主题与原创资产、M5-3 材质/壁纸效果、M5-4 编辑流程与分发 | 三端布局/主题/素材、公开材质及原生/Web 壁纸工具已接通开发；旧动画兼容、最终流程和物理设备专项仍待完成 |
 
 每项沿用原计划的完整验收标准。服务和平台原型不通过时先记录实际证据及限制，不以静态模板替代真实功能。
@@ -908,3 +908,17 @@ Connection store 新增整项原子刷新保存，保留账户 subject/label、�
 最终修正后的完整 `./Scripts/release-readiness.sh` 退出 0：Mac **675 通过 / 0 失败 / 32 跳过**；iPhone 17 Simulator **685 通过 / 0 失败 / 31 跳过**，两端 xcresult runtimeWarnings 均为空。Editor 52、预览引擎 163、Web Studio 96、Gallery 同步 2、服务独立 probe 44、91 内置模板/22 curated 包、全部浏览器流程、TypeScript/生产构建、两端 app build 和独立运行时/存储探针通过。SDK/link/Sendable/Xcode 版本解析诊断保留，不称为无编译警告。日志、最终 summary、44 项源文件哈希和前述失败证据位于 `__Release/capabilities/service-token-client/`。完整 gate 后仅更新文档/证据和 PR，不再改源码；实现提交为 b37c346。
 
 未启用新登录窗口、未连接任何真实 Spotify 账户，未修改 Web mock/公开 runtime 合约或原有动画默认行为，没有部署、构建上传或送审。后续继续原生系统授权会话、刷新协调、provider 配置与验收、Apple Music 动作和 M3/M5 设备专项；不把私有 token client 的检查当作这些功能已完成。
+
+### 2026-10-22：M4 条件启用的系统授权和前台刷新流程
+
+新增两端共用 Spotify Settings section/controller 和 ASWebAuthenticationSession driver：只从签名原生 app Bundle 读取 Client ID，要求原生注册专用 scheme；当前 Client ID 明确留空，默认显示 unavailable，不编造注册信息。登录用系统页面和临时浏览器偏好，driver 一次性使用，实际窗口由弱引用的原生 view bridge 提供，不调用应用单例。iOS/macOS app plist 均保留原有 scriptwidget 链接并登记独立 callback。新 Swift 源按既有 shared UI 模式加入两个项目的 app/widget target，两项目及 plist lint 通过。
+
+连接流程为 browser callback → PKCE token exchange → 固定 profile 核验 → 原子保存。每个 HTTP 阶段前和提交前复核原账户状态；保存的新账户没有 owner grants。前台 Refresh 验证新凭据仍对应同一 provider subject，再保留原 account/client/scope/owner policy 做原子旋转。Disconnect 只删除本机连接，管理链接供用户在 Spotify 撤销 provider 授权。跨设置窗口的前台 lease 同时只允许一个交互，完成/取消/模型释放只清理自己的 lease，不把 app-group 锁跨网络持有。尚无跨进程后台自动刷新。
+
+取消、离开页面或旧 callback 不能推进新 attempt；模型在 browser/token/profile 各阶段都做 generation 和 phase 检查。系统授权只接收专用 scheme，PKCE 仍核对完整 host/path/state。代码检查另发现：若专用 callback 落到普通 app URL 入口，旧转发逻辑可能再次打开自己。因此 iOS root/DeepLinkManager、macOS AppDelegate 均明确忽略保留 scheme，只由系统授权会话处理。两端路由回归覆盖大小写形式且不转发；既有外部链接和失败反馈不变。
+
+新增 9 项 app-hosted flow 检查：真实 Bundle 配置/注册、exchange/verify/save 顺序、每阶段取消与迟到结果、错误 callback 和竞争连接、provider subject 一致性、断开后的刷新拒绝、跨窗口 lease，以及真实窗口桥接和系统 callback matcher。另有一项可选截图检查。专项 Mac 11 项、iPhone Simulator 12 项均通过，包含新截图和既有账户截图/路由；随后对最后的 metadata/window/driver 约束再次运行 iOS 专项。截图使用内存 Keychain、注入 client 配置及 fake browser/HTTP，已检查未配置/等待/已连接等状态；未自动打开真实 provider 登录。原有 GitHub 截图同步当前 Settings 布局，见 [服务账户基础](service-accounts-foundation.md)。
+
+最终完整 `./Scripts/release-readiness.sh` 退出 0：Mac **684 通过 / 0 失败 / 33 跳过**；iPhone 17 Simulator **694 通过 / 0 失败 / 32 跳过**，两端 xcresult runtimeWarnings 为空。Editor 52、预览引擎 163、Web Studio 96、Gallery 同步 2、独立服务 probe 44、91 模板/22 curated 包、全部 browser 流程、TypeScript/生产构建、两端 app build 和独立运行时/存储/路由探针通过。原有 SDK/link/Sendable/Xcode 版本解析诊断保留；新截图检查在普通 gate 中跳过，已在前述 opt-in 专项实际执行。证据在 `__Release/capabilities/spotify-native-flow/`，最后 gate 后仅更新文档/图片/验证记录和 PR。
+
+开发流程已接到原生 UI，但不等同真实 Spotify 验收完成：仍需 provider 注册信息、真实系统登录/刷新和签名 app/widget 接受测试，以及公开 Spotify runtime adapter/owner grants、后台刷新、播放写入和 M3/M5 设备专项。Web 合约仍明确 unavailable，不向浏览器交付真实凭据。未改旧动画默认行为，未部署、未上传、未送审；M4 和整体目标保持进行中。

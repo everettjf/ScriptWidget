@@ -410,7 +410,8 @@ final class ServiceAccountsViewTests: XCTestCase {
             }
             memory.fail = state == "locked"
             let model = ScriptWidgetServiceAccountsModel(store: store, loadOwners: { [owner] }); model.reload()
-            let content = NavigationStack { ScriptWidgetServiceAccountsView(model: model) }.environment(\.colorScheme, .light)
+            let spotify = ScriptWidgetSpotifyAccountsModel(clientID: nil, store: store)
+            let content = NavigationStack { ScriptWidgetServiceAccountsView(model: model, spotifyModel: spotify) }.environment(\.colorScheme, .light)
             #if os(macOS)
             let host = NSHostingView(rootView: content.background(Color.white)); host.frame = NSRect(x: 0, y: 0, width: 620, height: 780)
             let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
@@ -435,6 +436,266 @@ final class ServiceAccountsViewTests: XCTestCase {
             }
             let pixels = try XCTUnwrap(image.cgImage?.dataProvider?.data)
             XCTAssertGreaterThan(Set(pixels as Data).count, 8, "Account settings must render content, not a blank canvas")
+            let png = try XCTUnwrap(image.pngData())
+            #endif
+            try png.write(to: directory.appendingPathComponent(state + ".png"))
+        }
+    }
+}
+#endif
+
+#if !SCRIPTWIDGET_SERVICE_STANDALONE_TESTS
+import AuthenticationServices
+
+@MainActor
+final class SpotifyAccountsFlowTests: XCTestCase {
+    private let clientID = "0123456789abcdef0123456789abcdef"
+    private final class Memory: ScriptWidgetServiceKeychainAccess {
+        var values: [String: Data] = [:]
+        func read(_ account: String) throws -> Data? { values[account] }
+        func write(_ data: Data, account: String) throws { values[account] = data }
+        func remove(_ account: String) throws { values.removeValue(forKey: account) }
+    }
+    private final class HTTP: ScriptWidgetServiceHTTPTransport {
+        var requests: [URLRequest] = []
+        var callbacks: [(Result<ScriptWidgetServiceHTTPResponse, ScriptWidgetServiceError>) -> Void] = []
+        var cancelled = false
+        func send(_ request: URLRequest, completion: @escaping (Result<ScriptWidgetServiceHTTPResponse, ScriptWidgetServiceError>) -> Void) -> ScriptWidgetServiceRequestHandle {
+            requests.append(request); callbacks.append(completion)
+            return .init { self.cancelled = true }
+        }
+    }
+    private final class Browser: ScriptWidgetSpotifyWebAuthorizing {
+        var authorization: ScriptWidgetSpotifyAuthorization?
+        var callback: (@MainActor (Result<URL, ScriptWidgetServiceError>) -> Void)?
+        var starts = 0, cancelled = false
+        func start(_ authorization: ScriptWidgetSpotifyAuthorization, completion: @escaping @MainActor (Result<URL, ScriptWidgetServiceError>) -> Void) -> ScriptWidgetServiceRequestHandle {
+            self.authorization = authorization; callback = completion; starts += 1
+            return .init { self.cancelled = true }
+        }
+        func success() {
+            guard let authorization else { return XCTFail("Browser session was not started") }
+            let state = URLComponents(url: authorization.authorizationURL, resolvingAgainstBaseURL: false)!.queryItems!.first { $0.name == "state" }!.value!
+            var url = URLComponents(string: ScriptWidgetSpotifyAuthorization.redirectURI)!
+            url.queryItems = [.init(name: "state", value: state), .init(name: "code", value: "sample-provider-code")]
+            callback?(.success(url.url!))
+        }
+    }
+    private func store(_ memory: Memory) -> ScriptWidgetServiceConnections {
+        let lock = NSLock()
+        return .init(keychain: memory, coordinate: { action in lock.lock(); defer { lock.unlock() }; try action() })
+    }
+    private var token: ScriptWidgetServiceHTTPResponse {
+        .init(status: 200, body: Data(#"{"access_token":"sample-spotify-access","refresh_token":"sample-spotify-refresh","token_type":"Bearer","expires_in":3600,"scope":"user-read-private user-read-playback-state"}"#.utf8))
+    }
+    private func profile(_ subject: String = "sample-listener") -> ScriptWidgetServiceHTTPResponse {
+        .init(status: 200, body: try! JSONSerialization.data(withJSONObject: ["id": subject, "display_name": "Sample listener"]))
+    }
+    private func fixture(_ store: ScriptWidgetServiceConnections, _ tokens: HTTP, _ profiles: HTTP) -> ScriptWidgetSpotifyAccountsModel {
+        .init(clientID: clientID, store: store, tokens: .init(transport: tokens), reader: .init(transport: profiles))
+    }
+    private func wait(_ model: ScriptWidgetSpotifyAccountsModel, _ phase: ScriptWidgetSpotifyAccountsModel.Phase,
+                      file: StaticString = #filePath, line: UInt = #line) async throws {
+        for _ in 0..<100 {
+            if model.phase == phase { return }
+            try await Task.sleep(nanoseconds: 10_000_000)
+        }
+        XCTFail("Expected account flow phase did not arrive", file: file, line: line)
+    }
+    private func saved(_ store: ScriptWidgetServiceConnections) throws -> ScriptWidgetServiceConnection {
+        let now = Date()
+        let credential = ScriptWidgetServiceCredential(formatVersion: 1, accountID: UUID(), service: .spotify, revision: UUID(), accessToken: "sample-previous-access", refreshToken: "sample-previous-refresh", oauthClientID: clientID, issuedAt: now, expiresAt: now.addingTimeInterval(60), scopes: ScriptWidgetSpotifyAuthorization.readScopes)
+        let profile = ScriptWidgetServiceProfile(service: .spotify, subject: "sample-listener", username: nil, displayName: "Sample listener", publicRepositories: nil, privateRepositories: nil, followers: nil, following: nil)
+        return try store.connect(credential, verifiedProfile: profile, expectedRevision: nil)
+    }
+
+    func testNativeConfigurationRequiresClientAndDedicatedRegisteredCallback() {
+        let types = [["CFBundleURLSchemes": [ScriptWidgetSpotifyAuthorization.callbackScheme]]]
+        XCTAssertEqual(ScriptWidgetSpotifyConfiguration.clientID(info: ["ScriptWidgetSpotifyClientID": clientID, "CFBundleURLTypes": types]), clientID)
+        for client: Any in ["", "$(UNCONFIGURED_CLIENT)", "client with spaces", true] {
+            XCTAssertNil(ScriptWidgetSpotifyConfiguration.clientID(info: ["ScriptWidgetSpotifyClientID": client, "CFBundleURLTypes": types]))
+        }
+        XCTAssertNil(ScriptWidgetSpotifyConfiguration.clientID(info: ["ScriptWidgetSpotifyClientID": clientID]))
+        XCTAssertNil(ScriptWidgetSpotifyConfiguration.clientID(info: ["ScriptWidgetSpotifyClientID": clientID, "CFBundleURLTypes": [["CFBundleURLSchemes": ["scriptwidget"]]]]))
+        let nativeTypes = Bundle.main.infoDictionary?["CFBundleURLTypes"] as? [[String: Any]] ?? []
+        let nativeSchemes = nativeTypes.flatMap { $0["CFBundleURLSchemes"] as? [String] ?? [] }
+        XCTAssertTrue(nativeSchemes.contains(ScriptWidgetSpotifyAuthorization.callbackScheme))
+        XCTAssertTrue(nativeSchemes.contains("scriptwidget"), "Existing widget links stay registered")
+        let nativeClient = Bundle.main.object(forInfoDictionaryKey: "ScriptWidgetSpotifyClientID") as? String
+        if nativeClient?.isEmpty != false { XCTAssertNil(ScriptWidgetSpotifyConfiguration.clientID) }
+        else { XCTAssertEqual(ScriptWidgetSpotifyConfiguration.clientID, nativeClient) }
+    }
+
+    func testSignInExchangesThenVerifiesBeforeAtomicallySavingWithoutGrants() async throws {
+        let memory = Memory(), store = store(memory), tokens = HTTP(), profiles = HTTP(), browser = Browser()
+        let model = fixture(store, tokens, profiles); defer { model.cancel() }
+        model.reload(); model.connect(using: browser); XCTAssertEqual(model.phase, .authorizing)
+        XCTAssertTrue(memory.values.isEmpty); browser.success()
+        try await wait(model, .exchanging)
+        XCTAssertEqual(tokens.requests.count, 1); XCTAssertTrue(memory.values.isEmpty)
+        tokens.callbacks[0](.success(token)); try await wait(model, .verifying)
+        XCTAssertEqual(profiles.requests.first?.url?.host, "api.spotify.com"); XCTAssertTrue(memory.values.isEmpty)
+        profiles.callbacks[0](.success(profile())); try await wait(model, .idle)
+        let connection = try XCTUnwrap(store.connection(.spotify))
+        XCTAssertEqual(model.connection?.label, "Sample listener"); XCTAssertEqual(connection.subject, "sample-listener")
+        XCTAssertTrue(connection.policy.grants.isEmpty); XCTAssertEqual(memory.values.count, 1); XCTAssertNil(model.message)
+    }
+
+    func testCancelAtEverySignInPhaseDiscardsLateCallbacksAndSavesNothing() async throws {
+        for phase in [ScriptWidgetSpotifyAccountsModel.Phase.authorizing, .exchanging, .verifying] {
+            let memory = Memory(), store = store(memory), tokens = HTTP(), profiles = HTTP(), browser = Browser()
+            let model = fixture(store, tokens, profiles); model.reload(); model.connect(using: browser)
+            if phase != .authorizing { browser.success(); try await wait(model, .exchanging) }
+            if phase == .verifying { tokens.callbacks[0](.success(token)); try await wait(model, .verifying) }
+            model.cancel(); browser.success()
+            for callback in tokens.callbacks { callback(.success(token)) }
+            for callback in profiles.callbacks { callback(.success(profile())) }
+            try await Task.sleep(nanoseconds: 20_000_000)
+            XCTAssertEqual(model.phase, .idle); XCTAssertNil(model.connection); XCTAssertTrue(memory.values.isEmpty)
+            XCTAssertTrue(phase == .authorizing ? browser.cancelled : phase == .exchanging ? tokens.cancelled : profiles.cancelled)
+        }
+    }
+
+    func testWrongCallbackNeverStartsHTTPAndCompetingConnectionCannotBeOverwritten() async throws {
+        let memory = Memory(), store = store(memory), tokens = HTTP(), profiles = HTTP(), browser = Browser()
+        let model = fixture(store, tokens, profiles); defer { model.cancel() }
+        model.reload(); model.connect(using: browser)
+        browser.callback?(.success(URL(string: "scriptwidget://oauth/spotify/callback?code=wrong")!))
+        try await wait(model, .idle)
+        XCTAssertTrue(tokens.requests.isEmpty); XCTAssertTrue(memory.values.isEmpty)
+        XCTAssertEqual(model.message, ScriptWidgetServiceError.invalidCallback.localizedDescription)
+        model.connect(using: browser)
+        let winner = try saved(store)
+        browser.success(); try await wait(model, .idle)
+        XCTAssertEqual(model.message, ScriptWidgetServiceError.conflict.localizedDescription)
+        XCTAssertTrue(tokens.requests.isEmpty); XCTAssertEqual(try store.connection(.spotify)?.revision, winner.revision)
+    }
+
+    func testConnectionChangedDuringProfileVerificationRejectsOldSignIn() async throws {
+        let memory = Memory(), store = store(memory), tokens = HTTP(), profiles = HTTP(), browser = Browser()
+        let model = fixture(store, tokens, profiles); defer { model.cancel() }
+        model.reload(); model.connect(using: browser); browser.success(); try await wait(model, .exchanging)
+        tokens.callbacks[0](.success(token)); try await wait(model, .verifying)
+        let winner = try saved(store)
+        profiles.callbacks[0](.success(profile())); try await wait(model, .idle)
+        XCTAssertEqual(try store.connection(.spotify)?.credential.revision, winner.credential.revision)
+        XCTAssertNotNil(model.message)
+    }
+
+    func testRefreshVerifiesSameProviderSubjectAndRetainsOwnerPolicy() async throws {
+        let memory = Memory(), store = store(memory), tokens = HTTP(), profiles = HTTP()
+        let original = try saved(store)
+        let granted = try store.setGrant(service: .spotify, ownerID: UUID(), operations: [.spotifyProfile, .spotifyPlayback], expectedRevision: original.revision)
+        let model = fixture(store, tokens, profiles); defer { model.cancel() }; model.reload()
+        model.refresh(); XCTAssertEqual(tokens.requests.count, 1)
+        tokens.callbacks[0](.success(token)); try await wait(model, .verifyingRefresh)
+        profiles.callbacks[0](.success(profile("another-account"))); try await wait(model, .idle)
+        XCTAssertEqual(model.message, ScriptWidgetServiceError.invalidCredential.localizedDescription)
+        XCTAssertEqual(try store.connection(.spotify)?.credential.revision, granted.credential.revision)
+        model.refresh(); tokens.callbacks[1](.success(token)); try await wait(model, .verifyingRefresh)
+        profiles.callbacks[1](.success(profile())); try await wait(model, .idle)
+        let current = try XCTUnwrap(store.connection(.spotify))
+        XCTAssertNotEqual(current.credential.revision, granted.credential.revision)
+        XCTAssertEqual(current.policy.revision, granted.policy.revision)
+        XCTAssertEqual(current.policy.grants.map(\.ownerID), granted.policy.grants.map(\.ownerID))
+        XCTAssertEqual(current.policy.grants.map(\.operations), granted.policy.grants.map(\.operations))
+        XCTAssertNil(model.message)
+    }
+
+    func testDisconnectedAccountCannotBeResurrectedByPendingRefresh() async throws {
+        let memory = Memory(), store = store(memory), tokens = HTTP(), profiles = HTTP()
+        let original = try saved(store), model = fixture(store, tokens, profiles); defer { model.cancel() }
+        model.reload(); model.refresh(); try store.disconnect(.spotify, expectedRevision: original.revision)
+        tokens.callbacks[0](.success(token)); try await wait(model, .idle)
+        XCTAssertNil(try store.connection(.spotify)); XCTAssertTrue(profiles.requests.isEmpty)
+        XCTAssertEqual(model.message, ScriptWidgetServiceError.notConnected.localizedDescription)
+    }
+
+    func testForegroundLeaseSerializesScreensAndOldCallbacksCannotReleaseNewLease() async throws {
+        let memory = Memory(), store = store(memory)
+        let first = fixture(store, HTTP(), HTTP()), second = fixture(store, HTTP(), HTTP()), third = fixture(store, HTTP(), HTTP())
+        defer { first.cancel(); second.cancel(); third.cancel() }
+        let one = Browser(), two = Browser(), three = Browser()
+        first.reload(); second.reload(); third.reload(); first.connect(using: one); second.connect(using: two)
+        XCTAssertEqual(two.starts, 0); XCTAssertEqual(second.message, ScriptWidgetServiceError.conflict.localizedDescription)
+        first.cancel(); second.connect(using: two); XCTAssertEqual(two.starts, 1)
+        one.callback?(.failure(.cancelled)); try await Task.sleep(nanoseconds: 20_000_000)
+        third.connect(using: three); XCTAssertEqual(three.starts, 0)
+        XCTAssertEqual(third.message, ScriptWidgetServiceError.conflict.localizedDescription)
+    }
+
+    func testActualPresentationWindowBridgeUsesHostWindowAndSystemCallbackScheme() async throws {
+        let reference = ScriptWidgetServiceWindowReference()
+        let content = Text("Account presentation").background(ScriptWidgetServicePresentationWindow(reference: reference))
+        #if os(macOS)
+        let host = NSHostingView(rootView: content), window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 400), styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = host; window.orderFront(nil); defer { window.orderOut(nil) }
+        #else
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first { $0.isKeyWindow }
+        let window = UIWindow(windowScene: scene), controller = UIHostingController(rootView: content)
+        window.rootViewController = controller; window.makeKeyAndVisible(); defer { window.isHidden = true; previous?.makeKey() }
+        #endif
+        for _ in 0..<100 { if reference.window != nil { break }; try await Task.sleep(nanoseconds: 10_000_000) }
+        XCTAssertTrue(reference.window === window)
+        if #available(iOS 17.4, macOS 14.4, *) {
+            let callback = ASWebAuthenticationSession.Callback.customScheme(ScriptWidgetSpotifyAuthorization.callbackScheme)
+            XCTAssertTrue(callback.matchesURL(URL(string: ScriptWidgetSpotifyAuthorization.redirectURI)!))
+            XCTAssertFalse(callback.matchesURL(URL(string: "scriptwidget://oauth/spotify/callback")!))
+        }
+        reference.update(nil); XCTAssertNil(reference.window)
+    }
+
+    func testSpotifyAccountScreenshots() async throws {
+        guard let path = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_SPOTIFY_ACCOUNTS"] else {
+            throw XCTSkip("Set TEST_RUNNER_SCRIPTWIDGET_EXPORT_SPOTIFY_ACCOUNTS for isolated account screenshots")
+        }
+        #if os(macOS)
+        let platform = "macos"
+        #else
+        let platform = "ios"
+        #endif
+        let directory = URL(fileURLWithPath: path).appendingPathComponent(platform)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        for state in ["unconfigured", "ready", "authorizing", "connected"] {
+            let memory = Memory(), store = store(memory)
+            if state == "connected" { _ = try saved(store) }
+            let spotify = ScriptWidgetSpotifyAccountsModel(clientID: state == "unconfigured" ? nil : clientID, store: store,
+                tokens: .init(transport: HTTP()), reader: .init(transport: HTTP()))
+            spotify.reload(); if state == "authorizing" { spotify.connect(using: Browser()) }
+            defer { spotify.cancel() }
+            let github = ScriptWidgetServiceAccountsModel(store: store, loadOwners: { [] }); github.reload()
+            let content = NavigationStack { ScriptWidgetServiceAccountsView(model: github, spotifyModel: spotify) }.environment(\.colorScheme, .light)
+            #if os(macOS)
+            let host = NSHostingView(rootView: content.background(Color.white)); host.frame = NSRect(x: 0, y: 0, width: 620, height: 900)
+            let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+            window.appearance = NSAppearance(named: .aqua); window.contentView = host; window.orderFront(nil)
+            defer { window.orderOut(nil) }
+            host.layoutSubtreeIfNeeded(); window.displayIfNeeded()
+            try await Task.sleep(nanoseconds: 150_000_000)
+            let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds)); host.cacheDisplay(in: host.bounds, to: bitmap)
+            let png = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+            #else
+            let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+            let previous = scene.windows.first { $0.isKeyWindow }, window = UIWindow(windowScene: scene)
+            window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+            let controller = UIHostingController(rootView: content); window.rootViewController = controller
+            window.makeKeyAndVisible(); controller.view.frame = window.bounds; controller.view.layoutIfNeeded()
+            defer { window.isHidden = true; previous?.makeKey() }
+            try await Task.sleep(nanoseconds: 150_000_000)
+            if state != "unconfigured" {
+                func scrollToBottom(_ view: UIView) {
+                    if let scroll = view as? UIScrollView, scroll.contentSize.height > scroll.bounds.height {
+                        scroll.setContentOffset(CGPoint(x: 0, y: max(-scroll.adjustedContentInset.top, scroll.contentSize.height - scroll.bounds.height + scroll.adjustedContentInset.bottom)), animated: false)
+                    }
+                    for child in view.subviews { scrollToBottom(child) }
+                }
+                scrollToBottom(controller.view); controller.view.layoutIfNeeded()
+                try await Task.sleep(nanoseconds: 100_000_000)
+            }
+            let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+                XCTAssertTrue(window.drawHierarchy(in: window.bounds, afterScreenUpdates: true))
+            }
             let png = try XCTUnwrap(image.pngData())
             #endif
             try png.write(to: directory.appendingPathComponent(state + ".png"))

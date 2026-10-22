@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>ScriptWidgetSpotifyClientID</key>
+	<string></string>
 	<key>ScriptWidgetServiceKeychainGroup</key>
 	<string>$(AppIdentifierPrefix)com.everettjf.scriptwidget.services</string>
 	<key>NSPhotoLibraryUsageDescription</key>
@@ -12,6 +14,11 @@
 	<string>Allow ScriptWidget to read reminders from lists you choose and apply reminder actions you trigger.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
+		<dict>
+			<key>CFBundleTypeRole</key><string>Viewer</string>
+			<key>CFBundleURLName</key><string>app.scriptwidget.spotify-auth</string>
+			<key>CFBundleURLSchemes</key><array><string>scriptwidget-spotify-auth</string></array>
+		</dict>
 		<dict>
 			<key>CFBundleTypeRole</key><string>Editor</string>
 			<key>CFBundleURLName</key><string>app.scriptwidget.calendar-access</string>

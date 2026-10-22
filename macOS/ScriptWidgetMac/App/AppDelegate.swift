@@ -23,6 +23,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         for url in urls {
             guard let scheme = url.scheme?.lowercased(),
                   scheme != kDeepLinkDefaultScheme,
+                  scheme != kSpotifyAuthorizationCallbackScheme,
                   scheme != "scriptwidget" else { continue }
             if !openWidgetURL(url) { reportUnavailableLink() }
         }

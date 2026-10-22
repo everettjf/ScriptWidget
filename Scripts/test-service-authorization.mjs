@@ -11,7 +11,7 @@ import {createHash} from "node:crypto";
 const exec = promisify(execFile);
 const repository = fileURLToPath(new URL("../", import.meta.url));
 const temporary = await mkdtemp(join(tmpdir(), "scriptwidget-services-"));
-const relativeSources = ["Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetServiceAuthorization.swift", "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetServiceCredentialVault.swift", "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetServiceAccessPolicy.swift", "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetServiceTransport.swift", "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetServiceConnections.swift", "Tests/ScriptWidgetRuntimeTests/ServiceAuthorizationTests.swift", "Tests/ScriptWidgetRuntimeTests/ServiceAccessPolicyTests.swift", "Tests/ScriptWidgetRuntimeTests/ServiceTransportTests.swift"];
+const relativeSources = ["Shared/ScriptWidgetRuntime/Widget/Runtime/DeepLinkDefine.swift", "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetServiceAuthorization.swift", "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetServiceCredentialVault.swift", "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetServiceAccessPolicy.swift", "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetServiceTransport.swift", "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetServiceConnections.swift", "Tests/ScriptWidgetRuntimeTests/ServiceAuthorizationTests.swift", "Tests/ScriptWidgetRuntimeTests/ServiceAccessPolicyTests.swift", "Tests/ScriptWidgetRuntimeTests/ServiceTransportTests.swift"];
 const sources = relativeSources.map(path => join(repository, path));
 const output = resolve(process.argv[2] ?? join(repository, "__Release/capabilities/services/authorization-verification.json"));
 const environment = {...process.env};

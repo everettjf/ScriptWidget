@@ -44,6 +44,7 @@
 		CDB853C8495E11763FA1FB86 /* ScriptWidgetRuntimeServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB59EE8D834A692D8F3B28BD /* ScriptWidgetRuntimeServices.swift */; };
 		98281CD4C258AF638F53DA1C /* ScriptWidgetRuntimeMusic.swift in Sources */ = {isa = PBXBuildFile; fileRef = F13EBD989BBDEFE54E230F78 /* ScriptWidgetRuntimeMusic.swift */; };
 		1046BD3E84C0131507E238EC /* ScriptWidgetServiceAccountsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F94FC27FA6AED19C320EC1A /* ScriptWidgetServiceAccountsView.swift */; };
+		659C34815B6E8B912340D8E0 /* ScriptWidgetSpotifyAccountsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA32761ABB9B371CFB2AFF52 /* ScriptWidgetSpotifyAccountsView.swift */; };
 		AFC0B3FA6880CA3F480BE26C /* ScriptWidgetServiceConnections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52682079590A9B440F2F181C /* ScriptWidgetServiceConnections.swift */; };
 		27D4422524BCFC363C094168 /* ScriptWidgetServiceTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = C464389B41C856684F198EA4 /* ScriptWidgetServiceTransport.swift */; };
 		3FE6779C466CC4CBFB366408 /* ScriptWidgetServiceCredentialVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8796038A2FE7F817F67A2D52 /* ScriptWidgetServiceCredentialVault.swift */; };
@@ -142,6 +143,7 @@
 		BD2E53E3A67F7DE342CF13F4 /* ScriptWidgetRuntimeServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB59EE8D834A692D8F3B28BD /* ScriptWidgetRuntimeServices.swift */; };
 		83DED99DCE9A1E3BE679CC01 /* ScriptWidgetRuntimeMusic.swift in Sources */ = {isa = PBXBuildFile; fileRef = F13EBD989BBDEFE54E230F78 /* ScriptWidgetRuntimeMusic.swift */; };
 		5AC3AAC0B1330A4C7B0F75FC /* ScriptWidgetServiceAccountsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F94FC27FA6AED19C320EC1A /* ScriptWidgetServiceAccountsView.swift */; };
+		227F1C9AD85BA18B2E1607EF /* ScriptWidgetSpotifyAccountsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA32761ABB9B371CFB2AFF52 /* ScriptWidgetSpotifyAccountsView.swift */; };
 		54163C1C7CFD5B4A99954A9D /* ScriptWidgetServiceConnections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52682079590A9B440F2F181C /* ScriptWidgetServiceConnections.swift */; };
 		20FB00D50A5EC80202BB495F /* ScriptWidgetServiceTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = C464389B41C856684F198EA4 /* ScriptWidgetServiceTransport.swift */; };
 		9A6602E545988F49B4BBF393 /* ScriptWidgetServiceCredentialVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8796038A2FE7F817F67A2D52 /* ScriptWidgetServiceCredentialVault.swift */; };
@@ -498,6 +500,7 @@
 		AB59EE8D834A692D8F3B28BD /* ScriptWidgetRuntimeServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeServices.swift; sourceTree = "<group>"; };
 		F13EBD989BBDEFE54E230F78 /* ScriptWidgetRuntimeMusic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeMusic.swift; sourceTree = "<group>"; };
 		0F94FC27FA6AED19C320EC1A /* ScriptWidgetServiceAccountsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetServiceAccountsView.swift; sourceTree = "<group>"; };
+		DA32761ABB9B371CFB2AFF52 /* ScriptWidgetSpotifyAccountsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetSpotifyAccountsView.swift; sourceTree = "<group>"; };
 		52682079590A9B440F2F181C /* ScriptWidgetServiceConnections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetServiceConnections.swift; sourceTree = "<group>"; };
 		C464389B41C856684F198EA4 /* ScriptWidgetServiceTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetServiceTransport.swift; sourceTree = "<group>"; };
 		8796038A2FE7F817F67A2D52 /* ScriptWidgetServiceCredentialVault.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetServiceCredentialVault.swift; sourceTree = "<group>"; };
@@ -1459,6 +1462,7 @@
 				AB59EE8D834A692D8F3B28BD /* ScriptWidgetRuntimeServices.swift */,
 				F13EBD989BBDEFE54E230F78 /* ScriptWidgetRuntimeMusic.swift */,
 				0F94FC27FA6AED19C320EC1A /* ScriptWidgetServiceAccountsView.swift */,
+				DA32761ABB9B371CFB2AFF52 /* ScriptWidgetSpotifyAccountsView.swift */,
 				52682079590A9B440F2F181C /* ScriptWidgetServiceConnections.swift */,
 				C464389B41C856684F198EA4 /* ScriptWidgetServiceTransport.swift */,
 				8796038A2FE7F817F67A2D52 /* ScriptWidgetServiceCredentialVault.swift */,
@@ -2028,6 +2032,7 @@
 				CDB853C8495E11763FA1FB86 /* ScriptWidgetRuntimeServices.swift in Sources */,
 				98281CD4C258AF638F53DA1C /* ScriptWidgetRuntimeMusic.swift in Sources */,
 				1046BD3E84C0131507E238EC /* ScriptWidgetServiceAccountsView.swift in Sources */,
+				659C34815B6E8B912340D8E0 /* ScriptWidgetSpotifyAccountsView.swift in Sources */,
 				AFC0B3FA6880CA3F480BE26C /* ScriptWidgetServiceConnections.swift in Sources */,
 				27D4422524BCFC363C094168 /* ScriptWidgetServiceTransport.swift in Sources */,
 				3FE6779C466CC4CBFB366408 /* ScriptWidgetServiceCredentialVault.swift in Sources */,
@@ -2200,6 +2205,7 @@
 				BD2E53E3A67F7DE342CF13F4 /* ScriptWidgetRuntimeServices.swift in Sources */,
 				83DED99DCE9A1E3BE679CC01 /* ScriptWidgetRuntimeMusic.swift in Sources */,
 				5AC3AAC0B1330A4C7B0F75FC /* ScriptWidgetServiceAccountsView.swift in Sources */,
+				227F1C9AD85BA18B2E1607EF /* ScriptWidgetSpotifyAccountsView.swift in Sources */,
 				54163C1C7CFD5B4A99954A9D /* ScriptWidgetServiceConnections.swift in Sources */,
 				20FB00D50A5EC80202BB495F /* ScriptWidgetServiceTransport.swift in Sources */,
 				9A6602E545988F49B4BBF393 /* ScriptWidgetServiceCredentialVault.swift in Sources */,

@@ -18,6 +18,8 @@ let externalURLs = [
     URL(string: "mailto:example@example.com")!
 ]
 let internalURLs = [
+    URL(string: "scriptwidget-spotify-auth://oauth/spotify/callback?code=sample-code")!,
+    URL(string: "SCRIPTWIDGET-SPOTIFY-AUTH://oauth/spotify/callback?code=sample-code")!,
     kDeepLinkDefaultURL,
     URL(string: "WIDGET-DEEPLINK://default")!,
     URL(string: "scriptwidget://open")!,

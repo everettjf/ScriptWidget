@@ -97,8 +97,8 @@ struct ScriptWidgetServiceCredential: Codable, Sendable, CustomStringConvertible
 /// An authorization session is deliberately a reference type: copying a value
 /// must not make its callback redeemable twice. It exists only in app memory.
 final class ScriptWidgetSpotifyAuthorization: CustomStringConvertible, CustomDebugStringConvertible, @unchecked Sendable {
-    static let callbackScheme = "scriptwidget-spotify-auth"
-    static let redirectURI = "scriptwidget-spotify-auth://oauth/spotify/callback"
+    static let callbackScheme = kSpotifyAuthorizationCallbackScheme
+    static let redirectURI = kSpotifyAuthorizationCallbackScheme + "://oauth/spotify/callback"
     static let tokenURL = URL(string: "https://accounts.spotify.com/api/token")!
     static let readScopes: Set<String> = ["user-read-private", "user-read-playback-state"]
     private let lock = NSLock()

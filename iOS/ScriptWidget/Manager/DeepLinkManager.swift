@@ -10,7 +10,8 @@ class DeepLinkManager {
             Task { @MainActor in completion(accepted) }
         }
     }, completion: @escaping @MainActor @Sendable (Bool) -> Void = { _ in }) {
-        guard let scheme=url.scheme?.lowercased(),scheme != kDeepLinkDefaultScheme,scheme != "scriptwidget" else { return }
+        guard let scheme=url.scheme?.lowercased(),scheme != kDeepLinkDefaultScheme,scheme != "scriptwidget",
+              scheme != kSpotifyAuthorizationCallbackScheme else { return }
         // The system decides whether an installed app can handle this link.
         // Do not log full URLs: shortcut input or app links may contain personal text.
         open(url,completion)
