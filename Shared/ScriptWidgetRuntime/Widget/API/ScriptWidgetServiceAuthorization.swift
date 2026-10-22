@@ -17,7 +17,7 @@ enum ScriptWidgetService: String, Codable, CaseIterable, Sendable {
 enum ScriptWidgetServiceError: LocalizedError, Equatable {
     case invalidConfiguration, invalidCallback, expiredAuthorization, consumedAuthorization
     case cancelled, authorizationFailed, invalidCredential, locked, storageUnavailable
-    case notConnected, permissionDenied, unsupportedOperation, rateLimited, unavailable, conflict
+    case notConnected, permissionDenied, unsupportedOperation, rateLimited, unavailable, conflict, networkLimit
 
     var errorDescription: String? {
         switch self {
@@ -34,6 +34,7 @@ enum ScriptWidgetServiceError: LocalizedError, Equatable {
         case .notConnected: "[service_not_connected] Connect a service in the app."
         case .permissionDenied: "[service_permission] Allow this service operation in the app."
         case .unsupportedOperation: "[service_operation] This service operation is unsupported."
+        case .networkLimit: "[network_limit] Too many concurrent or total network requests."
         case .rateLimited: "[service_rate_limit] The service is rate limited. Try again later."
         case .unavailable: "[service_unavailable] The service is currently unavailable."
         }

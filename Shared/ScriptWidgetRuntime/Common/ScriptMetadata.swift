@@ -56,6 +56,7 @@ enum WidgetPackagePermission: String, Codable, CaseIterable, Identifiable {
     case reminders
     case remindersWrite
     case photos
+    case services
     case storage
     case files
 

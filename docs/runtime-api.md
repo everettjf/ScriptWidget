@@ -1,8 +1,10 @@
-# ScriptWidget runtime API 1.3
+# ScriptWidget runtime API 1.4
 
 The public JavaScript/JSX host contract is versioned independently from the app. Scripts can read `$runtime.apiVersion` and must feature-detect optional device capabilities.
 
 ## Global API
+
+Version 1.4 adds `$reminders`, `$photos`, expanded Health summaries and `$services`. [Connected Services](services-api.md) starts with authenticated GitHub profiles through native account approval; Web samples do not grant real access. These additions remain under development in the unified release branch.
 
 Version 1.3 adds the read-only `$calendar` API, explicit `calendar` package permission and bounded queries/cache. See [Calendar API](calendar-api.md). This describes the current source contract; earlier uploaded builds do not contain these additions.
 

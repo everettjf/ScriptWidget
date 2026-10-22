@@ -27,6 +27,8 @@ final class ServiceTransportTests: XCTestCase {
 
     @objc func testGitHubProjectionOmitsPrivateFieldsAndPreservesMissingCounts() throws {
         guard case let .profile(value) = try decode(github()) else { return XCTFail("Missing profile") }
+        guard case let .profile(managed) = try decode(github(["login":"mona-cat_octo"])) else { return XCTFail("Missing managed profile") }
+        XCTAssertEqual(managed.username,"mona-cat_octo")
         XCTAssertEqual(value.subject, "42"); XCTAssertEqual(value.username, "octocat"); XCTAssertEqual(value.publicRepositories, 3)
         XCTAssertNil(value.privateRepositories); XCTAssertNil(value.following)
         let encoded = String(decoding: try JSONEncoder().encode(value), as: UTF8.self)

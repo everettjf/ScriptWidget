@@ -24,7 +24,7 @@
 | --- | --- | --- |
 | M2 | M2-1 记录模板、M2-2 数据卡片、M2-3 动作目录、M2-4 本地 Live Activity、M2-5 主题/宠物/时段、M2-6 配置与 Gallery | 未完成；复用已有基础继续实现 |
 | M3 | M3-1 日历、M3-2 提醒事项、M3-3 自动照片、M3-4 更多健康类型、M3-5 跨平台/Mock/文档/验收 | 日历、提醒事项、相册和扩展健康已接入开发；真机授权/撤权及系统入口验收仍待完成 |
-| M4 | M4-1 原生凭据、M4-2 请求代理、M4-3 Apple Music、M4-4 其他服务核验、M4-5 授权面板与音乐模板 | 原生授权/owner 策略基础开发中；界面、实际代理、音乐和 Web Mock 尚未接通 |
+| M4 | M4-1 原生凭据、M4-2 请求代理、M4-3 Apple Music、M4-4 其他服务核验、M4-5 授权面板与音乐模板 | GitHub 原生连接、owner 授权、受限请求、公开 profile API、模板与 Web Mock 已接通开发；OAuth 登录/刷新、音乐及真实账户/签名设备验收待完成 |
 | M5 | M5-1 可视化 JSX 子集、M5-2 主题与原创资产、M5-3 材质/壁纸效果、M5-4 编辑流程与分发 | 未开始 |
 
 每项沿用原计划的完整验收标准。服务和平台原型不通过时先记录实际证据及限制，不以静态模板替代真实功能。
@@ -776,3 +776,17 @@ Gallery 回归发现旧测试假定全部模板都需要 Runtime 1.3 和记录�
 本批完整 `./Scripts/release-readiness.sh` 退出 0：Mac 662 项中 634 通过、0 失败、28 跳过；iPhone 17 模拟器 671 项中 644 通过、0 失败、27 跳过，两端 xcresult 的 runtime warnings 均为空。编辑器 35、引擎 158、Web Studio 73、87 模板、18 个精选 Gallery、浏览器烟测、独立进程探针和两端应用构建通过。SDK 链接/版本诊断仍保留，不把跳过项算通过。证据为 `__Release/capabilities/services/transport-release-readiness.log` 和 `transport-macos-full-summary.json` / `transport-ios-full-summary.json`。
 
 全量后人工查图发现 iOS 截图导出器未绑定 UIWindowScene，虽测试返回成功但 PNG 为空白，不能作为 UI 证据。随后仅修正截图测试窗口/等待绘制、加非空像素断言，并从设置界面的错误文字中隐藏内部错误码；重新运行 iOS 请求/控制器专项 18 项以及最终两平台控制器/截图各 5 项均通过，零失败/跳过/运行时警告。最终在 `screenshots/final/{ios,macos}/` 导出并逐图核对，文档收录了[连接前](images/service-accounts-ios-disconnected.png)、[连接后](images/service-accounts-ios-connected.png)和 [Mac](images/service-accounts-macos-connected.png) 示例。没有为这两处测试采集/错误展示调整重复完整业务测试；它们的后续专项摘要单独保存为 `ios-accounts-final-summary.json` / `macos-accounts-final-summary.json`。真实服务账户、签名 Keychain 共享、物理设备及 Web 部署/新原生上传均未执行。
+
+## 2026-10-22：M4 GitHub 脚本 API、数据面板与 Web Mock
+
+统一分支已接入 Runtime API 1.4 的 `$services.status("github")` 和 `$services.profile("github")`，以及原生/Web/Schema 的 `services` 权限。状态只读 Keychain；资料请求还需 network、api.github.com、当前安装 owner 和独立原生授权。返回八个筛选字段，私有计数未分享时保持 null；不向脚本开放凭据、任意地址/请求头或登录/写操作。送达前复核执行身份、连接及 provider subject。服务请求与普通 fetch 共用原生 8 并发/32 总请求预算，并共享八次数据查询与执行取消；取消先于句柄返回的情形也会取消迟到句柄。未来条目与 Live Activity 不能发起实时服务查询。GitHub.com 的托管账户下划线用户名也已按官方规范纳入验证。
+
+新增 GitHub Profile 模板及 Gallery 包，覆盖八种 family 的成功、未连接、未授权、零计数、未分享私有计数、过期、限流、离线和不可用。实际 JSC 提供层导出 72 组树，浏览器逐组完全相同；通用只读 corpus 增加两个 live-data 标记，其余既有树未变。专用原生截图共 17 张；检查后调整小尺寸统计对齐、填满背景，并移除原生不支持的 image color。样例[正常状态](images/github-profile-sample.png)与[连接提示](images/github-profile-setup.png)使用隔离假账户，未向真实原生组件植入演示资料。
+
+Web Studio 新增 Connected services 面板、健康默认资料、字段/JSON 编辑及断开、无组件访问、零计数、私有计数未分享、过期、限流、离线场景。成功覆盖不能绕过包权限、域名、连接状态、提供方可用性与预算；Mock 资料拒绝额外凭据字段和非法计数。新增 API 同步生成补全、文档和两平台 editor bundle；AI 提示禁止把 token 放进脚本/Mock/上下文。预览引擎执行语义版本为 0.11.0，原生版本仍为本轮开发中的 1.4，Package ABI 保持 1.0。
+
+完整 `./Scripts/release-readiness.sh` 退出 0：Mac 672 项中 642 通过、0 失败、30 跳过；iPhone 17 模拟器 681 项中 652 通过、0 失败、29 跳过，runtime warnings 均为空。编辑器 35、引擎 158、Web Studio 79、88 模板、19 个精选 Gallery、两端应用构建、浏览器烟测及独立存储/交接/授权探针通过；独立授权探针仍为 37 项、内存 Keychain、零外部请求。证据在 `__Release/capabilities/services/api-release-readiness.log`、`macos-api-full-summary.json`、`ios-api-full-summary.json` 及 `api-authorization-probe.log`。SDK 链接/版本诊断保留，跳过项未算通过。
+
+浏览器专项验证可见 Mock Data 面板中的计数改为 47 后更新预览、各种场景、等待保存完成后重载保留，最后恢复默认健康样例。测试使用真实鼠标打开 Gallery/Mock 页签，并断言编辑期间面板仍可见；避免 Radix forceMount 隐藏面板造成假通过。全量后仅增强烟测的鼠标入口与可选截图取景，再独立运行整套 Chrome smoke 通过，没有修改产品源码或重复业务测试。[完整 Web 界面](images/github-profile-web-studio.png)来自该测试；IAB 交互尝试未能触发入口，不计为手工通过。
+
+这些证据完成本批原生/API/模板/Mock 开发验证，不代表 M4/M5 已完成：真实 GitHub 用户授权、签名 App/Widget Keychain 共享、物理组件、OAuth 登录/刷新、Apple Music/播放收据和 M5 可视化编辑仍需继续。Spotify 状态明确为 unavailable，不能用已有 PKCE 类型或 Web 假数据宣称接入成功。没有部署、上传或提交审核；后续仍在同一分支完成并统一发布。

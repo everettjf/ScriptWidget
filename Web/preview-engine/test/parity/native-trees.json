@@ -148,6 +148,9 @@
     "gallery/countdown": {
       "skipped": "live-data"
     },
+    "gallery/github-profile": {
+      "skipped": "live-data"
+    },
     "gallery/github-repo-stats": {
       "tree": "{\"$element\":\"vstack\",\"props\":{\"background\":\"#eff6ff\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"color\":\"#2563eb\",\"size\":\"26\",\"systemName\":\"network\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"color\":\"#1e3a8a\",\"font\":\"headline\",\"weight\":\"bold\"},\"children\":[\"Refresh unavailable\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#475569\",\"font\":\"caption\"},\"children\":[\"Check your connection and try again later.\"]}]}"
     },
@@ -294,6 +297,9 @@
     },
     "template/Gauge Battery": {
       "tree": "{\"$element\":\"vstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"gauge\",\"props\":{\"angle\":\"260\",\"label\":\"80%\",\"labelFont\":\"caption\",\"sections\":\"[{\\\"color\\\":\\\"yellow\\\",\\\"value\\\":0.1},{\\\"color\\\":\\\"blue\\\",\\\"value\\\":0.2},{\\\"color\\\":\\\"orange\\\",\\\"value\\\":0.3},{\\\"color\\\":\\\"green\\\",\\\"value\\\":0.4}]\",\"thickness\":\"10\",\"title\":\"BATTERY\",\"titleFont\":\"caption\",\"value\":0.8},\"children\":[]}]}"
+    },
+    "template/GitHub Profile": {
+      "skipped": "live-data"
     },
     "template/GitHub Repo Stats": {
       "tree": "{\"$element\":\"vstack\",\"props\":{\"background\":\"#eff6ff\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"color\":\"#2563eb\",\"size\":\"26\",\"systemName\":\"network\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"color\":\"#1e3a8a\",\"font\":\"headline\",\"weight\":\"bold\"},\"children\":[\"Refresh unavailable\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#475569\",\"font\":\"caption\"},\"children\":[\"Check your connection and try again later.\"]}]}"

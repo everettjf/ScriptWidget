@@ -517,6 +517,7 @@ export function scriptWidgetKernel(global, host, configJSON) {
       calendars: unavailablePromise("calendar.calendars"),
       events: unavailablePromise("calendar.events"),
     },
+    $services: {},
     $photos: {
       isAvailable: () => false, authorizationStatus: () => "unavailable",
       requestAuthorization: unavailablePromise("photos.authorization"), items: unavailablePromise("photos.items"),
@@ -668,6 +669,47 @@ export function scriptWidgetKernel(global, host, configJSON) {
   }
   // Apply policy after fixture replacement: mocks cannot grant package access.
   let dataQueries = 0;
+  const serviceProfileKeys = ["service", "subject", "username", "displayName", "publicRepositories", "privateRepositories", "followers", "following"];
+  const serviceError = (code, text) => `[service_${code}] ${text}`;
+  const serviceStatus = () => {
+    const mock = apiMocks["$services.status"];
+    if (mock?.error !== undefined) throw new Error(nativeString(mock.error));
+    const value = mock?.value ?? "notConnected";
+    if (!["connected", "notConnected", "notGranted", "unavailable"].includes(value)) throw new Error("[mock_invalid] Invalid service status");
+    return value;
+  };
+  for (const method of ["status", "profile"]) {
+    apis.$services[method] = (rawService) => nativePromise((resolve, reject) => {
+      try {
+        if (!config.hasManifest || !config.manifest?.permissions?.includes("services")) throw new Error(serviceError("permission", "Install this widget and declare services in widget.json"));
+        const service = nativeString(rawService);
+        if (!["github", "spotify"].includes(service)) throw new Error(serviceError("operation", "This service operation is unsupported"));
+        if (timelineProjection || liveActivityPresentation) throw new Error("[timeline_read_only] Read services in the current entry, then reuse a display snapshot");
+        if (++dataQueries > contract.maximumDataQueries) throw new Error("[query_limit] Too many system data queries");
+        if (service !== "github") {
+          if (method === "status") { resolve("unavailable"); return; }
+          throw new Error(serviceError("operation", "This service operation is unsupported"));
+        }
+        const status = serviceStatus();
+        if (method === "status") { resolve(status); return; }
+        if (status === "notConnected") throw new Error(serviceError("not_connected", "Connect GitHub in the app"));
+        if (status === "notGranted") throw new Error(serviceError("permission", "Allow this widget in native Service Accounts"));
+        if (status === "unavailable") throw new Error(serviceError("unavailable", "The service is currently unavailable"));
+        if (!packageAllows("api.github.com")) throw new Error(serviceError("permission", "Declare network and api.github.com in widget.json"));
+        if (++networkRequests > 16) throw new Error("[network_limit] Network request budget exceeded");
+        const mock = apiMocks["$services.profile"];
+        if (mock?.error !== undefined) throw new Error(nativeString(mock.error));
+        const value = mock?.value;
+        const text = (input, max) => typeof input === "string" && utf8ByteLength(input) <= max && !/[\p{Cc}\p{Cf}\p{Cs}]/u.test(input);
+        const count = (input, required = false) => (!required && input === null) || (Number.isSafeInteger(input) && input >= 0);
+        if (!value || typeof value !== "object" || ArrayIsArray(value) || ObjectKeys(value).length !== serviceProfileKeys.length || ObjectKeys(value).some(key => !serviceProfileKeys.includes(key)) ||
+            value.service !== "github" || typeof value.subject !== "string" || !/^[1-9][0-9]{0,15}$/.test(value.subject) || !Number.isSafeInteger(Number(value.subject)) ||
+            !text(value.username,39) || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,38}$/.test(value.username) || !(value.displayName === null || text(value.displayName,256)) ||
+            !count(value.publicRepositories,true) || !["privateRepositories","followers","following"].every(key=>count(value[key]))) throw new Error("[mock_invalid] Invalid service profile fields");
+        resolve(bridgeValue(value, 0));
+      } catch (error) { reject(nativeString(error)); }
+    });
+  }
   const healthStatus = apis.$health.authorizationStatus;
   apis.$health.authorizationStatus = () => config.hasManifest && !config.manifest?.permissions?.includes("health") ? "undeclared" : healthStatus();
   const healthNow = () => datePrototypeGetTime.call(new DateCtor());

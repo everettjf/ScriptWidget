@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-22T07:09:20.197Z",
+  "generatedAt": "2026-10-22T10:46:07.233Z",
   "items": [
     {
       "author": "ScriptWidget Community",
@@ -981,6 +981,42 @@
       "symbol": "heart.text.square",
       "tags": [
         "health"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 4125,
+          "path": "main.jsx",
+          "sha256": "6bc462231b879cbf2bb539a94f42802937a58daf220823568047f29ebdd45811",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/github-profile/main.jsx"
+        },
+        {
+          "bytes": 263,
+          "path": "meta.json",
+          "sha256": "e107dcd5ab291eb8ddc8a1cb4c952f58126e8390a7144d06fff13995d38aa161",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/github-profile/meta.json"
+        },
+        {
+          "bytes": 594,
+          "path": "widget.json",
+          "sha256": "05d19d47abf777fde203b461c3bb34d5c99a4c2cb41f56379eac051de93168ec",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/github-profile/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.github-profile",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "GitHub Profile",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/github-profile",
+      "summary": "Requires Runtime API 1.4. Your authenticated GitHub profile and repository counts, with explicit per-widget account access.",
+      "symbol": "person.crop.rectangle",
+      "tags": [
+        "productivity"
       ],
       "version": "1.0.0"
     }

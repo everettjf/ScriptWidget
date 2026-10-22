@@ -1,0 +1,13 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.github-profile",
+  "name": "GitHub Profile",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.4",
+  "entry": "main.jsx",
+  "supportedFamilies": ["systemSmall", "systemMedium", "systemLarge", "systemExtraLarge", "systemExtraLargePortrait", "accessoryCircular", "accessoryRectangular", "accessoryInline"],
+  "permissions": ["services", "network"],
+  "networkDomains": ["api.github.com"],
+  "description": "Your authenticated GitHub profile and repository counts, with explicit per-widget account access."
+}

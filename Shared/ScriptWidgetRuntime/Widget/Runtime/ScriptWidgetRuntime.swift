@@ -82,7 +82,7 @@ enum ScriptWidgetRuntimeContract {
     static let globalAPIs = [
         "$calendar", "$component", "$console", "$device", "$dynamic_island", "$element",
         "$error", "$fetch", "$file", "$getenv", "$health", "$http", "$import",
-        "$location", "$photos", "$reminders", "$render", "$runtime", "$storage", "$system", "$xml", "console", "fetch",
+        "$location", "$photos", "$reminders", "$render", "$runtime", "$services", "$storage", "$system", "$xml", "console", "fetch",
     ]
 
     static func validateSource(_ source: String) -> ScriptWidgetError? {
@@ -508,6 +508,7 @@ class ScriptWidgetRuntime {
             runtimeContext["$system"] = ScriptWidgetRuntimeSystem.self
             runtimeContext["$calendar"] = ScriptWidgetRuntimeCalendar.self
             runtimeContext["$photos"] = ScriptWidgetRuntimePhotos.self
+            runtimeContext["$services"] = ScriptWidgetRuntimeServices.self
             runtimeContext["$reminders"] = ScriptWidgetRuntimeReminders.self
             runtimeContext["$health"] = ScriptWidgetRuntimeHealth.self
             runtimeContext["$location"] = ScriptWidgetRuntimeLocation.self

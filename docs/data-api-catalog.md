@@ -2,12 +2,14 @@
 
 > Generated from `Editor/editorfe/src/dataAPICatalog.js`. Native JSExport protocols remain authoritative. This catalog is descriptive and grants no permissions.
 
-This covers device, system, health, location, calendar, reminders and photos data methods. Files, network, storage, rendering and runtime configuration retain their own contracts. Platforms list intended real-data support, not mocked browser execution; hardware and OS authorization still determine availability.
+This covers device, system, health, location, calendar, reminders, photos and connected-service data methods. Files, network, storage, rendering and runtime configuration retain their own contracts. Platforms list intended real-data support, not mocked browser execution; hardware and OS authorization still determine availability.
 
 Existing data-method return formats are unchanged. Present manifests now undergo package and minimum-version validation before execution. In particular, HealthKit does not expose individual read-denial status, and location cache presence is not proof that permission is still granted. Default mock values are illustrative, never measurements from the current device.
 
 | API | Minimum native API | Native platforms | Execution | Authorization | Operation |
 | --- | --- | --- | --- | --- | --- |
+| `$services.status(service)` | 1.4 | ios, macos | Promise | serviceAccount | read |
+| `$services.profile(service)` | 1.4 | ios, macos | Promise | serviceAccount | read |
 | `$device.screen()` | 1.0 | ios, macos | Synchronous | none | read |
 | `$device.language()` | 1.0 | ios, macos | Synchronous | none | read |
 | `$device.model()` | 1.0 | ios, macos | Synchronous | none | read |
@@ -66,6 +68,35 @@ Existing data-method return formats are unchanged. Present manifests now undergo
 | `$location.isAuthorizedForWidgetUpdates()` | 1.3 | ios | Synchronous | locationWhenInUse | availability |
 | `$location.requestAuthorization(options?)` | 1.0 | ios | Promise | locationWhenInUse | authorization |
 | `$location.current(options?)` | 1.0 | ios | Promise | locationWhenInUse | read |
+
+## services
+
+Runtime 1.4: status(service) and profile(service) are asynchronous. First provider: github; spotify status is unavailable and profile rejects until native login/refresh integration. Requires an installed owner and services permission. profile additionally requires network and api.github.com in networkDomains, a native connected GitHub account and explicit owner grant. Native Settings handles credentials; scripts cannot log in or obtain tokens. profile returns service, subject, username, displayName, publicRepositories, privateRepositories, followers and following (missing values are null). No live queries in future entries or Live Activities. Eight shared data queries; native requests also share the eight concurrent/32 total network budget, while Web uses its existing preview network budget. Web uses editable best-state samples only; it never authenticates or sends these requests.
+
+### `$services.status`
+
+Default editable preview sample:
+
+```json
+"connected"
+```
+
+### `$services.profile`
+
+Default editable preview sample:
+
+```json
+{
+  "service": "github",
+  "subject": "42",
+  "username": "octocat",
+  "displayName": "Mona",
+  "publicRepositories": 32,
+  "privateRepositories": 8,
+  "followers": 128,
+  "following": 24
+}
+```
 
 ## device
 

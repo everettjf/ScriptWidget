@@ -7,6 +7,7 @@ import { createHash } from "node:crypto";
 const curated = [
   ["Countdown", "countdown"],
   ["GitHub Repo Stats", "github-repo-stats"],
+  ["GitHub Profile", "github-profile"],
   ["Habit Heatmap", "habit-heatmap"],
   ["Habit Streak Tracker", "habit-streak"],
   ["Health Steps Ring", "health-card"],

@@ -188,12 +188,70 @@ async function calendarScope(): Promise<void> {
   } finally { await chrome.close(); }
 }
 
+async function connectedServices(): Promise<void> {
+  const chrome = await launchChrome({width:1400,height:1000,scale:1});
+  try {
+    const page = await chrome.newPage();
+    await page.call("Emulation.setEmulatedMedia",{features:[{name:"prefers-color-scheme",value:"light"}]});
+    const openMocks = async () => {
+      const point = await page.evaluate<{x:number;y:number}>("(() => {const r=[...document.querySelectorAll('[role=tab]')].find(tab=>tab.textContent==='Mock Data').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()");
+      await page.call("Input.dispatchMouseEvent",{type:"mousePressed",...point,button:"left",clickCount:1});
+      await page.call("Input.dispatchMouseEvent",{type:"mouseReleased",...point,button:"left",clickCount:1});
+      await page.waitFor("document.querySelector('[role=tab][aria-selected=true]')?.textContent==='Mock Data' && document.getElementById('mock-data-panel').offsetParent!==null");
+    };
+    await page.goto(studioURL);
+    await page.waitFor("!!document.querySelector('.sw-widget')",20000);
+    const galleryPoint = await page.evaluate<{x:number;y:number}>("(() => {const r=document.getElementById('open-templates').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()");
+    await page.call("Input.dispatchMouseEvent",{type:"mousePressed",...galleryPoint,button:"left",clickCount:1});
+    await page.call("Input.dispatchMouseEvent",{type:"mouseReleased",...galleryPoint,button:"left",clickCount:1});
+    await page.waitFor("[...document.querySelectorAll('.template-card')].some(card=>card.textContent.includes('GitHub Profile'))");
+    await page.evaluate("[...document.querySelectorAll('.template-card')].find(card=>card.textContent.includes('GitHub Profile')).click()");
+    await page.waitFor("!!document.getElementById('template-copy')");
+    await page.evaluate("document.getElementById('template-copy').click()");
+    await page.waitFor("document.getElementById('project-name').value==='GitHub Profile' && document.querySelector('.sw-widget')?.textContent.includes('Mona')",20000);
+    await openMocks();
+    await page.waitFor("!!document.getElementById('mock-group')");
+    await page.evaluate("(() => {const input=document.getElementById('mock-group');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,'services');input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    await page.waitFor("document.getElementById('mock-data-panel').textContent.includes('GitHub sample data only')");
+    await page.evaluate("(() => {const input=document.getElementById('mock-api');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,'$services.profile');input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    await page.waitFor("!!document.getElementById('mock-result.publicRepositories')");
+    await page.evaluate("(() => {const input=document.getElementById('mock-result.publicRepositories');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'47');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
+    await page.waitFor("document.querySelector('.sw-widget')?.textContent.includes('47')",20000);
+    const scenario = async (label: string, expected: string) => {
+      await page.evaluate(`[...document.getElementById('mock-data-panel').querySelectorAll('button')].find(button=>button.textContent===${JSON.stringify(label)}).click()`);
+      await page.waitFor(`document.querySelector('.sw-widget')?.textContent.includes(${JSON.stringify(expected)})`,20000);
+      if (!(await page.evaluate<boolean>("document.querySelector('[role=tab][aria-selected=true]')?.textContent==='Mock Data'"))) throw new Error("Service editing must keep its visible Mock Data panel");
+    };
+    await scenario("Disconnected","Connect GitHub");
+    await scenario("No widget access","Allow this widget");
+    await scenario("Private count not shared","Private repository count not shared");
+    await scenario("Rate limited","Try again later");
+    await scenario("Offline","Unable to refresh");
+    await page.waitFor("document.getElementById('save-state').textContent==='Saved in this browser'");
+    await page.goto(studioURL);
+    await page.waitFor("document.getElementById('project-name').value==='GitHub Profile' && document.querySelector('.sw-widget')?.textContent.includes('Unable to refresh')",20000);
+    await openMocks();
+    await page.waitFor("!!document.getElementById('mock-group')");
+    await page.evaluate("(() => {const input=document.getElementById('mock-group');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,'services');input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    await scenario("Sample success","Mona");
+    await page.evaluate("(() => {const input=document.getElementById('mock-api');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,'$services.profile');input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    await page.waitFor("document.getElementById('mock-result.publicRepositories')?.offsetParent!==null && document.getElementById('save-state').textContent==='Saved in this browser'");
+    if (process.env.SCRIPTWIDGET_SERVICES_SCREENSHOT) {
+      await page.evaluate("document.getElementById('mock-result.publicRepositories').scrollIntoView({block:'end'})");
+      fs.writeFileSync(process.env.SCRIPTWIDGET_SERVICES_SCREENSHOT,await page.screenshot());
+    }
+    if (exceptions(page).length) throw new Error(exceptions(page).join("\n"));
+    console.log("services: healthy GitHub template, editable counts, revoked/missing/private/limited/offline states and persisted mocks passed");
+  } finally { await chrome.close(); }
+}
+
 try {
   await desktop();
   await phone();
   await blockedSandbox();
   await scheduledTheme();
   await calendarScope();
+  await connectedServices();
 } catch (error) {
   console.error((error as Error).message);
   failed = true;

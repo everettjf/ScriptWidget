@@ -153,7 +153,7 @@ Apple 的 [EventKit 授权](https://developer.apple.com/documentation/eventkit/a
 先建立安全的原生授权能力，再接音乐和其他需要登录的服务。Data Source Plugin 仍是声明式映射，不能借接入服务扩大脚本权限。
 
 - [ ] M4-1 设计原生授权账户与凭据引用：Keychain 保存、按服务/用户隔离、刷新、注销、撤销和删除。OAuth 流程验证 state、PKCE、回调与服务域名。
-  - 原生凭据、PKCE、账户/连接绑定、Keychain owner 操作授权和固定请求计划已开发；两个平台保留各自默认 Keychain 组，服务使用独立共享组。GitHub 原生连接/逐组件授权/本机断开界面与有界只读 HTTP 代理已接入；账户/凭据/策略使用原子 Keychain 项，过期草稿与在途撤权会失效。独立 37 项回归通过，公开脚本接口、OAuth 登录/刷新协调、持久化写收据及 Web Mock 尚未接入。详见 [服务账户基础](service-accounts-foundation.md)，M4-1/M4-2 保持未勾选。
+  - 原生凭据、PKCE、账户/连接绑定、Keychain owner 操作授权和固定请求计划已开发；两个平台保留各自默认 Keychain 组，服务使用独立共享组。GitHub 原生连接/逐组件授权/本机断开界面与有界只读 HTTP 代理已接入；账户/凭据/策略使用原子 Keychain 项，过期草稿与在途撤权会失效。独立 37 项基础回归通过；现已接通 `$services` 的 GitHub 状态/资料、真实 owner 授权检查、共享执行预算与取消、原生 GitHub Profile 模板及可编辑 Web Mock。72 组实际原生/Web 树对照已通过。OAuth 登录/刷新协调、持久化音乐写收据及真实账户/签名容器验收仍待完成。详见 [服务账户基础](service-accounts-foundation.md)，M4-1/M4-2 保持未勾选。
 - [ ] M4-2 请求代理在原生侧注入凭据；脚本、包、插件、AI 提示、日志和导出文件均不能取得令牌。补恶意域名、跨账户、撤权和重定向测试。
 - [ ] M4-3 做 Apple Music 最小原型：授权、可读取曲目范围、允许的播放操作、订阅和后台限制。基于 [MusicKit](https://developer.apple.com/documentation/musickit) 的实际验证结果定公开 API。
 - [ ] M4-4 对 Spotify 等服务逐个核验官方接口、账户要求及接入资格；通过后实现适配器，未通过时提供明确的不可用状态或启动链接。
@@ -195,7 +195,7 @@ Apple 的 [EventKit 授权](https://developer.apple.com/documentation/eventkit/a
 
 ## 顺序、迭代和发布
 
-本次顺序为 `基线盘点 → M1/M2 收尾 → 全量与设备验收 → M0 构建上传`；M3–M5 后续继续。M2、M3 中已具备依赖的项目可提前实现；M5 的代码往返模型在 M1 契约稳定后设计。M6、M7 不进入本轮排期。
+按最新范围，沿用已有 M1/M2 成果，继续 `M3 个人数据 → M4 授权服务与音乐 → M5 创作工具 → 全量与设备验收 → M0 构建上传`，统一在 `codex/release-m1-m2` 和 PR #62 提交并准备一起发布。M5 的代码往返模型依赖已稳定的 M1 契约。M6、M7 不进入本轮排期；前文的 M1/M2 单独发版安排只作为历史保留。
 
 采用可演示增量推进，每个增量更新执行记录和测试证据。开发中的本地修改、已通过的测试、已部署的 Web 和已上传的原生构建分别记录。目前不承诺固定截止日，尤其 M4 的第三方服务需先核验接入资格与真实设备行为。
 

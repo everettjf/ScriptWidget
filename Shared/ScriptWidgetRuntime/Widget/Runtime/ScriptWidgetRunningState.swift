@@ -31,6 +31,7 @@ final class ScriptWidgetExecutionSession {
     let callbackQueue = DispatchQueue(label: "ScriptWidget.ExecutionCallbacks", qos: .userInitiated)
     private let lock = NSLock()
     private var tasks: [ObjectIdentifier: URLSessionTask] = [:]
+    private var serviceNetworkRequests: Set<UUID> = []
     private var cancellationHandlers: [UUID: () -> Void] = [:]
     private(set) var totalDataQueries = 0
     private(set) var totalNetworkRequests = 0
@@ -54,11 +55,22 @@ final class ScriptWidgetExecutionSession {
         lock.lock()
         defer { lock.unlock() }
         guard cancellation == nil,
-              tasks.count < Self.maximumConcurrentNetworkRequests,
+              tasks.count + serviceNetworkRequests.count < Self.maximumConcurrentNetworkRequests,
               totalNetworkRequests < Self.maximumTotalNetworkRequests else { return false }
         tasks[ObjectIdentifier(task)] = task
         totalNetworkRequests += 1
         return true
+    }
+
+    func registerServiceNetworkRequest() -> UUID? {
+        lock.lock(); defer { lock.unlock() }
+        guard cancellation == nil, tasks.count + serviceNetworkRequests.count < Self.maximumConcurrentNetworkRequests,
+              totalNetworkRequests < Self.maximumTotalNetworkRequests else { return nil }
+        let id = UUID(); serviceNetworkRequests.insert(id); totalNetworkRequests += 1; return id
+    }
+
+    func completeServiceNetworkRequest(_ id: UUID) {
+        lock.lock(); defer { lock.unlock() }; serviceNetworkRequests.remove(id)
     }
 
     func complete(_ task: URLSessionTask) {
@@ -91,6 +103,7 @@ final class ScriptWidgetExecutionSession {
         let activeTasks = Array(tasks.values)
         let handlers = Array(cancellationHandlers.values)
         tasks.removeAll()
+        serviceNetworkRequests.removeAll()
         cancellationHandlers.removeAll()
         lock.unlock()
         activeTasks.forEach { $0.cancel() }
@@ -214,6 +227,8 @@ class ScriptWidgetRunningState {
     var fetchManagerForTesting: ScriptWidgetFetchManager?
     var expandedHealthProviderForTesting: (any ScriptWidgetExpandedHealthProviding)?
     var calendarProviderForTesting: ScriptWidgetCalendarProvider?
+    var serviceConnectionsForTesting: ScriptWidgetServiceConnections?
+    var serviceReaderForTesting: ScriptWidgetServiceReader?
     var photosProviderForTesting: (any ScriptWidgetPhotosProviding)?
     var remindersProviderForTesting: (any ScriptWidgetRemindersProviding)?
     #endif

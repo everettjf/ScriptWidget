@@ -163,6 +163,13 @@ enum PromptBuilder {
             downloaded in Photos first; show unavailableCount and setup states.
             Future entries and Live Activity presentations need a prepared snapshot.
             Do not use a Web sample as evidence of native access or seed fake photos.
+            Connected account profiles use await $services.status("github") and
+            await $services.profile("github"), services + network permissions and
+            api.github.com. The installed widget owner must be allowed in native
+            Service Accounts. Tokens never belong in scripts, parameters, mocks
+            or AI context. Preserve null private counts; do not turn errors into
+            zero data. Spotify login/control is not yet available. Service reads
+            cannot run in future entries or Live Activity presentations.
             Reminders needs the reminders package permission and system approval.
             Use lists() for permitted IDs; items() is read-only with listIDs,
             start/end (up to 31 days), limit (up to 50) and completed Boolean.

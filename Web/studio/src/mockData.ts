@@ -51,6 +51,19 @@ export function parseMocks(text: string): MockObject {
     if (!isObject(response) || (("value" in response) === ("error" in response))) throw new Error(`${name} needs either value or error.`);
     if ("error" in response && typeof response.error !== "string") throw new Error(`${name} error must be text.`);
   }
+  if (isObject(value.api)) {
+    const status = value.api["$services.status"], profile = value.api["$services.profile"];
+    if (isObject(status) && "value" in status && !["connected", "notConnected", "notGranted", "unavailable"].includes(String(status.value))) throw new Error("Service status must be connected, notConnected, notGranted or unavailable.");
+    if (isObject(profile) && "value" in profile) {
+      const item = profile.value, keys = ["service", "subject", "username", "displayName", "publicRepositories", "privateRepositories", "followers", "following"];
+      const text = (raw: MockValue | undefined, max: number) => typeof raw === "string" && new TextEncoder().encode(raw).length <= max && !/[\p{Cc}\p{Cf}\p{Cs}]/u.test(raw);
+      const count = (raw: MockValue | undefined, required = false) => (!required && raw === null) || (typeof raw === "number" && Number.isSafeInteger(raw) && raw >= 0);
+      if (!isObject(item) || Object.keys(item).length !== keys.length || Object.keys(item).some(key => !keys.includes(key)) || item.service !== "github" ||
+          typeof item.subject !== "string" || !/^[1-9][0-9]{0,15}$/.test(item.subject) || !Number.isSafeInteger(Number(item.subject)) ||
+          !text(item.username,39) || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,38}$/.test(String(item.username)) || !(item.displayName === null || text(item.displayName,256)) ||
+          !count(item.publicRepositories,true) || !["privateRepositories","followers","following"].every(key=>count(item[key]))) throw new Error("Service profile needs the documented GitHub fields only, bounded text and nonnegative safe counts. Do not put credentials in mock data.");
+    }
+  }
   for (const key of ["fetch", "dataSource"]) {
     if (value[key] !== undefined && !Array.isArray(value[key])) throw new Error(`${key} must be an array.`);
     if (Array.isArray(value[key])) for (const item of value[key]) {
@@ -134,4 +147,13 @@ export function permissionScenario(text: string, group: "health" | "location" | 
     result = setResponse(result, api.id, response);
   }
   return result;
+}
+
+export type ServiceScenario = "connected" | "notConnected" | "notGranted" | "empty" | "publicOnly" | "expired" | "rateLimited" | "offline";
+export function serviceScenario(text: string, scenario: ServiceScenario): string {
+  const sample = mockAPIs.find(api => api.id === "$services.profile")!.value as MockObject;
+  let result = setResponse(text, "$services.status", {value: ["notConnected", "notGranted"].includes(scenario) ? scenario : "connected"});
+  const errors: Partial<Record<ServiceScenario,string>> = {expired:"[service_expired] Reconnect GitHub in the app.",rateLimited:"[service_rate_limit] GitHub is rate limited. Try later.",offline:"[service_unavailable] Service unavailable. Try again when online."};
+  const value = scenario === "empty" ? {...sample,publicRepositories:0,privateRepositories:0,followers:0,following:0} : scenario === "publicOnly" ? {...sample,privateRepositories:null} : sample;
+  return setResponse(result, "$services.profile", errors[scenario] ? {error:errors[scenario]!} : {value});
 }

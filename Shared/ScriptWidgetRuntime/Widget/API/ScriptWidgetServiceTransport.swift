@@ -201,7 +201,7 @@ enum ScriptWidgetServiceResponseDecoder {
         case .githubProfile:
             guard let id = try fields.integer("id", required: true), id > 0,
                   let username = try fields.text("login", required: true, maximum: 39),
-                  username.range(of: #"^[A-Za-z0-9][A-Za-z0-9-]{0,38}$"#, options: .regularExpression) != nil else { throw ScriptWidgetServiceError.unavailable }
+                  username.range(of: #"^[A-Za-z0-9][A-Za-z0-9_-]{0,38}$"#, options: .regularExpression) != nil else { throw ScriptWidgetServiceError.unavailable }
             return .profile(.init(service: .github, subject: String(id), username: username, displayName: try fields.text("name"),
                 publicRepositories: try fields.integer("public_repos", required: true), privateRepositories: try fields.integer("total_private_repos"),
                 followers: try fields.integer("followers"), following: try fields.integer("following")))

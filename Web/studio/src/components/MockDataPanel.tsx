@@ -3,10 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { addSampleMocks, isObject, mockAPIs, parseMocks, permissionScenario, responseFor, sampleFixtures, setResponse, type MockObject, type MockValue } from "@/mockData.ts";
+import { addSampleMocks, isObject, mockAPIs, parseMocks, permissionScenario, responseFor, sampleFixtures, serviceScenario, setResponse, type MockObject, type MockValue } from "@/mockData.ts";
 
-const groups = ["calendar", "reminders", "photos", "health", "location", "device", "system", "network", "storage", "dataSource", "json"];
-const labels: Record<string, string> = { calendar: "Calendar", reminders: "Reminders", photos: "Photos", health: "Health", location: "Location", device: "Device", system: "System", network: "Network responses", storage: "Storage", dataSource: "Data Source Plugins", json: "Full JSON" };
+const groups = ["services", "calendar", "reminders", "photos", "health", "location", "device", "system", "network", "storage", "dataSource", "json"];
+const labels: Record<string, string> = { services: "Connected services", calendar: "Calendar", reminders: "Reminders", photos: "Photos", health: "Health", location: "Location", device: "Device", system: "System", network: "Network responses", storage: "Storage", dataSource: "Data Source Plugins", json: "Full JSON" };
 
 // Primitive leaves use normal form fields. Arrays and uncommon payloads can
 // always be edited in the return JSON without losing unknown properties.
@@ -68,6 +68,10 @@ export function MockDataPanel({ fixtures, onChange }: { fixtures: string; onChan
         {(group === "health" || group === "location" || group === "calendar" || group === "reminders" || group === "photos") && <div className="flex flex-wrap gap-1">{(group === "health" ? ["granted", "empty", "unavailable"] as const : ["granted", "empty", "denied", "unavailable"] as const).map((item) => <Button key={item} variant="outline" size="xs" onClick={() => commit(() => permissionScenario(fixtures, group, item))}>{item === "granted" ? "Sample success" : item === "empty" ? (group === "health" ? "No shared data" : "No data") : item === "denied" ? "Permission denied" : "Unavailable"}</Button>)}</div>}
         <div className="flex items-center gap-2"><Label htmlFor="mock-mode" className="text-xs">Response</Label><select id="mock-mode" className="h-8 rounded-md border bg-background px-2 text-xs" value={mode} onChange={(event) => { setMode(event.target.value); setDraft(JSON.stringify(event.target.value === "error" ? "Simulated failure" : api.value, null, 2)); }}><option value="value">{writeResponse ? "Model-derived receipt" : "Return value"}</option><option value="error">Throw / reject error</option></select><Button size="xs" variant="ghost" className="ml-auto" onClick={() => commit(() => setResponse(fixtures, selected, responseFor(sampleFixtures(), api)))}>Reset this API</Button></div>
         {!writeResponse && mode === "value" && "value" in response && <ValueFields value={response.value!} onChange={(value) => commit(() => setResponse(fixtures, selected, { value }))} />}
+      </>}
+      {group === "services" && <>
+        <p className="text-xs text-muted-foreground">GitHub sample data only. Use $services.status("github") and $services.profile("github"). Native widgets need services access, network access to api.github.com, and approval in Service Accounts. This browser never authenticates; do not paste tokens here.</p>
+        <div className="flex flex-wrap gap-1">{(["connected", "notConnected", "notGranted", "empty", "publicOnly", "expired", "rateLimited", "offline"] as const).map(scenario => <Button key={scenario} variant="outline" size="xs" onClick={() => commit(() => serviceScenario(fixtures, scenario))}>{{connected:"Sample success",notConnected:"Disconnected",notGranted:"No widget access",empty:"Zero counts",publicOnly:"Private count not shared",expired:"Token expired",rateLimited:"Rate limited",offline:"Offline"}[scenario]}</Button>)}</div>
       </>}
       {group === "photos" && <>
         <p className="text-xs text-muted-foreground">Declare photos in widget.json. Native access defaults to no selection. The browser uses sample images; it cannot read your system photo library. In Full JSON, photosSelection lists allowed sample IDs and photosSnapshotPrepared controls future-entry cache availability. Edit authorizationStatus to limited for limited system access.</p>
