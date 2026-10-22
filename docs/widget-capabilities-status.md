@@ -2,6 +2,8 @@
 
 更新：2026-10-22。用户已确认本轮冻结范围：完成已开始的内容；未开始的功能记入 [TODO](widget-capabilities-todo.md)，暂不开发。代码仍统一在 `codex/release-m1-m2` / [PR #62](https://github.com/everettjf/scriptwidget/pull/62)，不以实现全部 M3–M5 作为本轮收尾条件。阶段交付不等于已经部署或完成商店发布。
 
+当前后续顺序见 [现行规划](widget-capabilities-plan.md)：先验收发布已有成果，再选择创作体验或音乐服务的小批次；历史 M 编号不再作为整阶段完成门槛。
+
 ## 已实现并纳入本轮
 
 | 范围 | 已有成果 | 实际边界 |

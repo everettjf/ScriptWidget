@@ -975,3 +975,9 @@ Web 只对使用到的 GIF 顺序预检，有界流读取或直接解码 data UR
 - iOS：`/tmp/scriptwidget-runtime-delivery/ios-tests/Logs/Test/Test-ScriptWidgetRuntimeTests-2026.10.22_11-04-09--0700.xcresult`
 
 最终 gate 后仅补文档、验证记录及 PR 说明。没有进行真实服务登录、物理设备或签名 Keychain/iCloud 验收；没有部署 Web、上传原生构建或提交审核。Spotify 未配置提示保留，App Review 仍由用户操作。本轮开发阶段收尾不替代发布门槛。
+
+### 2026-10-22：按发布优先重新整理规划（仅文档）
+
+用户要求重新整理规划。现行规划改为 A 当前版本验收发布、B 创作体验候选、C 音乐与服务候选、D 长期方向。原规划保存在 `widget-capabilities-plan-history.md`，避免历史 M1/M2 单独发布和全量 M3–M5 安排混入当前排期。TODO 使用 R/N/S/L 稳定编号，分开已实现内容待验收、未开发功能与外部配置前提。
+
+当前功能开发仍暂停；没有执行设备验收、部署、上传或新增运行时代码。现有测试计数仅引用前一实现版本的证据，不作为本次新执行。此次按纯文档范围运行链接与 release metadata 校验。

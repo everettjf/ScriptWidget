@@ -30,7 +30,8 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 
 ## Build and ship
 
-- [Widget capability expansion plan](widget-capabilities-plan.md) — phased coverage of 22 competitor-inspired capabilities, dependencies, acceptance criteria, and release gates.
+- [Widget delivery plan](widget-capabilities-plan.md) — release the implemented scope first, then select separate authoring or service batches; long-term ideas remain deferred.
+- [Widget delivery status](widget-capabilities-status.md) and [TODO](widget-capabilities-todo.md) — implemented scope, release acceptance and deferred work; [original capability plan](widget-capabilities-plan-history.md) is historical reference.
 - [Runtime API contract](scriptwidget-runtime-api.md) — versioning and compatibility policy.
 - [Connected Services API](services-api.md) — authenticated GitHub profiles, per-widget access and editable Web mocks.
 - [Music playback API](music-api.md) — read-only iOS Music app snapshots and editable Web samples.
