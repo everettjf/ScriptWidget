@@ -45,6 +45,7 @@ final class EditorInternalWebView: WKWebView {
     private var pendingActions: [() -> Void] = []
     private var cancellables = Set<AnyCancellable>()
     private var currentDocumentID: String?
+    private var documentGeneration = UUID()
     private var requestedDocumentID: String?
     private let documentSession = StudioDocumentSession()
     private var hasLoadedEditor = false
@@ -121,6 +122,7 @@ final class EditorInternalWebView: WKWebView {
             self.scriptModel = model
             self.currentRelativePath = resolvedRelativePath
             self.currentDocumentID = documentID
+            self.documentGeneration = UUID()
             self.openCurrentDocument()
         }
 
@@ -215,9 +217,11 @@ final class EditorInternalWebView: WKWebView {
             completion?(false)
             return
         }
+        let generation = documentGeneration
         callStudio(handlerName: StudioProtocol.editorGetState) { [weak self] response in
             guard
                 let self,
+                self.documentGeneration == generation,
                 let state = response as? [String: Any],
                 let content = state["content"] as? String,
                 self.currentDocumentID == documentID,
@@ -241,7 +245,9 @@ final class EditorInternalWebView: WKWebView {
     }
 
     private func replaceDocument(with content: String) {
-        guard isEditorReady, scriptModel?.package.readonly == false else { return }
+        guard isEditorReady, scriptModel?.package.readonly == false,
+              let documentID = currentDocumentID else { return }
+        let generation = documentGeneration
         callStudio(
             handlerName: StudioProtocol.documentReplace,
             payload: ["content": content, "version": 0]
@@ -249,7 +255,12 @@ final class EditorInternalWebView: WKWebView {
             guard let self else { return }
             let result = (response as? [String: Any])?["result"] as? String
             guard result == "ok" else { return }
-            _ = save(content: content)
+            guard self.currentDocumentID == documentID,
+                  self.documentGeneration == generation,
+                  self.scriptModel?.package.readonly == false else { return }
+            // Flush current text; a delayed proposal acknowledgement must not
+            // overwrite edits made since the replacement was shown.
+            self.saveCurrentContent()
         }
     }
 

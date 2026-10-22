@@ -78,31 +78,40 @@ The editor budgets are enforced by repeated CodeMirror state creation and edit t
 5. Archive both apps with distribution signing, validate, then distribute to TestFlight for a final smoke pass.
 6. Tag the exact tested commit; never rebuild from an untested commit.
 
-### Automated Apple release
+### Apple build/upload and manual review
 
-`Scripts/release-apple.sh` increments the shared patch and build numbers for the
-iOS and macOS apps and their extensions, runs the release gate, archives and
-uploads both builds to TestFlight, waits for processing, attaches the builds to
-their platform versions, and submits both versions to App Review.
+For the current A/B release, App Review is submitted manually by the user.
+`Scripts/release-apple.sh --testflight-only` increments the shared patch/build
+versions, runs the release gate, archives iOS/macOS and uploads both builds to
+TestFlight. It does not submit App Review with that option.
 
 ```sh
 export APPLE_ID='developer@example.com'
 export APPLE_SPECIFIC_PASSWORD='xxxx-xxxx-xxxx-xxxx'
 export APPLE_TEAM_ID='ABCDE12345'
-export APP_STORE_CONNECT_API_KEY_ID='ABC123DEFG'
-export APP_STORE_CONNECT_API_ISSUER_ID='00000000-0000-0000-0000-000000000000'
-export APP_STORE_CONNECT_API_KEY_PATH="$HOME/private/AuthKey_ABC123DEFG.p8"
 
-./Scripts/release-apple.sh --dry-run
-./Scripts/release-apple.sh --yes
+./Scripts/release-apple.sh --dry-run --testflight-only
+./Scripts/release-apple.sh --yes --testflight-only
 ```
+
+The helper always increments the project versions; inspect dry-run output before
+using it. The current prepared source is 27.1.3 (27013), so calling the helper
+would choose the next patch/build, rather than upload an existing 27013 archive.
+If the intended store version is already prepared, archive/export that exact
+source with Xcode and upload its artifacts without invoking this version bump.
+A signed Debug device build is not an App Store distribution archive.
 
 The Developer Team ID selects the signing team; Xcode still needs a valid local
 distribution certificate/profile or an authenticated developer account. The
-Apple ID and app-specific password authenticate binary validation. App Review
-submission additionally requires an App Store Connect API key with App Manager
-or Admin access; an app-specific password does not authorize App Store Connect
-API operations. No third-party release tool or Ruby gem is used: the script
-uses Xcode command-line tools and a Ruby-standard-library API client. Keep the
-`.p8` file outside the repository. The script reuses metadata and screenshots
-already present in App Store Connect and does not commit or tag automatically.
+Apple ID and app-specific password authenticate binary validation and upload.
+No third-party release tool or Ruby gem is used. The script reuses metadata and
+screenshots already present in App Store Connect and does not commit or tag
+changes automatically.
+
+The existing general-purpose helper, when run **without `--testflight-only`**,
+also waits for processing, attaches builds and submits App Review. That path
+requires `APP_STORE_CONNECT_API_KEY_ID`, `APP_STORE_CONNECT_API_ISSUER_ID` and
+`APP_STORE_CONNECT_API_KEY_PATH` with App Manager/Admin access. It is outside the
+current user-authorized review workflow. Do not omit the option or invoke
+`app-store-connect-submit.rb` for this release; the user completes review in
+App Store Connect. Keep credentials and `.p8` files outside the repository.

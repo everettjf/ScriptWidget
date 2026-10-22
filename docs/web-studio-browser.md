@@ -30,8 +30,12 @@ the browser and previews them itself.
   `$import`, and images under `image/`. **Add image…** uploads PNG, JPEG, WebP,
   or GIF files (up to 8 MB) for `<image id="name" />` and `<gif file="name" />`.
 - The editor has ScriptWidget completions, hover help, and diagnostics.
-- Projects are saved in this browser automatically. Clearing site data removes
-  them, so export a `.swt` to keep a copy.
+- Projects are saved in this browser automatically after the editing debounce.
+  Switching projects flushes the outgoing draft. **Saved in this browser** appears
+  only after the tracked drafts are stored; an older completion cannot clear a
+  newer edit or hide an outgoing draft. Saves/deletions are ordered. Wait for the
+  saved state before closing; clearing site data removes drafts, so export a
+  `.swt` to keep a copy. If storage is unavailable, the UI asks you to export.
 
 ## Preview
 

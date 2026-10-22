@@ -34,25 +34,40 @@ async function run<T>(mode: IDBTransactionMode, action: (store: IDBObjectStore) 
 const memory = new Map<string, Project>();
 let persistent = typeof indexedDB !== "undefined";
 
+// Preserve mutation order even when opening IndexedDB takes different amounts
+// of time. A late older write must not replace a newer save or undo a removal.
+let operations: Promise<unknown> = Promise.resolve();
+function ordered<T>(operation: () => Promise<T>): Promise<T> {
+  const result = operations.then(operation, operation);
+  operations = result.then(() => undefined, () => undefined);
+  return result;
+}
+
 export const storage = {
   get persistent(): boolean { return persistent; },
   async list(): Promise<Project[]> {
-    if (!persistent) return [...memory.values()];
-    try { return (await run<Project[]>("readonly", (store) => store.getAll())) ?? []; } catch { persistent = false; return [...memory.values()]; }
+    return ordered(async () => {
+      if (!persistent) return [...memory.values()];
+      try { return (await run<Project[]>("readonly", (store) => store.getAll())) ?? []; } catch { persistent = false; return [...memory.values()]; }
+    });
   },
   async save(project: Project): Promise<Project> {
     const value = { ...project, updatedAt: Date.now() };
     memory.set(value.id, value);
-    if (persistent) {
-      try { await run("readwrite", (store) => store.put(value)); } catch { persistent = false; }
-    }
+    await ordered(async () => {
+      if (persistent) {
+        try { await run("readwrite", (store) => store.put(value)); } catch { persistent = false; }
+      }
+    });
     return value;
   },
   async remove(id: string): Promise<void> {
     memory.delete(id);
-    if (persistent) {
-      try { await run("readwrite", (store) => store.delete(id)); } catch { persistent = false; }
-    }
+    await ordered(async () => {
+      if (persistent) {
+        try { await run("readwrite", (store) => store.delete(id)); } catch { persistent = false; }
+      }
+    });
   },
 };
 

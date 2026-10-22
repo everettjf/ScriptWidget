@@ -32,15 +32,46 @@ export function useProjects(): ProjectsModel {
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const dirty = useRef(false);
   const latest = useRef<Project | null>(null);
-  latest.current = project;
+  const drafts = useRef(new Map<string, Project>());
+  const dirtyProjects = useRef(new Set<string>());
+  const pending = useRef(new Map<Project, Promise<void>>());
+
+  const persist = useCallback((snapshot: Project): Promise<void> => {
+    const existing = pending.current.get(snapshot);
+    if (existing) return existing;
+    if (drafts.current.get(snapshot.id) !== snapshot) return Promise.resolve();
+    const task = (async () => {
+      const saved = await storage.save(snapshot);
+      // An older completion must not clear a newer edit, resurrect a removed
+      // project, or mark another project's draft as saved.
+      if (drafts.current.get(snapshot.id) !== snapshot) return;
+      drafts.current.set(saved.id, saved);
+      dirtyProjects.current.delete(saved.id);
+      setProjects((list) => list.map((item) => item.id === saved.id ? saved : item));
+      if (latest.current === snapshot) {
+        latest.current = saved;
+        dirty.current = false;
+        setProject(saved);
+      }
+      // Do not display Saved on a different open project while an outgoing
+      // draft is still waiting for its own durable write.
+      setSaveState(!storage.persistent ? "unavailable" : dirtyProjects.current.size ? "editing" : "saved");
+    })().finally(() => { pending.current.delete(snapshot); });
+    pending.current.set(snapshot, task);
+    return task;
+  }, []);
 
   const openProject = useCallback((next: Project) => {
-    dirty.current = false;
-    latest.current = next;
-    preferences.write("project", next.id);
-    setProject(next);
-    setPath(initialPath(next));
-  }, []);
+    if (dirty.current && latest.current) void persist(latest.current);
+    const current = drafts.current.get(next.id) ?? next;
+    drafts.current.set(current.id, current);
+    dirty.current = dirtyProjects.current.has(current.id);
+    latest.current = current;
+    preferences.write("project", current.id);
+    setProject(current);
+    setPath(initialPath(current));
+    setSaveState(!storage.persistent ? "unavailable" : dirtyProjects.current.size ? "editing" : "saved");
+  }, [persist]);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,6 +83,7 @@ export function useProjects(): ProjectsModel {
         list = [starter];
       }
       if (cancelled) return;
+      drafts.current = new Map(list.map((item) => [item.id, item]));
       setProjects(list);
       const lastID = preferences.read<string | null>("project", null);
       openProject(list.find((item) => item.id === lastID) ?? list[0]!);
@@ -60,53 +92,61 @@ export function useProjects(): ProjectsModel {
     return () => { cancelled = true; };
   }, [openProject]);
 
-  // Debounced save of the edited project.
+  // Debounce only the current revision; switching flushes its snapshot first.
   useEffect(() => {
-    if (!project || !dirty.current) return;
-    setSaveState("editing");
-    const timer = setTimeout(async () => {
-      const saved = await storage.save(project);
-      dirty.current = false;
-      setProjects((list) => list.map((item) => (item.id === saved.id ? saved : item)));
-      setSaveState(storage.persistent ? "saved" : "unavailable");
-    }, 400);
+    if (!project || !dirtyProjects.current.has(project.id)) return;
+    const timer = setTimeout(() => { void persist(project); }, 400);
     return () => clearTimeout(timer);
-  }, [project]);
+  }, [project, persist]);
 
   useEffect(() => {
-    const flush = () => { if (dirty.current && latest.current) void storage.save(latest.current); };
+    const flush = () => {
+      for (const id of dirtyProjects.current) {
+        const snapshot = drafts.current.get(id);
+        if (snapshot) void persist(snapshot);
+      }
+    };
     const onVisibility = () => { if (document.visibilityState === "hidden") flush(); };
     window.addEventListener("beforeunload", flush);
     document.addEventListener("visibilitychange", onVisibility);
     return () => { window.removeEventListener("beforeunload", flush); document.removeEventListener("visibilitychange", onVisibility); };
-  }, []);
+  }, [persist]);
 
   const edit = useCallback((change: (current: Project) => Project) => {
     const current = latest.current;
-    if (!current) return;
+    if (!current || drafts.current.get(current.id) !== current) return;
     dirty.current = true;
     const next = change(current);
     latest.current = next;
+    drafts.current.set(next.id, next);
+    dirtyProjects.current.add(next.id);
+    setProjects((list) => list.map((item) => item.id === next.id ? next : item));
     setProject(next);
+    setSaveState(storage.persistent ? "editing" : "unavailable");
   }, []);
 
   const addProject = useCallback(async (next: Project) => {
-    await storage.save(next);
-    setProjects((list) => [next, ...list.filter((item) => item.id !== next.id)]);
-    openProject(next);
+    const saved = await storage.save(next);
+    drafts.current.set(saved.id, saved);
+    setProjects((list) => [saved, ...list.filter((item) => item.id !== saved.id)]);
+    openProject(saved);
   }, [openProject]);
 
   const removeProject = useCallback(async (id: string) => {
+    drafts.current.delete(id);
+    dirtyProjects.current.delete(id);
+    if (latest.current?.id === id) dirty.current = false;
     await storage.remove(id);
-    let remaining = projects.filter((item) => item.id !== id);
+    let remaining = [...drafts.current.values()];
     if (remaining.length === 0) {
       const fresh = createProject();
-      await storage.save(fresh);
-      remaining = [fresh];
+      const saved = await storage.save(fresh);
+      drafts.current.set(saved.id, saved);
+      remaining = [...drafts.current.values()];
     }
     setProjects(remaining);
-    if (latest.current?.id === id) openProject(remaining[0]!);
-  }, [projects, openProject]);
+    if (latest.current?.id === id) { latest.current = null; openProject(remaining[0]!); }
+  }, [openProject]);
 
   const updateFiles = useCallback((changes: Record<string, string | Uint8Array | null>) => {
     edit((current) => {

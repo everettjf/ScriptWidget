@@ -148,6 +148,100 @@ final class VisualLayoutEditorTests: XCTestCase {
         """)
         let retained = try await content(web); XCTAssertEqual(retained, source)
     }
+    @MainActor func testDelayedNativeReplacementCannotSaveIntoAnotherDocument() async throws {
+        try await assertDelayedNativeReplacement(returnToFirst: false)
+    }
+    @MainActor func testDelayedNativeReplacementCannotOverwriteAReopenedDocument() async throws {
+        try await assertDelayedNativeReplacement(returnToFirst: true)
+    }
+    @MainActor func testDelayedNativeReplacementPreservesNewerEditsInTheSameDocument() async throws {
+        try await assertDelayedNativeReplacement(returnToFirst: true, stayOnFirst: true)
+    }
+    @MainActor private func assertDelayedNativeReplacement(returnToFirst: Bool, stayOnFirst: Bool = false) async throws {
+        let scratch = FileManager.default.temporaryDirectory.appendingPathComponent("NativeReplace-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: scratch) }
+        let first = scratch.appendingPathComponent("First"), second = scratch.appendingPathComponent("Second")
+        for directory in [first, second] {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try source.write(to: directory.appendingPathComponent("main.jsx"), atomically: true, encoding: .utf8)
+        }
+        let firstModel = ScriptModel(package: ScriptWidgetPackage(path: first, readonly: false))
+        let secondModel = ScriptModel(package: ScriptWidgetPackage(path: second, readonly: false))
+        let secondID = second.appendingPathComponent("main.jsx").standardizedFileURL.path
+        #if os(macOS)
+        let web = EditorInternalWebView()
+        web.frame = CGRect(x: 0, y: 0, width: 850, height: 650)
+        web.loadEditorIfNeeded()
+        web.updateDocument(firstModel, relativePath: "main.jsx")
+        #else
+        let web = MirrorEditorInternalView()
+        web.frame = CGRect(x: 0, y: 0, width: 850, height: 650)
+        web.updateDocument(action: MirrorEditorScriptView(model: firstModel, filePath: first.appendingPathComponent("main.jsx")).createActionProvider())
+        #endif
+        defer { web.stopLoading() }
+        try await wait(web, "document.querySelector('.cm-content')?.textContent.includes('Calm morning') === true")
+        // Hold only the real JS acknowledgement. Document reads/saves/resources
+        // still travel through the production bridge and package writer.
+        _ = try await evaluate(web, """
+        const bridge=window.WKWebViewJavascriptBridge,fetch=bridge._fetchQueue,receive=bridge._handleMessageFromiOS;
+        window.__releaseReplacement=false;
+        bridge._fetchQueue=()=>{
+          const passed=[];
+          for(const message of JSON.parse(fetch())){
+            if(message.handlerName==='document.replace'&&message.responseID)window.__heldReplacement=message;
+            else passed.push(message);
+          }
+          if(window.__releaseReplacement&&window.__heldReplacement){passed.unshift(window.__heldReplacement);window.__heldReplacement=null;}
+          return JSON.stringify(passed);
+        };
+        bridge._handleMessageFromiOS=json=>{
+          const message=JSON.parse(json);
+          if(message.handlerName==='document.open')window.__openedDocumentID=message.data.documentID;
+          return receive(json);
+        };void 0;
+        """)
+        let replacement = "$render(<text>Replacement intended for First only</text>);"
+        #if os(macOS)
+        EditorService.replaceDocument(with: replacement)
+        #else
+        MirrorEditorService.replaceDocument(with: replacement)
+        #endif
+        try await wait(web, "!!window.__heldReplacement")
+        if !stayOnFirst {
+            #if os(macOS)
+            web.updateDocument(secondModel, relativePath: "main.jsx")
+            #else
+            web.updateDocument(action: MirrorEditorScriptView(model: secondModel, filePath: second.appendingPathComponent("main.jsx")).createActionProvider())
+            #endif
+            try await wait(web, "window.__openedDocumentID === \(try json(secondID)) && document.querySelector('.cm-content').textContent.includes('Calm morning')")
+        }
+        var finalID = secondID, finalURL = second.appendingPathComponent("main.jsx"), expected = source
+        if returnToFirst {
+            finalID = first.appendingPathComponent("main.jsx").standardizedFileURL.path
+            finalURL = first.appendingPathComponent("main.jsx")
+            if !stayOnFirst {
+                #if os(macOS)
+                web.updateDocument(firstModel, relativePath: "main.jsx")
+                #else
+                web.updateDocument(action: MirrorEditorScriptView(model: firstModel, filePath: finalURL).createActionProvider())
+                #endif
+                try await wait(web, "window.__openedDocumentID === \(try json(finalID))")
+            }
+            expected = "$render(<text>New manual edit after reopening First</text>);"
+            _ = try await evaluate(web, "document.querySelector('.cm-content').focus();document.execCommand('selectAll');document.execCommand('insertText',false,\(try json(expected)));void 0;")
+            let deadline = Date().addingTimeInterval(15)
+            while (try? String(contentsOf: finalURL, encoding: .utf8)) != expected && Date() < deadline {
+                try await Task.sleep(nanoseconds: 50_000_000)
+            }
+            XCTAssertEqual(try String(contentsOf: finalURL, encoding: .utf8), expected, "The actual native save path must persist the manual edit before releasing the stale reply")
+        }
+        _ = try await evaluate(web, """
+        window.__releaseReplacement=true;
+        window.WKWebViewJavascriptBridge.callHandler('document.resources',{documentID:\(try json(finalID))},response=>{window.__nativeBarrier=response.result==='ok';});
+        """)
+        try await wait(web, "window.__nativeBarrier===true")
+        XCTAssertEqual(try String(contentsOf: finalURL, encoding: .utf8), expected)
+    }
     @MainActor func testNativeUnsupportedRootsKeepSourceAndShowTheCodeBoundary() async throws {
         let web = try await editor(), code = "const widget=<text>Do not rewrite</text>;$render(widget);"
         try await open(web, source: code)

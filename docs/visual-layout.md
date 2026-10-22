@@ -8,6 +8,8 @@ Drag a layer before another layer, use Move up/down, or choose a destination and
 
 Undo/Redo use the existing CodeMirror document history. Each visual operation is isolated as a single undo step, and changes go through the same save, recovery, version and preview callbacks as typing. Web files retain their existing per-file histories. Native document.open starts a fresh history when the document ID changes, preventing Undo from restoring another file's content. Read-only documents disable mutation controls and are checked again when a command runs.
 
+Native file sessions also carry a per-open generation. A delayed replacement acknowledgement or save snapshot cannot write into another file or a later reopening of the same path. Replacement acknowledgement flushes the current editor text, preserving manual edits made while the reply was pending. The regression tests use the production native bridge and actual temporary package files, not only a stub save handler. Copilot multi-window targeting and apply-result feedback remain separate acceptance work.
+
 ## Supported source and preservation
 
 Layout recognizes direct `$render(<NativeElement>…</NativeElement>)` calls. Multiple render branches are shown, but layers cannot move between branches or JavaScript scopes. It does not evaluate JavaScript to infer a layout. Variables passed to render, arbitrary expressions, loops, event functions and custom components continue to be authored in Code.

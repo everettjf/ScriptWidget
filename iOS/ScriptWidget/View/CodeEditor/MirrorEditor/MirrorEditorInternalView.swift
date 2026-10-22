@@ -78,6 +78,7 @@ class MirrorEditorInternalView: WKWebView {
     
     private let documentSession = StudioDocumentSession()
     private var currentDocumentID: String?
+    private var documentGeneration = UUID()
     private var draftWorkItem: DispatchWorkItem?
     
     var action: MirrorEditorInternalActionProvider?
@@ -199,8 +200,10 @@ class MirrorEditorInternalView: WKWebView {
             completion(false)
             return
         }
+        let generation = documentGeneration
         editorGetValue { [weak self] succeed, value in
-            guard let self, !self.isTearingDown, self.currentDocumentID == documentID, succeed else {
+            guard let self, !self.isTearingDown, self.currentDocumentID == documentID,
+                  self.documentGeneration == generation, succeed else {
                 completion(false)
                 return
             }
@@ -256,7 +259,9 @@ class MirrorEditorInternalView: WKWebView {
     }
 
     private func replaceDocument(with content: String) {
-        guard !isTearingDown, action?.onIsReadOnly?() != true else { return }
+        guard !isTearingDown, action?.onIsReadOnly?() != true,
+              let documentID = currentDocumentID else { return }
+        let generation = documentGeneration
         callStudio(
             handlerName: StudioProtocol.documentReplace,
             payload: ["content": content, "version": 0]
@@ -264,9 +269,12 @@ class MirrorEditorInternalView: WKWebView {
             guard let self else { return }
             let result = (response as? [String: Any])?["result"] as? String
             guard result == "ok" || result == nil else { return }
-            if self.action?.onWrite?(content) == true {
-                self.documentSession.markSaved(content)
-            }
+            guard self.currentDocumentID == documentID,
+                  self.documentGeneration == generation,
+                  self.action?.onIsReadOnly?() != true else { return }
+            // The acknowledgement may arrive after newer manual edits. Flush
+            // the actual current editor state, never the captured proposal.
+            self.saveCurrentContent()
         }
     }
 
@@ -294,6 +302,7 @@ class MirrorEditorInternalView: WKWebView {
             return
         }
         currentDocumentID = action.documentID
+        documentGeneration = UUID()
         self.runJSAction { [weak self] in
             self?.reloadCurrentScript()
         }
