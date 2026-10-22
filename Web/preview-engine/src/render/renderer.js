@@ -5,7 +5,7 @@
 
 import {
   alignments, cssColor, defaultFont, elementFont, fontFamily, gradientCSS, parseColor, parseFont, parseFrame,
-  parsePadding, parsePaint, platform, propReader, setPlatform, styleFont, swiftDouble, systemBackground,
+  parsePadding, parsePaint, parseRotation3D, platform, propReader, setPlatform, styleFont, swiftDouble, systemBackground,
 } from "./props.js";
 import { coverage, generalProps, ignoredProp } from "./coverage.js";
 import { deviceProfiles, widgetSize } from "./profiles.js";
@@ -165,10 +165,11 @@ async function naturalSizes(urls, doc) {
 /// Must run in a document with layout (text is measured by the browser).
 export async function renderWidget(treeJSON, {
   family = "medium", profile = "iphone-393", appearance = "light", renderingMode = "fullColor", lockScreen = true, resources = {}, document: doc = globalThis.document,
-  now = null, animations = "live",
+  now = null, animations = "live", reduceTransparency = false, reduceMotion = false,
 } = {}) {
   // Milliseconds since 1970 for a fixed clock (snapshot tests), or null.
   const fixedNow = typeof now === "number" && Number.isFinite(now) ? now : null;
+  if (reduceMotion) animations = "firstFrame";
   const size = widgetSize(profile, family);
   const diagnostics = [];
   const reported = new Set();
@@ -561,6 +562,12 @@ export async function renderWidget(treeJSON, {
       const paint = parsePaint(background, appearance);
       if (paint) decoration.background = paint;
     }
+    const material = reader.string("backgroundMaterial");
+    if (!isRoot && ["ultraThin", "thin", "regular", "thick", "ultraThick"].includes(material)) {
+      decoration.material = material;
+      decoration.materialFallback = parsePaint(background, appearance);
+      delete decoration.background;
+    }
     const corner = reader.double("corner");
     if (corner !== null) decoration.cornerRadius = corner;
     let clipShape = reader.int("clip") === 1 ? "" : null;
@@ -584,12 +591,9 @@ export async function renderWidget(treeJSON, {
     const rotation = reader.double("rotation");
     if (rotation !== null) transforms.push(`rotate(${rotation}deg)`);
     const rotation3d = reader.string("rotation3d");
-    if (rotation3d !== null) {
-      const parts = rotation3d.split(",");
-      if (parts.length === 4 && swiftDouble(parts[0]) !== null) {
-        const [x, y, z] = parts.slice(1).map((part) => swiftDouble(part));
-        transforms.push(`perspective(400px) rotate3d(${x ?? 1}, ${y ?? 0}, ${z ?? 0}, ${swiftDouble(parts[0])}deg)`);
-      }
+    if (rotation3d !== null && !reduceMotion) {
+      const rotation = parseRotation3D(rotation3d);
+      if (rotation) transforms.push(`perspective(400px) rotate3d(${rotation.x}, ${rotation.y}, ${rotation.z}, ${rotation.degree}deg)`);
     }
     if (transforms.length) decoration.transform = transforms.join(" ");
     const shadow = reader.string("shadow");
@@ -1170,6 +1174,7 @@ export async function renderWidget(treeJSON, {
 
   function applyDecoration(element, decoration, width, height) {
     const style = element.style;
+    if (decoration.material) paintMaterial(element, decoration.material, decoration.materialFallback, width, height);
     if (decoration.animation && animations === "firstFrame") {
       // What ImageRenderer captures: clock hands at rest, and the swing
       // overlay's nested frames at angle 0, which leave the content where
@@ -1205,6 +1210,34 @@ export async function renderWidget(treeJSON, {
 
   // MARK: Widget container (ScriptWidgetWidgetElementRootView)
 
+  let materialCount = 0;
+  function paintMaterial(element, material, fallback, width, height) {
+    const style = element.style;
+    const opacities = { ultraThin: 0.3, thin: 0.46, regular: 0.65, thick: 0.8, ultraThick: 0.92 };
+    if (!Object.hasOwn(opacities, material)) return;
+    style.backgroundImage = "none";
+    element.dataset.swMaterial = material;
+    const css = doc.defaultView?.CSS;
+    const cssSupported = css?.supports?.("backdrop-filter", "blur(1px)") || css?.supports?.("-webkit-backdrop-filter", "blur(1px)");
+    materialCount += 1;
+    if (renderingMode !== "fullColor") {
+      style.backgroundColor = "transparent"; style.backgroundImage = "none";
+      element.dataset.swMaterialFallback = "system";
+      report("info", "material.system", "Local material is omitted in accented/vibrant mode; the system controls the widget background.");
+    } else if (reduceTransparency || materialCount > 4 || cssSupported !== true) {
+      style.backgroundColor = appearance === "dark" ? "black" : "white";
+      if (fallback?.color) { const fill = cssColor(fallback.color); style.backgroundImage = `linear-gradient(${fill}, ${fill})`; }
+      else if (fallback?.gradient) style.backgroundImage = gradientCSS(fallback.gradient, width, height);
+      element.dataset.swMaterialFallback = "solid";
+      report("info", "material.fallback", "Material uses an opaque background fallback (Reduce Transparency, unavailable CSS blur, or preview budget).");
+    } else {
+      style.backdropFilter = "blur(16px) saturate(140%)"; style.webkitBackdropFilter = style.backdropFilter;
+      const component = appearance === "dark" ? 30 : 255;
+      style.backgroundColor = `rgba(${component}, ${component}, ${component}, ${opacities[material]})`;
+      report("info", "material.approximated", "CSS backdrop blur approximates SwiftUI material inside the widget; it does not reproduce system Liquid Glass or blur Home Screen wallpaper.");
+    }
+  }
+
   const previousPlatform = setPlatform(deviceProfiles[profile]?.platform ?? "ios");
   try {
     const rootNode = build(root, "z", { isRoot: root.tag !== "Fragment" });
@@ -1223,6 +1256,7 @@ export async function renderWidget(treeJSON, {
     if (renderingMode === "fullColor" && !(lockScreen && family.startsWith("accessory"))) {
       if (rootPaint?.color) widget.style.backgroundColor = cssColor(rootPaint.color);
       else if (rootPaint?.gradient) widget.style.backgroundImage = gradientCSS(rootPaint.gradient, size.width, size.height);
+      paintMaterial(widget, propReader(root.props).string("backgroundMaterial"), rootPaint, size.width, size.height);
     } else {
       // WidgetKit removes the container background on the Lock Screen and in
       // tinted Home Screen modes; show a neutral wallpaper stand-in.

@@ -1,0 +1,8 @@
+{
+  "description": "A calm frosted card with original shapes, static depth and accessible fallbacks.",
+  "category": "starter",
+  "difficulty": "beginner",
+  "icon": "square.3.layers.3d",
+  "featured": true,
+  "tags": ["material", "design", "depth", "offline"]
+}

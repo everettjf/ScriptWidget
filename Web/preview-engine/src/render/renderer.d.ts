@@ -18,6 +18,8 @@ export function renderWidget(treeJSON: string, options?: {
   now?: number | null;
   /// "live" animates with CSS; "firstFrame" draws what ImageRenderer captures.
   animations?: "live" | "firstFrame";
+  reduceTransparency?: boolean;
+  reduceMotion?: boolean;
 }): Promise<RenderedWidget>;
 
 export function lineHeight(size: number): number;

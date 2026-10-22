@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-22T13:17:51.787Z",
+  "generatedAt": "2026-10-22T14:23:12.398Z",
   "items": [
     {
       "author": "ScriptWidget Community",
@@ -1087,6 +1087,48 @@
       "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/layout-starter",
       "summary": "Requires Runtime API 1.0. A literal JSX canvas for the shared native/Web Layout editor. Select layers, change text and properties, reorder and undo without replacing your JavaScript.",
       "symbol": "square.stack.3d.up",
+      "tags": [
+        "starter"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 1071,
+          "path": "LICENSE.txt",
+          "sha256": "ffba69d85a7743331776b725f9834d171dbc74a880776f87e44544fa82df21d2",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/material-study/LICENSE.txt"
+        },
+        {
+          "bytes": 1207,
+          "path": "main.jsx",
+          "sha256": "c1f17f8090c2bdf9b855bcdd55a96653e826f6e826ed2776a12fcd3de4c547c2",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/material-study/main.jsx"
+        },
+        {
+          "bytes": 263,
+          "path": "meta.json",
+          "sha256": "52e778bbf6772e30a76228bab8d6063e399aeb26e6d369ddc2fbd8f2f9e0a03d",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/material-study/meta.json"
+        },
+        {
+          "bytes": 564,
+          "path": "widget.json",
+          "sha256": "34b9863a7efbbb78a52bff31c7c358c9eb94114ebc55c788505da0fb6398e149",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/material-study/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.material-study",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Material Study",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/material-study",
+      "summary": "Requires Runtime API 1.4. Original shapes behind a public frosted material card with a static 3D tilt and accessibility fallbacks.",
+      "symbol": "square.3.layers.3d",
       "tags": [
         "starter"
       ],

@@ -38,6 +38,7 @@ the browser and previews them itself.
 - Choose a device (iPhone sizes, iPad, or Mac), a widget size from the manifest's
   `supportedFamilies`, light or dark appearance, a rendering mode, and the
   `widget-param` value.
+- **Reduce transparency** and **Reduce motion** simulate accessibility fallbacks without changing widget source. They start from browser media preferences. Material is a labeled CSS approximation of SwiftUI; the system's Liquid Glass and wallpaper refraction are not reproduced. See [Visual effects](visual-effects.md).
 - The preview runs your code in an isolated sandbox with the same rules as the
   iPhone runtime: the same compiler, limits, `$render` behavior, and error
   categories. It renders with layout calibrated against iOS.

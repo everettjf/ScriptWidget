@@ -31,6 +31,7 @@ export function scriptWidgetKernel(global, host, configJSON) {
   const DateCtor = Date;
   const datePrototypeGetTime = Date.prototype.getTime;
   const StringCtor = String;
+  const stringLowerCase = Function.prototype.call.bind(String.prototype.toLowerCase);
   const JSONStringify = JSON.stringify;
   const logs = [];
   const diagnostics = [];
@@ -253,12 +254,18 @@ export function scriptWidgetKernel(global, host, configJSON) {
 
   function validateElementTree(root) {
     let count = 0;
+    let materials = 0;
     const activePath = new Set();
     function visit(element, depth) {
       if (depth > contract.maximumElementDepth) {
         return fail("resourceLimit", `Element tree exceeds the maximum depth of ${contract.maximumElementDepth}`);
       }
       count += 1;
+      const material = element.props?.backgroundMaterial;
+      if (stringLowerCase(StringCtor(element.tag)) !== "spacer" && (material === "ultraThin" || material === "thin" || material === "regular" || material === "thick" || material === "ultraThick")) {
+        materials += 1;
+        if (materials > contract.maximumMaterialBackgrounds) return fail("resourceLimit", `Element tree exceeds the ${contract.maximumMaterialBackgrounds}-material background limit`);
+      }
       if (count > contract.maximumElementNodes) {
         return fail("resourceLimit", `Element tree exceeds the ${contract.maximumElementNodes}-node limit`);
       }

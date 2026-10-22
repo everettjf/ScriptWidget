@@ -40,8 +40,10 @@ function templateCatalog(): string {
       let meta: { name?: string; description?: string; category?: string; featured?: boolean; tags?: string[]; icon?: string } = {};
       const metaText = files["meta.json"] ?? files["widget.json"];
       try { meta = typeof metaText === "string" ? JSON.parse(metaText) : {}; } catch { meta = {}; }
+      let manifestName: unknown;
+      try { manifestName = typeof files["widget.json"] === "string" ? JSON.parse(files["widget.json"]).name : undefined; } catch { /* Legacy folder name remains the fallback. */ }
       templates.push({
-        id: `${source}/${name}`, source, name: meta.name ?? name, description: meta.description ?? "",
+        id: `${source}/${name}`, source, name: typeof meta.name === "string" && meta.name.trim() ? meta.name : typeof manifestName === "string" && manifestName.trim() ? manifestName : name, description: meta.description ?? "",
         category: meta.category ?? (source === "gallery" ? "gallery" : "starter"),
         // Gallery widgets are curated, so they are featured with the templates marked featured.
         featured: source === "gallery" || meta.featured === true, tags: Array.isArray(meta.tags) ? meta.tags : [], icon: meta.icon ?? null, files,

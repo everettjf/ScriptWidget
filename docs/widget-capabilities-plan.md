@@ -171,7 +171,9 @@ Apple 的 [EventKit 授权](https://developer.apple.com/documentation/eventkit/a
 - [x] M5-2 提供主题 token、配色、字体、照片与原创图标/宠物资源，允许模板换肤，保留资源来源及使用权记录。
   - 首批创作资源已完成开发验证：三个端共用十一种 Theme token、四套配色、字体/间距编辑和 JSON 复用；Assets 接入现有图片导入/包内选择，并插入两种原创 mark 与静态 Pebble companion。源码保留完整 MIT 出处/许可，连接主题时随配色变化，普通 Package 导出携带源码和图片。实际 WKWebView、八组 JSC/Web source/tree、Package 往返、真实 Chrome 指针/image input、手机宽度及原生截图通过；完整 gate Mac 660 / iPhone Simulator 670 均 0 失败。Layout Starter 说明/元数据和 Gallery 哈希同步；支持范围见 [主题](widget-themes.md) 与 [素材](studio-assets.md)。这不勾选 M5-3/4 或物理设备专项。
 - [ ] M5-3 研究玻璃材质、空间效果和动态壁纸，分别验证公开 API、系统版本、内存和静态回退。壁纸编辑/导出作为独立工具流程，不假设组件能够修改系统壁纸。
+  - 公开材质增量已完成开发验证：Runtime 1.4 新增 backgroundMaterial，原生公开 SwiftUI Material / Web 明示 CSS 近似，Reduce Transparency 不透明回退、非 full-color 省略局部材质、Reduce Motion 静态深度回退和四区域预算；Material Study 内置/Gallery 模板、48 组实际 JSC/Web 树、原生/WK/Chrome 编辑与回退、App/测试进程冷预热和暖态内存/耗时记录通过。完整 gate Mac 665 / iPhone Simulator 675 均 0 失败。现有 clock/swing/GIF 仍涉及私有桥接，兼容方案已询问用户；真实 Clear/Tinted/扩展内存和 Web 裁切导出尚未验收，本项不勾选。详见 [视觉效果评估](visual-effects.md)。
 - [ ] M5-4 同步 Mac/Web 编辑流程和原生渲染能力表，发布生成 bundle、文档和代表性模板；通过现有 Gallery 安装分发。
+  - 公共材质、主题、素材已同步到原生/Web 元数据、生成 bundle、AI 指引与能力表；Gallery 现有 22 个 curated 包，Web 优先使用包清单名称而非目录 slug。仍需 Web 壁纸创作界面及完整流程/设备验收，不将 canonical tree 一致视为系统材质或像素完全一致。
 
 出口：F11/F12 的创作能力扩展、F21 的首个可用编辑子集完成；F13 每种效果有实现证据或可复核限制，不能合并笼统标为全部支持。
 

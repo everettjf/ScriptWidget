@@ -177,6 +177,14 @@ enum PromptBuilder {
             while track details are withheld. Preserve nullable metadata/seconds,
             show permission/unavailable states and never infer subscription.
             No playback/queue changes, library scans or live future-entry reads.
+            Runtime 1.4 supports backgroundMaterial="thin" (ultraThin/thin/regular/
+            thick/ultraThick/none) using public SwiftUI material inside the widget,
+            at most four material backgrounds per tree. Supply a readable background
+            color for Reduce Transparency. Accented/vibrant modes omit local material.
+            This is not Home Screen wallpaper blur or a switch for system Liquid Glass.
+            rotation3d is static depth and falls back with Reduce Motion. Do not
+            promise device-motion parallax, continuous widget animation or system
+            wallpaper control. Web CSS material is an approximation.
             Reminders needs the reminders package permission and system approval.
             Use lists() for permitted IDs; items() is read-only with listIDs,
             start/end (up to 31 days), limit (up to 50) and completed Boolean.

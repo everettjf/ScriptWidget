@@ -2,6 +2,8 @@ import Foundation
 import XCTest
 import WebKit
 import SwiftUI
+import Darwin
+import WidgetKit
 @testable import ScriptWidget
 #if os(macOS)
 import AppKit
@@ -206,6 +208,125 @@ final class VisualLayoutEditorTests: XCTestCase {
         let png = try XCTUnwrap(snapshot.pngData())
         #endif
         try png.write(to: URL(fileURLWithPath: path))
+    }
+    func testPublicMaterialPoliciesAndFourRegionBudget() throws {
+        XCTAssertEqual(ScriptWidgetRuntimeContract.maximumMaterialBackgrounds,4)
+        for style in ScriptWidgetBackgroundMaterial.allCases { XCTAssertTrue(ScriptWidgetBackgroundMaterial.isEnabled(style.rawValue)) }
+        XCTAssertFalse(ScriptWidgetBackgroundMaterial.isEnabled("none")); XCTAssertFalse(ScriptWidgetBackgroundMaterial.isEnabled("glass"))
+        XCTAssertNil(ScriptWidgetVisualAccessibility().reduceTransparency); XCTAssertNil(ScriptWidgetVisualAccessibility().reduceMotion)
+        XCTAssertTrue(ScriptWidgetBackgroundMaterial.usesMaterial(reduceTransparency:false,renderingMode:.fullColor))
+        for mode in [WidgetRenderingMode.fullColor,.accented,.vibrant] {
+            XCTAssertFalse(ScriptWidgetBackgroundMaterial.usesMaterial(reduceTransparency:true,renderingMode:mode))
+        }
+        XCTAssertFalse(ScriptWidgetBackgroundMaterial.usesMaterial(reduceTransparency:false,renderingMode:.accented))
+        XCTAssertFalse(ScriptWidgetBackgroundMaterial.usesMaterial(reduceTransparency:false,renderingMode:.vibrant))
+        let directory = try XCTUnwrap(Bundle.main.url(forResource:"template",withExtension:nil,subdirectory:"Script.bundle")).appendingPathComponent("Material Study")
+        for (value,count,limited) in [("thin",4,false),("thin",5,true),("none",5,false),("unknown",5,false)] {
+            let engine = ScriptWidgetRuntime(package:ScriptWidgetPackage(path:directory,readonly:true),environments:["widget-size":"medium"])
+            let code = "$render(<vstack>" + String(repeating:"<text backgroundMaterial=\"\(value)\">A</text>",count:count) + "</vstack>);"
+            let result = engine.executeJSXSyncForWidget(code)
+            if limited { XCTAssertTrue(result.1?.displayMessage.contains("4-material") == true); XCTAssertNil(result.0) }
+            else { XCTAssertNil(result.1); XCTAssertNotNil(result.0) }
+        }
+    }
+    func testStaticDepthRejectsNonfiniteOrZeroAxesAndNormalizesLargeFiniteValues() throws {
+        for value in ["nan,1,0,0","inf,1,0,0","5,inf,0,0","5,0,nan,0","5,0,0,0","5,bad,0,1","5,1,0","5,1,0,0,2"] { XCTAssertNil(ScriptWidgetRotation3D(value),value) }
+        let valid = try XCTUnwrap(ScriptWidgetRotation3D("365, 0, 2, 0"))
+        XCTAssertEqual(valid.degree,5); XCTAssertEqual(valid.x,0); XCTAssertEqual(valid.y,1); XCTAssertEqual(valid.z,0)
+        let large = try XCTUnwrap(ScriptWidgetRotation3D("5,1e308,-1e308,0"))
+        XCTAssertEqual(large.x,1); XCTAssertEqual(large.y,-1); XCTAssertEqual(large.z,0)
+    }
+    @MainActor func testPublicMaterialHostedRenderBaselineRecordsTimeAndFootprint() throws {
+        func footprint() -> UInt64 {
+            var info = task_vm_info_data_t()
+            var count = mach_msg_type_number_t(MemoryLayout<task_vm_info_data_t>.size / MemoryLayout<integer_t>.size)
+            let status = withUnsafeMutablePointer(to:&info) { pointer in pointer.withMemoryRebound(to:integer_t.self,capacity:Int(count)) { task_info(mach_task_self_,task_flavor_t(TASK_VM_INFO),$0,&count) } }
+            return status == KERN_SUCCESS ? info.phys_footprint : 0
+        }
+        let directory = try XCTUnwrap(Bundle.main.url(forResource:"template",withExtension:nil,subdirectory:"Script.bundle")).appendingPathComponent("Material Study")
+        let package = ScriptWidgetPackage(path:directory,readonly:true)
+        let panel = "<vstack frame=\"62,62\" backgroundMaterial=\"thin\" background=\"#FAFFFC\" corner=\"12\"><text font=\"caption\">Calm</text></vstack>"
+        let source = "$render(<hstack spacing=\"8\" background=\"#D3EBDD\">"+String(repeating:panel,count:4)+"</hstack>);"
+        var samples:[[String:Any]] = []
+        @MainActor func render(_ code: String, reduced: Bool) throws -> UInt64 {
+            try autoreleasepool {
+                let engine = ScriptWidgetRuntime(package:package,environments:["widget-size":"medium"],isDarkMode:false)
+                let result = engine.executeJSXSyncForWidget(code); XCTAssertNil(result.1)
+                let context = ScriptWidgetElementContext(runtime:engine,debugMode:false,scriptName:"Material budget",scriptParameter:"",package:package)
+                let renderer = ImageRenderer(content:ScriptWidgetElementView(element:try XCTUnwrap(result.0),context:context).frame(width:329,height:155).environment(\.scriptWidgetVisualAccessibility,.init(reduceTransparency:reduced,reduceMotion:reduced)))
+                let image = try XCTUnwrap(renderer.cgImage); XCTAssertEqual(image.width,329); XCTAssertEqual(image.height,155)
+                return footprint()
+            }
+        }
+        let cold = footprint()
+        _ = try render(source.replacingOccurrences(of:"backgroundMaterial=\"thin\"",with:"backgroundMaterial=\"none\""),reduced:false)
+        let afterPlain = footprint()
+        _ = try render(source,reduced:false); _ = try render(source,reduced:true)
+        let afterWarmup = footprint()
+        for reduced in [false,true] {
+            let baseline = footprint(), started = Date(); var peak = baseline
+            for _ in 0..<5 {
+                peak = max(peak,try render(source,reduced:reduced),footprint())
+            }
+            samples.append(["reduced":reduced,"frames":5,"regionsPerFrame":4,"seconds":Date().timeIntervalSince(started),"baselineFootprint":baseline,"peakSampledFootprint":peak,"deltaBytes":peak >= baseline ? peak-baseline : 0])
+        }
+        let data = try JSONSerialization.data(withJSONObject:["scope":"Hosted app/test JSC + ImageRenderer with plain/material/fallback warmup; not WidgetKit extension or physical-device memory acceptance","coldFootprint":cold,"afterPlainWarmup":afterPlain,"afterAllWarmup":afterWarmup,"samples":samples],options:[.prettyPrinted,.sortedKeys])
+        let attachment = XCTAttachment(data:data,uniformTypeIdentifier:"public.json"); attachment.name = "public-material-hosted-baseline"; attachment.lifetime = .keepAlways; add(attachment)
+        if let path = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_MATERIAL_BENCHMARK"] { try data.write(to:URL(fileURLWithPath:path)) }
+    }
+    @MainActor func testMaterialStudyCanonicalTreesAndStaticAccessibilityCaptures() async throws {
+        let directory = try XCTUnwrap(Bundle.main.url(forResource:"template",withExtension:nil,subdirectory:"Script.bundle")).appendingPathComponent("Material Study")
+        let source = try String(contentsOf:directory.appendingPathComponent("main.jsx"),encoding:.utf8)
+        let package = ScriptWidgetPackage(path:directory,readonly:true)
+        var examples:[String:[String:String]] = [:]
+        for family in ["small","medium","large","extraLarge","extraLargePortrait","accessoryInline","accessoryCircular","accessoryRectangular"] {
+            for mode in ["fullColor","accented","vibrant"] {
+                for dark in [false,true] {
+                    let key = family+"-"+mode+"-"+(dark ? "dark" : "light")
+                    let engine = ScriptWidgetRuntime(package:package,environments:["widget-size":family,"widget-rendering-mode":mode],isDarkMode:dark)
+                    let result = engine.executeJSXSyncForWidget(source)
+                    XCTAssertNil(result.1,result.1?.displayMessage ?? "")
+                    let root = try XCTUnwrap(result.0)
+                    examples[key] = ["tree":ScriptWidgetElementTreeJSON.encode(root)]
+                    if family == "medium", mode == "fullColor", let output = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_MATERIAL_WIDGETS"] {
+                        let folder = URL(fileURLWithPath:output); try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true)
+                        for reduced in [false,true] {
+                            let context = ScriptWidgetElementContext(runtime:engine,debugMode:false,scriptName:"Material Study",scriptParameter:"",package:package)
+                            let renderer = ImageRenderer(content:ScriptWidgetElementView(element:root,context:context).frame(width:329,height:155).background(dark ? Color.black : Color.white).environment(\.colorScheme,dark ? .dark : .light).environment(\.scriptWidgetVisualAccessibility,.init(reduceTransparency:reduced,reduceMotion:reduced)))
+                            renderer.scale = 2
+                            let image = try XCTUnwrap(renderer.cgImage)
+                            #if os(macOS)
+                            let png = try XCTUnwrap(NSBitmapImageRep(cgImage:image).representation(using:.png,properties:[:]))
+                            #else
+                            let png = try XCTUnwrap(UIImage(cgImage:image).pngData())
+                            #endif
+                            try png.write(to:folder.appendingPathComponent(key+(reduced ? "-reduced" : "")+".png"))
+                        }
+                    }
+                }
+            }
+        }
+        let repository = URL(fileURLWithPath:#filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let fixture = repository.appendingPathComponent("Web/preview-engine/test/parity/material-study-trees.json")
+        if ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_MATERIAL_TREES"] == "1" {
+            try JSONSerialization.data(withJSONObject:["formatVersion":1,"source":source,"examples":examples],options:[.prettyPrinted,.sortedKeys]).write(to:fixture)
+        } else {
+            let stored = try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:fixture)) as? [String:Any])
+            XCTAssertEqual(stored["source"] as? String,source)
+            XCTAssertEqual(stored["examples"] as? [String:[String:String]],examples)
+        }
+    }
+    @MainActor func testNativeMaterialPropertyEditingPreservesSourceAndHistory() async throws {
+        let directory = try XCTUnwrap(Bundle.main.url(forResource:"template",withExtension:nil,subdirectory:"Script.bundle")).appendingPathComponent("Material Study")
+        let code = try String(contentsOf:directory.appendingPathComponent("main.jsx"),encoding:.utf8)
+        let web = try await editor(); try await open(web,source:code,id:"material-study/main.jsx")
+        _ = try await evaluate(web,"document.querySelector('.sw-layout-toggle').click();[...document.querySelectorAll('.sw-layout-layer')].find(row=>row.textContent==='<vstack>').click();const choose=document.querySelector('select[aria-label=\"Layout property\"]');choose.value='backgroundMaterial';choose.dispatchEvent(new Event('change',{bubbles:true}));document.querySelector('select[aria-label=\"Layout property value\"]').value='regular';[...document.querySelectorAll('.sw-layout button')].find(b=>b.textContent==='Apply').click();")
+        let changed = try await content(web)
+        XCTAssertEqual(changed,code.replacingOccurrences(of:"backgroundMaterial=\"thin\"",with:"backgroundMaterial={\"regular\"}"))
+        _ = try await evaluate(web,"[...document.querySelectorAll('.sw-layout button')].find(b=>b.textContent==='Undo').click()")
+        let undone = try await content(web); XCTAssertEqual(undone,code)
+        _ = try await evaluate(web,"[...document.querySelectorAll('.sw-layout button')].find(b=>b.textContent==='Redo').click()")
+        let redone = try await content(web); XCTAssertEqual(redone,changed)
     }
     @MainActor func testNativeAssetsInsertUndoAndRenderOriginalsAndPackageImages() async throws {
         let web = try await editor()

@@ -11,6 +11,7 @@ Arrange children vertically.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -22,9 +23,9 @@ Arrange children vertically.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `spacing` | `number` | No |  |
@@ -36,6 +37,7 @@ Arrange children horizontally.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -47,9 +49,9 @@ Arrange children horizontally.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `spacing` | `number` | No |  |
@@ -61,6 +63,7 @@ Overlay children.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -72,9 +75,9 @@ Overlay children.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 
@@ -85,6 +88,7 @@ Vertical lazy grid.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -96,9 +100,9 @@ Vertical lazy grid.
 | `alignment` | `enum` | No | Values: `leading`, `center`, `trailing` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `columns` | `string` | Yes |  |
@@ -111,6 +115,7 @@ Horizontal lazy grid.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -122,9 +127,9 @@ Horizontal lazy grid.
 | `alignment` | `enum` | No | Values: `top`, `center`, `bottom`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `columns` | `string` | Yes |  |
@@ -137,6 +142,7 @@ Display text content.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -148,9 +154,9 @@ Display text content.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `text` | `string` | No |  |
@@ -162,6 +168,7 @@ Display a formatted date.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -173,9 +180,9 @@ Display a formatted date.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `date` | `date|number` | Yes |  |
@@ -188,6 +195,7 @@ Display a bundled, remote, or SF Symbol image.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -199,9 +207,9 @@ Display a bundled, remote, or SF Symbol image.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `systemName` | `string` | No |  |
@@ -220,6 +228,7 @@ Display a GIF from the package.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -231,9 +240,9 @@ Display a GIF from the package.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `file` | `string` | Yes |  |
@@ -245,6 +254,7 @@ Flexible layout space.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -256,9 +266,9 @@ Flexible layout space.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `minLength` | `number` | No |  |
@@ -270,6 +280,7 @@ Rectangle shape.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -281,9 +292,9 @@ Rectangle shape.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `trim` | `number|string` | No |  |
@@ -296,6 +307,7 @@ Filled rounded rectangle.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -307,9 +319,9 @@ Filled rounded rectangle.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `radius` | `number` | No |  |
@@ -321,6 +333,7 @@ Capsule shape.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -332,9 +345,9 @@ Capsule shape.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `trim` | `number|string` | No |  |
@@ -347,6 +360,7 @@ Ellipse shape.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -358,9 +372,9 @@ Ellipse shape.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `trim` | `number|string` | No |  |
@@ -373,6 +387,7 @@ Circle shape.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -384,9 +399,9 @@ Circle shape.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `trim` | `number|string` | No |  |
@@ -399,6 +414,7 @@ Display a gauge or instrument.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -410,9 +426,9 @@ Display a gauge or instrument.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `type` | `string` | No |  |
@@ -436,6 +452,7 @@ Render chart data.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -447,9 +464,9 @@ Render chart data.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `type` | `enum` | No | Values: `bar`, `bar-x`, `bar-y`, `bar-gantt`, `line`, `point`, `line-point`, `area`, `rect`, `rule-x` |
@@ -466,6 +483,7 @@ Open a URL when selected.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -477,9 +495,9 @@ Open a URL when selected.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `url` | `url` | Yes |  |
@@ -491,6 +509,7 @@ Horizontal or vertical separator.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -502,9 +521,9 @@ Horizontal or vertical separator.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `thickness` | `number` | No |  |
@@ -517,6 +536,7 @@ Fixed-length line.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -528,9 +548,9 @@ Fixed-length line.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `thickness` | `number` | No |  |
@@ -544,6 +564,7 @@ SF Symbol icon.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -555,9 +576,9 @@ SF Symbol icon.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `systemName` | `string` | Yes |  |
@@ -570,6 +591,7 @@ Text paired with an SF Symbol.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -581,9 +603,9 @@ Text paired with an SF Symbol.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `title` | `string` | No |  |
@@ -596,6 +618,7 @@ Linear or circular progress.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -607,9 +630,9 @@ Linear or circular progress.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `value` | `number` | Yes |  |
@@ -626,6 +649,7 @@ Circular progress ring.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -637,9 +661,9 @@ Circular progress ring.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `value` | `number` | Yes |  |
@@ -653,6 +677,7 @@ Compact status badge.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -664,9 +689,9 @@ Compact status badge.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `text` | `string` | No |  |
@@ -679,6 +704,7 @@ Outlined metadata chip.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -690,9 +716,9 @@ Outlined metadata chip.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `text` | `string` | No |  |
@@ -706,6 +732,7 @@ Title, value, and subtitle statistic.
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -717,9 +744,9 @@ Title, value, and subtitle statistic.
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `title` | `string` | No |  |
@@ -734,6 +761,7 @@ Interactive widget button. Use actionID to share a declared Package 2.0 action w
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -745,9 +773,9 @@ Interactive widget button. Use actionID to share a declared Package 2.0 action w
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `action` | `enum` | No | Values: `reload` |
@@ -761,6 +789,7 @@ Interactive widget toggle. A declared actionID requires a package-relative stora
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
 | `background` | `color` | No | Background color, hex value, or named color. |
+| `backgroundMaterial` | `enum` | No | Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background. Values: `none`, `ultraThin`, `thin`, `regular`, `thick`, `ultraThick` |
 | `color` | `color` | No | Foreground color, hex value, or named color. |
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
@@ -772,9 +801,9 @@ Interactive widget toggle. A declared actionID requires a package-relative stora
 | `alignment` | `enum` | No | Layout alignment. Values: `center`, `leading`, `trailing`, `top`, `bottom`, `topLeading`, `topTrailing`, `bottomLeading`, `bottomTrailing`, `firstTextBaseline`, `lastTextBaseline` |
 | `clip` | `enum` | No | Clip the view to a shape. Values: `circle`, `rect`, `capsule`, `ellipse` |
 | `rotation` | `number` | No | Rotation in degrees. |
-| `rotation3d` | `string` | No | 3D rotation description. |
+| `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | Timeline-driven animation description. |
+| `animation` | `string` | No | Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `on` | `boolean` | Yes |  |

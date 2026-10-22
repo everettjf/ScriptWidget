@@ -157,6 +157,10 @@ export function PreviewPane({ project, settings, families, onSettings, preview, 
           <Choice<RenderingMode> id="rendering-mode" value={settings.renderingMode} onChange={(renderingMode) => onSettings({ renderingMode })}
             options={[["fullColor", "Full color"], ["accented", "Accented"], ["vibrant", "Vibrant"]]} />
         </Field>
+        <div className="flex basis-full flex-wrap gap-3 text-xs text-muted-foreground" aria-label="Preview accessibility">
+          <label className="flex items-center gap-1.5"><input id="reduce-transparency" type="checkbox" checked={settings.reduceTransparency} onChange={(event) => onSettings({reduceTransparency:event.target.checked})} />Reduce transparency</label>
+          <label className="flex items-center gap-1.5"><input id="reduce-motion" type="checkbox" checked={settings.reduceMotion} onChange={(event) => onSettings({reduceMotion:event.target.checked})} />Reduce motion</label>
+        </div>
         <Field id="timeline-date" label="Timeline date (your local time)" className="basis-full">
           <div className="flex gap-2">
             <Input id="timeline-date" type="datetime-local" className="h-8 min-w-0 flex-1 bg-card" value={timelineInputValue(settings.timelineDate)} onChange={(event) => onSettings({ timelineDate: event.target.value })} />

@@ -27,6 +27,8 @@ function initialSettings(colorScheme: "light" | "dark"): PreviewSettings {
     renderingMode: "fullColor",
     parameter: "",
     timelineDate: "",
+    reduceTransparency: window.matchMedia("(prefers-reduced-transparency: reduce)").matches,
+    reduceMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   };
 }
 

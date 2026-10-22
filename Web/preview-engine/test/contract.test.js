@@ -16,6 +16,7 @@ test("runtime limits and native API version match ScriptWidgetRuntimeContract", 
   assert.match(runtimeSwift, /static let maximumTranspiledBytes = 2 \* 1_024 \* 1_024/);
   assert.match(runtimeSwift, /static let executionTimeout: DispatchTimeInterval = \.seconds\(5\)/);
   assert.match(runtimeSwift, /static let maximumElementNodes = 1_000/);
+  assert.match(runtimeSwift, new RegExp(`static let maximumMaterialBackgrounds = ${runtimeContract.maximumMaterialBackgrounds}`));
   assert.match(runtimeSwift, /static let maximumElementDepth = 64/);
   assert.match(runtimeSwift, /static let maximumPropsPerElement = 128/);
   const globals = /static let globalAPIs = \[([\s\S]*?)\]/.exec(runtimeSwift)[1].match(/"[^"]+"/g).map((item) => JSON.parse(item));

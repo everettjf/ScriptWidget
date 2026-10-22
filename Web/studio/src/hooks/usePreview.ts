@@ -13,6 +13,8 @@ export interface PreviewSettings {
   renderingMode: RenderingMode;
   parameter: string;
   timelineDate: string;
+  reduceTransparency: boolean;
+  reduceMotion: boolean;
 }
 
 export interface Message {
@@ -48,7 +50,7 @@ export function usePreview(project: Project | null, settings: PreviewSettings): 
 
   const files = project?.files;
   const fixtures = project?.fixtures;
-  const { profile, family, appearance, renderingMode, parameter, timelineDate } = settings;
+  const { profile, family, appearance, renderingMode, parameter, timelineDate, reduceTransparency, reduceMotion } = settings;
 
   useEffect(() => {
     if (!ready || !files) return;
@@ -79,7 +81,7 @@ export function usePreview(project: Project | null, settings: PreviewSettings): 
         setState({ output: { kind: "error", errorKind: error.kind, message: error.message }, problems, logs });
         return;
       }
-      const rendered = await renderWidget(result.tree, { family, profile, appearance, renderingMode, resources: resourceURLs(files) });
+      const rendered = await renderWidget(result.tree, { family, profile, appearance, renderingMode, reduceTransparency, reduceMotion, resources: resourceURLs(files) });
       if (current !== generation.current) return;
       for (const item of rendered.diagnostics) problems.push({ severity: item.severity, text: item.message });
       setState({
@@ -88,7 +90,7 @@ export function usePreview(project: Project | null, settings: PreviewSettings): 
       });
     }, 200);
     return () => clearTimeout(timer);
-  }, [ready, files, fixtures, profile, family, appearance, renderingMode, parameter, timelineDate]);
+  }, [ready, files, fixtures, profile, family, appearance, renderingMode, parameter, timelineDate, reduceTransparency, reduceMotion]);
 
   return state;
 }

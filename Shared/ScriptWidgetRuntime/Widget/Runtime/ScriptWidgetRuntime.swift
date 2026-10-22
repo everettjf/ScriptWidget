@@ -76,6 +76,7 @@ enum ScriptWidgetRuntimeContract {
     /// Public JavaScriptCore APIs cannot preempt a native parser/built-in call.
     static let compileTimeout: TimeInterval = 10
     static let maximumElementNodes = 1_000
+    static let maximumMaterialBackgrounds = 4
     static let maximumElementDepth = 64
     static let maximumPropsPerElement = 128
 
@@ -117,6 +118,7 @@ enum ScriptWidgetRuntimeContract {
 
     static func validateElementTree(_ root: ScriptWidgetRuntimeElement) -> ScriptWidgetError? {
         var count = 0
+        var materials = 0
         var activePath: Set<ObjectIdentifier> = []
 
         func visit(_ element: ScriptWidgetRuntimeElement, depth: Int) -> ScriptWidgetError? {
@@ -124,6 +126,12 @@ enum ScriptWidgetRuntimeContract {
                 return .resourceLimit("Element tree exceeds the maximum depth of \(maximumElementDepth)")
             }
             count += 1
+            if element.tagAsString()?.lowercased() != "spacer", ScriptWidgetBackgroundMaterial.isEnabled(element.getPropString("backgroundMaterial")) {
+                materials += 1
+                guard materials <= maximumMaterialBackgrounds else {
+                    return .resourceLimit("Element tree exceeds the \(maximumMaterialBackgrounds)-material background limit")
+                }
+            }
             guard count <= maximumElementNodes else {
                 return .resourceLimit("Element tree exceeds the \(maximumElementNodes)-node limit")
             }

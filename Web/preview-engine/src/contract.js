@@ -13,6 +13,7 @@ export const runtimeContract = Object.freeze({
   maximumTranspiledBytes: 2 * 1024 * 1024,
   executionTimeoutMilliseconds: 5000,
   maximumElementNodes: 1000,
+  maximumMaterialBackgrounds: 4,
   maximumElementDepth: 64,
   maximumPropsPerElement: 128,
   maximumDataQueries: 8,
@@ -24,7 +25,7 @@ export const runtimeContract = Object.freeze({
 });
 
 /// Bumped whenever the web host changes observable execution semantics.
-export const engineVersion = "0.12.0";
+export const engineVersion = "0.13.0";
 
 export const errorCategories = Object.freeze({
   undefinedRender: Object.freeze({ category: "Render", recovery: "Call $render(...) once from the main script." }),

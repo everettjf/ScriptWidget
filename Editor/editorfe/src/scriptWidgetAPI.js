@@ -15,6 +15,7 @@ export const scriptWidgetAPI = {
   },
   "globalProperties": {
     "background": { "type": "color", "documentation": "Background color, hex value, or named color." },
+    "backgroundMaterial": { "type": "enum", "values": ["none", "ultraThin", "thin", "regular", "thick", "ultraThick"], "documentation": "Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background." },
     "color": { "type": "color", "documentation": "Foreground color, hex value, or named color." },
     "font": { "type": "enum", "values": ["largeTitle", "title", "title2", "title3", "headline", "subheadline", "body", "callout", "footnote", "caption", "caption2"], "documentation": "Semantic text style." },
     "fontWeight": { "type": "enum", "values": ["ultraLight", "thin", "light", "regular", "medium", "semibold", "bold", "heavy", "black"], "documentation": "Font weight." },
@@ -26,9 +27,9 @@ export const scriptWidgetAPI = {
     "alignment": { "type": "enum", "values": ["center", "leading", "trailing", "top", "bottom", "topLeading", "topTrailing", "bottomLeading", "bottomTrailing", "firstTextBaseline", "lastTextBaseline"], "documentation": "Layout alignment." },
     "clip": { "type": "enum", "values": ["circle", "rect", "capsule", "ellipse"], "documentation": "Clip the view to a shape." },
     "rotation": { "type": "number", "documentation": "Rotation in degrees." },
-    "rotation3d": { "type": "string", "documentation": "3D rotation description." },
+    "rotation3d": { "type": "string", "documentation": "Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax." },
     "shadow": { "type": "string", "documentation": "Shadow color, radius, and offset description." },
-    "animation": { "type": "string", "documentation": "Timeline-driven animation description." },
+    "animation": { "type": "string", "documentation": "Legacy experimental clock/swing effect; continuous WidgetKit animation is system-dependent, not a public-API guarantee. Reduce Motion or reduced luminance keeps a static view. Public data-change animations do not imply continuous playback." },
     "widgetAccentable": { "type": "boolean", "documentation": "Group this view into the accent layer in tinted and vibrant widget appearances." },
     "linkurl": { "type": "url", "documentation": "Widget deep link URL." }
   },

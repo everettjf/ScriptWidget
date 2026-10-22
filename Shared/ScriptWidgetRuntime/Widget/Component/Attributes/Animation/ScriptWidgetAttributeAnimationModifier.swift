@@ -57,6 +57,9 @@ import SwiftyJSON
 
 
 struct ScriptWidgetAttributeAnimationModifier: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.isLuminanceReduced) private var luminanceReduced
+    @Environment(\.scriptWidgetVisualAccessibility) private var preview
 
     let animationType: String
 
@@ -174,7 +177,9 @@ struct ScriptWidgetAttributeAnimationModifier: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if animationType == "clockSecond" {
+        if (preview.reduceMotion ?? reduceMotion) || luminanceReduced {
+            content
+        } else if animationType == "clockSecond" {
             content
                 .clockHandRotationEffect(period: .secondHand, in: self.clockTimezone, anchor: self.clockAnchor)
         } else if animationType == "clockMinute" || animationType == "clockMiniute" {

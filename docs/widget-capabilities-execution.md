@@ -846,3 +846,19 @@ M5-1 首个支持子集据此勾选；M5-2 主题/资产、M5-3 效果与 M5-4 �
 Layout Starter 的说明和元数据已更新，Gallery 摘要/哈希同步，主 JSX 与原生/Web 既有 corpus 均不重写。首次完整检查在 metadata drift 处正确失败；执行显式 Gallery --write 同步后重新完整检查，失败日志单独保留。M5-3 效果、M5-4 最终能力表与流程验收，以及 M4 剩余授权/播放和物理设备专项仍继续；尚未部署、上传或送审。
 
 最终完整 `./Scripts/release-readiness.sh` 退出 0：Mac **660 通过 / 0 失败 / 32 跳过**，iPhone 17 Simulator **670 通过 / 0 失败 / 31 跳过**，两个 xcresult 的 runtimeWarnings 均为空。Editor 52、预览引擎 158、Web Studio 88、Gallery 同步 2 项、90 内置模板/21 curated 包、生产 TypeScript/构建、两端 app build、既有 browser/Layout/Theme smoke、新 Assets smoke 和独立运行时/服务/存储探针均通过。SDK/link、Sendable 和 Xcode 版本解析诊断保留，跳过不算通过。完整 gate 后仅补文档/证据和 PR，不改产品代码。证据目录 `__Release/capabilities/assets/` 包含成功完整日志、metadata drift 失败日志、两端 summary 与 verification。M5-2 首批主题/资源据此勾选；M5 与完整 M3–M5 目标仍未完成。
+
+### 2026-10-22：M5-3 公开材质、静态深度与回退增量
+
+基于 Apple 官方 Material、WidgetKit Clear/Tinted、数据更新动画和 rotation3DEffect 文档核对 SDK/API。新增 Runtime 1.4 的 backgroundMaterial 六选项（none + 五种公开 SwiftUI Material），由既有 background 提供颜色/渐变回退。Reduce Transparency 在不透明底色上合成回退；accented/vibrant 省略局部材质，根背景继续使用既有可移除 containerBackground。材质只混合组件内部内容，不读 Home Screen 壁纸，也不伪装为系统 Liquid Glass。
+
+原生与 Web 同样限制每树四个启用的材质背景，执行阶段拒绝第五个，Spacer 的忽略语义保持。Web 另做绘制预算、CSS 标准/前缀支持检测和不透明回退，预览引擎版本 0.13.0。新增 Reduce Transparency / Reduce Motion 预览控件，不改源码/包权限。静态 3D 拒绝非有限/零轴/错误格式，安全归一化大轴值，Reduce Motion 取消倾斜；旧 general animation modifier 在 Reduce Motion/低亮度时静态回退。原生只读系统 accessibility 环境保持不变，可信 host/test 可通过自定义 EnvironmentKey 覆盖，不设置 Apple 私有环境键，脚本无此能力。
+
+新增 Material Study 内置/Gallery 包，最低 Runtime 1.4，八种尺寸，无权限和网络；原创几何与完整 MIT 许可随包保留。静态倾斜只作用于背景形状，保持文字清晰。48 份 family × rendering-mode × appearance 的实际 JSC 树与 Web 一致；通用 corpus 只增加模板/Gallery 两项，旧项及元数据逐项相等。实际 WK 验证新 enum 的 source-range 编辑/Undo/Redo；Chrome 明确选 Gallery 来源，验证材质、两种辅助回退、系统模式、无 CSS 情况、源码不变、属性修改、手机宽度和保存重开。Web Gallery 名称现在从 widget.json 补齐，不再把 slug 当作展示名称。API 元数据/文档、AI 指引、能力表和两端 editor bundle 同步。
+
+性能记录包括普通/材质/实色回退预热及每组五帧、每帧四区域的 JSC + ImageRenderer 时间和采样 footprint，作为 XCTest 附件保留。最终 gate：Mac 材质 12.93 ms / 0.30 MiB 暖态增量、实色 11.75 ms / 0.16 MiB；iPhone 17 Simulator 分别 27.49 ms / 0.72 MiB、21.98 ms / 0.41 MiB。Mac 普通到全部预热额外约 35.27 MiB，模拟器约 0.63 MiB；不以暖态小增量掩盖首次框架/缓存成本，不据此宣称满足 WidgetKit 扩展限制。首次未对称预热的探针另存，不作为因果性能比较。截图及公开依据见 [视觉效果](visual-effects.md)。
+
+首次原生专项出现 Xcode 的“compile command exit 0 but no output”诊断，实际 xcresult build status succeeded、errorCount 0、测试通过；最终完整运行保留 SDK/link/Sendable/版本解析等诊断。浏览器专项最初受宿主默认深色导致“再次选 Dark 不触发渲染”及菜单关闭时机影响；固定 media 条件并等待实际状态后，CSS 不可用回退验证通过，临时探针已移除。首次完整 gate 拒绝未知 design 分类，改用现有 starter 分类并同步 Gallery，而未放宽验证器，然后完整重跑。
+
+最终 `./Scripts/release-readiness.sh` 退出 0：Mac **665 通过 / 0 失败 / 32 跳过**，iPhone 17 Simulator **675 通过 / 0 失败 / 31 跳过**，两个 xcresult runtimeWarnings 均为空。Editor 52、预览引擎 162、Web Studio 89、Gallery 同步 2 项、91 内置模板/22 curated 包、TypeScript/生产构建、两端 app build、全部 browser smoke 和独立服务/存储/运行时探针通过。完整日志、两端 summary、附件和验证记录在 `__Release/capabilities/effects/`。完整 gate 后只补文档、截图、证据和 PR，不改产品代码。
+
+研究确认现有 clock 私有类型动态查找也被 swing 和 iOS GIF 调用。Apple 2.5.1 与公共接口不保证持续动画的事实均已留官方依据；已向用户询问旧功能兼容选择，尚未实施其默认行为迁移。Native GIF 的额外回退/资源预算、真实 Clear/Tinted/WidgetKit、物理扩展内存、Web 裁切导出、M4 授权/播放与设备专项继续；M5-3/4 和整体目标保持未完成。未部署 Web、未上传构建、未送审。
