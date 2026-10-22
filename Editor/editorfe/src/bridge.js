@@ -17,12 +17,12 @@ export function connectNativeBridge(onConnected) {
   }
 }
 
-export function callNative(bridge, type, payload = {}, documentID = null, callback = () => {}) {
+export function callNative(bridge, type, payload = {}, documentID = null, callback = () => {}, sessionID = null) {
   if (!bridge) {
     callback({ result: "unavailable" });
     return;
   }
-  bridge.callHandler(type, studioEnvelope(type, payload, documentID), callback);
+  bridge.callHandler(type, studioEnvelope(type, payload, documentID, sessionID), callback);
 }
 
 export function announceReady(bridge) {

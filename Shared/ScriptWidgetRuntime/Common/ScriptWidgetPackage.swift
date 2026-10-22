@@ -45,22 +45,36 @@ enum StudioProtocol {
     static let editorFormat = "editor.format"
     static let editorGetState = "editor.getState"
 
-    static func envelope(type: String, documentID: String?, payload: [String: Any]) -> [String: Any] {
-        [
+    static func envelope(type: String, documentID: String?, payload: [String: Any], sessionID: String? = nil) -> [String: Any] {
+        var value: [String: Any] = [
             "protocolVersion": version,
             "type": type,
             "documentID": documentID as Any? ?? NSNull(),
             "payload": payload,
         ]
+        if let sessionID { value["sessionID"] = sessionID }
+        return value
     }
+}
+
+struct StudioEditorTarget: Equatable {
+    let editorID: UUID
+    let documentID: String
 }
 
 struct StudioDocumentSnapshot: Equatable {
     let content: String
     let version: Int
     let selection: Range<Int>
+    let documentID: String?
+    let sessionID: String?
+    let editorID: UUID?
+    var target: StudioEditorTarget? {
+        guard let editorID, let documentID else { return nil }
+        return StudioEditorTarget(editorID: editorID, documentID: documentID)
+    }
 
-    init?(state: Any?) {
+    init?(state: Any?, editorID: UUID? = nil) {
         guard
             let state = state as? [String: Any],
             let content = state["content"] as? String
@@ -69,13 +83,74 @@ struct StudioDocumentSnapshot: Equatable {
         let selection = state["selection"] as? [String: Any]
         let from = selection?["from"] as? Int ?? 0
         let to = selection?["to"] as? Int ?? from
-        self.init(content: content, version: version, selection: min(from, to)..<max(from, to))
+        self.init(content: content, version: version, selection: min(from, to)..<max(from, to),
+                  documentID: state["documentID"] as? String, sessionID: state["sessionID"] as? String, editorID: editorID)
     }
 
-    init(content: String, version: Int, selection: Range<Int>) {
+    init(content: String, version: Int, selection: Range<Int>, documentID: String? = nil, sessionID: String? = nil, editorID: UUID? = nil) {
         self.content = content
         self.version = version
         self.selection = selection
+        self.documentID = documentID
+        self.sessionID = sessionID
+        self.editorID = editorID
+    }
+}
+
+enum StudioDocumentApplyResult: Equatable {
+    case saved, conflict, unavailable, saveFailed
+    var message: String {
+        switch self {
+        case .saved: return "Applied and saved. Use Undo to restore the previous version."
+        case .conflict: return "The file changed. Review the current code before applying this proposal."
+        case .unavailable: return "The editor is not ready. Reopen the file and try again."
+        case .saveFailed: return "Saving could not be confirmed. Keep the editor open and try saving again."
+        }
+    }
+}
+
+@MainActor final class StudioEditorSaveRequest {
+    let target: StudioEditorTarget
+    private var completion: ((Bool) -> Void)?
+    init(target: StudioEditorTarget, completion: @escaping (Bool) -> Void) {
+        self.target = target
+        self.completion = completion
+    }
+    func finish(_ saved: Bool) {
+        let callback = completion
+        completion = nil
+        callback?(saved)
+    }
+}
+
+@MainActor final class StudioEditorSnapshotRequest {
+    let target: StudioEditorTarget
+    private var completion: ((StudioDocumentSnapshot?) -> Void)?
+    init(target: StudioEditorTarget, completion: @escaping (StudioDocumentSnapshot?) -> Void) {
+        self.target = target
+        self.completion = completion
+    }
+    func finish(_ snapshot: StudioDocumentSnapshot?) {
+        let callback = completion
+        completion = nil
+        callback?(snapshot)
+    }
+}
+
+@MainActor final class StudioEditorReplacementRequest {
+    let snapshot: StudioDocumentSnapshot
+    let content: String
+    private var completion: ((StudioDocumentApplyResult) -> Void)?
+    var isPending: Bool { completion != nil }
+    init(snapshot: StudioDocumentSnapshot, content: String, completion: @escaping (StudioDocumentApplyResult) -> Void) {
+        self.snapshot = snapshot
+        self.content = content
+        self.completion = completion
+    }
+    func finish(_ result: StudioDocumentApplyResult) {
+        let callback = completion
+        completion = nil
+        callback?(result)
     }
 }
 

@@ -152,7 +152,9 @@ export function App() {
           projects={model.projects} project={project} path={path} entry={report.manifest?.entry}
           onOpenProject={model.openProject}
           onDeleteProject={async (item) => {
-            if (await confirm({ title: `Delete “${item.name}”?`, description: "The project is removed from this browser. Export it first if you want to keep it.", action: "Delete", destructive: true })) await model.removeProject(item.id);
+            if (!(await confirm({ title: `Delete “${item.name}”?`, description: "The project is removed from this browser. Export it first if you want to keep it.", action: "Delete", destructive: true }))) return;
+            try { await model.removeProject(item.id); }
+            catch { toast.error("Project could not be deleted", { description: "The browser did not confirm deletion. Your project and edits were kept. Try again or export a backup." }); }
           }}
           onOpenFile={model.openFile}
           onDeleteFile={async (file) => {

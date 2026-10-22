@@ -9,32 +9,32 @@ import Combine
 import SwiftUI
 import WebKit
 
-final class EditorService {
+@MainActor final class EditorService {
     static let saveNotification = Notification.Name("EditorService_SaveNotification")
-    fileprivate static let snapshotRequestNotification = Notification.Name("EditorService_SnapshotRequestNotification")
+    fileprivate static let snapshotRequestNotification = Notification.Name("EditorService_SnapshotNotification")
     fileprivate static let replaceDocumentNotification = Notification.Name("EditorService_ReplaceDocumentNotification")
 
-    static func requestSnapshot(_ completion: @escaping (EditorDocumentSnapshot?) -> Void) {
-        NotificationCenter.default.post(
-            name: snapshotRequestNotification,
-            object: EditorSnapshotRequest(completion: completion)
-        )
+    static func save(target: StudioEditorTarget, completion: @escaping (Bool) -> Void) {
+        let request = StudioEditorSaveRequest(target: target, completion: completion)
+        NotificationCenter.default.post(name: saveNotification, object: request)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { request.finish(false) }
     }
 
-    static func replaceDocument(with content: String) {
-        NotificationCenter.default.post(name: replaceDocumentNotification, object: content)
+    static func requestSnapshot(target: StudioEditorTarget, completion: @escaping (StudioDocumentSnapshot?) -> Void) {
+        let request = StudioEditorSnapshotRequest(target: target, completion: completion)
+        NotificationCenter.default.post(name: snapshotRequestNotification, object: request)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { request.finish(nil) }
+    }
+
+    static func replaceDocument(with content: String, snapshot: StudioDocumentSnapshot,
+                                completion: @escaping (StudioDocumentApplyResult) -> Void) {
+        let request = StudioEditorReplacementRequest(snapshot: snapshot, content: content, completion: completion)
+        NotificationCenter.default.post(name: replaceDocumentNotification, object: request)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { request.finish(.unavailable) }
     }
 }
 
 typealias EditorDocumentSnapshot = StudioDocumentSnapshot
-
-private final class EditorSnapshotRequest {
-    let completion: (EditorDocumentSnapshot?) -> Void
-
-    init(completion: @escaping (EditorDocumentSnapshot?) -> Void) {
-        self.completion = completion
-    }
-}
 
 final class EditorInternalWebView: WKWebView {
     fileprivate var libraryEditorLease: UUID?
@@ -48,14 +48,19 @@ final class EditorInternalWebView: WKWebView {
     private var documentGeneration = UUID()
     private var requestedDocumentID: String?
     private let documentSession = StudioDocumentSession()
+    private var isTearingDown = false
     private var hasLoadedEditor = false
     private var draftWorkItem: DispatchWorkItem?
 
+    let editorID: UUID
+
     required init?(coder: NSCoder) {
+        editorID = UUID()
         super.init(coder: coder)
     }
 
-    init() {
+    init(editorID: UUID = UUID()) {
+        self.editorID = editorID
         let configuration = WKWebViewConfiguration()
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
         configuration.setURLSchemeHandler(EditorSchemeHandler(), forURLScheme: kEditorURLScheme)
@@ -67,24 +72,44 @@ final class EditorInternalWebView: WKWebView {
 
         NotificationCenter.default.publisher(for: EditorService.saveNotification)
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.saveCurrentContent() }
+            .sink { [weak self] notification in
+                guard let self, !self.isTearingDown,
+                      let request = notification.object as? StudioEditorSaveRequest,
+                      request.target.editorID == self.editorID else { return }
+                guard request.target.documentID == self.currentDocumentID else { request.finish(false); return }
+                self.saveCurrentContent(completion: request.finish)
+            }
             .store(in: &cancellables)
 
         NotificationCenter.default.publisher(for: EditorService.snapshotRequestNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
-                guard let request = notification.object as? EditorSnapshotRequest else { return }
-                self?.readSnapshot(completion: request.completion)
+                guard let self, !self.isTearingDown,
+                      let request = notification.object as? StudioEditorSnapshotRequest,
+                      request.target.editorID == self.editorID else { return }
+                guard request.target.documentID == self.currentDocumentID else { request.finish(nil); return }
+                self.readSnapshot(completion: request.finish)
             }
             .store(in: &cancellables)
 
         NotificationCenter.default.publisher(for: EditorService.replaceDocumentNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
-                guard let content = notification.object as? String else { return }
-                self?.replaceDocument(with: content)
+                guard let self, !self.isTearingDown,
+                      let request = notification.object as? StudioEditorReplacementRequest,
+                      request.snapshot.editorID == self.editorID else { return }
+                self.replaceDocument(request)
             }
             .store(in: &cancellables)
+    }
+
+    func invalidate() {
+        isTearingDown = true
+        documentGeneration = UUID()
+        pendingActions.removeAll()
+        draftWorkItem?.cancel()
+        for cancellable in cancellables { cancellable.cancel() }
+        cancellables.removeAll()
     }
 
     deinit {
@@ -153,23 +178,30 @@ final class EditorInternalWebView: WKWebView {
                 let self,
                 let payload = parameters?["payload"] as? [String: Any],
                 let content = payload["content"] as? String,
-                parameters?["documentID"] as? String == self.currentDocumentID
+                parameters?["documentID"] as? String == self.currentDocumentID,
+                parameters?["sessionID"] as? String == self.documentGeneration.uuidString
             else {
                 callback?(["result": "failed", "message": "Invalid document payload"])
                 return
             }
 
-            callback?(save(content: content) ? ["result": "ok"] : ["result": "failed"])
+            let saved = save(content: content)
+            callback?(saved ? ["result": "ok"] : ["result": "failed"])
         }
 
-        bridge?.register(handlerName: StudioProtocol.documentChanged) { [weak self] _, callback in
-            self?.scheduleDraftSnapshot()
+        bridge?.register(handlerName: StudioProtocol.documentChanged) { [weak self] parameters, callback in
+            guard let self, parameters?["documentID"] as? String == self.currentDocumentID,
+                  parameters?["sessionID"] as? String == self.documentGeneration.uuidString else {
+                callback?(["result": "failed"]); return
+            }
+            self.scheduleDraftSnapshot()
             callback?(["result": "ok"])
         }
 
         bridge?.register(handlerName: StudioProtocol.documentResources) { [weak self] parameters, callback in
             guard let self, let id = self.currentDocumentID,
-                  parameters?["documentID"] as? String == id, let model = self.scriptModel else {
+                  parameters?["documentID"] as? String == id,
+                  parameters?["sessionID"] as? String == self.documentGeneration.uuidString, let model = self.scriptModel else {
                 callback?(["result": "failed"]); return
             }
             callback?(["result": "ok", "documentID": id, "resources": model.package.editorImageResources()])
@@ -182,6 +214,7 @@ final class EditorInternalWebView: WKWebView {
         guard let content = result.0 else { return }
 
         guard let currentDocumentID else { return }
+        documentGeneration = UUID()
         let recovered = documentSession.open(documentID: currentDocumentID, content: content)
         callStudio(
             handlerName: StudioProtocol.documentOpen,
@@ -212,61 +245,72 @@ final class EditorInternalWebView: WKWebView {
         callStudio(handlerName: StudioProtocol.documentSetReadOnly, payload: ["readOnly": readOnly])
     }
 
-    private func saveCurrentContent(completion: ((Bool) -> Void)? = nil) {
-        guard isEditorReady, let documentID = currentDocumentID else {
-            completion?(false)
+    private func saveCurrentContent(completion: @escaping (Bool) -> Void = { _ in }) {
+        guard !isTearingDown, isEditorReady, let documentID = currentDocumentID else {
+            completion(false)
             return
         }
         let generation = documentGeneration
         callStudio(handlerName: StudioProtocol.editorGetState) { [weak self] response in
             guard
                 let self,
-                self.documentGeneration == generation,
+                !self.isTearingDown, self.documentGeneration == generation,
                 let state = response as? [String: Any],
                 let content = state["content"] as? String,
                 self.currentDocumentID == documentID,
-                state["documentID"] as? String == documentID
+                state["documentID"] as? String == documentID,
+                state["sessionID"] as? String == generation.uuidString
             else {
-                completion?(false)
+                completion(false)
                 return
             }
-            completion?(save(content: content))
+            if self.scriptModel?.package.readonly == true {
+                completion(content == self.documentSession.savedContent)
+                return
+            }
+            let saved = save(content: content)
+            completion(saved)
         }
     }
 
-    private func readSnapshot(completion: @escaping (EditorDocumentSnapshot?) -> Void) {
-        guard isEditorReady else {
-            completion(nil)
-            return
-        }
-        callStudio(handlerName: StudioProtocol.editorGetState) { response in
-            completion(EditorDocumentSnapshot(state: response))
-        }
-    }
-
-    private func replaceDocument(with content: String) {
-        guard isEditorReady, scriptModel?.package.readonly == false,
-              let documentID = currentDocumentID else { return }
+    private func readSnapshot(completion: @escaping (StudioDocumentSnapshot?) -> Void) {
+        guard isEditorReady, !isTearingDown, let documentID = currentDocumentID else { completion(nil); return }
         let generation = documentGeneration
-        callStudio(
-            handlerName: StudioProtocol.documentReplace,
-            payload: ["content": content, "version": 0]
-        ) { [weak self] response in
-            guard let self else { return }
-            let result = (response as? [String: Any])?["result"] as? String
-            guard result == "ok" else { return }
-            guard self.currentDocumentID == documentID,
+        callStudio(handlerName: StudioProtocol.editorGetState) { [weak self] response in
+            guard let self, !self.isTearingDown, self.currentDocumentID == documentID,
                   self.documentGeneration == generation,
-                  self.scriptModel?.package.readonly == false else { return }
-            // Flush current text; a delayed proposal acknowledgement must not
-            // overwrite edits made since the replacement was shown.
-            self.saveCurrentContent()
+                  let snapshot = StudioDocumentSnapshot(state: response, editorID: self.editorID),
+                  snapshot.documentID == documentID, snapshot.sessionID == generation.uuidString else {
+                completion(nil); return
+            }
+            completion(snapshot)
+        }
+    }
+
+    private func replaceDocument(_ request: StudioEditorReplacementRequest) {
+        guard request.isPending else { return }
+        guard isEditorReady, !isTearingDown else { request.finish(.unavailable); return }
+        let snapshot = request.snapshot
+        guard snapshot.documentID == currentDocumentID,
+              snapshot.sessionID == documentGeneration.uuidString,
+              scriptModel?.package.readonly == false else { request.finish(.conflict); return }
+        let generation = documentGeneration
+        callStudio(handlerName: StudioProtocol.documentReplace,
+                   payload: ["content": request.content, "expectedContent": snapshot.content, "version": snapshot.version + 1]) { [weak self] response in
+            guard let self, request.isPending else { return }
+            guard !self.isTearingDown, self.documentGeneration == generation,
+                  self.currentDocumentID == snapshot.documentID else { request.finish(.conflict); return }
+            guard (response as? [String: Any])?["result"] as? String == "ok" else {
+                request.finish(.conflict); return
+            }
+            // Read current text so newer manual edits survive a delayed reply.
+            self.saveCurrentContent { saved in request.finish(saved ? .saved : .saveFailed) }
         }
     }
 
     @discardableResult
     private func save(content: String) -> Bool {
-        guard let scriptModel, let documentID = currentDocumentID else { return false }
+        guard !isTearingDown, let scriptModel, !scriptModel.package.readonly, let documentID = currentDocumentID else { return false }
         let saved = documentSession.save(content, documentID: documentID) { value in
             let entry = scriptModel.package.readManifest()?.entry ?? "main.jsx"
             return currentRelativePath == entry
@@ -294,7 +338,7 @@ final class EditorInternalWebView: WKWebView {
     }
 
     private func studioEnvelope(type: String, payload: [String: Any]) -> [String: Any] {
-        StudioProtocol.envelope(type: type, documentID: currentDocumentID, payload: payload)
+        StudioProtocol.envelope(type: type, documentID: currentDocumentID, payload: payload, sessionID: documentGeneration.uuidString)
     }
 
     private func callStudio(
@@ -313,9 +357,10 @@ final class EditorInternalWebView: WKWebView {
 struct EditorWebView: NSViewRepresentable {
     let scriptModel: ScriptModel
     let relativePath: String
+    var editorID = UUID()
 
     func makeNSView(context: Context) -> EditorInternalWebView {
-        let webView = EditorInternalWebView()
+        let webView = EditorInternalWebView(editorID: editorID)
         webView.libraryEditorLease = ScriptWidgetEditorPresence.register()
         webView.loadEditorIfNeeded()
         webView.updateDocument(scriptModel, relativePath: relativePath)
@@ -325,6 +370,7 @@ struct EditorWebView: NSViewRepresentable {
     static func dismantleNSView(_ view: EditorInternalWebView, coordinator: ()) {
         ScriptWidgetEditorPresence.unregister(view.libraryEditorLease)
         view.libraryEditorLease = nil
+        view.invalidate()
     }
 
     func updateNSView(_ view: EditorInternalWebView, context: Context) {

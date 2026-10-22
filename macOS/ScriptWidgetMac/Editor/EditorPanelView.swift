@@ -24,6 +24,8 @@ struct EditorPanelTabLabel: View {
 struct EditorPanelView: View {
     let scriptModel: ScriptModel
     let configuration: StudioWidgetConfiguration
+    var editorID = UUID()
+    var documentID: String? = nil
     
     var body: some View {
         TabView {
@@ -40,7 +42,7 @@ struct EditorPanelView: View {
             WidgetConfigurationView(scriptModel: scriptModel, configuration: configuration)
                 .tabItem({ EditorPanelTabLabel(imageName: "slider.horizontal.3", label: "Config") })
 
-            StudioCopilotView(scriptModel: scriptModel)
+            StudioCopilotView(scriptModel: scriptModel, editorID: editorID, documentID: documentID)
                 .tabItem({ EditorPanelTabLabel(imageName: "sparkles", label: "Copilot") })
         }
         .padding(.top, 4)
@@ -50,6 +52,12 @@ struct EditorPanelView: View {
 
 private struct StudioCopilotView: View {
     let scriptModel: ScriptModel
+    let editorID: UUID
+    let documentID: String?
+    @State private var proposalSnapshot: StudioDocumentSnapshot?
+    @State private var requestID = UUID()
+    @State private var isApplying = false
+    @State private var isReading = false
 
     @StateObject private var session = AIGenerateSession()
     @State private var instruction = ""
@@ -113,7 +121,7 @@ private struct StudioCopilotView: View {
                             beginCopilotRequest(fixCurrentError: true)
                         }
                     }
-                    .disabled(session.isRunning || scriptModel.package.readonly)
+                    .disabled(session.isRunning || isReading || isApplying || scriptModel.package.readonly)
 
                     if session.isRunning {
                         AIGenerateProgressView(session: session)
@@ -137,6 +145,8 @@ private struct StudioCopilotView: View {
         .onChange(of: session.phase) { _, phase in
             consume(phase: phase)
         }
+        .onChange(of: documentID) { _, _ in resetProposal() }
+        .onDisappear { resetProposal() }
         .onAppear { skills = AIWidgetSkillManager.shared.allSkills() }
         .onReceive(NotificationCenter.default.publisher(for: AIWidgetSkillManager.changedNotification)) { _ in
             skills = AIWidgetSkillManager.shared.allSkills()
@@ -167,13 +177,11 @@ private struct StudioCopilotView: View {
                 }
                 Spacer()
                 Button("Apply to Editor", systemImage: "checkmark") {
-                    EditorService.replaceDocument(with: proposedCode)
-                    originalCode = proposedCode
-                    proposedCode = ""
-                    statusMessage = "Applied and saved. Use editor Undo to restore the previous version."
+                    applyProposal()
                 }
                 .buttonStyle(.borderedProminent)
             }
+            .disabled(isApplying || proposalSnapshot == nil)
         }
     }
 
@@ -187,6 +195,33 @@ private struct StudioCopilotView: View {
         }
         .frame(maxHeight: 180)
         .background(Color(nsColor: .textBackgroundColor), in: .rect(cornerRadius: 6))
+    }
+
+    private func resetProposal() {
+        requestID = UUID()
+        proposalSnapshot = nil
+        proposedCode = ""
+        isApplying = false
+        isReading = false
+        statusMessage = nil
+        session.cancel()
+    }
+
+    private func applyProposal() {
+        guard !isApplying, let snapshot = proposalSnapshot else { return }
+        let code = proposedCode, token = requestID
+        isApplying = true
+        statusMessage = "Applying and saving…"
+        EditorService.replaceDocument(with: code, snapshot: snapshot) { result in
+            guard requestID == token else { return }
+            isApplying = false
+            statusMessage = result.message
+            if result == .saved {
+                originalCode = code
+                proposedCode = ""
+                proposalSnapshot = nil
+            }
+        }
     }
 
     private func beginCopilotRequest(fixCurrentError: Bool) {
@@ -205,11 +240,18 @@ private struct StudioCopilotView: View {
             requestText = trimmed
         }
 
-        EditorService.requestSnapshot { snapshot in
+        guard !isReading, !isApplying, let documentID else { return }
+        let token = UUID()
+        requestID = token
+        isReading = true
+        EditorService.requestSnapshot(target: StudioEditorTarget(editorID: editorID, documentID: documentID)) { snapshot in
+            guard requestID == token else { return }
+            isReading = false
             guard let snapshot else {
                 statusMessage = "The editor is not ready yet."
                 return
             }
+            proposalSnapshot = snapshot
             originalCode = snapshot.content
             proposedCode = ""
             statusMessage = diagnostic == nil && fixCurrentError
@@ -224,6 +266,7 @@ private struct StudioCopilotView: View {
     }
 
     private func consume(phase: AIGenerateSession.Phase) {
+        guard proposalSnapshot != nil else { return }
         switch phase {
         case .done(let jsx):
             proposedCode = jsx

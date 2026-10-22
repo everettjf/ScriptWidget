@@ -26,6 +26,8 @@ struct ScriptWidgetAppShortcuts: AppShortcutsProvider {
 
 @main
 struct ScriptWidgetMacApp: App {
+    @FocusedValue(\.studioEditorTarget) private var editorTarget
+
 
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate;
 
@@ -79,11 +81,10 @@ struct ScriptWidgetMacApp: App {
                 }.keyboardShortcut("g", modifiers: [.command, .shift])
 
                 Button("Save") {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                        NotificationCenter.default.post(name: EditorService.saveNotification, object: nil, userInfo: nil)
-                        NotificationCenter.default.post(name: PreviewService.updateNotification, object: nil, userInfo: nil)
-                    }
+                    guard let editorTarget else { return }
+                    EditorService.save(target: editorTarget) { _ in }
                 }.keyboardShortcut("s")
+                .disabled(editorTarget == nil)
 
                 Button("Run") {
                     NotificationCenter.default.post(name: PreviewService.updateNotification, object: nil, userInfo: nil)

@@ -36,6 +36,10 @@ the browser and previews them itself.
   newer edit or hide an outgoing draft. Saves/deletions are ordered. Wait for the
   saved state before closing; clearing site data removes drafts, so export a
   `.swt` to keep a copy. If storage is unavailable, the UI asks you to export.
+- A project disappears only after its deletion commits. If the browser rejects
+  deletion, an error keeps the project and any edits made while waiting; you can
+  retry or export a backup. Existing disk projects still require a confirmed
+  disk deletion after a later save has fallen back to memory.
 
 ## Preview
 

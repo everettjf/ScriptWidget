@@ -10,6 +10,7 @@ import SwiftUI
 struct EditorMainView: View {
     
     @SceneStorage("editorPanelLayoutMode") private var panelLayoutModeVertical = true
+    @State private var editorID = UUID()
     @State private var selectedFilePath = "main.jsx"
     @State private var widgetConfiguration = StudioWidgetConfiguration()
     
@@ -20,8 +21,13 @@ struct EditorMainView: View {
         _selectedFilePath = State(initialValue: scriptModel.package.readManifest()?.entry ?? "main.jsx")
     }
     
+    private var documentID: String? {
+        scriptModel.package.resolvedPackageURL(relativePath: selectedFilePath)?.standardizedFileURL.path
+    }
+
     var body: some View {
         content
+            .focusedSceneValue(\.studioEditorTarget, documentID.map { StudioEditorTarget(editorID: editorID, documentID: $0) })
             .navigationTitle(scriptModel.name)
             .toolbar {
                 ToolbarItem(placement: .automatic) {
@@ -53,12 +59,14 @@ struct EditorMainView: View {
                         FileListView(scriptModel: scriptModel, selectedFilePath: $selectedFilePath)
                             .frame(minWidth: 190, idealWidth: 220, maxWidth: 300)
 
-                        EditorWebView(scriptModel: scriptModel, relativePath: selectedFilePath)
+                        EditorWebView(scriptModel: scriptModel, relativePath: selectedFilePath, editorID: editorID)
                             .frame(minWidth: 420, idealWidth: 620)
 
                         EditorPanelView(
                             scriptModel: scriptModel,
-                            configuration: widgetConfiguration
+                            configuration: widgetConfiguration,
+                            editorID: editorID,
+                            documentID: documentID
                         )
                             .frame(minWidth: 300, idealWidth: 360, maxWidth: 440)
                     }
@@ -68,12 +76,14 @@ struct EditorMainView: View {
                             .frame(minWidth: 190, idealWidth: 220, maxWidth: 300)
 
                         VSplitView {
-                            EditorWebView(scriptModel: scriptModel, relativePath: selectedFilePath)
+                            EditorWebView(scriptModel: scriptModel, relativePath: selectedFilePath, editorID: editorID)
                                 .frame(minHeight: 360, idealHeight: 600)
 
                             EditorPanelView(
                                 scriptModel: scriptModel,
-                                configuration: widgetConfiguration
+                                configuration: widgetConfiguration,
+                                editorID: editorID,
+                                documentID: documentID
                             )
                                 .frame(minHeight: 280, idealHeight: 380)
                         }
@@ -103,7 +113,7 @@ private struct EditorWorkspaceHeader: View {
             }
             Spacer()
             HStack(spacing: 12) {
-                Label("Saved", systemImage: "checkmark.icloud.fill")
+                Label("Studio", systemImage: "square.and.pencil")
                     .foregroundStyle(.secondary)
 
                 Divider()
@@ -126,5 +136,16 @@ private struct EditorWorkspaceHeader: View {
 struct EditorView_Previews: PreviewProvider {
     static var previews: some View {
         EditorMainView(scriptModel: globalScriptModel)
+    }
+}
+
+private struct StudioEditorTargetFocusKey: FocusedValueKey {
+    typealias Value = StudioEditorTarget
+}
+
+extension FocusedValues {
+    var studioEditorTarget: StudioEditorTarget? {
+        get { self[StudioEditorTargetFocusKey.self] }
+        set { self[StudioEditorTargetFocusKey.self] = newValue }
     }
 }

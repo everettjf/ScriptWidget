@@ -9,13 +9,15 @@
 
 X01/X02 证据：最终完整 gate 退出 0，Mac 661 / iPhone Simulator 671 均 0 失败；服务 probe 24、Web Studio 96 及所有保留的浏览器流程通过。确切结果见 [实施记录](widget-capabilities-execution.md)。其余 A/B 项尚未据此勾选。
 
-## 下一批优先事项（按顺序）
+## 当前执行顺序
 
-- [ ] **R05 / CI** 定位并修复 `03fe86d` 发布 CI 的探针运行依赖：`XCTestCore.framework` 加载失败；验证实际远端结果，不能以本地通过替代。
-- [x] **N03 / 旧控件隔离** 已复现相同源码切换文件时旧表单串改，修复后 Mac/iPad 实际 WKWebView 的表单、属性、主题、素材、Undo 和同文件重绘回归通过；N03 的其余范围继续验收。
-- [x] **N01 / 模板排版** 水族箱改成独立元素、受限位移和分尺寸布局；16 张原生/Web 截图覆盖八种 family，小号截断/换行消失。小号像素差 4.06%，仍有细微对齐差异，见公开动画文档。
+1. **N03 / 保存与生命周期验收**：会话隔离、Copilot 定向和保存回执、iPhone 切换前保存、Web 删除失败保留草稿均已修复并通过回归；Mac/iPhone 最终全量 688/698 通过，iPad 697 通过及两项补充检查通过，7 项 IndexedDB 场景通过。继续核查布局切换、离开编辑器和完整三端流程，N03 整体验收保持未完成。
+2. **R05 / 远端 CI（阻塞发布）**：`99d6f7a` 的 [运行 39869682111](https://github.com/everettjf/scriptwidget/actions/runs/39869682111) 在动画反向时钟检查失败；独立 XCTest 探针尚未执行到，运行路径修复仍待远端验证。
+3. **N01–N03 / 三端流程**：完成已有创作工具的保存重开、包往返、资源、动态表达式与只读边界验收。
+4. **R01–R04 / 文档和真机**：收口系统兼容范围，完成授权、共享存储、组件表现及性能验收。
+5. **R05–R07 / 发布**：最终代码全量回归，整理材料，部署 Web、归档上传原生；审核由用户提交。
 
-完成上述聚焦修复，再按规划进入三端流程、真机验收和最终发布。详细批次和出口见 [规划](widget-capabilities-plan.md)。
+已完成的旧控件隔离与水族箱排版保留在实施记录，不重复开发。三阶段出口见 [规划](widget-capabilities-plan.md)。
 
 ## B：创作能力完善
 
@@ -23,7 +25,7 @@ X01/X02 证据：最终完整 gate 退出 0，Mac 661 / iPhone Simulator 671 均
 - [ ] **N02（实现及自动化已完成，系统实机表现待 R04）** 已移除私有桥接，改用 Foundation/SwiftUI/ImageIO；对齐负周期、时区/锚点、固定日期、摆动及 GIF 帧时序。Mac/减少动态效果的标准钟针显示正确静态时间。最终两端完整 gate、iPad 状态测试、构建矩阵和 Chromium/WebKit 实际渲染检查通过；Firefox 本地启动失败；Linux/Windows 跨浏览器 CI 已通过（见规划中的确切运行链接）；真实 WidgetKit/AOD/扩展内存不计作已验收。
 - [ ] **N03** 彻底验证支持的 JSX 子集：源码保留、动态属性、未知结构、scope、陈旧命令、撤销、保存重开和 package 往返；复杂表达式继续可用 Code 编辑。已修复相同源码跨文件与同文件重绘的旧控件事件；继续完成其他支持子集、往返和三端流程验收。
 
-N03 current checkpoint: native delayed-replacement / reopened-file / newer-edit regressions and four real Web IndexedDB persistence cases now pass locally. The full gate is 678/688/688 passed with no failures. Remaining audit includes process-wide Copilot snapshot/replacement notification targeting and accurate apply/save feedback; current fixes do not mark all of N03 complete. The final remote readiness run is still required.
+N03 当前检查点：本批已确认缺陷均有实际桥接/文件或 IndexedDB 失败证据；最终完整 gate、补充 Mac 全量及最终 Web gate 已通过。覆盖真实写入失败、更新代码冲突、异步格式化和删除失败/重试。剩余生命周期、键盘/无障碍与完整操作验收不据此勾选，最终远端 CI 尚待验证。证据见实施记录末节。
 
 ## A：当前版本验收与发布
 

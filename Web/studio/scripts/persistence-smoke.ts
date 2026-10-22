@@ -131,6 +131,64 @@ async function outgoingDraftBlocksSaved() {
   } finally { await chrome.close(); }
 }
 
-try { await lateSaveCompletion(); await switchBeforeDebounce(); await deleteWhileSaveIsPending(); await outgoingDraftBlocksSaved(); }
+async function abortedDeletionKeepsProjectAndAllowsRetry(active: boolean, fallback = false) {
+  const chrome = await launchChrome({ width: 1400, height: 1000, scale: 1 });
+  try {
+    const page = await chrome.newPage();
+    await page.goto(url); await page.waitFor("!!document.querySelector('.sw-widget')", 20000);
+    const initial = await page.evaluate<Array<{ id: string }>>(stored);
+    const originalID = initial[0]!.id;
+    await clickReady(page, "document.getElementById('new-project')");
+    await page.waitFor("document.querySelectorAll('#project-list li').length===2 && document.getElementById('save-state').textContent==='Saved in this browser'");
+    if (active) {
+      await clickReady(page, "[...document.querySelectorAll('#project-list li button')].find(b=>b.textContent.includes('My First Widget'))");
+      await page.waitFor("document.getElementById('project-name').value==='My First Widget'");
+    }
+    if (fallback) {
+      await page.evaluate("window.__put=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(){throw new DOMException('Injected storage quota failure','QuotaExceededError');}");
+      await edit(page, second);
+      await page.waitFor("document.getElementById('save-state').textContent.includes('storage is unavailable')");
+      await page.evaluate("IDBObjectStore.prototype.put=window.__put");
+    }
+    await page.evaluate(`(()=>{
+      window.__delete=IDBObjectStore.prototype.delete;window.__holdDeleteFailure=true;window.__failureCallbacks=[];
+      for(const name of ['onabort','onerror']){
+        const descriptor=Object.getOwnPropertyDescriptor(IDBTransaction.prototype,name);
+        Object.defineProperty(IDBTransaction.prototype,name,{configurable:true,get:descriptor.get,set(handler){descriptor.set.call(this,event=>{
+          if(window.__holdDeleteFailure&&this.mode==='readwrite')window.__failureCallbacks.push(()=>handler.call(this,event));
+          else handler.call(this,event);
+        });}});
+      }
+      IDBObjectStore.prototype.delete=function(key){const request=window.__delete.call(this,key);this.transaction.abort();return request;};
+    })()`);
+    await clickReady(page, "document.querySelector('#project-list button[aria-label=\"Delete My First Widget\"]')");
+    await clickReady(page, "[...document.querySelectorAll('[role=alertdialog] button')].find(b=>b.textContent==='Delete')");
+    await page.waitFor("window.__failureCallbacks.length>0");
+    if (active) await edit(page, second);
+    await page.evaluate("window.__holdDeleteFailure=false;for(const resume of window.__failureCallbacks.splice(0))resume()");
+    await page.waitFor("document.body.textContent.includes('Project could not be deleted')");
+    assert.equal(await page.evaluate("document.querySelectorAll('#project-list li').length"), 2, 'an aborted deletion must retain its project');
+    const savedProjects = await page.evaluate<Array<{id:string}>>(stored);
+    assert.ok(savedProjects.some(item=>item.id===originalID));
+    if (active) {
+      await page.waitFor("document.getElementById('save-state').textContent==='Saved in this browser'");
+      await page.goto(url);
+      await page.waitFor(`document.querySelector('.cm-content')?.textContent===${JSON.stringify(second)}`,20000);
+      assert.equal(await page.evaluate("document.querySelectorAll('#project-list li').length"), 2);
+    } else {
+      assert.equal(await page.evaluate("document.getElementById('project-name').value"), 'Widget 2');
+      await page.evaluate("IDBObjectStore.prototype.delete=window.__delete");
+      await clickReady(page, "document.querySelector('#project-list button[aria-label=\"Delete My First Widget\"]')");
+      await clickReady(page, "[...document.querySelectorAll('[role=alertdialog] button')].find(b=>b.textContent==='Delete')");
+      await page.waitFor("document.querySelectorAll('#project-list li').length===1");
+      const remaining = await page.evaluate<Array<{id:string}>>(stored);
+      assert.ok(!remaining.some(item=>item.id===originalID));
+      await page.goto(url); await page.waitFor("document.querySelectorAll('#project-list li').length===1");
+    }
+    console.log(`persistence: aborted ${active ? 'active' : fallback ? 'memory-fallback' : 'inactive'} deletion preserves the project, ${active ? 'pending manual edits survive reload' : 'retry commits and survives reload'}`);
+  } finally { await chrome.close(); }
+}
+
+try { await lateSaveCompletion(); await switchBeforeDebounce(); await deleteWhileSaveIsPending(); await outgoingDraftBlocksSaved(); await abortedDeletionKeepsProjectAndAllowsRetry(false); await abortedDeletionKeepsProjectAndAllowsRetry(true); await abortedDeletionKeepsProjectAndAllowsRetry(false, true); }
 finally { server.close(); }
 console.log("✓ Project persistence asynchronous acceptance passed");

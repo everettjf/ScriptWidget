@@ -34,17 +34,18 @@ export function useProjects(): ProjectsModel {
   const latest = useRef<Project | null>(null);
   const drafts = useRef(new Map<string, Project>());
   const dirtyProjects = useRef(new Set<string>());
+  const deletingProjects = useRef(new Set<string>());
   const pending = useRef(new Map<Project, Promise<void>>());
 
   const persist = useCallback((snapshot: Project): Promise<void> => {
     const existing = pending.current.get(snapshot);
     if (existing) return existing;
-    if (drafts.current.get(snapshot.id) !== snapshot) return Promise.resolve();
+    if (deletingProjects.current.has(snapshot.id) || drafts.current.get(snapshot.id) !== snapshot) return Promise.resolve();
     const task = (async () => {
       const saved = await storage.save(snapshot);
       // An older completion must not clear a newer edit, resurrect a removed
       // project, or mark another project's draft as saved.
-      if (drafts.current.get(snapshot.id) !== snapshot) return;
+      if (deletingProjects.current.has(snapshot.id) || drafts.current.get(snapshot.id) !== snapshot) return;
       drafts.current.set(saved.id, saved);
       dirtyProjects.current.delete(saved.id);
       setProjects((list) => list.map((item) => item.id === saved.id ? saved : item));
@@ -133,20 +134,29 @@ export function useProjects(): ProjectsModel {
   }, [openProject]);
 
   const removeProject = useCallback(async (id: string) => {
-    drafts.current.delete(id);
-    dirtyProjects.current.delete(id);
-    if (latest.current?.id === id) dirty.current = false;
-    await storage.remove(id);
-    let remaining = [...drafts.current.values()];
-    if (remaining.length === 0) {
-      const fresh = createProject();
-      const saved = await storage.save(fresh);
-      drafts.current.set(saved.id, saved);
-      remaining = [...drafts.current.values()];
+    if (deletingProjects.current.has(id)) return;
+    deletingProjects.current.add(id);
+    try {
+      await storage.remove(id);
+      // Keep the draft until deletion commits. An aborted transaction must
+      // preserve both the project and edits made while the result was pending.
+      drafts.current.delete(id);
+      dirtyProjects.current.delete(id);
+      if (latest.current?.id === id) dirty.current = false;
+      let remaining = [...drafts.current.values()];
+      if (remaining.length === 0) {
+        const saved = await storage.save(createProject());
+        drafts.current.set(saved.id, saved);
+        remaining = [...drafts.current.values()];
+      }
+      setProjects(remaining);
+      if (latest.current?.id === id) { latest.current = null; openProject(remaining[0]!); }
+    } finally {
+      deletingProjects.current.delete(id);
+      const retained = drafts.current.get(id);
+      if (retained && dirtyProjects.current.has(id)) void persist(retained);
     }
-    setProjects(remaining);
-    if (latest.current?.id === id) { latest.current = null; openProject(remaining[0]!); }
-  }, [openProject]);
+  }, [openProject, persist]);
 
   const updateFiles = useCallback((changes: Record<string, string | Uint8Array | null>) => {
     edit((current) => {

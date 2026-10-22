@@ -15,11 +15,12 @@ export const StudioMessage = Object.freeze({
   diagnosticsPublish: "diagnostics.publish",
 });
 
-export function studioEnvelope(type, payload = {}, documentID = null) {
+export function studioEnvelope(type, payload = {}, documentID = null, sessionID = null) {
   return {
     protocolVersion: STUDIO_PROTOCOL_VERSION,
     type,
     documentID,
+    ...(sessionID === null ? {} : { sessionID }),
     payload,
   };
 }

@@ -67,6 +67,23 @@ final class VisualLayoutEditorTests: XCTestCase {
         let response = try await evaluate(web, "window.__nativeCall('editor.getState')") as? [String:Any]
         return try XCTUnwrap(response?["content"] as? String)
     }
+    @MainActor func testAsyncFormattingCannotChangeAFileOpenedWhileFormatting() async throws {
+        let web = try await editor()
+        try await open(web, source: source)
+        let next = "const answer=42;$render(<text>Leave the next file untouched</text>);"
+        let data = try json(["documentID": "next/main.jsx", "payload": ["content": next, "version": 0]])
+        _ = try await evaluate(web, "(async()=>{const formatting=window.__nativeCall('editor.format');await window.__nativeCall('document.open',\(data));await formatting;})()")
+        let current = try await content(web)
+        XCTAssertEqual(current, next)
+    }
+    @MainActor func testAsyncFormattingCannotOverwriteManualEdits() async throws {
+        let web = try await editor()
+        try await open(web, source: source)
+        let manual = "$render(<text>Manual change during formatting</text>);"
+        _ = try await evaluate(web, "(async()=>{const formatting=window.__nativeCall('editor.format');document.querySelector('.cm-content').focus();document.execCommand('selectAll');document.execCommand('insertText',false,\(try json(manual)));await formatting;})()")
+        let current = try await content(web)
+        XCTAssertEqual(current, manual)
+    }
     @MainActor func testNativeBundledEditorLayoutChangesSaveThroughTheBridgeAndUndoWithoutLosingCode() async throws {
         let web = try await editor(); try await open(web, source: source)
         _ = try await evaluate(web, "document.querySelector('.sw-layout-toggle').click();[...document.querySelectorAll('.sw-layout-layer')].find(row=>row.textContent.includes('Calm morning')).click();document.querySelector('input[aria-label=\"Layer text\"]').value='Make today yours';[...document.querySelectorAll('.sw-layout button')].find(button=>button.textContent==='Apply text').click();")
@@ -180,6 +197,7 @@ final class VisualLayoutEditorTests: XCTestCase {
         #endif
         defer { web.stopLoading() }
         try await wait(web, "document.querySelector('.cm-content')?.textContent.includes('Calm morning') === true")
+        let snapshot = try await nativeSnapshot(web, documentID: first.appendingPathComponent("main.jsx").standardizedFileURL.path)
         // Hold only the real JS acknowledgement. Document reads/saves/resources
         // still travel through the production bridge and package writer.
         _ = try await evaluate(web, """
@@ -196,15 +214,15 @@ final class VisualLayoutEditorTests: XCTestCase {
         };
         bridge._handleMessageFromiOS=json=>{
           const message=JSON.parse(json);
-          if(message.handlerName==='document.open')window.__openedDocumentID=message.data.documentID;
+          if(message.handlerName==='document.open'){window.__openedDocumentID=message.data.documentID;window.__openedSessionID=message.data.sessionID;}
           return receive(json);
         };void 0;
         """)
         let replacement = "$render(<text>Replacement intended for First only</text>);"
         #if os(macOS)
-        EditorService.replaceDocument(with: replacement)
+        EditorService.replaceDocument(with: replacement, snapshot: snapshot) { _ in }
         #else
-        MirrorEditorService.replaceDocument(with: replacement)
+        MirrorEditorService.replaceDocument(with: replacement, snapshot: snapshot) { _ in }
         #endif
         try await wait(web, "!!window.__heldReplacement")
         if !stayOnFirst {
@@ -237,10 +255,192 @@ final class VisualLayoutEditorTests: XCTestCase {
         }
         _ = try await evaluate(web, """
         window.__releaseReplacement=true;
-        window.WKWebViewJavascriptBridge.callHandler('document.resources',{documentID:\(try json(finalID))},response=>{window.__nativeBarrier=response.result==='ok';});
+        window.WKWebViewJavascriptBridge.callHandler('document.resources',{documentID:\(try json(finalID)),sessionID:window.__openedSessionID || \(try json(snapshot.sessionID!))},response=>{window.__nativeBarrier=response.result==='ok';});
         """)
         try await wait(web, "window.__nativeBarrier===true")
         XCTAssertEqual(try String(contentsOf: finalURL, encoding: .utf8), expected)
+    }
+    #if os(macOS)
+    private typealias NativeEditor = EditorInternalWebView
+    private typealias NativeService = EditorService
+    #else
+    private typealias NativeEditor = MirrorEditorInternalView
+    private typealias NativeService = MirrorEditorService
+    #endif
+    @MainActor private func nativeSnapshot(_ web: NativeEditor, documentID: String) async throws -> StudioDocumentSnapshot {
+        let snapshot: StudioDocumentSnapshot? = await withCheckedContinuation { continuation in
+            NativeService.requestSnapshot(target: StudioEditorTarget(editorID: web.editorID, documentID: documentID)) {
+                continuation.resume(returning: $0)
+            }
+        }
+        return try XCTUnwrap(snapshot)
+    }
+    @MainActor private func applyNative(_ code: String, snapshot: StudioDocumentSnapshot) async -> StudioDocumentApplyResult {
+        await withCheckedContinuation { continuation in
+            NativeService.replaceDocument(with: code, snapshot: snapshot) { continuation.resume(returning: $0) }
+        }
+    }
+    @MainActor private func nativeEditor(_ model: ScriptModel) async throws -> NativeEditor {
+        let web = NativeEditor()
+        web.frame = CGRect(x: 0, y: 0, width: 850, height: 650)
+        #if os(macOS)
+        web.loadEditorIfNeeded()
+        #endif
+        openNative(web, model)
+        try await wait(web, "document.querySelector('.cm-content')?.textContent.includes('Calm morning')===true")
+        return web
+    }
+    @MainActor private func openNative(_ web: NativeEditor, _ model: ScriptModel) {
+        #if os(macOS)
+        web.updateDocument(model, relativePath: "main.jsx")
+        #else
+        web.updateDocument(action: MirrorEditorScriptView(model: model, filePath: model.package.path.appendingPathComponent("main.jsx")).createActionProvider())
+        #endif
+    }
+    @MainActor private func waitForFile(_ url: URL, _ text: String) async throws {
+        let deadline = Date().addingTimeInterval(15)
+        while (try? String(contentsOf: url, encoding: .utf8)) != text && Date() < deadline {
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), text)
+    }
+    private func nativeModels() throws -> (URL, ScriptModel, ScriptModel) {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("NativeScope-" + UUID().uuidString)
+        let models = try ["First", "Second"].map { name -> ScriptModel in
+            let directory = root.appendingPathComponent(name)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try source.write(to: directory.appendingPathComponent("main.jsx"), atomically: true, encoding: .utf8)
+            return ScriptModel(package: ScriptWidgetPackage(path: directory, readonly: false))
+        }
+        return (root, models[0], models[1])
+    }
+    @MainActor func testNativeReplacementOnlyChangesItsIntendedEditor() async throws {
+        let (root, first, second) = try nativeModels()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let a = try await nativeEditor(first), b = try await nativeEditor(second)
+        defer { a.stopLoading(); b.stopLoading() }
+        let proposal = "$render(<text>Only the first editor requested this</text>);"
+        let snapshot = try await nativeSnapshot(a, documentID: first.package.path.appendingPathComponent("main.jsx").standardizedFileURL.path)
+        let result = await applyNative(proposal, snapshot: snapshot)
+        XCTAssertEqual(result, .saved)
+        try await waitForFile(first.package.path.appendingPathComponent("main.jsx"), proposal)
+        let other = try await evaluate(b, "document.querySelector('.cm-content').textContent") as? String
+        XCTAssertFalse(other?.contains("Only the first editor") == true)
+        XCTAssertEqual(try String(contentsOf: second.package.path.appendingPathComponent("main.jsx"), encoding: .utf8), source)
+    }
+    @MainActor func testNativeSaveWithoutAnAcknowledgementStillWrites() async throws {
+        let (root, first, _) = try nativeModels()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let web = try await nativeEditor(first)
+        defer { web.stopLoading() }
+        let url = first.package.path.appendingPathComponent("main.jsx")
+        let snapshot = try await nativeSnapshot(web, documentID: url.standardizedFileURL.path)
+        let saved = "$render(<text>Saved without a callback</text>);"
+        let envelope = try json(["documentID": snapshot.documentID!, "sessionID": snapshot.sessionID!, "payload": ["content": saved]])
+        _ = try await evaluate(web, "window.WKWebViewJavascriptBridge.callHandler('document.save',\(envelope));void 0;")
+        try await waitForFile(url, saved)
+    }
+    @MainActor func testImmediateNativeFileSwitchFlushesOutgoingEdits() async throws {
+        let (root, first, second) = try nativeModels()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let web = try await nativeEditor(first)
+        defer { web.stopLoading() }
+        let firstURL = first.package.path.appendingPathComponent("main.jsx")
+        let secondURL = second.package.path.appendingPathComponent("main.jsx")
+        _ = try await evaluate(web, "const receive=window.WKWebViewJavascriptBridge._handleMessageFromiOS;window.WKWebViewJavascriptBridge._handleMessageFromiOS=json=>{const message=JSON.parse(json);if(message.handlerName==='document.open')window.__switchedID=message.data.documentID;return receive(json);};void 0;")
+        let manual = "$render(<text>Edited just before switching files</text>);"
+        _ = try await evaluate(web, "document.querySelector('.cm-content').focus();document.execCommand('selectAll');document.execCommand('insertText',false,\(try json(manual)));void 0;")
+        openNative(web, second)
+        try await wait(web, "window.__switchedID===\(try json(secondURL.standardizedFileURL.path))")
+        try await waitForFile(firstURL, manual)
+        XCTAssertEqual(try String(contentsOf: secondURL, encoding: .utf8), source)
+    }
+    @MainActor func testNativeReadOnlyDocumentCanSwitchWithoutWriting() async throws {
+        let (root, first, second) = try nativeModels()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let readonly = ScriptModel(package: ScriptWidgetPackage(path: first.package.path, readonly: true))
+        let web = try await nativeEditor(readonly)
+        defer { web.stopLoading() }
+        try source.replacingOccurrences(of: "Calm morning", with: "Second file opened").write(to: second.package.path.appendingPathComponent("main.jsx"), atomically: true, encoding: .utf8)
+        openNative(web, second)
+        try await wait(web, "document.querySelector('.cm-content')?.textContent.includes('Second file opened')===true")
+        XCTAssertEqual(try String(contentsOf: first.package.path.appendingPathComponent("main.jsx"), encoding: .utf8), source)
+    }
+    @MainActor func testNativeProposalTargetsOneOfTwoWindowsOnTheSameFile() async throws {
+        let (root, first, _) = try nativeModels()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let a = try await nativeEditor(first), b = try await nativeEditor(first)
+        defer { a.stopLoading(); b.stopLoading() }
+        let snapshot = try await nativeSnapshot(a, documentID: first.package.path.appendingPathComponent("main.jsx").standardizedFileURL.path)
+        let result = await applyNative("$render(<text>Only window A</text>);", snapshot: snapshot)
+        XCTAssertEqual(result, .saved)
+        let other = try await evaluate(b, "document.querySelector('.cm-content').textContent") as? String
+        XCTAssertFalse(other?.contains("Only window A") == true)
+    }
+    @MainActor func testNativeProposalRejectsCodeEditedAfterSnapshot() async throws {
+        let (root, first, _) = try nativeModels()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let web = try await nativeEditor(first)
+        defer { web.stopLoading() }
+        let url = first.package.path.appendingPathComponent("main.jsx")
+        let snapshot = try await nativeSnapshot(web, documentID: url.standardizedFileURL.path)
+        let manual = "$render(<text>Keep my newer manual edit</text>);"
+        _ = try await evaluate(web, "document.querySelector('.cm-content').focus();document.execCommand('selectAll');document.execCommand('insertText',false,\(try json(manual)));void 0;")
+        let result = await applyNative("$render(<text>Stale proposal</text>);", snapshot: snapshot)
+        XCTAssertEqual(result, .conflict)
+        try await waitForFile(url, manual)
+    }
+    @MainActor func testNativeProposalReportsActualWriterFailure() async throws {
+        let (root, first, _) = try nativeModels()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let web = try await nativeEditor(first)
+        defer { web.stopLoading() }
+        let url = first.package.path.appendingPathComponent("main.jsx")
+        let snapshot = try await nativeSnapshot(web, documentID: url.standardizedFileURL.path)
+        try FileManager.default.removeItem(at: url)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: false)
+        let result = await applyNative("$render(<text>Not saved</text>);", snapshot: snapshot)
+        XCTAssertEqual(result, .saveFailed)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
+    }
+    @MainActor func testQueuedAutosaveCannotOverwriteAReopenedNativeFile() async throws {
+        let (root, first, second) = try nativeModels()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let web = try await nativeEditor(first)
+        defer { web.stopLoading() }
+        _ = try await evaluate(web, """
+        const bridge=window.WKWebViewJavascriptBridge,fetch=bridge._fetchQueue,receive=bridge._handleMessageFromiOS;
+        window.__holdNextSave=true;window.__releaseSave=false;
+        bridge._fetchQueue=()=>{
+          const passed=[];
+          for(const message of JSON.parse(fetch())){
+            if(window.__holdNextSave&&message.handlerName==='document.save'&&!message.responseID){window.__heldSave=message;window.__holdNextSave=false;}
+            else passed.push(message);
+          }
+          if(window.__releaseSave&&window.__heldSave){passed.unshift(window.__heldSave);window.__heldSave=null;}
+          return JSON.stringify(passed);
+        };
+        bridge._handleMessageFromiOS=json=>{
+          const message=JSON.parse(json);
+          if(message.handlerName==='document.open'){window.__openedDocumentID=message.data.documentID;window.__openedSessionID=message.data.sessionID;}
+          return receive(json);
+        };void 0;
+        """)
+        let old = "$render(<text>Old queued autosave</text>);", newer = "$render(<text>New edit after reopening</text>);"
+        _ = try await evaluate(web, "document.querySelector('.cm-content').focus();document.execCommand('selectAll');document.execCommand('insertText',false,\(try json(old)));void 0;")
+        try await wait(web, "!!window.__heldSave")
+        openNative(web, second)
+        try await wait(web, "document.querySelector('.cm-content').textContent.includes('Calm morning')")
+        openNative(web, first)
+        let id = first.package.path.appendingPathComponent("main.jsx").standardizedFileURL.path
+        try await wait(web, "window.__openedDocumentID===\(try json(id))")
+        _ = try await evaluate(web, "document.querySelector('.cm-content').focus();document.execCommand('selectAll');document.execCommand('insertText',false,\(try json(newer)));void 0;")
+        try await waitForFile(first.package.path.appendingPathComponent("main.jsx"), newer)
+        _ = try await evaluate(web, "window.__releaseSave=true;window.WKWebViewJavascriptBridge.callHandler('document.resources',{documentID:\(try json(id)),sessionID:window.__openedSessionID},response=>{window.__saveBarrier=response.result==='ok';});")
+        try await wait(web, "window.__saveBarrier===true")
+        XCTAssertEqual(try String(contentsOf: first.package.path.appendingPathComponent("main.jsx"), encoding: .utf8), newer)
+        let status = try await evaluate(web, "document.getElementById('save-status').textContent") as? String
+        XCTAssertEqual(status, "Saved")
     }
     @MainActor func testNativeUnsupportedRootsKeepSourceAndShowTheCodeBoundary() async throws {
         let web = try await editor(), code = "const widget=<text>Do not rewrite</text>;$render(widget);"

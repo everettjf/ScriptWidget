@@ -31,10 +31,30 @@ try {
   assert.ok(Math.abs(value.pose[direction==="horizontal"?"x":"y"]-10)<0.001);
  }
  value=await page.evaluate("window.pose('clockCustom,-10')");assert.equal(value.pose.direction,"reverse");assert.equal(value.pose.duration,"20s");
- const first=await page.evaluate("window.measurePose().angle");
- await new Promise(resolve=>setTimeout(resolve,160));
- const second=await page.evaluate("window.measurePose().angle"),delta=((second-first+540)%360)-180;
- assert.ok(delta< -0.5&&delta> -8,`negative clock moves backwards: ${delta}`);
+ // A CSS declaration does not mean its animation has started. Sample real
+ // rendered frames after the browser has resolved the animation's ready state.
+ const playback=await page.evaluate(`(async()=>{
+  const deadline=performance.now()+5000;
+  const frame=()=>new Promise((resolve,reject)=>{
+   const timer=setTimeout(()=>reject(new Error('Animation frame did not arrive')),5000);
+   requestAnimationFrame(()=>{clearTimeout(timer);resolve();});
+  });
+  const animation=window.poseElement.getAnimations().find(value=>value.animationName==='sw-clock');
+  if(!animation)throw new Error('Clock CSS animation was not created');
+  await Promise.race([animation.ready,new Promise((_,reject)=>setTimeout(()=>reject(new Error('Clock animation did not become ready')),5000))]);
+  await frame();
+  const first={angle:window.measurePose().angle,time:animation.currentTime};
+  while(animation.currentTime-first.time<160){
+   if(performance.now()>deadline)throw new Error('Clock animation did not advance');
+   await frame();
+  }
+  return {first,second:{angle:window.measurePose().angle,time:animation.currentTime},state:animation.playState};
+ })()`);
+ const delta=((playback.second.angle-playback.first.angle+540)%360)-180;
+ const elapsed=playback.second.time-playback.first.time;
+ assert.equal(playback.state,'running');
+ assert.ok(delta< -0.5,`negative clock moves backwards: ${delta}`);
+ assert.ok(Math.abs(delta+elapsed*360/20000)<0.2,`negative clock follows actual animation time: ${JSON.stringify(playback)}`);
  value=await page.evaluate("window.pose('clockCustom,0.1')");assert.equal(value.pose.duration,"0.5s");
  value=await page.evaluate("window.pose('animation:{\"type\":\"clock\",\"interval\":1e308}',{now:978307205000})");
  assert.equal(value.pose.name,"none");assert.ok(Number.isFinite(value.pose.angle));

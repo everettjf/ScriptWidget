@@ -48,6 +48,7 @@ const readOnly = new Compartment();
 const theme = new Compartment();
 let bridge = null;
 let documentID = null;
+let documentSessionID = null;
 let documentVersion = 0;
 let documentGeneration = 0;
 let suppressChanges = false;
@@ -81,11 +82,11 @@ function scheduleSave() {
   window.clearTimeout(saveTimer);
   setSaveStatus("Saving…", "saving");
   saveTimer = window.setTimeout(() => {
-    const content = view.state.doc.toString();
-    callNative(bridge, StudioMessage.documentSave, { content, version: documentVersion }, documentID, (response = {}) => {
-      if (isWebStudio) return;
+    const content = view.state.doc.toString(), version = documentVersion, id = documentID, session = documentSessionID, generation = documentGeneration;
+    callNative(bridge, StudioMessage.documentSave, { content, version }, id, (response = {}) => {
+      if (isWebStudio || id !== documentID || session !== documentSessionID || generation !== documentGeneration || version !== documentVersion) return;
       setSaveStatus(response.result === "ok" || response.result === "unavailable" ? "Saved" : "Save failed", response.result === "failed" ? "error" : "saved");
-    });
+    }, session);
   }, 700);
 }
 
@@ -98,7 +99,7 @@ function onEditorUpdate(update) {
   update.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
     changes.push({ from: fromA, to: toA, insert: inserted.toString(), newFrom: fromB, newTo: toB });
   });
-  callNative(bridge, StudioMessage.documentChanged, { changes, version: documentVersion }, documentID);
+  callNative(bridge, StudioMessage.documentChanged, { changes, version: documentVersion }, documentID, undefined, documentSessionID);
   scheduleSave();
 }
 
@@ -108,13 +109,13 @@ const extensions = [
   highlightSpecialChars(),
   history(),
   visualLayoutEditor({ refreshResources: () => new Promise((resolve, reject) => {
-    const expectedID = documentID, generation = documentGeneration;
+    const expectedID = documentID, generation = documentGeneration, expectedSession = documentSessionID;
     const timeout = window.setTimeout(() => reject(new Error("Resource refresh timed out")), 5000);
     callNative(bridge, StudioMessage.documentResources, {}, expectedID, (response = {}) => {
       window.clearTimeout(timeout);
       if (expectedID !== documentID || generation !== documentGeneration || response.result !== "ok" || response.documentID !== expectedID || !Array.isArray(response.resources)) reject(new Error("Document resources are unavailable"));
       else resolve(response.resources);
-    });
+    }, expectedSession);
   }) }),
   foldGutter(),
   drawSelection(),
@@ -153,6 +154,7 @@ const view = new EditorView({
 });
 
 function replaceDocument(content, nextDocumentID = documentID, version = 0) {
+  window.clearTimeout(saveTimer);
   documentGeneration += 1;
   const previousSelection = view.state.selection.main;
   saveDocumentState(window.localStorage, documentID, { anchor: previousSelection.anchor, head: previousSelection.head, scrollTop: view.scrollDOM.scrollTop });
@@ -191,24 +193,27 @@ function insertText(content) {
 
 async function formatDocument() {
   if (view.state.readOnly) return false;
+  const source = view.state.doc.toString(), generation = documentGeneration, version = documentVersion;
+  const current = () => !view.state.readOnly && generation === documentGeneration && version === documentVersion && source === view.state.doc.toString();
   try {
     const [{ format }, { default: babelPlugin }, { default: estreePlugin }] = await Promise.all([
       import("prettier/standalone"),
       import("prettier/plugins/babel"),
       import("prettier/plugins/estree"),
     ]);
-    const formatted = await format(view.state.doc.toString(), {
+    const formatted = await format(source, {
       parser: "babel",
       plugins: [babelPlugin, estreePlugin],
       semi: true,
       singleQuote: true,
       trailingComma: "es5",
     });
+    if (!current()) return false;
     replaceDocument(formatted, documentID, documentVersion + 1);
     scheduleSave();
     return true;
   } catch (error) {
-    callNative(bridge, "diagnostics.publish", { message: String(error), severity: "error" }, documentID);
+    if (current()) callNative(bridge, "diagnostics.publish", { message: String(error), severity: "error" }, documentID, undefined, documentSessionID);
     return false;
   }
 }
@@ -236,6 +241,8 @@ function publishDiagnostics(items = []) {
 function register(name, handler) {
   bridge.registerHandler(name, async (data = {}, callback = () => {}) => {
     try {
+      if (documentSessionID !== null && name !== StudioMessage.documentOpen && name !== StudioMessage.editorSetTheme &&
+          (data.documentID !== documentID || data.sessionID !== documentSessionID)) throw new Error("The editor session changed.");
       callback({ result: "ok", ...(await handler(data)) });
     } catch (error) {
       callback({ result: "failed", message: String(error) });
@@ -246,13 +253,15 @@ function register(name, handler) {
 connectNativeBridge((nativeBridge) => {
   bridge = nativeBridge;
 
-  register(StudioMessage.documentOpen, ({ payload = {}, documentID: id }) => {
+  register(StudioMessage.documentOpen, ({ payload = {}, documentID: id, sessionID = null }) => {
+    documentSessionID = sessionID;
     replaceDocument(payload.content, id, payload.version ?? 0);
     setVisualLayoutResources(view, payload.resources ?? []);
     setReadOnly(payload.readOnly);
     return { protocolVersion: STUDIO_PROTOCOL_VERSION };
   });
   register(StudioMessage.documentReplace, ({ payload = {}, documentID: id }) => {
+    if (view.state.readOnly || (payload.expectedContent !== undefined && payload.expectedContent !== view.state.doc.toString())) throw new Error("The file changed or is read only.");
     replaceDocument(payload.content, id, payload.version ?? documentVersion);
     return {};
   });
@@ -270,6 +279,7 @@ connectNativeBridge((nativeBridge) => {
     content: view.state.doc.toString(),
     version: documentVersion,
     documentID,
+    sessionID: documentSessionID,
     selection: { from: view.state.selection.main.from, to: view.state.selection.main.to },
   }));
   register(StudioMessage.diagnosticsPublish, ({ payload = {} }) => {
