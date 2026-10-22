@@ -23,6 +23,7 @@ git diff --exit-code -- \
 
 if [ "${SCRIPTWIDGET_SKIP_XCODE:-0}" != "1" ]; then
   node Scripts/test-runtime-delivery.mjs
+  node Scripts/test-service-authorization.mjs
   node Scripts/test-storage-atomic.mjs
   node Scripts/test-storage-files.mjs
   sh Scripts/macos-widget-link-tests.sh

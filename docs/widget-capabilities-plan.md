@@ -153,6 +153,7 @@ Apple 的 [EventKit 授权](https://developer.apple.com/documentation/eventkit/a
 先建立安全的原生授权能力，再接音乐和其他需要登录的服务。Data Source Plugin 仍是声明式映射，不能借接入服务扩大脚本权限。
 
 - [ ] M4-1 设计原生授权账户与凭据引用：Keychain 保存、按服务/用户隔离、刷新、注销、撤销和删除。OAuth 流程验证 state、PKCE、回调与服务域名。
+  - 原生凭据、PKCE、账户/连接绑定、Keychain owner 操作授权和固定请求计划已开发；两个平台保留各自默认 Keychain 组，服务使用独立共享组。当前独立 24 项回归通过，连接界面、真实请求代理、刷新/撤销协调、持久化写收据及 Web Mock 尚未接入。详见 [服务账户基础](service-accounts-foundation.md)，M4-1/M4-2 保持未勾选。
 - [ ] M4-2 请求代理在原生侧注入凭据；脚本、包、插件、AI 提示、日志和导出文件均不能取得令牌。补恶意域名、跨账户、撤权和重定向测试。
 - [ ] M4-3 做 Apple Music 最小原型：授权、可读取曲目范围、允许的播放操作、订阅和后台限制。基于 [MusicKit](https://developer.apple.com/documentation/musickit) 的实际验证结果定公开 API。
 - [ ] M4-4 对 Spotify 等服务逐个核验官方接口、账户要求及接入资格；通过后实现适配器，未通过时提供明确的不可用状态或启动链接。

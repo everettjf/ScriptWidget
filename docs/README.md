@@ -32,6 +32,7 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 
 - [Widget capability expansion plan](widget-capabilities-plan.md) — phased coverage of 22 competitor-inspired capabilities, dependencies, acceptance criteria, and release gates.
 - [Runtime API contract](scriptwidget-runtime-api.md) — versioning and compatibility policy.
+- [Service account foundation](service-accounts-foundation.md) — M4 native credential, owner-grant and PKCE work in progress.
 - [Studio architecture](scriptwidget-studio-plan.md) — editor and bridge design.
 - [Browser widget preview research](browser-widget-preview-research.md) — browser-first fast preview proposal, fidelity model, and staged validation plan.
 - [Browser preview engine](browser-preview-engine.md) — engine, renderer, measured JavaScriptCore and SwiftUI parity (iOS and macOS), sandbox isolation, and known differences. The macOS comparison app lives in `Tools/ScriptWidgetPreview`.

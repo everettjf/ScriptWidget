@@ -103,6 +103,23 @@ for (const key of ["NSHealthShareUsageDescription", "NSHealthUpdateUsageDescript
   if (!iosInfo.includes(`<key>${key}</key>`)) failures.push(`iOS Info.plist is missing ${key}`);
 }
 
+// Service credentials share a dedicated group; the first/default group must
+// remain app-specific so existing AI items never default into the shared group.
+const serviceGroup = "$(AppIdentifierPrefix)com.everettjf.scriptwidget.services";
+for (const [infoPath, entitlementPath] of [
+  ["iOS/ScriptWidget/Info.plist", "iOS/ScriptWidget/ScriptWidget.entitlements"],
+  ["iOS/ScriptWidgetWidget/Info.plist", "iOS/ScriptWidgetWidget/ScriptWidgetWidget.entitlements"],
+  ["macOS/ScriptWidgetMac/Info.plist", "macOS/ScriptWidgetMac/macOS.entitlements"],
+  ["macOS/ScriptWidgetMacWidget/Info.plist", "macOS/ScriptWidgetMacWidget/ScriptWidgetMacWidget.entitlements"],
+]) {
+  const info = await readFile(join(root, infoPath), "utf8"), entitlements = await readFile(join(root, entitlementPath), "utf8");
+  const declaredGroup = info.match(/<key>ScriptWidgetServiceKeychainGroup<\/key>\s*<string>([^<]+)<\/string>/)?.[1];
+  const groupBlock = entitlements.match(/<key>keychain-access-groups<\/key>\s*<array>([\s\S]*?)<\/array>/)?.[1] ?? "";
+  const groups = [...groupBlock.matchAll(/<string>([^<]+)<\/string>/g)].map(value => value[1]);
+  if (declaredGroup !== serviceGroup || (info.match(/<key>ScriptWidgetServiceKeychainGroup<\/key>/g) ?? []).length !== 1) failures.push(`${infoPath}: service Keychain group must match the signed shared service group`);
+  if (JSON.stringify(groups) !== JSON.stringify(["$(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)", serviceGroup]) || (entitlements.match(/<key>keychain-access-groups<\/key>/g) ?? []).length !== 1) failures.push(`${entitlementPath}: preserve the app-specific default group before the dedicated shared service group`);
+}
+
 const aiSettings = await readFile(join(root, "Shared/ScriptWidgetRuntime/AI/AISettings.swift"), "utf8");
 if (!aiSettings.includes("apiKey is intentionally omitted") || !aiSettings.includes("AIKeychain.live")) {
   failures.push("AI credentials must remain Keychain-backed and omitted from UserDefaults JSON");

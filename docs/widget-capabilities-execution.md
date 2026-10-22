@@ -24,7 +24,7 @@
 | --- | --- | --- |
 | M2 | M2-1 记录模板、M2-2 数据卡片、M2-3 动作目录、M2-4 本地 Live Activity、M2-5 主题/宠物/时段、M2-6 配置与 Gallery | 未完成；复用已有基础继续实现 |
 | M3 | M3-1 日历、M3-2 提醒事项、M3-3 自动照片、M3-4 更多健康类型、M3-5 跨平台/Mock/文档/验收 | 日历、提醒事项、相册和扩展健康已接入开发；真机授权/撤权及系统入口验收仍待完成 |
-| M4 | M4-1 原生凭据、M4-2 请求代理、M4-3 Apple Music、M4-4 其他服务核验、M4-5 授权面板与音乐模板 | 未开始 |
+| M4 | M4-1 原生凭据、M4-2 请求代理、M4-3 Apple Music、M4-4 其他服务核验、M4-5 授权面板与音乐模板 | 原生授权/owner 策略基础开发中；界面、实际代理、音乐和 Web Mock 尚未接通 |
 | M5 | M5-1 可视化 JSX 子集、M5-2 主题与原创资产、M5-3 材质/壁纸效果、M5-4 编辑流程与分发 | 未开始 |
 
 每项沿用原计划的完整验收标准。服务和平台原型不通过时先记录实际证据及限制，不以静态模板替代真实功能。
@@ -748,3 +748,16 @@ Gallery 回归发现旧测试假定全部模板都需要 Runtime 1.3 和记录�
 - 完整 `./Scripts/release-readiness.sh` 退出 0：Mac 620 项中 592 通过、0 失败、28 跳过；iPhone 17 模拟器 629 项中 602 通过、0 失败、27 跳过。两端应用构建、编辑器 35、引擎 158、Web Studio 73、87 个模板、18 个精选 Gallery、浏览器烟测与存储进程探针通过。Mac/iOS xcresult 均无运行时警告；跳过的物理设备与签名容器项目未算通过。
 
 本记录只确认该运行时增量和当前已接入 M3 代码的自动化检查；M4/M5 和真实设备验收仍未完成。M4 的 PKCE 与 Keychain 基础代码正在独立开发，尚未接入运行时、设置界面或 Web Mock，不属于这次核心修复的门禁范围。统一发布分支和 PR #62 保持不变，尚未部署或上传新构建，审核仍由用户提交。
+
+
+## 2026-10-22：M4 原生授权与 owner 策略基础
+
+本增量把原生凭据、PKCE 与固定服务请求计划编入 iOS/macOS App 和组件目标，测试编入两端 XCTest。服务凭据使用专用共享 Keychain 组，默认第一组仍是各自 App ID，既有 AI 凭据不改存共享组；macOS 明确使用 Data Protection Keychain。Info.plist、entitlements 和元数据校验同步，缺失/未展开/错误组不回退默认 Keychain。真实签名共享与服务登录没有执行，不能用模型回归替代。
+
+新增 version 1 私有凭据/授权策略：账户、服务、连接与凭据 revision 绑定，有限 token/过期时间，client 绑定刷新，PKCE S256/随机 state/五分钟/一次消费回调；Keychain 锁定与损坏不冒充未连接。新连接默认没有任何组件权限，最多 32 个 owner UUID 授权项，按具体操作过滤；撤销和过期草稿会阻止计划创建。请求计划只有 GitHub profile 和 Spotify profile/playback/pause/resume/next/previous 的固定 HTTPS 目标；要求网络主机范围、提供方 scope，写操作另要求原生动作与请求 UUID。
+
+独立 XCTest 探针 24 项通过，涵盖回调混淆/重复/过期/并发、token 头注入、过期/账户/client/scope、Keychain 状态、错误组与 AI 默认组隔离、owner/账户/连接替换、写动作条件、固定端点、撤权/冲突和未知字段/版本。探针使用内存 Keychain、样例 token、零网络请求，并已接入 release-readiness。证据在 `__Release/capabilities/services/authorization-verification.json`。
+
+这些类型仍是内部基础：连接设置、真实 HTTP 执行与字段提取、刷新/撤销事务、持久化重放收据、公开运行时接口、Apple Music、原生模板和 Web Mock 尚未交付。本增量没有把服务账户对象注入 JavaScript，也不能称为 M4 已完成。实现边界与下一步约束见 [服务账户基础](service-accounts-foundation.md)。
+
+本增量完整 `./Scripts/release-readiness.sh` 退出 0：Mac 644 项中 616 通过、0 失败、28 跳过；iPhone 17 模拟器 653 项中 626 通过、0 失败、27 跳过，两份 xcresult 的 runtime warnings 均为空。两端应用构建、编辑器 35、引擎 158、Web Studio 73、87 个模板、18 个精选 Gallery、浏览器烟测和独立进程探针通过。完整日志与结果摘要在 `__Release/capabilities/services/foundation-release-readiness.log`、`macos-foundation-summary.json`、`ios-foundation-summary.json`。跳过项不计通过；真实服务登录、签名 Keychain 共享与物理设备未验收。
