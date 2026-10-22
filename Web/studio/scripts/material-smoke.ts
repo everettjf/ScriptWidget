@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { launchChrome, serveDirectory } from "../../preview-engine/scripts/lib/chrome.mjs";
+import { launchChrome, serveDirectory, clickReady } from "../../preview-engine/scripts/lib/chrome.mjs";
 
 const dist=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../dist");
 const server=await serveDirectory(dist),chrome=await launchChrome({width:1440,height:1060,scale:1});
@@ -10,12 +10,7 @@ const page=await chrome.newPage();
 try {
   await page.call("Emulation.setEmulatedMedia",{features:[{name:"prefers-color-scheme",value:"light"},{name:"prefers-reduced-motion",value:"no-preference"},{name:"prefers-reduced-transparency",value:"no-preference"}]});
   await page.goto(`${server.origin}/index.html`); await page.waitFor("!!document.querySelector('.sw-widget')",20000);
-  const click=async(expression:string)=>{
-    await page.evaluate(`(${expression}).scrollIntoView({block:'center'})`);
-    const position=await page.evaluate<{x:number;y:number}>(`(()=>{const r=(${expression}).getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2};})()`);
-    await page.call("Input.dispatchMouseEvent",{type:"mousePressed",...position,button:"left",clickCount:1});
-    await page.call("Input.dispatchMouseEvent",{type:"mouseReleased",...position,button:"left",clickCount:1});
-  };
+  const click = (expression: string) => clickReady(page, expression);
   const button=(name:string)=>`[...document.querySelectorAll('.sw-layout button')].find(b=>b.textContent===${JSON.stringify(name)})`;
   const choose=async(id:string,label:string)=>{
     await click(`document.getElementById(${JSON.stringify(id)})`);
@@ -26,7 +21,12 @@ try {
   await click("document.getElementById('open-templates')");
   await page.waitFor("!![...document.querySelectorAll('.template-card')].find(card=>card.textContent.includes('Material Study') && card.querySelector('span.text-primary')?.textContent==='Gallery')");
   await click("[...document.querySelectorAll('.template-card')].find(card=>card.textContent.includes('Material Study') && card.querySelector('span.text-primary')?.textContent==='Gallery')");
-  await page.waitFor("!!document.getElementById('template-copy')"); await click("document.getElementById('template-copy')");
+  await page.waitFor("!!document.getElementById('template-copy')");
+  await page.waitFor("!document.querySelector('[role=dialog]').getAnimations({subtree:true}).some(a=>a.playState==='running')");
+  // Keep the closing Gallery overlay alive after the fast material preview.
+  await page.call("Animation.enable");
+  await page.call("Animation.setPlaybackRate", {playbackRate:0.1});
+  await click("document.getElementById('template-copy')");
   await page.waitFor("!!document.querySelector('.sw-widget [data-sw-material=thin]')",20000);
   assert.equal(await page.evaluate("document.querySelector('.sw-widget [data-sw-material]').style.backdropFilter.includes('blur')"),true);
   assert.equal(await page.evaluate("[...document.querySelectorAll('.sw-widget [style]')].some(e=>e.style.transform.includes('rotate3d'))"),true);

@@ -24,7 +24,7 @@ $render(
 | Clear/Tinted Liquid Glass | WidgetKit owns the system container appearance; local material is omitted in accented/vibrant mode | Neutral wallpaper stand-in and mode diagnostics; not a replica of the system material |
 | Static depth | Public `rotation3DEffect` projection using `degree,x,y,z` | CSS perspective approximation; no device-motion reading or parallax |
 | Content-update animation | System-controlled widget/Live Activity updates | A continuously running browser effect is not evidence of native continuous playback |
-| Wallpaper matching/export | Existing native calibrated crop and PNG export | Existing package-image preview works; a guided Web crop/export interface remains unfinished |
+| Wallpaper matching/export | Existing native calibrated crop and PNG export | Guided image selection, pointer/numeric crops, slot replacement, portable configuration and PNG/package export; manual calibration is still required |
 | Live/spatial system wallpaper | No control exposed to scripts/widgets by this implementation | No fake claim of changing the operating-system wallpaper |
 
 Apple documents Material as blending content **inside** an app/widget, rather than the Home Screen behind it. The framework type is available from iOS 15/macOS 12, within this project's deployment targets. [SwiftUI Material](https://developer.apple.com/documentation/swiftui/material).

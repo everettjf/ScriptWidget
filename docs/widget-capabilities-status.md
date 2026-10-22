@@ -13,6 +13,28 @@
 | M5：公开动画与 GIF | 私有桥接已移除，改用公开时间轴/旋转/位移、有界 ImageIO；原生/Web 时相与静态回退对齐，固定快照时钟统一 | 系统调度不保证永久动画；小号水族箱截断已修复；真实扩展内存/WidgetKit/AOD 验收仍待完成 |
 | Web Studio 对齐 | 已新增 API 的可编辑默认样例、授权/空数据/错误场景，服务独立 fixture；浏览器编辑、保存重载和导出验证 | Web 不访问手机私人数据、不连接真实服务，mock 不作为原生真实数据导出 |
 
+## 当前实现的支持矩阵（R01 核对）
+
+此表描述候选源码，不代表已上传版本或真机验收。项目实际最低部署目标是 iOS App/Share **16.0**、iOS Widget 扩展 **18.0**，macOS App/Widget **26.0**。`release-readiness.md` 的旧 iOS 16 Widget 行与现有主分支配置矛盾；已单独向用户确认本次是否恢复旧系统组件，在决定前不更改部署目标、不把该行判为通过。Live Activity 的 App 代码虽从 16.2 可调用，完整系统展示仍受扩展部署目标约束。
+
+| 能力 | iOS / iPadOS 原生 | macOS 原生 | Web Studio | 权限与边界 |
+| --- | --- | --- | --- | --- |
+| Code / Layout / Theme / Assets | 已实现 | 已实现 | 已实现 | [Layout](visual-layout.md) 只编辑支持的直接 JSX 子集；动态表达式、custom component/fragment 保留在 Code；只读、历史与旧控件边界适用 |
+| 记录与模板 | 本地真实记录 | 本地真实记录 | 浏览器项目内模拟记录 | Package 2.0 的 `storage`、组件 owner 隔离；[备份](storage-api.md) 不携带系统健康/服务凭据 |
+| Calendar | 选定来源的只读事件 | 同左 | 可编辑 mock | `calendar`，安装身份与系统授权；[来源、缓存、查询限制](calendar-api.md) |
+| Reminders | 选定列表读取；显式用户动作写入 | 同左 | 可编辑数据与动作模拟 | 读取 `reminders`；写入还需 `remindersWrite`、声明动作及真实执行授权；[回执与重放](reminders-api.md) |
+| Photos | 选定照片/相册的有界快照 | 同左 | 可编辑模拟照片 | `photos`；系统授权不等于选择来源，有限访问与离线来源可能为空；[只读和快照限制](photos-api.md) |
+| Health | 仅 HealthKit 报告可用的设备；只读 | 不支持真实读数 | 可编辑样例 / No shared data | `health`，实际安装与授权；不推断单项读取授权，不导出/缓存读数；[聚合与空值](health-api.md) |
+| Location | 系统授权、精度与组件可用性检查 | 当前数据契约不支持 | 可编辑 mock | `location`；已有缓存不能证明授权仍有效；[位置边界](location-api.md) |
+| GitHub | 原生连接与逐组件批准 | 同左 | 独立模拟数据，无登录 | `services`；profile 另需 `network` 和 `api.github.com`；[Keychain 与撤权](services-api.md) |
+| Music | 系统 Music App 的只读快照 | 明确不可用 | 曲目/权限状态 mock | `music`；无播放控制、无任意播放器信息、无第三方 SDK；[平台说明](music-api.md) |
+| 材质 / 3D | 公共 SwiftUI 与无障碍回退 | 同左 | 有说明的 CSS 近似 | 无设备视差/传感器；Clear/Tinted 由系统容器决定；[材质预算](visual-effects.md) |
+| 壁纸匹配 | 导入自有图片、手工校准裁切、PNG/配置 | 同左 | 指针/数值裁切、配置与包导出 | 不设置系统壁纸，不自动识别桌面位置；[壁纸流程](wallpaper-match.md) |
+| 时钟 / 摆动 / GIF | 公共调度与固定/减少动态效果回退 | 静态回退，标准钟针保留正确时相 | 公共预览与固定截图 | 无永久系统播放承诺；GIF 有解码预算；[公开动画](public-animations.md) |
+| 组件 / Control / Live Activity | 系统集成已实现；当前 Widget 扩展部署目标 18.0 | Mac Widget；无 iOS 系统入口承诺 | 预览与模拟，不能验证系统行为 | 普通组件动作和 Control 使用声明的动作；Activity 仅本地管理，非远端/交互 Island 控制；[系统边界](widgetkit-modern-features.md) |
+
+数据 API 的精确方法、最低 Runtime API、同步/Promise 和授权类型见自动生成的 [能力目录](data-api-catalog.md)。Package/compiler ABI 1.0 与 public Runtime API 1.4 不等于操作系统版本。安装包需要的权限、host 和版本均须声明；mock 不授予真实权限，也不随组件包导出为私人系统数据。iOS 最低版本决定尚未收口，因此 R01 保留未完成。
+
 ## 本轮移除
 
 Spotify 条件接入、授权/刷新、播放读取及内部写操作记录已移除；不是保留未配置提示，也不再列为后续 TODO。GitHub 与 iOS Music 只读能力保留。历史记录不代表当前支持状态。

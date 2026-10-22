@@ -198,9 +198,7 @@ async function connectedServices(): Promise<void> {
     };
     await page.goto(studioURL);
     await page.waitFor("!!document.querySelector('.sw-widget')",20000);
-    const galleryPoint = await page.evaluate<{x:number;y:number}>("(() => {const r=document.getElementById('open-templates').getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()");
-    await page.call("Input.dispatchMouseEvent",{type:"mousePressed",...galleryPoint,button:"left",clickCount:1});
-    await page.call("Input.dispatchMouseEvent",{type:"mouseReleased",...galleryPoint,button:"left",clickCount:1});
+    await clickReady(page, "document.getElementById('open-templates')");
     await page.waitFor("[...document.querySelectorAll('.template-card')].some(card=>card.textContent.includes('GitHub Profile'))");
     await page.evaluate("[...document.querySelectorAll('.template-card')].find(card=>card.textContent.includes('GitHub Profile')).click()");
     await page.waitFor("!!document.getElementById('template-copy')");

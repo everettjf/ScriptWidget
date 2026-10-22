@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { launchChrome, serveDirectory } from "../../preview-engine/scripts/lib/chrome.mjs";
+import { launchChrome, serveDirectory, clickReady } from "../../preview-engine/scripts/lib/chrome.mjs";
 
 const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../dist");
 const sample = fs.readFileSync(new URL("../../preview-engine/test/parity/assets/Sample.png",import.meta.url));
@@ -13,12 +13,7 @@ try {
   await page.call("Emulation.setEmulatedMedia",{features:[{name:"prefers-color-scheme",value:"light"}]});
   await page.goto(`${server.origin}/index.html`); await page.waitFor("!!document.querySelector('.sw-widget')",20000);
   const button = (name: string) => `[...document.querySelectorAll('.sw-layout button')].find(button=>button.textContent===${JSON.stringify(name)})`;
-  const click = async (expression: string) => {
-    await page.evaluate(`(${expression}).scrollIntoView({block:'center'})`);
-    const position = await page.evaluate<{x:number;y:number}>(`(() => {const r=(${expression}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
-    await page.call("Input.dispatchMouseEvent",{type:"mousePressed",...position,button:"left",clickCount:1});
-    await page.call("Input.dispatchMouseEvent",{type:"mouseReleased",...position,button:"left",clickCount:1});
-  };
+  const click = (expression: string) => clickReady(page, expression);
   const code = () => page.evaluate<string>("document.querySelector('.cm-content').textContent");
   await page.evaluate("document.querySelector('.cm-content').focus();document.execCommand('selectAll')");
   await page.call("Input.insertText",{text:fixture.original});

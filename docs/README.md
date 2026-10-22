@@ -10,7 +10,7 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 - [Web Studio in the browser](web-studio-browser.md) — design and preview on Windows, macOS, or Linux, then install on iPhone.
 - [Runtime API](runtime-api.md) — supported components, properties, globals, and limits.
 - [Package storage](storage-api.md) — saved records, bounded compare-and-set updates, and contention handling.
-- [Reminders API](reminders-api.md) — read-only reminders, list selection and bounded due/completion windows.
+- [Reminders API](reminders-api.md) — selected-list reads, bounded windows and explicit user actions with write receipts.
 - [Calendar API](calendar-api.md) — real read-only events, package permission, bounded queries, and cache behavior.
 - [Location API](location-api.md) — app/widget authorization, precision-aware snapshots, and revocation.
 - [Scheduled widget states](timeline-api.md) — daily transitions, planned dates, read-only future entries and preview.
@@ -40,7 +40,7 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 - [Widget themes](widget-themes.md) — reusable color, font and spacing tokens saved in ordinary source.
 - [Studio assets](studio-assets.md) — package images and original JSX with retained provenance and licenses.
 - [Visual effects](visual-effects.md) — public material, static depth, accessibility fallbacks and system/legacy limits.
-- [Service account foundation](service-accounts-foundation.md) — native credentials, connection transactions, PKCE and remaining music integration.
+- [Service account foundation](service-accounts-foundation.md) — native GitHub credentials, per-widget grants, disconnect and secure-store boundaries.
 - [Studio architecture](scriptwidget-studio-plan.md) — editor and bridge design.
 - [Browser widget preview research](browser-widget-preview-research.md) — browser-first fast preview proposal, fidelity model, and staged validation plan.
 - [Browser preview engine](browser-preview-engine.md) — engine, renderer, measured JavaScriptCore and SwiftUI parity (iOS and macOS), sandbox isolation, and known differences. The macOS comparison app lives in `Tools/ScriptWidgetPreview`.

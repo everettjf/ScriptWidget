@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { launchChrome, serveDirectory } from "../../preview-engine/scripts/lib/chrome.mjs";
+import { launchChrome, serveDirectory, clickReady } from "../../preview-engine/scripts/lib/chrome.mjs";
 
 const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../dist");
 const server = await serveDirectory(dist), chrome = await launchChrome({width:1440,height:1000,scale:1});
@@ -12,11 +12,7 @@ try {
   await page.call("Emulation.setEmulatedMedia",{features:[{name:"prefers-color-scheme",value:"light"}]});
   await page.goto(`${server.origin}/index.html`); await page.waitFor("!!document.querySelector('.sw-widget')",20000);
   const pointer = async (expression: string) => page.evaluate<{x:number;y:number}>(`(() => {const r=(${expression}).getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2};})()`);
-  const click = async (expression: string) => {
-    const position = await pointer(expression);
-    await page.call("Input.dispatchMouseEvent",{type:"mousePressed",...position,button:"left",clickCount:1});
-    await page.call("Input.dispatchMouseEvent",{type:"mouseReleased",...position,button:"left",clickCount:1});
-  };
+  const click = (expression: string) => clickReady(page, expression);
   const choose = async (label: string, value: string) => page.evaluate(`(() => {const input=document.querySelector('select[aria-label=${JSON.stringify(label)}]');input.value=${JSON.stringify(value)};input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
   const fill = async (label: string, value: string) => page.evaluate(`document.querySelector('input[aria-label=${JSON.stringify(label)}]').value=${JSON.stringify(value)}`);
   const button = (label: string) => `[...document.querySelectorAll('.sw-layout button')].find(button=>button.textContent===${JSON.stringify(label)})`;
