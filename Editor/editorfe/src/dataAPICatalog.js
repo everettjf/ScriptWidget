@@ -28,6 +28,9 @@ const samples = [
   { id: "$reminders.requestAuthorization", group: "reminders", value: true },
   { id: "$reminders.lists", group: "reminders", value: [{ id: "sample.reminders", title: "Personal" }] },
   { id: "$reminders.items", group: "reminders", value: { status: "ready", items: [{ id: "sample.reminder", listID: "sample.reminders", title: "Read a chapter", due: "2026-01-01T16:00:00Z", hasTime: true, completed: false, completedAt: null, priority: 0 }], fetchedAt: sampleEnd, source: "system", stale: false, truncated: false } },
+  { id: "$reminders.create", group: "reminders", value: { id: "sample.reminder", listID: "sample.reminders", status: "applied", replayed: false } },
+  { id: "$reminders.update", group: "reminders", value: { id: "sample.reminder", listID: "sample.reminders", status: "applied", replayed: false } },
+  { id: "$reminders.setCompleted", group: "reminders", value: { id: "sample.reminder", listID: "sample.reminders", status: "applied", replayed: false } },
   { id: "$health.authorizationStatus", group: "health", value: "notDisclosed" },
   { id: "$health.isAvailable", group: "health", value: true },
   { id: "$health.requestAuthorization", group: "health", value: true, legacy: ["health"] },
@@ -42,7 +45,7 @@ const samples = [
 ];
 
 const groupPolicy = {
-  reminders: { platforms: ["ios", "macos"], authorization: "remindersRead", notes: "Requires reminders in widget.json and full system Reminders access. Scripts have read-only access to native Settings selected lists; they cannot create, edit or complete reminders. Use lists() for IDs. items() selects pending due dates or completed completion dates in a positive window of at most 31 days, up to 50 items. Undated pending reminders are excluded. remindersSelection mocks the user scope without granting permission." },
+  reminders: { platforms: ["ios", "macos"], authorization: "remindersRead", notes: "Requires reminders in widget.json and full system Reminders access. Reads require native Settings selected lists. create/update/setCompleted additionally require remindersWrite and a native declared action, stable requestID, durable replay receipts and an unchanged selected list. Web writes update preview-only items/receipts; receipt identities are derived from that state, with configurable API errors. Use lists() for IDs. items() selects pending due dates or completed completion dates in a positive window of at most 31 days, up to 50 items. Undated pending reminders are excluded. remindersSelection mocks the user scope without granting permission." },
   calendar: { platforms: ["ios", "macos"], authorization: "calendarRead", notes: "Requires calendar in widget.json and full system Calendar access. The user's native Settings source selection limits metadata, events and cached snapshots; scripts cannot enlarge it. Use calendars() for permitted IDs and show setup when no sources are selected. Queries are read-only, limited to 31 days and 50 items. Preview calendarSelection simulates this scope without granting package permission." },
   device: { platforms: ["ios", "macos"], authorization: "none", notes: "Device values depend on hardware. Some legacy Mac values are placeholders; inspect the API documentation before using them as measurements." },
   system: { platforms: ["ios", "macos"], authorization: "none", notes: "System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable." },
@@ -58,10 +61,11 @@ export const dataAPICatalog = samples.map((sample) => {
     ...sample,
     ...groupPolicy[sample.group],
     minimumRuntimeVersion: sample.group === "reminders" ? "1.4" : ["calendar"].includes(sample.group) || ["$health.authorizationStatus", "$location.isAuthorizedForWidgetUpdates"].includes(sample.id) ? "1.3" : "1.0",
-    arguments: options ? ["options?"] : [],
+    arguments: sample.group === "reminders" && ["create", "update", "setCompleted"].includes(method) ? ["options"] : options ? ["options?"] : [],
+    ...(sample.group === "reminders" && ["create", "update", "setCompleted"].includes(method) ? { authorization: "remindersWrite" } : {}),
     asynchronous,
     nativeSource: `Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntime${sample.group[0].toUpperCase()}${sample.group.slice(1)}.swift`,
-    operation: method === "requestAuthorization" ? "authorization" : ["isAvailable", "authorizationStatus", "isAuthorizedForWidgetUpdates"].includes(method) ? "availability" : "read",
+    operation: sample.group === "reminders" && ["create", "update", "setCompleted"].includes(method) ? "write" : method === "requestAuthorization" ? "authorization" : ["isAvailable", "authorizationStatus", "isAuthorizedForWidgetUpdates"].includes(method) ? "availability" : "read",
     mock: "editable",
   };
 });

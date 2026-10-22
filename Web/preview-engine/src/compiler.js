@@ -25,10 +25,10 @@ function describe(error) {
 /// Mirrors ScriptWidgetRuntime.transform plus ScriptWidgetCompiler.compile.
 /// A Babel exception is reported as scriptException because the native
 /// compiler receives "undefined" output and then reports the exception.
-export function compilePackageEntry(compiler, source, { wrap = true } = {}) {
+export function compilePackageEntry(compiler, source, { wrap = true, callFunction = "" } = {}) {
   const sourceError = validateByteCount(source, runtimeContract.maximumSourceBytes, "Source");
   if (sourceError) return { ok: false, kind: sourceError.kind, message: sourceError.message };
-  const input = wrap ? wrappedSource(source) : source;
+  const input = wrap ? wrappedSource(source, callFunction) : source;
   let code;
   try {
     code = compiler.transform(input);

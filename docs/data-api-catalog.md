@@ -45,6 +45,9 @@ Existing data-method return formats are unchanged. Present manifests now undergo
 | `$reminders.requestAuthorization()` | 1.4 | ios, macos | Promise | remindersRead | authorization |
 | `$reminders.lists()` | 1.4 | ios, macos | Promise | remindersRead | read |
 | `$reminders.items(options?)` | 1.4 | ios, macos | Promise | remindersRead | read |
+| `$reminders.create(options)` | 1.4 | ios, macos | Promise | remindersWrite | write |
+| `$reminders.update(options)` | 1.4 | ios, macos | Promise | remindersWrite | write |
+| `$reminders.setCompleted(options)` | 1.4 | ios, macos | Promise | remindersWrite | write |
 | `$health.authorizationStatus()` | 1.3 | ios | Synchronous | healthRead | availability |
 | `$health.isAvailable()` | 1.0 | ios | Synchronous | healthRead | availability |
 | `$health.requestAuthorization()` | 1.0 | ios | Promise | healthRead | authorization |
@@ -372,7 +375,7 @@ Default editable preview sample:
 
 ## reminders
 
-Requires reminders in widget.json and full system Reminders access. Scripts have read-only access to native Settings selected lists; they cannot create, edit or complete reminders. Use lists() for IDs. items() selects pending due dates or completed completion dates in a positive window of at most 31 days, up to 50 items. Undated pending reminders are excluded. remindersSelection mocks the user scope without granting permission.
+Requires reminders in widget.json and full system Reminders access. Reads require native Settings selected lists. create/update/setCompleted additionally require remindersWrite and a native declared action, stable requestID, durable replay receipts and an unchanged selected list. Web writes update preview-only items/receipts; receipt identities are derived from that state, with configurable API errors. Use lists() for IDs. items() selects pending due dates or completed completion dates in a positive window of at most 31 days, up to 50 items. Undated pending reminders are excluded. remindersSelection mocks the user scope without granting permission.
 
 ### `$reminders.isAvailable`
 
@@ -434,6 +437,45 @@ Default editable preview sample:
   "source": "system",
   "stale": false,
   "truncated": false
+}
+```
+
+### `$reminders.create`
+
+Default editable preview sample:
+
+```json
+{
+  "id": "sample.reminder",
+  "listID": "sample.reminders",
+  "status": "applied",
+  "replayed": false
+}
+```
+
+### `$reminders.update`
+
+Default editable preview sample:
+
+```json
+{
+  "id": "sample.reminder",
+  "listID": "sample.reminders",
+  "status": "applied",
+  "replayed": false
+}
+```
+
+### `$reminders.setCompleted`
+
+Default editable preview sample:
+
+```json
+{
+  "id": "sample.reminder",
+  "listID": "sample.reminders",
+  "status": "applied",
+  "replayed": false
 }
 ```
 

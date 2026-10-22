@@ -1,5 +1,5 @@
 // Reminders Agenda — actual EventKit data on iPhone, iPad and Mac.
-// Declare reminders in widget.json. Run in the app to grant access.
+// Declare reminders, remindersWrite and storage. Grant access and select lists in Settings.
 // Optional widget parameter: comma-separated list IDs from $reminders.lists().
 // Browser previews use editable samples; native templates never seed fake reminders.
 const size = $getenv("widget-size");
@@ -12,8 +12,10 @@ const accent = accessory ? "primary" : "#5274d9";
 const small = size === "small" || size === "systemSmall";
 const limit = accessory || small ? 2 : (size === "medium" || size === "systemMedium" ? 3 : 6);
 let items = [], message = "", authorized = false, stale = false, failed = false;
+const pendingWrite = $storage.getJSON("pending-reminder-write");
 
 
+if (size !== "action" && size !== "function") {
 try {
   if (!$reminders.isAvailable()) message = "Reminders is unavailable on this device.";
   else if ($reminders.authorizationStatus() !== "authorized") message = small ? "Settings → Reminders in ScriptWidget." : "Connect Reminders in ScriptWidget Settings.";
@@ -34,12 +36,42 @@ try {
     : (small || accessory ? "Open ScriptWidget to check access." : "Reminders could not load. Open ScriptWidget to check access.");
 }
 
+}
+
+function newRequestID() {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, key => { const value = Math.floor(Math.random() * 16); return (key === "x" ? value : (value & 3) | 8).toString(16); });
+}
+async function completeNext() {
+  let request = $storage.getJSON("pending-reminder-write");
+  if (!request.requestID) {
+    const options = {limit: 1, maxAgeSeconds: 0};
+    const parameter = $getenv("widget-param").trim();
+    if (parameter) options.listIDs = parameter.split(",").map(id => id.trim()).filter(Boolean);
+    const result = await $reminders.items(options);
+    if (!result.items.length) { $render(<text>Nothing due today</text>); return; }
+    const item = result.items[0];
+    request = {requestID: newRequestID(), listID: item.listID, id: item.id, completed: true};
+    if (!$storage.setJSON("pending-reminder-write", request)) throw new Error("Could not save the reminder request. Nothing was changed.");
+  }
+  await $reminders.setCompleted(request);
+  $storage.remove("pending-reminder-write");
+  $render(<text>Reminder completed</text>);
+}
+
+// Use only after inspecting the actual Reminders app for an uncertain result.
+function clearPending() {
+  $storage.remove("pending-reminder-write");
+  $render(<text>Pending request cleared. Check Reminders before starting another action.</text>);
+}
+
 function reminderTime(item) {
   if (!item.hasTime) return "Today";
   return new Date(item.due).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-if (small && (!authorized || failed)) {
+if (size === "action" || size === "function") {
+  $render(<text>Reminder action</text>);
+} else if (small && (!authorized || failed)) {
   $render(<link url="scriptwidget://reminders-access"><vstack frame="max" padding="14" spacing="6" alignment="leading" background={background}>
     <text font="headline" color={foreground}>Reminders</text>
     <text font="caption" color={secondary}>{failed ? "Review list access in Settings." : "Connect in ScriptWidget Settings."}</text>
@@ -57,6 +89,8 @@ if (small && (!authorized || failed)) {
       {items.map(item => <hstack spacing="10"><rect frame="3,30" color={accent}/><vstack alignment="leading" spacing="3"><text font={small || accessory ? "caption" : "headline"} color={foreground}>{item.title || "Untitled reminder"}</text><text font="caption2" color={secondary}>{reminderTime(item)}</text></vstack><spacer/></hstack>)}
       {!!message && <text font={authorized && !failed ? "headline" : "caption"} color={foreground}>{message}</text>}
       {(!authorized || failed) && !accessory && <link url="scriptwidget://reminders-access"><hstack spacing="6"><icon systemName="lock.open" size="14"/><text font="caption">{small ? "Settings" : "Open ScriptWidget"}</text></hstack></link>}
+      {!accessory && !small && pendingWrite.requestID && <button actionID="clear-pending"><text font="caption">Checked Reminders? Clear pending</text></button>}
+      {!accessory && !small && authorized && !failed && items.length > 0 && <button actionID="complete-next"><text font="caption">Complete next</text></button>}
       {!accessory && <spacer/>}
     </vstack>
   );

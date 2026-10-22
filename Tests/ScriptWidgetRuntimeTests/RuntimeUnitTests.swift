@@ -5937,7 +5937,7 @@ final class RemindersMutationTests: XCTestCase {
     func testCreationRejectsMalformedDatesTypesAndUnknownFields() throws {
         let request = try ScriptWidgetReminderMutation(kind: .create, options: options(["due": "2028-02-29", "priority": 4]))
         XCTAssertEqual(request.due, "2028-02-29"); XCTAssertEqual(request.priority, 4); XCTAssertNil(request.id)
-        for changes: [String: Any] in [["title": " "], ["title": String(repeating: "é", count: 513)], ["title": "a\nb"], ["due": "2026-02-29"], ["due": "bad"], ["priority": true], ["priority": 1.5], ["priority": 10], ["listID": ""], ["requestID": "unstable"], ["requestID": requestID.uppercased()], ["completed": true], ["id": "foreign"]] {
+        for changes: [String: Any] in [["title": " "], ["title": String(repeating: "é", count: 513)], ["title": "a\nb"], ["due": "2026-02-29"], ["due": "2026-02-29T12:00:00Z"], ["due": "2026-03-01T24:00:00Z"], ["due": "bad"], ["priority": true], ["priority": 1.5], ["priority": 10], ["listID": ""], ["requestID": "unstable"], ["requestID": requestID.uppercased()], ["completed": true], ["id": "foreign"]] {
             XCTAssertThrowsError(try ScriptWidgetReminderMutation(kind: .create, options: options(changes)))
         }
     }
@@ -5979,5 +5979,73 @@ final class RemindersMutationTests: XCTestCase {
         allowed.executionSession.cancel(.explicit); XCTAssertFalse(ScriptWidgetReminderMutation.permitsAction(allowed))
         let forged = ScriptWidgetRuntime(package: package, environments: ["widget-size": "action", "action-id": "complete", "action-source": "widget"])
         XCTAssertFalse(try XCTUnwrap(forged.runningState).isUserInitiatedAction)
+    }
+}
+
+final class RemindersWriteReceiptTests: XCTestCase {
+    private var root: URL!, backend: ScriptWidgetFileStorageBackend!, defaults: UserDefaults!, suite: String!
+    private let key = "ScriptWidget.RemindersWrites.v1." + String(repeating: "a", count: 64)
+    override func setUpWithError() throws {
+        root = FileManager.default.temporaryDirectory.appendingPathComponent("ReminderWrites-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        suite = "app.scriptwidget.reminder-writes." + UUID().uuidString
+        defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        backend = try ScriptWidgetFileStorageBackend(container: root, legacy: defaults)
+    }
+    override func tearDownWithError() throws {
+        defaults.removePersistentDomain(forName: suite)
+        try FileManager.default.removeItem(at: root)
+    }
+    private func request(_ title: String = "Read", id: String = "550e8400-e29b-41d4-a716-446655440000") throws -> ScriptWidgetReminderMutation {
+        try .init(kind: .create, options: ["requestID": id, "listID": "personal", "title": title])
+    }
+    func testReceiptsSurviveReopeningAndNeverRepeatACompletedCreate() throws {
+        let mutation = try request(); var writes = 0
+        func perform(_ store: any ScriptWidgetStorageBackend) throws -> [String: Any] {
+            try ScriptWidgetReminderMutationLedger.perform(mutation, container: root, backend: store, key: key, validate: {}) { commit in
+                try commit(); writes += 1; return "system-id"
+            }
+        }
+        XCTAssertEqual(try perform(backend)["replayed"] as? Bool, false)
+        let reopened = try ScriptWidgetFileStorageBackend(container: root, legacy: defaults)
+        XCTAssertEqual(try perform(reopened)["replayed"] as? Bool, true)
+        XCTAssertEqual(writes, 1)
+        XCTAssertThrowsError(try ScriptWidgetReminderMutationLedger.perform(request("Changed"), container: root, backend: reopened, key: key, validate: {}) { _ in XCTFail("Conflicting request reached EventKit"); return "bad" }) { error in
+            XCTAssertTrue(error.localizedDescription.contains("request_conflict"))
+        }
+        XCTAssertNil(defaults.object(forKey: key))
+    }
+    func testInterruptedCommitIsRetainedAsUnknownAndNeverAutomaticallyRetried() throws {
+        enum Interrupted: Error { case afterCommit }
+        let mutation = try request(); var writes = 0
+        XCTAssertThrowsError(try ScriptWidgetReminderMutationLedger.perform(mutation, container: root, backend: backend, key: key, validate: {}) { commit in
+            try commit(); writes += 1; throw Interrupted.afterCommit
+        })
+        let reopened = try ScriptWidgetFileStorageBackend(container: root, legacy: defaults)
+        XCTAssertThrowsError(try ScriptWidgetReminderMutationLedger.perform(mutation, container: root, backend: reopened, key: key, validate: {}) { _ in writes += 1; return "duplicate" }) { error in
+            XCTAssertTrue(error.localizedDescription.contains("outcome_unknown"))
+        }
+        XCTAssertEqual(writes, 1)
+    }
+    func testRevocationBeforeCommitDoesNotReserveOrApplyARequest() throws {
+        var authorized = true, commits = 0
+        let mutation = try request()
+        XCTAssertThrowsError(try ScriptWidgetReminderMutationLedger.perform(mutation, container: root, backend: backend, key: key,
+            validate: { if !authorized { throw ScriptWidgetRemindersError.denied } }) { commit in
+                authorized = false; try commit(); commits += 1; return "forbidden"
+            })
+        XCTAssertNil(try backend.readValue(forKey: key)); XCTAssertEqual(commits, 0)
+    }
+    func testCorruptAndUnknownLedgerFieldsFailBeforeSystemWrites() throws {
+        try backend.writeValue(Data("broken".utf8), forKey: key)
+        XCTAssertThrowsError(try ScriptWidgetReminderMutationLedger.perform(request(), container: root, backend: backend, key: key, validate: {}) { _ in XCTFail("Malformed ledger reached EventKit"); return "bad" })
+        try backend.writeValue(Data(#"{"formatVersion":1,"entries":[],"unknown":true}"#.utf8), forKey: key)
+        XCTAssertThrowsError(try ScriptWidgetReminderMutationLedger.perform(request(), container: root, backend: backend, key: key, validate: {}) { _ in XCTFail("Unknown fields reached EventKit"); return "bad" })
+    }
+    func testPendingReceiptsAreNotExpiredOrEvicted() throws {
+        let mutation = try request()
+        enum Stopped: Error { case stopped }
+        XCTAssertThrowsError(try ScriptWidgetReminderMutationLedger.perform(mutation, container: root, backend: backend, key: key, now: Date(timeIntervalSince1970: 100), validate: {}) { commit in try commit(); throw Stopped.stopped })
+        XCTAssertThrowsError(try ScriptWidgetReminderMutationLedger.perform(mutation, container: root, backend: backend, key: key, now: Date(timeIntervalSince1970: 100 + 30 * 86400), validate: {}) { _ in XCTFail("Old pending operation was repeated"); return "bad" })
     }
 }

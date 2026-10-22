@@ -26,8 +26,8 @@ test("data catalog exactly covers native JSExport data methods and Promise seman
       assert.ok(scriptWidgetAPI.functions[entry.id], `${entry.id} missing from completion metadata`);
       assert.ok(entry.notes.length > 20);
       assert.ok(entry.platforms.length);
-      assert.ok(["none", "healthRead", "locationWhenInUse", "calendarRead", "remindersRead"].includes(entry.authorization));
-      assert.ok(["availability", "authorization", "read"].includes(entry.operation));
+      assert.ok(["none", "healthRead", "locationWhenInUse", "calendarRead", "remindersRead", "remindersWrite"].includes(entry.authorization));
+      assert.ok(["availability", "authorization", "read", "write"].includes(entry.operation));
       assert.equal(entry.mock, "editable");
       assert.notEqual(JSON.stringify(entry.value), undefined, entry.id);
     }

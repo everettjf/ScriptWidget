@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ActionTestPanel } from "@/components/ActionTestPanel";
+import type { Project } from "@/project.ts";
 import { MockDataPanel } from "@/components/MockDataPanel";
 import { cn } from "@/lib/utils";
 import { familyLabels, type PackageReport } from "@/project.ts";
@@ -16,6 +18,7 @@ import type { Message, PreviewOutput, PreviewSettings, PreviewState } from "@/ho
 export type DetailTab = "problems" | "console" | "package" | "fixtures";
 
 interface PreviewPaneProps {
+  project: Project;
   settings: PreviewSettings;
   families: WidgetSize[];
   onSettings(change: Partial<PreviewSettings>): void;
@@ -131,7 +134,7 @@ function PackageSummary({ report }: { report: PackageReport }) {
   );
 }
 
-export function PreviewPane({ settings, families, onSettings, preview, report, fixtures, onFixtures, tab, onTab, className }: PreviewPaneProps) {
+export function PreviewPane({ project, settings, families, onSettings, preview, report, fixtures, onFixtures, tab, onTab, className }: PreviewPaneProps) {
   let transitionDates: string[] = [];
   try { transitionDates = timelinePreview(report.manifest, settings.timelineDate).plan.entries.slice(1).map((entry) => entry.date); } catch { /* Package problems explain invalid schedules. */ }
   const errors = preview.problems.filter((item) => item.severity === "error").length;
@@ -189,6 +192,7 @@ export function PreviewPane({ settings, families, onSettings, preview, report, f
           <PackageSummary report={report} />
         </TabsContent>
         <TabsContent forceMount value="fixtures" className="flex min-h-40 flex-col gap-2 bg-card px-3 py-2.5 data-[state=inactive]:hidden">
+          <ActionTestPanel key={project.id} project={project} onFixtures={onFixtures} />
           <MockDataPanel fixtures={fixtures} onChange={onFixtures} />
         </TabsContent>
       </Tabs>

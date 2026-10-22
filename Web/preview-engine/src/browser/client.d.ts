@@ -8,6 +8,8 @@ export interface ExecuteJob {
   preview?: { appearance: Appearance };
   fixtures?: unknown;
   prelude?: string;
+  /// Run a declared action against preview data only.
+  actionID?: string | null;
   timeoutMilliseconds?: number;
 }
 

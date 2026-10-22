@@ -10,6 +10,9 @@ import EventKit
     static func requestAuthorization() -> ScriptWidgetRuntimePromise
     static func lists() -> ScriptWidgetRuntimePromise
     static func items(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise
+    static func create(_ options: [String: Any]) -> ScriptWidgetRuntimePromise
+    static func update(_ options: [String: Any]) -> ScriptWidgetRuntimePromise
+    static func setCompleted(_ options: [String: Any]) -> ScriptWidgetRuntimePromise
 }
 
 struct ScriptWidgetRemindersQuery {
@@ -105,10 +108,17 @@ struct ScriptWidgetReminderItem: Sendable {
 }
 
 protocol ScriptWidgetRemindersProviding: AnyObject {
+    func mutate(_ request: ScriptWidgetReminderMutation, beforeCommit: () throws -> Void) throws -> String
     func authorizationStatus() -> String
     func sources() -> [ScriptWidgetCalendarSource]
     func fetch(_ query: ScriptWidgetRemindersQuery, ids: [String], session: ScriptWidgetExecutionSession,
                completion: @escaping (Result<(items: [ScriptWidgetReminderItem], truncated: Bool), Error>) -> Void)
+}
+
+extension ScriptWidgetRemindersProviding {
+    func mutate(_ request: ScriptWidgetReminderMutation, beforeCommit: () throws -> Void) throws -> String {
+        throw ScriptWidgetRemindersError.unavailable
+    }
 }
 
 final class ScriptWidgetRemindersSystemProvider: ScriptWidgetRemindersProviding {
@@ -118,6 +128,39 @@ final class ScriptWidgetRemindersSystemProvider: ScriptWidgetRemindersProviding 
         store.calendars(for: .reminder).compactMap {
             ScriptWidgetCalendarSelection.validIDs([$0.calendarIdentifier]) ? .init(id: $0.calendarIdentifier, title: String($0.title.prefix(256))) : nil
         }
+    }
+    func mutate(_ request: ScriptWidgetReminderMutation, beforeCommit: () throws -> Void) throws -> String {
+        guard authorizationStatus() == "authorized",
+              let list = store.calendar(withIdentifier: request.listID), list.allowedEntityTypes.contains(.reminder),
+              list.allowsContentModifications else { throw ScriptWidgetRemindersError.denied }
+        let reminder: EKReminder
+        if request.kind == .create { reminder = EKReminder(eventStore: store); reminder.calendar = list }
+        else {
+            guard let id = request.id, let existing = store.calendarItem(withIdentifier: id) as? EKReminder,
+                  ScriptWidgetCalendarSelection.sameID(existing.calendar.calendarIdentifier, request.listID) else {
+                throw ScriptWidgetRemindersError.invalid("The reminder is unavailable in the selected list")
+            }
+            reminder = existing
+        }
+        if let title = request.title { reminder.title = title }
+        if let priority = request.priority { reminder.priority = priority }
+        if request.changesDue {
+            if let due = request.due {
+                var calendar = Calendar(identifier: .gregorian); calendar.timeZone = .current
+                if let day = ScriptWidgetReminderItem.day(due) {
+                    reminder.dueDateComponents = calendar.dateComponents([.year, .month, .day], from: day)
+                } else if let date = ScriptWidgetReminderItem.isoDate(due) {
+                    var components = calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
+                    components.timeZone = calendar.timeZone; reminder.dueDateComponents = components
+                }
+            } else { reminder.dueDateComponents = nil }
+        }
+        if let completed = request.completed { reminder.isCompleted = completed }
+        // No EventKit mutation is persisted before the durable replay marker and
+        // the final cancellation, ownership, permission and scope checks.
+        try beforeCommit()
+        try store.save(reminder, commit: true)
+        return reminder.calendarItemIdentifier
     }
     func fetch(_ query: ScriptWidgetRemindersQuery, ids: [String], session: ScriptWidgetExecutionSession,
                completion: @escaping (Result<(items: [ScriptWidgetReminderItem], truncated: Bool), Error>) -> Void) {
@@ -268,6 +311,63 @@ enum ScriptWidgetRemindersCache {
     static func lists() -> ScriptWidgetRuntimePromise { read(nil, error: nil) }
     static func items(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise {
         do { return read(try ScriptWidgetRemindersQuery(options), error: nil) } catch { return read(nil, error: error.localizedDescription) }
+    }
+    static func create(_ options: [String: Any]) -> ScriptWidgetRuntimePromise { mutate(.create, options) }
+    static func update(_ options: [String: Any]) -> ScriptWidgetRuntimePromise { mutate(.update, options) }
+    static func setCompleted(_ options: [String: Any]) -> ScriptWidgetRuntimePromise { mutate(.setCompleted, options) }
+    private static func mutate(_ kind: ScriptWidgetReminderMutation.Kind, _ options: [String: Any]) -> ScriptWidgetRuntimePromise {
+        let state = JSContext.current()?.scriptWidgetRunningState
+        return ScriptWidgetRuntimePromise { resolve, reject in
+            guard let state, let snapshot = state.executionSnapshot,
+                  ScriptWidgetReminderMutation.permitsAction(state), permitted(state),
+                  state.package.readManifest()?.permissions.contains(.remindersWrite) == true else {
+                reject.call(withArguments: ["[permission_denied] Declare reminders and remindersWrite and invoke a declared native action"]); return
+            }
+            let request: ScriptWidgetReminderMutation
+            do { request = try ScriptWidgetReminderMutation(kind: kind, options: options) }
+            catch { reject.call(withArguments: [error.localizedDescription]); return }
+            guard state.executionSession.registerDataQuery() else { reject.call(withArguments: ["[query_limit] Too many system data operations"]); return }
+            queue.async {
+                do {
+                    func validate() throws {
+                        guard ScriptWidgetReminderMutation.permitsAction(state), permitted(state),
+                              state.package.readManifest()?.permissions.contains(.remindersWrite) == true,
+                              status(state) == "authorized" else { throw ScriptWidgetRemindersError.denied }
+                    }
+                    try validate()
+                    let selection = try scope(state)
+                    guard selection.allows(request.listID) else { throw ScriptWidgetRemindersError.noneSelected }
+                    let container = snapshot.context.container
+                    let result = try selection.withStableAccess(container: container, kind: .reminders) {
+                        let source = provider(state)
+                        guard source.sources().contains(where: { ScriptWidgetCalendarSelection.sameID($0.id, request.listID) }) else {
+                            throw ScriptWidgetRemindersError.invalid("The selected reminder list is unavailable")
+                        }
+                        let ledgerKey = "ScriptWidget.RemindersWrites.v1." + SHA256.hash(data: Data(state.storageNamespace.utf8)).map { String(format: "%02x", $0) }.joined()
+                        let value = try ScriptWidgetReminderMutationLedger.perform(request, container: container,
+                            backend: snapshot.context.defaults, key: ledgerKey, validate: validate) { beforeCommit in
+                            try source.mutate(request, beforeCommit: beforeCommit)
+                        }
+                        try? snapshot.context.defaults.removeValue(forKey: key(state))
+                        return value
+                    }
+                    state.executionSession.callbackQueue.async {
+                        guard state.isCurrentExecution else { return }
+                        do {
+                            try validate()
+                            guard try scope(state) == selection else { throw ScriptWidgetRemindersError.scopeChanged }
+                            resolve.call(withArguments: [result])
+                        } catch { reject.call(withArguments: [error.localizedDescription]) }
+                    }
+                } catch {
+                    let message: String
+                    if let known = error as? ScriptWidgetReminderMutationLedger.Failure { message = known.localizedDescription }
+                    else if let known = error as? ScriptWidgetRemindersError { message = known.localizedDescription }
+                    else { message = "[write_failed] The reminder write could not be confirmed. Inspect Reminders before retrying." }
+                    state.executionSession.callbackQueue.async { if state.isCurrentExecution { reject.call(withArguments: [message]) } }
+                }
+            }
+        }
     }
     private static func cached(_ query: ScriptWidgetRemindersQuery, _ state: ScriptWidgetRunningState, _ selection: ScriptWidgetCalendarSelection) -> [String: Any]? {
         guard let data = (try? defaults(state).readValue(forKey: key(state))) as? Data else { return nil }
@@ -434,7 +534,7 @@ struct ScriptWidgetReminderMutation {
         changesDue = options.keys.contains("due")
         if let value = options["due"], !(value is NSNull) {
             guard let text = value as? String,
-                  ScriptWidgetReminderItem.day(text) != nil || ScriptWidgetReminderItem.isoDate(text) != nil else {
+                  Self.validDue(text) else {
                 throw ScriptWidgetRemindersError.invalid("due must be a valid calendar day, ISO date-time, or null")
             }
             due = text
@@ -461,12 +561,125 @@ struct ScriptWidgetReminderMutation {
         if changesDue { identity["due"] = due as Any? ?? NSNull() }
         if let priority { identity["priority"] = priority }
         if let completed { identity["completed"] = completed }
-        let data = try JSONSerialization.data(withJSONObject: identity, options: [.sortedKeys])
+        let data = try JSONSerialization.data(withJSONObject: identity, options: [.sortedKeys, .withoutEscapingSlashes])
         fingerprint = SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
+
+    private static func validDue(_ text: String) -> Bool {
+        if ScriptWidgetReminderItem.day(text) != nil { return true }
+        guard text.range(of: #"^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$"#, options: .regularExpression) != nil,
+              ScriptWidgetReminderItem.day(String(text.prefix(10))) != nil else { return false }
+        return ScriptWidgetReminderItem.isoDate(text) != nil
     }
 
     static func permitsAction(_ state: ScriptWidgetRunningState) -> Bool {
         state.isUserInitiatedAction && !state.isTimelineProjection && !state.isLiveActivityPresentation
             && state.previewStorage == nil && state.isCurrentExecution
+    }
+}
+
+/// Private per-owner write receipts. A prepared receipt is never blindly retried:
+/// the process may have stopped after EventKit committed but before we recorded
+/// the identifier. Only completed receipts older than seven days are discarded.
+enum ScriptWidgetReminderMutationLedger {
+    static let maximumEntries = 128
+    static let maximumBytes = 64 * 1024
+    static let retention: TimeInterval = 7 * 86_400
+    enum Failure: LocalizedError {
+        case corrupt, busy, conflict, uncertain, full
+        var errorDescription: String? {
+            switch self {
+            case .corrupt: return "[write_history_invalid] Reminder write history could not be validated"
+            case .busy: return "[write_busy] Another reminder write is running. Retry with the same requestID."
+            case .conflict: return "[request_conflict] This requestID was used with a different operation"
+            case .uncertain: return "[outcome_unknown] This operation may already have been applied. Inspect Reminders before creating another request."
+            case .full: return "[write_history_full] Reminder write history has reached its bound"
+            }
+        }
+    }
+    private struct Entry: Codable {
+        let requestID: String
+        let fingerprint: String
+        let listID: String
+        let createdAt: Double
+        var state: String
+        var id: String?
+    }
+    private struct Ledger: Codable {
+        let formatVersion: Int
+        var entries: [Entry]
+    }
+    static func perform(_ request: ScriptWidgetReminderMutation, container: URL,
+                        backend: any ScriptWidgetStorageBackend, key: String, now: Date = Date(),
+                        validate: @escaping () throws -> Void,
+                        write: (_ beforeCommit: () throws -> Void) throws -> String) throws -> [String: Any] {
+        let result = ScriptWidgetStorageLock.withExclusiveAccess(container: container, namespace: key) {
+            Result<[String: Any], Error> {
+                try validate()
+                var ledger = Ledger(formatVersion: 1, entries: [])
+                if let present = try backend.readValue(forKey: key) {
+                    guard let bytes = present as? Data, bytes.count <= maximumBytes,
+                          let decoded = try? JSONDecoder().decode(Ledger.self, from: bytes),
+                          let original = try? JSONSerialization.jsonObject(with: bytes),
+                          let normalized = try? JSONSerialization.jsonObject(with: JSONEncoder().encode(decoded)),
+                          try JSONSerialization.data(withJSONObject: original, options: .sortedKeys) == JSONSerialization.data(withJSONObject: normalized, options: .sortedKeys),
+                          decoded.formatVersion == 1, decoded.entries.count <= maximumEntries,
+                          Set(decoded.entries.map(\.requestID)).count == decoded.entries.count else { throw Failure.corrupt }
+                    for entry in decoded.entries {
+                        guard UUID(uuidString: entry.requestID)?.uuidString.lowercased() == entry.requestID,
+                              entry.fingerprint.range(of: "^[0-9a-f]{64}$", options: .regularExpression) != nil,
+                              ScriptWidgetCalendarSelection.validIDs([entry.listID]), entry.createdAt.isFinite, entry.createdAt >= 0,
+                              ["prepared", "completed"].contains(entry.state),
+                              entry.state == "prepared" ? entry.id == nil : validID(entry.id) else { throw Failure.corrupt }
+                    }
+                    ledger = decoded
+                }
+                ledger.entries.removeAll { $0.state == "completed" && now.timeIntervalSince1970 - $0.createdAt > retention }
+                if let prior = ledger.entries.first(where: { $0.requestID == request.requestID }) {
+                    guard prior.fingerprint == request.fingerprint,
+                          ScriptWidgetCalendarSelection.sameID(prior.listID, request.listID) else { throw Failure.conflict }
+                    guard prior.state == "completed", let id = prior.id else { throw Failure.uncertain }
+                    return ["id": id, "listID": prior.listID, "status": "applied", "replayed": true]
+                }
+                guard ledger.entries.count < maximumEntries else { throw Failure.full }
+                func save() throws {
+                    let bytes = try JSONEncoder().encode(ledger)
+                    guard bytes.count <= maximumBytes else { throw Failure.full }
+                    try backend.writeValue(bytes, forKey: key)
+                    guard backend.synchronize() else { throw Failure.uncertain }
+                }
+                var beganCommit = false
+                let id: String
+                do {
+                    id = try write {
+                        guard !beganCommit else { throw Failure.uncertain }
+                        try validate()
+                        ledger.entries.append(.init(requestID: request.requestID, fingerprint: request.fingerprint,
+                                                    listID: request.listID, createdAt: now.timeIntervalSince1970, state: "prepared"))
+                        // Reserve the largest supported system identifier before
+                        // committing so a successful write can fit its receipt.
+                        var completed = ledger
+                        completed.entries[completed.entries.count - 1].state = "completed"
+                        completed.entries[completed.entries.count - 1].id = String(repeating: "x", count: 2048)
+                        guard try JSONEncoder().encode(completed).count <= maximumBytes else { throw Failure.full }
+                        try save()
+                        beganCommit = true
+                    }
+                } catch {
+                    if beganCommit { throw Failure.uncertain }
+                    throw error
+                }
+                guard beganCommit, validID(id), let last = ledger.entries.indices.last else { throw Failure.uncertain }
+                ledger.entries[last].state = "completed"; ledger.entries[last].id = id
+                do { try save() } catch { throw Failure.uncertain }
+                return ["id": id, "listID": request.listID, "status": "applied", "replayed": false]
+            }
+        }
+        guard let result else { throw Failure.busy }
+        return try result.get()
+    }
+    private static func validID(_ id: String?) -> Bool {
+        guard let id else { return false }
+        return !id.isEmpty && id.utf8.count <= 2048 && !id.unicodeScalars.contains { CharacterSet.controlCharacters.contains($0) }
     }
 }

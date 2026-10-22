@@ -144,6 +144,18 @@ struct ScriptWidgetCalendarSelection: Equatable, Sendable {
         try result.get()
     }
 
+    /// Keep an explicit native selection unchanged through a system mutation.
+    func withStableAccess<T>(container: URL, kind: ScriptWidgetEventSourceKind, operation: () throws -> T) throws -> T {
+        let result = ScriptWidgetStorageLock.withExclusiveAccess(container: container, namespace: kind.lockName) {
+            Result<T, Error> {
+                guard try Self.load(container: container, kind: kind) == self else { throw AccessError.changed }
+                return try operation()
+            }
+        }
+        guard let result else { throw AccessError.unavailable }
+        return try result.get()
+    }
+
     func permittedIDs(available: [String], requested: [String]) throws -> [String] {
         if let calendarIDs, calendarIDs.isEmpty { throw AccessError.noneSelected }
         let byID = Dictionary(available.map { (Data($0.utf8), $0) }, uniquingKeysWith: { first, _ in first })

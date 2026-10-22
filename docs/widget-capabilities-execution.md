@@ -1,6 +1,6 @@
 # Widget 能力实施与验收记录
 
-最新范围确认：用户选择先发布 [能力扩展计划](widget-capabilities-plan.md) 的 M1/M2，M3–M5 后续继续。提醒事项新增代码已从发布目录移出，完整保存在本地检查点分支 `codex/m3-m5-checkpoint-20261021-193645`（`8cd3ba78deb785fdf09d450d47e04e0d6d969df0`）。Watch、远端更新和社交共享不在本次范围。发布裁剪后重新验收、准备构建上传，最终 App Review 由用户提交。
+最新范围确认：用户已要求继续完成 M3–M5，并明确全部在 `codex/release-m1-m2` 分支及 PR #62 提交，与 M1/M2 一起发布。此前仅发布 M1/M2 的安排已被取代。Watch、远端更新和社交共享不在本次范围；最终 App Review 由用户提交。下方保留各阶段历史，当前状态以最新记录为准。
 
 本记录区分已有基础、本次完成、待验收和未实现。已有模板、Web Mock 和绿色基线不能证明新增功能完成。当前整体目标仍在进行，不能发布为“M1–M5 全部完成”。
 
@@ -674,3 +674,14 @@ M1/M2 裁剪后的新构建目录验证 `./Scripts/release-readiness.sh` 已退�
 新 API 开发版本为 Runtime 1.4，保持 Package 编译契约 1.0 和既有模板最低版本；Reminders 模板与元数据更新为 1.4。编辑器文档和两端 bundle 已生成。聚焦原生参数/动作边界、来源策略和版本检查已通过；完整 gate 结果随后按实际记录。M3/M4/M5 均未整体验收，不上传或送审。
 
 统一分支固定代码的 `./Scripts/release-readiness.sh` 已退出 0：macos 563 passed / 0 failed / 28 skipped，ios 573 passed / 0 failed / 24 skipped。Web、目录/存储独立进程探针、85 个模板及两端应用构建通过。完整日志和 xcresult 保存于 `__Release/capabilities/m3-resume/`。没有将本批内部参数校验与原生动作标识计为 EventKit 写操作已经实现；M3–M5 继续开发，实际权限/设备/服务验收仍待完成。
+
+
+### 2026-10-21：提醒事项显式写入与 Web Studio 动作模拟
+
+- 新增 remindersWrite 权限及 `$reminders.create/update/setCompleted`，只能由托管包的原生用户动作调用；普通渲染、环境字段伪造、时间线投影与 Live Activity 呈现不能授权。写入前复核 owner、执行状态、包声明、系统授权和允许列表，选择范围在提交期间保持稳定。
+- 每 owner 的私有文件日志保存请求 UUID、负载指纹与提交状态，最多 128 条/64 KiB。七天内成功请求重放返回已确认回执，负载变化拒绝；中断或不确定的 prepared 请求保留并阻止自动重试，不用生成新 UUID 隐藏不确定结果。提交前预留最大回执空间；不记录事项标题或系统错误原文。
+- 原生动作执行等待异步 `$main` 完成，修复入口先 `$render` 时过早结束、取消后续系统写入的问题。Reminders Agenda 提供显式 Complete next 与检查系统记录后清理本地 pending 请求的恢复动作；普通读取不会创建假提醒事项。
+- Web Studio 的 Mock Data 面板支持执行已声明动作，在浏览器项目中保存模拟记录、存储与回执；页面重开后保留结果，不修改真实系统数据，导出包不含 mock。成功写入由模拟模型生成结果，可编辑错误、来源与事项数据；支持模拟不确定提交。原生/Web/Schema、API 目录、AI 上下文、文档与两个 editor bundle 同步。
+- 专项原生参数/回执/动作测试通过；Web Studio 57 项测试通过。浏览器实际操作验证“完成下一项”后事项消失，页面重新打开仍为空；截图 `__Release/capabilities/reminders-write/studio-action-persisted.png`。完整发布检查进行中。没有实际 EventKit 用户授权/写入、物理 Widget 点击、签名容器或设备性能证据，不将其计作通过。M3 相册/健康、M4、M5 仍需继续；未部署、上传或送审。
+
+本批最终 `./Scripts/release-readiness.sh` 退出 0：Mac 571 passed / 0 failed / 28 skipped，iPhone Simulator 581 passed / 0 failed / 24 skipped；editor 35、preview engine 158、Web Studio 57、Gallery 同步 1 全通过，两端 app build、Chrome smoke、存储独立进程探针通过。首轮完整检查暴露目录声明文件未包含 write operation，已修复后重跑通过。Mac 构建曾输出 SwiftCompile “exit code 0 but produced no further output”诊断，但命令返回成功；额外独立重跑 Mac app build 退出 0 且不再出现该诊断。SDK/链接/弃用提示保留。证据、完整日志及两端 xcresult 位于 `__Release/capabilities/reminders-write/`。跳过项不计为通过；实际系统授权与设备写入仍待验收。

@@ -335,9 +335,10 @@ export function scriptWidgetKernel(global, host, configJSON) {
     return promise;
   }
 
+  const actionMode = typeof config.actionID === "string" && config.manifest?.actions?.some((item) => item.id === config.actionID) === true;
   const environments = config.environments ?? {};
   const timelineProjection = environments["timeline-is-projection"] === "true";
-  const liveActivityPresentation = ["live-activity","dynamic-island"].includes(environments["widget-size"]);
+  const liveActivityPresentation = config.liveActivityPresentation === true || ["live-activity","dynamic-island"].includes(environments["widget-size"]);
   const fixtures = config.fixtures ?? {};
   let networkRequests = 0;
 
@@ -609,6 +610,7 @@ export function scriptWidgetKernel(global, host, configJSON) {
       return typeof value === "string" ? value : "";
     },
     $render(root) {
+      if (actionMode) return;
       if (isElement(root)) {
         const result = resolveWidgetElementTree(root);
         if (result.ok) resultElement = result.element;
@@ -616,7 +618,7 @@ export function scriptWidgetKernel(global, host, configJSON) {
       }
       signal();
     },
-    $dynamic_island() { signal(); },
+    $dynamic_island() { if (!actionMode) signal(); },
     $component() {},
     $error(message) { exceptionInfo = nativeString(message); signal(); },
     $import(relativePath) {
@@ -747,6 +749,35 @@ export function scriptWidgetKernel(global, host, configJSON) {
       }, reject);
     });
   }
+  const reminderStateInput = fixtures.remindersState;
+  const reminderRows = JSON.parse(JSONStringify(reminderStateInput?.items ?? apiMocks["$reminders.items"]?.value?.items ?? []));
+  const reminderReceipts = JSON.parse(JSONStringify(reminderStateInput?.receipts ?? []));
+  let remindersChanged = reminderStateInput !== undefined;
+  function reminderDate(text) {
+    if (typeof text !== "string" || text.length > 64) return false;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+      const [y, m, d] = text.split("-").map(Number), value = new DateCtor(0);
+      value.setFullYear(y, m - 1, d); value.setHours(0, 0, 0, 0);
+      return y >= 1 && value.getFullYear() === y && value.getMonth() === m - 1 && value.getDate() === d;
+    }
+    return /^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/.test(text) && reminderDate(text.slice(0, 10)) && Number.isFinite(new DateCtor(text).getTime());
+  }
+  function reminderHash(text) {
+    const bytes = [];
+    for (const c of text) { const n = c.codePointAt(0); if (n < 128) bytes.push(n); else if (n < 2048) bytes.push(192 | n >> 6, 128 | n & 63); else if (n < 65536) bytes.push(224 | n >> 12, 128 | n >> 6 & 63, 128 | n & 63); else bytes.push(240 | n >> 18, 128 | n >> 12 & 63, 128 | n >> 6 & 63, 128 | n & 63); }
+    const bits = bytes.length * 8; bytes.push(128); while (bytes.length % 64 !== 56) bytes.push(0);
+    bytes.push(0, 0, 0, 0, bits >>> 24, bits >>> 16 & 255, bits >>> 8 & 255, bits & 255);
+    const k = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+    const h = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19], rotate = (n, b) => n >>> b | n << 32 - b;
+    for (let offset = 0; offset < bytes.length; offset += 64) {
+      const w = new Array(64); for (let i = 0; i < 16; i++) w[i] = bytes[offset + i * 4] << 24 | bytes[offset + i * 4 + 1] << 16 | bytes[offset + i * 4 + 2] << 8 | bytes[offset + i * 4 + 3];
+      for (let i = 16; i < 64; i++) { const x = w[i - 15], y = w[i - 2]; w[i] = (w[i - 16] + (rotate(x, 7) ^ rotate(x, 18) ^ x >>> 3) + w[i - 7] + (rotate(y, 17) ^ rotate(y, 19) ^ y >>> 10)) | 0; }
+      let [a,b,c,d,e,f,g,j] = h;
+      for (let i = 0; i < 64; i++) { const t = (j + (rotate(e, 6) ^ rotate(e, 11) ^ rotate(e, 25)) + (e & f ^ ~e & g) + k[i] + w[i]) | 0, u = ((rotate(a, 2) ^ rotate(a, 13) ^ rotate(a, 22)) + (a & b ^ a & c ^ b & c)) | 0; j=g;g=f;f=e;e=(d+t)|0;d=c;c=b;b=a;a=(t+u)|0; }
+      [a,b,c,d,e,f,g,j].forEach((v, i) => { h[i] = h[i] + v | 0; });
+    }
+    return h.map((n) => (n >>> 0).toString(16).padStart(8, "0")).join("");
+  }
   const rawReminderSelection = fixtures.remindersSelection;
   const reminderSelectionValid = rawReminderSelection == null || (ArrayIsArray(rawReminderSelection) && rawReminderSelection.length <= 64 && new Set(rawReminderSelection).size === rawReminderSelection.length && rawReminderSelection.every((id) => typeof id === "string" && id.length > 0 && utf8ByteLength(id) <= 256));
   const selectedLists = rawReminderSelection == null ? null : reminderSelectionValid ? new Set(rawReminderSelection) : new Set();
@@ -784,7 +815,7 @@ export function scriptWidgetKernel(global, host, configJSON) {
       if (method !== "requestAuthorization") {
         if (!reminderSelectionValid) { reject("[permission_denied] Reminder source settings are unavailable"); return; }
         if (method === "items" && selectedLists?.size === 0) { reject("[permission_denied] No Reminder lists are selected in ScriptWidget Settings"); return; }
-        const available = apiMocks["$reminders.calendars"]?.value;
+        const available = apiMocks["$reminders.lists"]?.value;
         if (method === "items" && selectedLists !== null && ArrayIsArray(available) && !available.some((item) => selectedLists.has(item?.id))) {
           reject("[invalid_options] A requested Reminder source is unavailable or outside your selection"); return;
         }
@@ -794,17 +825,18 @@ export function scriptWidgetKernel(global, host, configJSON) {
       }
       if (timelineProjection || liveActivityPresentation) {
         if (method === "requestAuthorization") { resolve(apis.$reminders.authorizationStatus() === "authorized"); return; }
-        const snapshot = apiMocks["$reminders.events"]?.value;
+        const snapshot = apiMocks["$reminders.items"]?.value;
         if (method === "lists" || snapshot?.source !== "cache") { reject("[timeline_read_only] No matching Reminder snapshot is available"); return; }
       }
       implementation(options).then((value) => {
         if (method === "requestAuthorization") { resolve(value); return; }
-        const available = apiMocks["$reminders.calendars"]?.value;
+        const available = apiMocks["$reminders.lists"]?.value;
         const allowed = (id) => typeof id === "string" && (selectedLists === null || selectedLists.has(id)) && (!ArrayIsArray(available) || available.some((item) => item?.id === id));
         if (method === "lists") {
           if (!ArrayIsArray(value)) { reject("[mock_invalid] Reminder sources must be an array"); return; }
           resolve(value.filter((item) => allowed(item?.id)).slice(0,64)); return;
         }
+        if (remindersChanged && value && ArrayIsArray(value.items)) value = { ...value, items: unbridge(reminderRows) };
         if (!value || !ArrayIsArray(value.items)) { reject("[mock_invalid] Reminder events need an items array"); return; }
         const inWindow = (item) => {
           if (item?.completed !== (reminderQuery.completed ?? false)) return false;
@@ -826,6 +858,69 @@ export function scriptWidgetKernel(global, host, configJSON) {
         const limit = reminderQuery.limit ?? 10;
         resolve({ ...value, items: items.slice(0, limit), status: items.length ? "ready" : "empty", truncated: value.truncated === true || items.length > limit });
       }, reject);
+    });
+  }
+  for (const method of ["create", "update", "setCompleted"]) {
+    apis.$reminders[method] = (options) => nativePromise((resolve, reject) => {
+      const invalid = (message) => { throw new Error(`[invalid_options] ${message}`); };
+      try {
+        if (!remindersDeclared() || !config.manifest?.permissions?.includes("remindersWrite") || !actionMode || timelineProjection || liveActivityPresentation) {
+          reject("[permission_denied] Declare reminders and remindersWrite and invoke a declared action"); return;
+        }
+        const input = bridgeDictionary(options ?? {}, 0), fields = method === "create" ? ["requestID", "listID", "title", "due", "priority"] : method === "update" ? ["requestID", "listID", "id", "title", "due", "priority"] : ["requestID", "listID", "id", "completed"];
+        if (ObjectKeys(input).some((key) => !fields.includes(key))) invalid("Unknown mutation option");
+        if (typeof input.requestID !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(input.requestID)) invalid("A canonical request UUID is required");
+        const validList = (id) => typeof id === "string" && id.length > 0 && utf8ByteLength(id) <= 256;
+        const validID = (id) => typeof id === "string" && id.length > 0 && utf8ByteLength(id) <= 2048 && !/[\p{Cc}\p{Cf}]/u.test(id);
+        if (!validList(input.listID) || (method !== "create" && !validID(input.id))) invalid("One listID and an existing reminder ID are required");
+        if (method === "create" && input.title === undefined) invalid("A title is required");
+        if (input.title !== undefined && (typeof input.title !== "string" || !input.title.trim() || utf8ByteLength(input.title) > 1024 || /[\p{Cc}\p{Cf}]/u.test(input.title))) invalid("Invalid title");
+        if (input.due !== undefined && input.due !== null && !reminderDate(input.due)) invalid("Invalid due date");
+        if (input.priority !== undefined && (!Number.isInteger(input.priority) || input.priority < 0 || input.priority > 9)) invalid("Invalid priority");
+        if (method === "setCompleted" && typeof input.completed !== "boolean") invalid("completed must be Boolean");
+        if (method === "update" && !["title", "due", "priority"].some((field) => input[field] !== undefined)) invalid("An update requires changed fields");
+        if (++dataQueries > contract.maximumDataQueries) { reject("[query_limit] Too many system data operations"); return; }
+        if (!apis.$reminders.isAvailable()) { reject("[unavailable] Reminder is unavailable"); return; }
+        if (apis.$reminders.authorizationStatus() !== "authorized" || !reminderSelectionValid || (selectedLists !== null && !selectedLists.has(input.listID))) { reject("[permission_denied] Allow reminders access and select the list"); return; }
+        const available = apiMocks["$reminders.lists"]?.value;
+        if (!ArrayIsArray(available) || !available.some((item) => item?.id === input.listID)) invalid("The selected list is unavailable");
+        const mock = apiMocks[`$reminders.${method}`];
+        if (mock && Object.prototype.hasOwnProperty.call(mock, "error")) { reject(StringCtor(mock.error)); return; }
+        const now = new DateCtor().getTime() / 1000;
+        if ((reminderStateInput !== undefined && reminderStateInput?.formatVersion !== 1) || !ArrayIsArray(reminderReceipts) || reminderReceipts.length > 128 || utf8ByteLength(JSONStringify(reminderReceipts)) > 65536 || reminderReceipts.some((entry) => !entry || ObjectKeys(entry).some((key) => !["requestID", "fingerprint", "listID", "createdAt", "state", "id"].includes(key)) || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(entry.requestID) || !/^[0-9a-f]{64}$/.test(entry.fingerprint) || !validList(entry.listID) || typeof entry.createdAt !== "number" || !Number.isFinite(entry.createdAt) || entry.createdAt < 0 || !["prepared", "completed"].includes(entry.state) || (entry.state === "prepared" ? entry.id !== undefined : !validID(entry.id))) || new Set(reminderReceipts.map((entry) => entry.requestID)).size !== reminderReceipts.length) { reject("[write_history_invalid] Reminder write history could not be validated"); return; }
+        if (!ArrayIsArray(reminderRows) || reminderRows.length > 1000 || new Set(reminderRows.map((row) => row?.id)).size !== reminderRows.length || reminderRows.some((row) => !row || !validID(row.id) || !validList(row.listID) || typeof row.title !== "string" || utf8ByteLength(row.title) > 1024 || typeof row.completed !== "boolean" || !Number.isInteger(row.priority) || row.priority < 0 || row.priority > 9)) { reject("[mock_invalid] Reminder state needs valid unique items"); return; }
+        const identity = { kind: method, listID: input.listID };
+        for (const key of ["id", "title", "due", "priority", "completed"]) if (input[key] !== undefined) identity[key] = input[key];
+        if (method === "create" && identity.priority === undefined) identity.priority = 0;
+        const fingerprint = reminderHash(JSONStringify(Object.fromEntries(ObjectKeys(identity).sort().map((key) => [key, identity[key]]))));
+        for (let i = reminderReceipts.length - 1; i >= 0; i--) if (reminderReceipts[i].state === "completed" && now - reminderReceipts[i].createdAt > 7 * 86400) reminderReceipts.splice(i, 1);
+        const previous = reminderReceipts.find((receipt) => receipt.requestID === input.requestID);
+        if (previous) {
+          if (previous.fingerprint !== fingerprint || previous.listID !== input.listID) { reject("[request_conflict] This requestID belongs to a different operation"); return; }
+          if (previous.state !== "completed") { reject("[outcome_unknown] Inspect Reminders before creating another request"); return; }
+          resolve({ id: previous.id, listID: previous.listID, status: "applied", replayed: true }); return;
+        }
+        if (reminderReceipts.length >= 128) { reject("[write_history_full] Reminder write history has reached its bound"); return; }
+        let row;
+        if (method === "create") {
+          if (reminderRows.length >= 1000) { reject("[mock_limit] Reminder preview state is limited to 1000 items"); return; }
+          row = { id: `mock.reminder.${input.requestID}`, listID: input.listID, title: input.title, due: input.due ?? null, hasTime: typeof input.due === "string" && input.due.includes("T"), priority: input.priority ?? 0, completed: false, completedAt: null };
+        } else {
+          const prior = reminderRows.find((item) => item.id === input.id && item.listID === input.listID);
+          if (!prior) invalid("The reminder is unavailable in the selected list");
+          row = { ...prior };
+          if (input.title !== undefined) row.title = input.title;
+          if (input.priority !== undefined) row.priority = input.priority;
+          if (input.due !== undefined) { row.due = input.due; row.hasTime = typeof input.due === "string" && input.due.includes("T"); }
+          if (input.completed !== undefined) { row.completed = input.completed; row.completedAt = input.completed ? new DateCtor().toISOString() : null; }
+        }
+        const receipt = { requestID: input.requestID, fingerprint, listID: input.listID, createdAt: now, state: fixtures.remindersCommitUncertain === true ? "prepared" : "completed", ...(fixtures.remindersCommitUncertain === true ? {} : { id: row.id }) };
+        if (utf8ByteLength(JSONStringify([...reminderReceipts, { ...receipt, state: "completed", id: "x".repeat(2048) }])) > 65536) { reject("[write_history_full] Reminder write history has reached its bound"); return; }
+        if (method === "create") reminderRows.push(row); else reminderRows[reminderRows.findIndex((item) => item.id === row.id)] = row;
+        reminderReceipts.push(receipt); remindersChanged = true;
+        if (receipt.state === "prepared") { reject("[outcome_unknown] The write may have been applied. Inspect the mock state before retrying."); return; }
+        resolve({ id: row.id, listID: row.listID, status: "applied", replayed: false });
+      } catch (error) { reject(StringCtor(error.message ?? error)); }
     });
   }
   apis.$fetch = apis.fetch;
@@ -859,7 +954,7 @@ export function scriptWidgetKernel(global, host, configJSON) {
       if (validation) error = { kind: validation.kind, message: validation.message };
       else tree = encodeElement(state.resultElement);
     }
-    return JSONStringify({ tree, error, logs, diagnostics });
+    return JSONStringify({ tree, error, logs, diagnostics, ...(actionMode ? { mockState: { storage: Object.fromEntries(storage), remindersState: { formatVersion: 1, items: reminderRows, receipts: reminderReceipts } } } : {}) });
   }
 
   return {
@@ -889,12 +984,18 @@ export function scriptWidgetKernel(global, host, configJSON) {
 
       signalWaiter = () => host.defer(() => complete({}));
       try {
-        main.call(undefined);
+        const returned = main.call(undefined);
+        if (actionMode) {
+          returned.then(() => {
+            resultElement = new ScriptWidgetRuntimeElement("text", null, ["Action completed"]);
+            signal();
+          }, (error) => { exceptionInfo = describeException(error); signal(); });
+        }
       } catch (error) {
         exceptionInfo = describeException(error);
         signal();
       }
-      if (!javaScript.includes("$render")) {
+      if (!actionMode && !javaScript.includes("$render")) {
         resultElement = new ScriptWidgetRuntimeElement("text", null, ["#UI Not Found#"]);
         signal();
       }

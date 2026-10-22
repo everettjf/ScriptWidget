@@ -3,7 +3,7 @@ import { dataAPICatalog } from "../../../Editor/editorfe/src/dataAPICatalog.js";
 // Preview data only. Kept with the browser draft, never in exported packages.
 export type MockValue = null | boolean | number | string | MockValue[] | { [key: string]: MockValue };
 export type MockObject = { [key: string]: MockValue };
-export interface MockAPI { id: string; group: string; value: MockValue; legacy?: string[] }
+export interface MockAPI { operation?: string; id: string; group: string; value: MockValue; legacy?: string[] }
 export const mockAPIs: MockAPI[] = dataAPICatalog;
 // Dark appearance follows the preview setting until a user explicitly mocks it.
 export function sampleFixtures(): MockObject {
@@ -26,6 +26,9 @@ export function parseMocks(text: string): MockObject {
   for (const key of ["api", "device", "system", "storage"]) {
     if (value[key] !== undefined && !isObject(value[key])) throw new Error(`${key} must be a JSON object.`);
   }
+  if (value.remindersState !== undefined && (!isObject(value.remindersState) || value.remindersState.formatVersion !== 1 ||
+      Object.keys(value.remindersState).some(key => !["formatVersion", "items", "receipts"].includes(key)) || !Array.isArray(value.remindersState.items) || !Array.isArray(value.remindersState.receipts))) throw new Error("Reminder action state needs formatVersion 1, items and receipts.");
+  if (value.remindersCommitUncertain !== undefined && typeof value.remindersCommitUncertain !== "boolean") throw new Error("remindersCommitUncertain must be true or false.");
   for (const key of ["calendarSelection", "remindersSelection"]) if (value[key] !== undefined && value[key] !== null) {
     const ids = value[key];
     if (!Array.isArray(ids) || ids.length > 64 || new Set(ids).size !== ids.length || ids.some((id) => typeof id !== "string" || !id || new TextEncoder().encode(id).length > 256)) {
@@ -67,6 +70,9 @@ export function responseFor(data: MockObject, api: MockAPI): MockObject {
 export function setResponse(text: string, id: string, response: MockObject): string {
   const data = parseMocks(text);
   data.api = { ...(isObject(data.api) ? data.api : {}), [id]: response };
+  if (id === "$reminders.items" && isObject(data.remindersState) && isObject(response.value) && Array.isArray(response.value.items)) {
+    data.remindersState = { ...data.remindersState, items: response.value.items };
+  }
   return JSON.stringify(data, null, 2);
 }
 export function addSampleMocks(text: string): string {

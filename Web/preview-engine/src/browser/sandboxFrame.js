@@ -42,7 +42,7 @@ export function sandboxFrame(compilerWorkerSource, executorWorkerSource) {
   function prepare(id, job) {
     return new Promise((resolve) => {
       pending.set(id, resolve);
-      compiler.postMessage({ type: "prepare", id, files: job.files, entry: job.entry, prelude: job.prelude, manifest: JSON.parse(job.config).manifest ?? null });
+      compiler.postMessage({ type: "prepare", id, files: job.files, entry: job.entry, prelude: job.prelude, manifest: JSON.parse(job.config).manifest ?? null, actionID: JSON.parse(job.config).actionID ?? null });
     });
   }
 
@@ -63,7 +63,7 @@ export function sandboxFrame(compilerWorkerSource, executorWorkerSource) {
       worker.onerror = (event) => { event.preventDefault(); settle(errorResult("internalError", event.message || "Execution worker failed")); };
       const config = JSON.parse(job.config);
       worker.postMessage({
-        config: JSON.stringify({ ...config, environments: { ...prepared.timelineEnvironment, ...config.environments }, manifest: prepared.manifest, hasManifest: prepared.hasManifest }),
+        config: JSON.stringify({ ...config, environments: { ...prepared.timelineEnvironment, ...config.environments, ...(prepared.actionID ? { "widget-size": "action", "action-id": prepared.actionID, "action-source": "web-preview" } : {}) }, actionID: prepared.actionID, liveActivityPresentation: ["live-activity", "dynamic-island"].includes(config.environments?.["widget-size"]), manifest: prepared.manifest, hasManifest: prepared.hasManifest }),
         code: prepared.code,
         imports: prepared.imports,
         files: prepared.files,

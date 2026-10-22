@@ -6,7 +6,7 @@ import { normalizePackagePath } from "../packageFiles.js";
 
 export const runtimeAPIVersion = "1.0";
 export const families = ["systemSmall", "systemMedium", "systemLarge", "systemExtraLarge", "systemExtraLargePortrait", "accessoryCircular", "accessoryRectangular", "accessoryInline"];
-export const permissions = ["network", "location", "health", "calendar", "reminders", "storage", "files"];
+export const permissions = ["network", "location", "health", "calendar", "reminders", "remindersWrite", "storage", "files"];
 const manifestKeys = new Set(["formatVersion", "id", "name", "version", "runtimeVersion", "minimumRuntimeVersion", "timeline", "entry", "supportedFamilies", "permissions", "networkDomains", "plugins", "actions", "controls", "pushUpdates", "description", "category", "tags", "icon", "preview", "author", "license"]);
 const actionKeys = new Set(["id", "title", "description", "systemImage", "function"]);
 const controlKeys = new Set(["id", "type", "title", "subtitle", "systemImage", "action", "actionID", "stateKey"]);

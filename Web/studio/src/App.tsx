@@ -156,6 +156,7 @@ export function App() {
         />
         <EditorPane project={project} path={path} saveState={model.saveState} colorScheme={colorScheme} onChange={onEdit} />
         <PreviewPane
+          project={project}
           className="max-[1100px]:col-span-full max-[1100px]:border-t max-[720px]:-order-1 max-[720px]:border-t-0"
           settings={effective} families={families} onSettings={changeSettings} preview={preview} report={report}
           fixtures={project.fixtures} onFixtures={model.setFixtures} tab={tab} onTab={setTab}

@@ -35,6 +35,7 @@ export function MockDataPanel({ fixtures, onChange }: { fixtures: string; onChan
   const methods = mockAPIs.filter((api) => api.group === group);
   const api = mockAPIs.find((item) => item.id === selected)!;
   const response = responseFor(data, api);
+  const writeResponse = api.operation === "write";
   const special = group === "network" ? "fetch" : group;
   const structured = ["network", "storage", "dataSource"].includes(group);
   const encoded = structured ? JSON.stringify(data[special] ?? (group === "storage" ? {} : []), null, 2)
@@ -65,8 +66,8 @@ export function MockDataPanel({ fixtures, onChange }: { fixtures: string; onChan
       {!structured && <>
         <div><Label htmlFor="mock-api" className="text-xs">API</Label><select id="mock-api" className="mt-1 h-8 w-full rounded-md border bg-background px-2 font-mono text-xs" value={selected} onChange={(event) => setSelected(event.target.value)}>{methods.map((item) => <option key={item.id} value={item.id}>{item.id}()</option>)}</select></div>
         {(group === "health" || group === "location" || group === "calendar" || group === "reminders") && <div className="flex flex-wrap gap-1">{(group === "health" ? ["granted", "empty", "unavailable"] as const : ["granted", "empty", "denied", "unavailable"] as const).map((item) => <Button key={item} variant="outline" size="xs" onClick={() => commit(() => permissionScenario(fixtures, group, item))}>{item === "granted" ? "Sample success" : item === "empty" ? (group === "health" ? "No shared data" : "No data") : item === "denied" ? "Permission denied" : "Unavailable"}</Button>)}</div>}
-        <div className="flex items-center gap-2"><Label htmlFor="mock-mode" className="text-xs">Response</Label><select id="mock-mode" className="h-8 rounded-md border bg-background px-2 text-xs" value={mode} onChange={(event) => { setMode(event.target.value); setDraft(JSON.stringify(event.target.value === "error" ? "Simulated failure" : api.value, null, 2)); }}><option value="value">Return value</option><option value="error">Throw / reject error</option></select><Button size="xs" variant="ghost" className="ml-auto" onClick={() => commit(() => setResponse(fixtures, selected, responseFor(sampleFixtures(), api)))}>Reset this API</Button></div>
-        {mode === "value" && "value" in response && <ValueFields value={response.value!} onChange={(value) => commit(() => setResponse(fixtures, selected, { value }))} />}
+        <div className="flex items-center gap-2"><Label htmlFor="mock-mode" className="text-xs">Response</Label><select id="mock-mode" className="h-8 rounded-md border bg-background px-2 text-xs" value={mode} onChange={(event) => { setMode(event.target.value); setDraft(JSON.stringify(event.target.value === "error" ? "Simulated failure" : api.value, null, 2)); }}><option value="value">{writeResponse ? "Model-derived receipt" : "Return value"}</option><option value="error">Throw / reject error</option></select><Button size="xs" variant="ghost" className="ml-auto" onClick={() => commit(() => setResponse(fixtures, selected, responseFor(sampleFixtures(), api)))}>Reset this API</Button></div>
+        {!writeResponse && mode === "value" && "value" in response && <ValueFields value={response.value!} onChange={(value) => commit(() => setResponse(fixtures, selected, { value }))} />}
       </>}
       {group === "location" && <>
         <Button variant="outline" size="xs" className="self-start" onClick={() => commit(() => permissionScenario(fixtures, "location", "widgetDenied"))}>Widget access off</Button>
@@ -88,8 +89,9 @@ export function MockDataPanel({ fixtures, onChange }: { fixtures: string; onChan
       {group === "dataSource" && <p className="text-xs text-muted-foreground">Match pluginID and operationID. Each rule needs an HTTPS url and value or error. Declare the plugin, network permission and domain in widget.json. Parameters are not matched.</p>}
       {group === "dataSource" && <Button variant="outline" size="xs" className="self-start" onClick={() => setDraft(JSON.stringify([{ pluginID: "example.weather", operationID: "current", url: "https://api.example.com/weather", value: { temperature: 22 } }], null, 2))}>Show example rule</Button>}
       <Label htmlFor="mock-response-json" className="text-xs">{structured ? "Mock data JSON" : "Response JSON"}</Label>
-      <Textarea id="mock-response-json" spellCheck={false} aria-label="Mock response JSON" className="min-h-32 font-mono text-xs" value={draft} onChange={(event) => setDraft(event.target.value)} />
-      <Button size="sm" className="self-start" onClick={apply}>Apply mock data</Button>
+      <Textarea id="mock-response-json" spellCheck={false} aria-label="Mock response JSON" className="min-h-32 font-mono text-xs" value={draft} readOnly={writeResponse && mode === "value" && !structured} onChange={(event) => setDraft(event.target.value)} />
+      {writeResponse && <p className="text-xs text-muted-foreground">Write receipts come from the simulated items and request history. Edit $reminders.items to change the dataset, or choose an error response here.</p>}
+      <Button size="sm" className="self-start" disabled={writeResponse && mode === "value" && !structured} onClick={apply}>Apply mock data</Button>
     </>}
     {error && <p role="alert" className="text-xs text-destructive">{error}</p>}
     <p className="text-xs text-muted-foreground">Files, JSX rendering and XML parsing run normally. Widget size, appearance and parameters use the preview controls. $runtime reports the real preview contract.</p>

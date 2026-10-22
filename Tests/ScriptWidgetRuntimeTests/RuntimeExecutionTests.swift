@@ -5033,6 +5033,14 @@ final class IsolatedPersonalDataPreviewTests: XCTestCase {
 }
 
 private final class RemindersFixtureProvider: ScriptWidgetRemindersProviding {
+    var writes = 0
+    var onMutate: (() -> Void)?
+    func mutate(_ request: ScriptWidgetReminderMutation, beforeCommit: () throws -> Void) throws -> String {
+        if let id = request.id, id != request.listID { throw ScriptWidgetRemindersError.invalid("Reminder is outside the selected list") }
+        onMutate?(); try beforeCommit(); writes += 1
+        return request.id ?? "created-" + request.requestID
+    }
+
     var status = "authorized"
     var onFetch: (() -> Void)?
     var fetches = 0
@@ -5122,5 +5130,84 @@ extension RuntimeExecutionTests {
         XCTAssertNil(guarded.1); let text = collectText(try XCTUnwrap(guarded.0))
         XCTAssertTrue(text.contains("permission_denied")); XCTAssertFalse(text.contains("Read a chapter")); XCTAssertEqual(provider.fetches, 1)
         XCTAssertFalse(f.defaults.dictionaryRepresentation().keys.contains { $0.hasPrefix("ScriptWidget.RemindersCache.") })
+    }
+}
+
+
+extension LibrarySessionExecutionTests {
+    func testReminderActionWaitsForAsyncWriteAndReplaysDurably() throws {
+        let session = try start(), manager = try XCTUnwrap(session.sourceManager)
+        let package = manager.getScriptPackage(packageName: packageName)
+        var manifest = WidgetPackageManifest.newProject(name: packageName)
+        manifest.permissions = [.storage, .reminders, .remindersWrite]; manifest.minimumRuntimeVersion = "1.4"
+        XCTAssertTrue(package.writeManifest(manifest).0)
+        let source = """
+        $render(<text>Entry feedback must not finish the action</text>);
+        async function finishReminder() {
+          const r = await $reminders.setCompleted({requestID:'550e8400-e29b-41d4-a716-446655440000',listID:'personal',id:'personal',completed:true});
+          $storage.setString('write-result',r.id+':'+r.replayed);
+          $render(<text>Done</text>);
+        }
+        """
+        XCTAssertTrue(package.writeFile(relativePath: "main.jsx", content: source).0)
+        let provider = RemindersFixtureProvider()
+        for replayed in [false, true] {
+            let captured = try session.capture(name: packageName)
+            let runtime = ScriptWidgetRuntime(package: captured.package, environments: ["widget-size": "action"], executionSnapshot: captured, isUserInitiatedAction: true)
+            runtime.runningState?.remindersProviderForTesting = provider
+            XCTAssertNil(runtime.executeJSXSyncForFunction(source, "finishReminder").1)
+            XCTAssertEqual(try captured.context.defaults.readValue(forKey: captured.storageNamespace + "write-result") as? String, "personal:\(replayed)")
+        }
+        XCTAssertEqual(provider.writes, 1)
+    }
+    func testReminderWriteRejectsRenderingAndWrongList() throws {
+        let session = try start(), package = try XCTUnwrap(session.sourceManager).getScriptPackage(packageName: packageName)
+        var manifest = WidgetPackageManifest.newProject(name: packageName)
+        manifest.permissions = [.storage, .reminders, .remindersWrite]; manifest.minimumRuntimeVersion = "1.4"
+        XCTAssertTrue(package.writeManifest(manifest).0)
+        let source = """
+        async function createReminder() {
+          try { await $reminders.create({requestID:'550e8400-e29b-41d4-a716-446655440001',listID:'work',title:'Read'}); }
+          catch(e) { $storage.setString('write-error',String(e)); }
+          $render(<text>Checked</text>);
+        }
+        """
+        XCTAssertTrue(package.writeFile(relativePath: "main.jsx", content: source).0)
+        let provider = RemindersFixtureProvider()
+        try ScriptWidgetCalendarSelection(calendarIDs: ["personal"]).save(container: container, kind: .reminders)
+        for nativeAction in [false, true] {
+            let captured = try session.capture(name: packageName)
+            let runtime = ScriptWidgetRuntime(package: captured.package, environments: ["widget-size": "action", "action-id": "fake"], executionSnapshot: captured, isUserInitiatedAction: nativeAction)
+            runtime.runningState?.remindersProviderForTesting = provider
+            XCTAssertNil(runtime.executeJSXSyncForFunction(source, "createReminder").1)
+            XCTAssertTrue((try captured.context.defaults.readValue(forKey: captured.storageNamespace + "write-error") as? String)?.contains("permission_denied") == true)
+        }
+        XCTAssertEqual(provider.writes, 0)
+    }
+
+    func testReminderWriteRequiresPermissionAndRechecksRevocationBeforeCommit() throws {
+        let session = try start(), package = try XCTUnwrap(session.sourceManager).getScriptPackage(packageName: packageName)
+        try ScriptWidgetCalendarSelection(calendarIDs: ["personal"]).save(container: container, kind: .reminders)
+        let source = """
+        async function createReminder() {
+          try { await $reminders.create({requestID:'550e8400-e29b-41d4-a716-446655440002',listID:'personal',title:'Read'}); }
+          catch(e) { $storage.setString('write-error',String(e)); }
+        }
+        """
+        for declared in [false, true] {
+            var manifest = WidgetPackageManifest.newProject(name: packageName)
+            manifest.permissions = declared ? [.storage, .reminders, .remindersWrite] : [.storage, .reminders]
+            manifest.minimumRuntimeVersion = "1.4"
+            XCTAssertTrue(package.writeManifest(manifest).0)
+            XCTAssertTrue(package.writeFile(relativePath: "main.jsx", content: source).0)
+            let captured = try session.capture(name: packageName), provider = RemindersFixtureProvider()
+            if declared { provider.onMutate = { provider.status = "denied" } }
+            let runtime = ScriptWidgetRuntime(package: captured.package, environments: ["widget-size": "action"], executionSnapshot: captured, isUserInitiatedAction: true)
+            runtime.runningState?.remindersProviderForTesting = provider
+            XCTAssertNil(runtime.executeJSXSyncForFunction(source, "createReminder").1)
+            let error = try captured.context.defaults.readValue(forKey: captured.storageNamespace + "write-error") as? String
+            XCTAssertTrue(error?.contains("permission_denied") == true, error ?? "missing error")
+            XCTAssertEqual(provider.writes, 0)
+        }
     }
 }

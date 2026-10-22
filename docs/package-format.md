@@ -55,7 +55,7 @@ The machine-readable contract is [`widget.schema.json`](../Shared/ScriptWidgetRu
   contains an HTTPS `registrationURL` on a declared `networkDomains` host and a
   non-secret `channel`. ScriptWidget posts the WidgetKit token, package ID, and
   channel when the token changes; packages never receive the token in JSX.
-- `permissions`: declared capabilities: `network`, `location`, `health`, `calendar`, `reminders`, `storage`, or `files`.
+- `permissions`: declared capabilities: `network`, `location`, `health`, `calendar`, `reminders`, `remindersWrite`, `storage`, or `files`.
 - `networkDomains`: lowercase host allowlist. It requires `network`; use exact hosts or a leading wildcard such as `*.example.com`.
 - `plugins`: optional Data Source Plugin identifiers. Every data-source request also requires `network` and a matching `networkDomains` entry.
 - Optional discovery fields: `description`, `category`, `tags`, `icon`, `preview`, `author`, and `license`.
@@ -87,7 +87,7 @@ ScriptWidget treats every imported `.swt` as untrusted. Before extraction it che
 
 Extraction uses a unique temporary directory that is removed after every attempt. The extracted tree is checked again before copying. The archive filename does not control the installed project directory; the validated manifest name does.
 
-Permission declarations are surfaced for review during import and enforced by the Package 2.0 runtime. Generic network calls require `network`, use public HTTP(S) endpoints, and must match `networkDomains`; Data Source Plugin mappings remain HTTPS-only. Legacy packages remain compatible but do not gain access to the new plugin, Calendar or Reminders APIs. The additive `calendar` declaration enables read-only `$calendar` calls after system approval; it does not enable event writes. Older readers reject the unknown permission rather than silently running the package without it. See [Calendar API](calendar-api.md). The additive `reminders` declaration similarly enables read-only `$reminders` calls within native Settings list selection; see [Reminders API](reminders-api.md).
+Permission declarations are surfaced for review during import and enforced by the Package 2.0 runtime. Generic network calls require `network`, use public HTTP(S) endpoints, and must match `networkDomains`; Data Source Plugin mappings remain HTTPS-only. Legacy packages remain compatible but do not gain access to the new plugin, Calendar or Reminders APIs. The additive `calendar` declaration enables read-only `$calendar` calls after system approval; it does not enable event writes. Older readers reject the unknown permission rather than silently running the package without it. See [Calendar API](calendar-api.md). The additive `reminders` declaration enables read-only `$reminders` calls within native Settings list selection. `remindersWrite` additionally permits explicit declared user actions to create, update or set completion after native identity, source scope and durable replay checks; rendering cannot write. see [Reminders API](reminders-api.md).
 
 ## Compatibility
 
@@ -96,7 +96,7 @@ Permission declarations are surfaced for review during import and enforced by th
 
 Before compiling or running a package, native widget rendering, Dynamic Island rendering and action execution validate a present manifest, including its minimum API requirement. Preview compilation does the same. The package file takes precedence over any host-provided manifest object; a malformed or incompatible present file is never treated as a legacy package. Legacy projects without `widget.json` keep their existing execution behavior.
 
-A minimum version is an availability floor, not a permission grant. Declare the permissions required by the selected APIs separately, and obtain system approval in the application where needed. See the [data API catalog](data-api-catalog.md) for per-method availability. Calendar and Reminders packages should declare `minimumRuntimeVersion: "1.3"`.
+A minimum version is an availability floor, not a permission grant. Declare the permissions required by the selected APIs separately, and obtain system approval in the application where needed. See the [data API catalog](data-api-catalog.md) for per-method availability. Calendar packages should declare `minimumRuntimeVersion: "1.3"`; Reminders APIs require `"1.4"`.
 
 Runtime 1.3 adds optional `timeline` with 1–4 sorted `dailyTimes` and an optional IANA `timeZone`. It does not grant capabilities or change the execution clock. See [scheduled widget states](timeline-api.md) for DST behavior, projections and resource limits.
 

@@ -36,12 +36,12 @@ test("new projects can read healthy system samples and authorize without setup",
   assert.equal(output.memory.physical, 8589934592);
 });
 
-test("every listed API returns its configured value with the right sync or async shape", async () => {
-  const calls = mockAPIs.filter((api) => api.id !== "$device.isdarkmode").map((api) => `${JSON.stringify(api.id)}: await ${api.id}()`);
+test("every read API returns its configured value with the right sync or async shape", async () => {
+  const calls = mockAPIs.filter((api) => api.id !== "$device.isdarkmode" && api.operation !== "write").map((api) => `${JSON.stringify(api.id)}: await ${api.id}()`);
   const result = await execute(`$render(<text>{JSON.stringify({${calls.join(",")}})}</text>);`);
   assert.equal(result.error, null);
   const actual = JSON.parse(JSON.parse(result.tree!).children[0]);
-  for (const api of mockAPIs.filter((item) => item.id !== "$device.isdarkmode")) assert.deepEqual(actual[api.id], (parseMocks(defaultFixtures).api as Record<string, {value: unknown}>)[api.id]!.value, api.id);
+  for (const api of mockAPIs.filter((item) => item.id !== "$device.isdarkmode" && item.operation !== "write")) assert.deepEqual(actual[api.id], (parseMocks(defaultFixtures).api as Record<string, {value: unknown}>)[api.id]!.value, api.id);
 });
 
 test("catalog Promise semantics hold before awaiting, including simulated failures", async () => {
@@ -49,7 +49,7 @@ test("catalog Promise semantics hold before awaiting, including simulated failur
     const response = ${api.id}();
     const asynchronous = response !== null && typeof response === 'object' && typeof response.then === 'function';
     if (asynchronous !== ${api.asynchronous}) throw new Error(${JSON.stringify(api.id)} + ' Promise shape mismatch');
-    await response;
+    ${api.operation === "write" ? "try { await response; throw new Error('write unexpectedly allowed'); } catch (error) { if (!String(error).includes('permission_denied')) throw error; }" : "await response;"}
   }`);
   const result = await execute(`${checks.join("\n")} $render(<text>ok</text>);`);
   assert.equal(result.error, null);

@@ -8,7 +8,7 @@ const scriptFile = /\.(jsx?|mjs)$/i;
 /// Compiles the entry (wrapped in $main) and every script file (unwrapped,
 /// like $import) before execution. Precompilation keeps the Babel bundle out
 /// of the realm that runs user code and lets $import stay synchronous.
-export function preparePackage(compiler, { files, entry, prelude = "", manifest = null }) {
+export function preparePackage(compiler, { files, entry, prelude = "", manifest = null, actionID = null }) {
   const packageFiles = createPackageFileSystem(files);
   // The on-disk manifest is authoritative, even when a host supplies a more
   // permissive object. Reject invalid packages before Babel or any user code.
@@ -32,7 +32,9 @@ export function preparePackage(compiler, { files, entry, prelude = "", manifest 
   if (source === null) {
     return { ok: false, error: { kind: "internalError", message: `Entry file ${entry} not found` } };
   }
-  const main = compilePackageEntry(compiler, prelude + source);
+  const action = actionID === null ? null : selected?.actions?.find((item) => item.id === actionID);
+  if (actionID !== null && !action) return { ok: false, error: { kind: "scriptError", message: "[action:not_declared] Select a declared package action." } };
+  const main = compilePackageEntry(compiler, prelude + source, { callFunction: action?.function ?? "" });
   if (!main.ok) return { ok: false, error: { kind: main.kind, message: main.message } };
 
   const imports = {};
@@ -44,5 +46,5 @@ export function preparePackage(compiler, { files, entry, prelude = "", manifest 
   const textFiles = Object.create(null);
   for (const path of packageFiles.paths()) textFiles[path] = packageFiles.read(path);
   const timelineEnvironment = selected?.timeline ? buildTimelinePlan(selected.timeline).entries[0].environments : {};
-  return { ok: true, code: main.code, imports, files: textFiles, manifest: selected, hasManifest: present || manifest !== null, timelineEnvironment };
+  return { ok: true, code: main.code, imports, files: textFiles, manifest: selected, hasManifest: present || manifest !== null, actionID: action?.id ?? null, timelineEnvironment };
 }

@@ -11,7 +11,7 @@ export interface DataAPI {
   asynchronous: boolean;
   minimumRuntimeVersion: string;
   nativeSource: string;
-  operation: "authorization" | "availability" | "read";
+  operation: "authorization" | "availability" | "read" | "write";
   mock: "editable";
 }
 export const dataAPICatalog: DataAPI[];

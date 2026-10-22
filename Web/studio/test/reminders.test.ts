@@ -11,7 +11,7 @@ const output = (tree: string) => JSON.parse(JSON.parse(tree).children[0]);
 
 test("reminders declaration round-trips but unknown permissions still fail closed", () => {
   assert.equal(decodeManifest(JSON.stringify(manifest)).error, undefined);
-  assert.match(decodeManifest(JSON.stringify({ ...manifest, permissions: ["remindersWrite"] })).error!, /unknown permission/);
+  assert.match(decodeManifest(JSON.stringify({ ...manifest, permissions: ["remindersUnknown"] })).error!, /unknown permission/);
 });
 
 test("best-state reminders mocks cannot bypass package permission", async () => {

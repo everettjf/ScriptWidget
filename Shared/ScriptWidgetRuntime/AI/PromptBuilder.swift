@@ -159,7 +159,12 @@ enum PromptBuilder {
             Use lists() for permitted IDs; items() is read-only with listIDs,
             start/end (up to 31 days), limit (up to 50) and completed Boolean.
             Pending items use due dates (undated items excluded); completed items
-            use completion dates. Never claim create/edit/complete is supported.
+            use completion dates. create/update/setCompleted require remindersWrite,
+            a declared native user action and a saved stable requestID UUID.
+            Always await writes. Reuse the same requestID after uncertain delivery;
+            outcome_unknown requires user inspection, never a blind new create.
+            Do not request remindersWrite for display-only widgets. Web Studio
+            simulates actions and persists only preview items/receipts.
             Health read permissions are private: authorizationStatus returns
             notDisclosed, and completing consent review is not proof of access.
             Empty Health results may mean no records or data not shared.

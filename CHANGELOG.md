@@ -9,7 +9,9 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 - Expand verified Gallery packages and editable Web Studio sample data.
 - Improve owner-scoped record storage, offline caches, Calendar source selection and bounded timeline generation.
 - Fix library opening when read-only legacy preferences cannot synchronize after a successful file-backed storage write.
-- Defer Reminders, further personal-data APIs, authenticated services/music and visual editing to later releases.
+- Add selected-list Reminders reads and explicit create, update and completion actions with durable replay receipts.
+- Simulate declared widget actions in Web Studio against persistent, editable preview data.
+- Continue expanded personal-data APIs, authenticated services/music and visual editing on the same release branch; M3–M5 remain in progress.
 
 ## Unreleased
 

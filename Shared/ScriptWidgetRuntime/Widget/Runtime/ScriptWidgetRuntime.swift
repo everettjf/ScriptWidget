@@ -1344,17 +1344,14 @@ extension ScriptWidgetRuntime {
             
             let semaphore = DispatchSemaphore(value: 0)
             
-            let renderWidget:@convention(block) (ScriptWidgetRuntimeElement)->Void = { rootElement in
-                semaphore.signal()
-            }
+            // Rendering is feedback, not completion: the declared action may
+            // still be awaiting a system write after the entry rendered.
+            let renderWidget:@convention(block) (ScriptWidgetRuntimeElement)->Void = { _ in }
             self.runtimeContext["$render"] = unsafeBitCast(renderWidget, to: JSValue.self)
             
             // ignore for dynamic island
             // -begin
-            let renderDynamicIsland:@convention(block) (NSDictionary)->Void = { islandInfo in
-                print("not support in normal widget rendering : islandInfo = \(islandInfo)")
-                semaphore.signal()
-            }
+            let renderDynamicIsland:@convention(block) (NSDictionary)->Void = { _ in }
             self.runtimeContext["$dynamic_island"] = unsafeBitCast(renderDynamicIsland, to: JSValue.self)
             // -end
             
@@ -1427,7 +1424,17 @@ extension ScriptWidgetRuntime {
             }
 
             // Call main
-            let _ = mainEntry.call(withArguments: [])
+            let complete: @convention(block) (JSValue) -> Void = { _ in semaphore.signal() }
+            let failed: @convention(block) (JSValue) -> Void = { error in
+                exceptionInfo = error.toString() ?? "Action failed"
+                semaphore.signal()
+            }
+            guard let mainResult = mainEntry.call(withArguments: []),
+                  let then = mainResult.objectForKeyedSubscript("then"), !then.isUndefined else {
+                promise(.failure(.internalError("The action entry did not return an asynchronous result")))
+                return
+            }
+            mainResult.invokeMethod("then", withArguments: [unsafeBitCast(complete, to: JSValue.self), unsafeBitCast(failed, to: JSValue.self)])
 
             DispatchQueue.global().async {
                 guard semaphore.wait(timeout: .now() + ScriptWidgetRuntimeContract.executionTimeout) == .success else {

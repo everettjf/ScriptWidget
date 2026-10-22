@@ -16,9 +16,27 @@
     "accessoryInline"
   ],
   "permissions": [
-    "reminders"
+    "reminders",
+    "remindersWrite",
+    "storage"
   ],
   "networkDomains": [],
-  "description": "Read-only reminders due today from lists selected in ScriptWidget Settings.",
-  "minimumRuntimeVersion": "1.4"
+  "description": "Reminders due today from selected lists, with an explicit Complete next action.",
+  "minimumRuntimeVersion": "1.4",
+  "actions": [
+    {
+      "id": "complete-next",
+      "title": "Complete next reminder",
+      "systemImage": "checkmark.circle",
+      "function": "completeNext",
+      "description": "Mark the next due reminder completed in a selected list."
+    },
+    {
+      "id": "clear-pending",
+      "title": "Clear pending after checking Reminders",
+      "systemImage": "arrow.counterclockwise",
+      "function": "clearPending",
+      "description": "After inspecting Reminders for an uncertain write, clear this template\u2019s pending request. Does not undo system changes."
+    }
+  ]
 }

@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>NSRemindersFullAccessUsageDescription</key>
-	<string>Allow ScriptWidget to read reminders from lists you choose for your widgets.</string>
+	<string>Allow ScriptWidget to read reminders from lists you choose and apply reminder actions you trigger.</string>
 	<key>NSRemindersUsageDescription</key>
-	<string>Allow ScriptWidget to read reminders from lists you choose for your widgets.</string>
+	<string>Allow ScriptWidget to read reminders from lists you choose and apply reminder actions you trigger.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

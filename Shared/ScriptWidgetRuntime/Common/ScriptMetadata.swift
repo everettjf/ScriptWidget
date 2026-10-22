@@ -54,12 +54,13 @@ enum WidgetPackagePermission: String, Codable, CaseIterable, Identifiable {
     case health
     case calendar
     case reminders
+    case remindersWrite
     case storage
     case files
 
     var id: String { rawValue }
 
-    var displayName: String { rawValue.capitalized }
+    var displayName: String { self == .remindersWrite ? "Modify Reminders" : rawValue.capitalized }
 }
 
 struct WidgetPackageAuthor: Codable, Equatable {

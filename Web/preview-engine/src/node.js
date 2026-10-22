@@ -56,15 +56,16 @@ export async function executePackageInNode({
   system,
   storage,
   prelude = "",
+  actionID = null,
   timeoutMilliseconds = runtimeContract.executionTimeoutMilliseconds,
   timeZone,
 }) {
-  const prepared = preparePackage(nodeCompiler(), { files, entry, prelude, manifest });
+  const prepared = preparePackage(nodeCompiler(), { files, entry, prelude, manifest, actionID });
   if (!prepared.ok) return emptyResult(prepared.error);
 
   const config = JSON.stringify({
     contract: runtimeContract,
-    environments: { ...prepared.timelineEnvironment, ...environments }, preview, fixtures, device, system, storage,
+    environments: { ...prepared.timelineEnvironment, ...environments, ...(prepared.actionID ? { "widget-size": "action", "action-id": prepared.actionID, "action-source": "web-preview" } : {}) }, actionID: prepared.actionID, liveActivityPresentation: ["live-activity", "dynamic-island"].includes(environments["widget-size"]), preview, fixtures, device, system, storage,
     manifest: prepared.manifest,
     hasManifest: prepared.hasManifest,
   });
