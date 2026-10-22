@@ -238,6 +238,58 @@ final class ServiceTransportTests: XCTestCase {
         DispatchQueue.concurrentPerform(iterations: 32) { _ in handle.cancel() }
         XCTAssertEqual(calls, 1); XCTAssertFalse(String(reflecting: handle).contains("sample-private"))
     }
+
+    @objc func testCredentialRefreshPreservesGrantsAndRejectsStaleRotationOrDisconnect() throws {
+        let memory = Memory(), store = connections(memory), original = credential(.spotify)
+        let profile = ScriptWidgetServiceProfile(service: .spotify, subject: "sample-user", username: nil, displayName: "Sample listener", publicRepositories: nil, privateRepositories: nil, followers: nil, following: nil)
+        let connected = try store.connect(original, verifiedProfile: profile, expectedRevision: nil)
+        let granted = try store.setGrant(service: .spotify, ownerID: UUID(), operations: [.spotifyProfile], expectedRevision: connected.revision)
+        let updated = ScriptWidgetServiceCredential(formatVersion: 1, accountID: original.accountID, service: .spotify, revision: UUID(), accessToken: "rotated-sample-access", refreshToken: "rotated-sample-refresh", oauthClientID: original.oauthClientID, issuedAt: original.issuedAt.addingTimeInterval(60), expiresAt: original.issuedAt.addingTimeInterval(3660), scopes: original.scopes)
+        XCTAssertThrowsError(try store.refreshCredential(updated, expected: connected), "A concurrent grant change invalidates the pending refresh")
+        let rotated = try store.refreshCredential(updated, expected: granted)
+        XCTAssertEqual(rotated.policy.formatVersion, granted.policy.formatVersion)
+        XCTAssertEqual(rotated.policy.accountID, granted.policy.accountID)
+        XCTAssertEqual(rotated.policy.service, granted.policy.service)
+        XCTAssertEqual(rotated.policy.connectionID, granted.policy.connectionID)
+        XCTAssertEqual(rotated.policy.revision, granted.policy.revision)
+        XCTAssertEqual(rotated.policy.active, granted.policy.active)
+        XCTAssertEqual(rotated.policy.grants.map(\.ownerID), granted.policy.grants.map(\.ownerID))
+        XCTAssertEqual(rotated.policy.grants.map(\.operations), granted.policy.grants.map(\.operations))
+        XCTAssertEqual(rotated.subject, granted.subject); XCTAssertEqual(rotated.label, granted.label)
+        XCTAssertEqual(rotated.credential.revision, updated.revision)
+        XCTAssertThrowsError(try store.revalidate(granted)); XCTAssertNoThrow(try store.revalidate(rotated))
+        XCTAssertThrowsError(try store.refreshCredential(updated, expected: granted))
+        try store.disconnect(.spotify, expectedRevision: rotated.revision)
+        XCTAssertThrowsError(try store.refreshCredential(updated, expected: rotated))
+        XCTAssertNil(try store.connection(.spotify))
+    }
+
+    @objc func testCredentialRefreshCannotSwitchAccountClientScopesOrLoseSavedStateOnWriteFailure() throws {
+        let memory = Memory(), store = connections(memory), original = credential(.spotify)
+        let profile = ScriptWidgetServiceProfile(service: .spotify, subject: "sample-user", username: nil, displayName: "Sample listener", publicRepositories: nil, privateRepositories: nil, followers: nil, following: nil)
+        let connected = try store.connect(original, verifiedProfile: profile, expectedRevision: nil)
+        func update(account: UUID? = nil, client: String? = nil, scopes: Set<String>? = nil, revision: UUID = UUID(), issuedAt: Date? = nil) -> ScriptWidgetServiceCredential {
+            .init(formatVersion: 1, accountID: account ?? original.accountID, service: .spotify, revision: revision, accessToken: "rotated-sample-access", refreshToken: "rotated-sample-refresh", oauthClientID: client ?? original.oauthClientID, issuedAt: issuedAt ?? original.issuedAt.addingTimeInterval(60), expiresAt: original.issuedAt.addingTimeInterval(3600), scopes: scopes ?? original.scopes)
+        }
+        let before = memory.values
+        for invalid in [update(account: UUID()), update(client: "different-client-id"), update(scopes: original.scopes.subtracting(["user-modify-playback-state"])), update(revision: original.revision), update(issuedAt: original.issuedAt.addingTimeInterval(-1))] {
+            XCTAssertThrowsError(try store.refreshCredential(invalid, expected: connected))
+            XCTAssertEqual(memory.values, before)
+        }
+        memory.failWrites = true
+        XCTAssertThrowsError(try store.refreshCredential(update(), expected: connected))
+        memory.failWrites = false
+        XCTAssertEqual(memory.values, before); XCTAssertNoThrow(try store.revalidate(connected))
+    }
+
+    @objc func testTokenResponseBudgetRejectsChunkedDataBeforeTheGeneralAPILimit() throws {
+        let transport = ScriptWidgetServiceURLTransport(protocolClasses: [FixtureProtocol.self], maximumResponseBytes: 16 * 1024)
+        let done = expectation(description: "Token streaming budget")
+        let handle = transport.send(URLRequest(url: URL(string: "https://accounts.spotify.com/large")!)) { result in
+            if case .success = result { XCTFail("Oversized token response was accepted") }; done.fulfill()
+        }
+        wait(for: [done], timeout: 3); withExtendedLifetime(handle) {}
+    }
 }
 
 #if !SCRIPTWIDGET_SERVICE_STANDALONE_TESTS

@@ -97,11 +97,12 @@ struct ScriptWidgetServiceCredential: Codable, Sendable, CustomStringConvertible
 /// An authorization session is deliberately a reference type: copying a value
 /// must not make its callback redeemable twice. It exists only in app memory.
 final class ScriptWidgetSpotifyAuthorization: CustomStringConvertible, CustomDebugStringConvertible, @unchecked Sendable {
-    static let redirectURI = "scriptwidget://oauth/spotify/callback"
+    static let callbackScheme = "scriptwidget-spotify-auth"
+    static let redirectURI = "scriptwidget-spotify-auth://oauth/spotify/callback"
     static let tokenURL = URL(string: "https://accounts.spotify.com/api/token")!
     static let readScopes: Set<String> = ["user-read-private", "user-read-playback-state"]
     private let lock = NSLock()
-    private let clientID: String
+    fileprivate let clientID: String
     private let verifier: String
     private let state: String
     private let createdAt: Date
@@ -157,7 +158,7 @@ final class ScriptWidgetSpotifyAuthorization: CustomStringConvertible, CustomDeb
         guard !consumed else { throw ScriptWidgetServiceError.consumedAuthorization }
         guard now >= createdAt, now.timeIntervalSince(createdAt) <= 300 else { consumed = true; throw ScriptWidgetServiceError.expiredAuthorization }
         guard callback.absoluteString.utf8.count <= 8192, let parts = URLComponents(url: callback, resolvingAgainstBaseURL: false),
-              parts.scheme == "scriptwidget", parts.host == "oauth", parts.percentEncodedPath == "/spotify/callback",
+              parts.scheme == Self.callbackScheme, parts.host == "oauth", parts.percentEncodedPath == "/spotify/callback",
               parts.user == nil, parts.password == nil, parts.port == nil, parts.fragment == nil,
               let items = parts.queryItems, items.count <= 4,
               Set(items.map(\.name)).count == items.count,
@@ -215,5 +216,70 @@ final class ScriptWidgetSpotifyAuthorization: CustomStringConvertible, CustomDeb
         guard refresh != nil else { throw ScriptWidgetServiceError.invalidCredential }
         let credential = ScriptWidgetServiceCredential(formatVersion: 1, accountID: accountID, service: .spotify, revision: UUID(), accessToken: access, refreshToken: refresh, oauthClientID: clientID, issuedAt: now, expiresAt: now.addingTimeInterval(expires.doubleValue), scopes: scopes)
         try credential.validate(); return credential
+    }
+}
+
+/// Native-only exchange of PKCE codes and refresh tokens. No arbitrary URL,
+/// callback payload or provider response is forwarded to scripts or diagnostics.
+final class ScriptWidgetSpotifyTokenClient {
+    private let transport: any ScriptWidgetServiceHTTPTransport
+    private let now: () -> Date
+    init(transport: any ScriptWidgetServiceHTTPTransport = ScriptWidgetServiceURLTransport(maximumResponseBytes: 16 * 1024),
+         now: @escaping () -> Date = Date.init) {
+        self.transport = transport; self.now = now
+    }
+
+    @discardableResult func exchange(_ session: ScriptWidgetSpotifyAuthorization, callback: URL, accountID: UUID,
+        completion: @escaping (Result<ScriptWidgetServiceCredential, ScriptWidgetServiceError>) -> Void) -> ScriptWidgetServiceRequestHandle {
+        do {
+            let request = try session.tokenRequest(callback: callback, now: now())
+            return send(request, accountID: accountID, clientID: session.clientID, scopes: session.requestedScopes, completion: completion)
+        } catch { completion(.failure(error as? ScriptWidgetServiceError ?? .authorizationFailed)); return .init({}) }
+    }
+
+    @discardableResult func refresh(_ credential: ScriptWidgetServiceCredential,
+        completion: @escaping (Result<ScriptWidgetServiceCredential, ScriptWidgetServiceError>) -> Void) -> ScriptWidgetServiceRequestHandle {
+        do {
+            guard let clientID = credential.oauthClientID else { throw ScriptWidgetServiceError.invalidCredential }
+            let request = try ScriptWidgetSpotifyAuthorization.refreshRequest(clientID: clientID, credential: credential)
+            return send(request, accountID: credential.accountID, clientID: clientID, scopes: credential.scopes, previous: credential, completion: completion)
+        } catch { completion(.failure(error as? ScriptWidgetServiceError ?? .invalidCredential)); return .init({}) }
+    }
+
+    private func send(_ request: URLRequest, accountID: UUID, clientID: String, scopes: Set<String>, previous: ScriptWidgetServiceCredential? = nil,
+        completion: @escaping (Result<ScriptWidgetServiceCredential, ScriptWidgetServiceError>) -> Void) -> ScriptWidgetServiceRequestHandle {
+        let delivery = Delivery(completion)
+        let handle = transport.send(request) { [now] result in
+            let decoded = result.flatMap { response -> Result<ScriptWidgetServiceCredential, ScriptWidgetServiceError> in
+                do {
+                    guard response.status == 200 else { throw ScriptWidgetServiceError.authorizationFailed }
+                    return .success(try ScriptWidgetSpotifyAuthorization.credential(response: response.body, accountID: accountID,
+                        clientID: clientID, requestedScopes: scopes, previous: previous, now: now()))
+                } catch { return .failure(error as? ScriptWidgetServiceError ?? .invalidCredential) }
+            }
+            delivery.finish(decoded)
+        }
+        delivery.attach(handle)
+        return .init { delivery.cancel() }
+    }
+
+    private final class Delivery: @unchecked Sendable {
+        private let lock = NSLock()
+        private var completion: ((Result<ScriptWidgetServiceCredential, ScriptWidgetServiceError>) -> Void)?
+        private var request: ScriptWidgetServiceRequestHandle?
+        init(_ completion: @escaping (Result<ScriptWidgetServiceCredential, ScriptWidgetServiceError>) -> Void) { self.completion = completion }
+        func attach(_ handle: ScriptWidgetServiceRequestHandle) {
+            lock.lock(); let finished = completion == nil
+            if !finished { request = handle }; lock.unlock()
+            if finished { handle.cancel() }
+        }
+        func finish(_ result: Result<ScriptWidgetServiceCredential, ScriptWidgetServiceError>) {
+            lock.lock(); let callback = completion; completion = nil; request = nil; lock.unlock()
+            callback?(result)
+        }
+        func cancel() {
+            lock.lock(); let callback = completion, pending = request; completion = nil; request = nil; lock.unlock()
+            pending?.cancel(); callback?(.failure(.cancelled))
+        }
     }
 }

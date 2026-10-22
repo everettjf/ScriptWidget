@@ -41,6 +41,14 @@ struct ScriptWidgetServiceConnection: CustomStringConvertible, CustomDebugString
         try .init(credential: credential, policy: policy.updatingGrant(ownerID: ownerID, operations: operations, expectedRevision: expectedRevision), subject: subject, label: label)
     }
 
+    func refreshing(_ updated: ScriptWidgetServiceCredential) throws -> Self {
+        try updated.validate()
+        guard credential.service == .spotify, updated.service == credential.service, updated.accountID == credential.accountID,
+              updated.oauthClientID == credential.oauthClientID, updated.scopes == credential.scopes,
+              updated.revision != credential.revision, updated.issuedAt >= credential.issuedAt else { throw ScriptWidgetServiceError.invalidCredential }
+        return try .init(credential: updated, policy: policy, subject: subject, label: label)
+    }
+
     func encoded() throws -> Data {
         try validate()
         let bytes = try JSONSerialization.data(withJSONObject: ["formatVersion": 1,
@@ -114,6 +122,21 @@ final class ScriptWidgetServiceConnections {
             guard let current = try load(service) else { throw ScriptWidgetServiceError.notConnected }
             guard current.revision == expectedRevision else { throw ScriptWidgetServiceError.conflict }
             try keychain.remove(key(service))
+        }
+    }
+
+    /// An in-flight refresh cannot resurrect a disconnected account or overwrite
+    /// a newer credential/grant. The network request never holds this lock.
+    @discardableResult func refreshCredential(_ updated: ScriptWidgetServiceCredential,
+                                             expected: ScriptWidgetServiceConnection) throws -> ScriptWidgetServiceConnection {
+        try transaction {
+            guard let current = try load(expected.credential.service) else { throw ScriptWidgetServiceError.notConnected }
+            guard current.policy.connectionID == expected.policy.connectionID,
+                  current.revision == expected.revision, current.credential.accountID == expected.credential.accountID,
+                  current.credential.revision == expected.credential.revision else { throw ScriptWidgetServiceError.conflict }
+            let changed = try current.refreshing(updated)
+            try keychain.write(changed.encoded(), account: key(updated.service))
+            return changed
         }
     }
 

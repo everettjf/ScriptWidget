@@ -55,10 +55,11 @@ final class ServiceAuthorizationTests: XCTestCase {
     }
 
     @objc func testCallbackRejectsWrongOriginStateDuplicatesAndEncodedPathBeforeRedemption() throws {
-        for mutation in ["scheme", "host", "path", "encodedPath", "port", "user", "fragment", "state", "duplicateState", "duplicateCode", "mixed", "unknown"] {
+        for mutation in ["scheme", "legacyScheme", "host", "path", "encodedPath", "port", "user", "fragment", "state", "duplicateState", "duplicateCode", "mixed", "unknown"] {
             let session = try pending(); var parts = URLComponents(url: callback(session), resolvingAgainstBaseURL: false)!
             switch mutation {
             case "scheme": parts.scheme = "https"
+            case "legacyScheme": parts.scheme = "scriptwidget"
             case "host": parts.host = "oauth.attacker.test"
             case "path": parts.path = "/other/callback"
             case "encodedPath": parts.percentEncodedPath = "/spotify%2Fcallback"
@@ -224,5 +225,78 @@ final class ServiceAuthorizationTests: XCTestCase {
         for status in [errSecInteractionNotAllowed, errSecAuthFailed] { fails(.locked) { try ScriptWidgetServiceSystemKeychain.check(status) } }
         for status in [errSecParam, errSecNotAvailable] { fails(.storageUnavailable) { try ScriptWidgetServiceSystemKeychain.check(status) } }
         XCTAssertNoThrow(try ScriptWidgetServiceSystemKeychain.check(errSecSuccess))
+    }
+}
+
+extension ServiceAuthorizationTests {
+    private final class TokenTransport: ScriptWidgetServiceHTTPTransport {
+        var request: URLRequest?
+        var sent = 0
+        var cancelled = false
+        var callback: ((Result<ScriptWidgetServiceHTTPResponse, ScriptWidgetServiceError>) -> Void)?
+        func send(_ request: URLRequest, completion: @escaping (Result<ScriptWidgetServiceHTTPResponse, ScriptWidgetServiceError>) -> Void) -> ScriptWidgetServiceRequestHandle {
+            self.request = request; sent += 1; callback = completion
+            return .init { self.cancelled = true }
+        }
+    }
+
+    @objc func testTokenClientExchangesOnlyVerifiedSingleUseCallbacksAndDeliversOnce() throws {
+        let transport = TokenTransport(), client = ScriptWidgetSpotifyTokenClient(transport: transport, now: { self.now })
+        let session = try pending(), accountID = UUID()
+        var results: [Result<ScriptWidgetServiceCredential, ScriptWidgetServiceError>] = []
+        let handle = client.exchange(session, callback: callback(session), accountID: accountID) { results.append($0) }
+        XCTAssertEqual(transport.sent, 1)
+        XCTAssertEqual(transport.request?.url, ScriptWidgetSpotifyAuthorization.tokenURL)
+        XCTAssertEqual(transport.request?.httpMethod, "POST")
+        XCTAssertNil(transport.request?.url?.query)
+        XCTAssertNil(transport.request?.value(forHTTPHeaderField: "Authorization"))
+        transport.callback?(.success(.init(status: 200, body: try response())))
+        transport.callback?(.failure(.unavailable)); handle.cancel()
+        XCTAssertEqual(results.count, 1)
+        let value = try XCTUnwrap(results.first).get()
+        XCTAssertEqual(value.accountID, accountID); XCTAssertEqual(value.scopes, session.requestedScopes)
+        XCTAssertEqual(value.issuedAt, now)
+        XCTAssertFalse(String(reflecting: value).contains(value.accessToken))
+        var replay: ScriptWidgetServiceError?
+        client.exchange(session, callback: callback(session), accountID: accountID) { if case .failure(let error) = $0 { replay = error } }
+        XCTAssertEqual(replay, .consumedAuthorization); XCTAssertEqual(transport.sent, 1)
+    }
+
+    @objc func testTokenClientCancellationRejectsLateSuccessAndInvokesCompletionOnlyOnce() throws {
+        let transport = TokenTransport(), client = ScriptWidgetSpotifyTokenClient(transport: transport, now: { self.now })
+        let session = try pending(); var results: [Result<ScriptWidgetServiceCredential, ScriptWidgetServiceError>] = []
+        let handle = client.exchange(session, callback: callback(session), accountID: UUID()) { results.append($0) }
+        handle.cancel(); handle.cancel()
+        transport.callback?(.success(.init(status: 200, body: try response())))
+        XCTAssertTrue(transport.cancelled); XCTAssertEqual(results.count, 1)
+        XCTAssertThrowsError(try results[0].get()) { XCTAssertEqual($0 as? ScriptWidgetServiceError, .cancelled) }
+    }
+
+    @objc func testTokenClientRefreshRetainsIdentityAndRejectsUnexpectedOrMalformedResponses() throws {
+        let old = credential(), transport = TokenTransport()
+        let client = ScriptWidgetSpotifyTokenClient(transport: transport, now: { self.now.addingTimeInterval(3000) })
+        var refreshed: ScriptWidgetServiceCredential?
+        client.refresh(old) { refreshed = try? $0.get() }
+        let data = Data(#"{"access_token":"rotated-access-token","token_type":"Bearer","expires_in":3600}"#.utf8)
+        transport.callback?(.success(.init(status: 200, body: data)))
+        let value = try XCTUnwrap(refreshed)
+        XCTAssertEqual(value.accountID, old.accountID); XCTAssertEqual(value.oauthClientID, old.oauthClientID)
+        XCTAssertEqual(value.refreshToken, old.refreshToken); XCTAssertEqual(value.scopes, old.scopes)
+        XCTAssertNotEqual(value.revision, old.revision); XCTAssertEqual(value.issuedAt, now.addingTimeInterval(3000))
+        for response in [ScriptWidgetServiceHTTPResponse(status: 204, body: Data()), .init(status: 200, body: Data("{}".utf8)), .init(status: 200, body: Data(repeating: 32, count: 16385))] {
+            var failure: ScriptWidgetServiceError?
+            client.refresh(old) { if case .failure(let error) = $0 { failure = error } }
+            transport.callback?(.success(response))
+            XCTAssertNotNil(failure); XCTAssertFalse(failure!.localizedDescription.contains(old.refreshToken!))
+        }
+    }
+
+    @objc func testInvalidCallbackNeverDispatchesTokenRequestAndValidCallbackStillWorks() throws {
+        let transport = TokenTransport(), client = ScriptWidgetSpotifyTokenClient(transport: transport, now: { self.now })
+        let session = try pending(); var failure: ScriptWidgetServiceError?
+        client.exchange(session, callback: URL(string: "https://example.invalid/callback")!, accountID: UUID()) { if case .failure(let error) = $0 { failure = error } }
+        XCTAssertEqual(failure, .invalidCallback); XCTAssertEqual(transport.sent, 0)
+        client.exchange(session, callback: callback(session), accountID: UUID()) { _ in }
+        XCTAssertEqual(transport.sent, 1)
     }
 }

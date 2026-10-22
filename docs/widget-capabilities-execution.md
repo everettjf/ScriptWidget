@@ -890,3 +890,17 @@ Web 工具的每次会话保留原始 project/files 快照，提交必须匹配 
 最终完整 `./Scripts/release-readiness.sh` 退出 0：Editor **52**、预览引擎 **163**、Web Studio **96**、Gallery 同步 **2** 项、91 内置模板/22 curated 包、所有 browser scripts、TypeScript/生产构建、两端 app scheme build 和独立服务/存储/运行时探针通过。Mac **668 通过 / 0 失败 / 32 跳过**；iPhone 17 Simulator **678 通过 / 0 失败 / 31 跳过**。两端 xcresult runtimeWarnings 为空；SDK/link 和 Xcode 版本解析诊断保留。日志、summary、实际浏览器导出 .swt 及独立归档核验在 `__Release/capabilities/wallpaper-web-ui/`。完整 gate 后仅补文档/截图/验证记录与 PR，不改产品代码。
 
 Web 壁纸创作/导出这条开发链路据此完成，不代表整个 M5 完成；旧动画兼容和真实 WidgetKit/物理扩展内存，以及 M4 OAuth/刷新/播放动作和 M3 签名设备授权验收仍继续。没有 Web 部署、原生构建上传或送审，整体目标保持进行中。
+
+### 2026-10-22：M4 原生令牌交换与原子刷新基础
+
+新增 native-only Spotify TokenClient，将已有 PKCE callback 校验接到固定 token endpoint 的 POST 请求，并复用不跟随重定向、无 cookie/cache/凭据存储的短生命周期 transport。令牌响应的 advertised/streaming 上限为 16 KiB，普通 API 仍为 128 KiB。取消传递到 URLSession task 并只交付一次结果；迟到和重复回调不再交付凭据。初次交换保留原生指定账户/客户端/请求 scope，刷新仅通过合法 previous credential 保留省略字段，签发时间使用接收响应的时钟。
+
+Connection store 新增整项原子刷新保存，保留账户 subject/label、连接和所有 grants。提交要求连接、账户、凭据 revision 及 policy revision 仍与开始时一致；并发断开/重连/授权变更或其他旋转会拒绝旧结果。拒绝跨账户、客户端、scope、原 revision 和倒退的 issuedAt，Keychain 写失败保留原记录。这只是原子提交能力；还需要协调器在请求前复核权限、串行处理 refresh，并处理 provider 已旋转但本地冲突的恢复，不称为完整自动刷新或跨进程 lease。
+
+官方 Spotify Apps 要求 iOS 使用专供 Spotify 登录的 scheme。旧基础实现复用 scriptwidget action scheme，不符合该配置要求；当前改为 `scriptwidget-spotify-auth://oauth/spotify/callback`，并新增拒绝通用 scheme 的回归。既有 OAuth UI 尚未启用、没有用户回调配置迁移，也没有改普通 widget deep links；native scheme 注册/系统授权窗口与 provider dashboard 配置仍待接入。官方 PKCE、Apps、Quota 与 2026-07-23 更新依据见 [服务账户基础](service-accounts-foundation.md)。尚未收到真实应用的注册信息，不据 mock 或 Client ID 推断生产资格。
+
+服务专项从 37 增至 44 项：新增真实 URLSession 的较低流式预算、token callback 非派发/replay、取消/重复、刷新 identity/字段/坏响应、原子提交的 stale/conflict 和写入失败。首次新测试的闭包抛错标注编译失败已修正；另一个 scope 反例误把原本已有的 control scope 再做 union，实际没有改变输入，改为不同 scope 集后正确验证拒绝条件。44 项独立 native probe 通过，零真实账户、Keychain 或外部 HTTP。
+
+发现 callback scheme 问题时，已确认工作目录和 live handle 后主动终止当时完整 gate（退出 143，不算通过），修改后重新从头执行；中止日志保留于 `__Release/capabilities/service-token-client/release-readiness-interrupted.log`。本增量没有启用原生 Spotify 登录、公开 Spotify runtime API、播放写入或新的 Web 凭据能力；M4-1/2/3/5 和整体目标继续保持未完成。
+
+随后一轮 iOS 结果为 684 通过 / 1 失败 / 31 跳过：新增的 policy 保留断言误把 JSON 编码字节当作语义等价证明，iOS 的键顺序不同导致字节不等。改为逐字段比较 format/account/service/connection/revision/active 及每个 owner 的 operation Set，保留完整权限检查，不修改生产编码来满足测试。失败后 Xcode 又卡在 simulator diagnostics collection：对当前自有 xcodebuild 的采样定位到 `collectSimulatorDiagnostics → simCtlDiagnose`，确认子进程父 PID 与 cwd 后，仅中止该 simctl 诊断子进程，使原运行返回真实 exit 65 和失败 xcresult。未以诊断中止或缺失报告推断通过。该失败日志与 summary 单独保留，测试修正后完整重跑。

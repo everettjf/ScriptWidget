@@ -60,14 +60,21 @@ final class ScriptWidgetServiceRequestHandle: @unchecked Sendable, CustomStringC
 final class ScriptWidgetServiceURLTransport: ScriptWidgetServiceHTTPTransport {
     static let maximumResponseBytes = 128 * 1024
     private let protocolClasses: [AnyClass]?
-    init() { protocolClasses = nil }
+    private let responseByteLimit: Int
+    init(maximumResponseBytes: Int = ScriptWidgetServiceURLTransport.maximumResponseBytes) {
+        precondition((1...Self.maximumResponseBytes).contains(maximumResponseBytes))
+        protocolClasses = nil; responseByteLimit = maximumResponseBytes
+    }
     #if DEBUG || SCRIPTWIDGET_SERVICE_STANDALONE_TESTS
-    init(protocolClasses: [AnyClass]) { self.protocolClasses = protocolClasses }
+    init(protocolClasses: [AnyClass], maximumResponseBytes: Int = ScriptWidgetServiceURLTransport.maximumResponseBytes) {
+        precondition((1...Self.maximumResponseBytes).contains(maximumResponseBytes))
+        self.protocolClasses = protocolClasses; responseByteLimit = maximumResponseBytes
+    }
     #endif
 
     @discardableResult func send(_ request: URLRequest,
         completion: @escaping (Result<ScriptWidgetServiceHTTPResponse, ScriptWidgetServiceError>) -> Void) -> ScriptWidgetServiceRequestHandle {
-        let worker = Worker(request: request, completion: completion)
+        let worker = Worker(request: request, maximumBytes: responseByteLimit, completion: completion)
         let configuration = URLSessionConfiguration.ephemeral
         configuration.urlCache = nil; configuration.urlCredentialStorage = nil; configuration.httpCookieStorage = nil
         configuration.httpShouldSetCookies = false; configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
@@ -84,13 +91,14 @@ final class ScriptWidgetServiceURLTransport: ScriptWidgetServiceHTTPTransport {
 
     private final class Worker: NSObject, URLSessionDataDelegate, @unchecked Sendable {
         let request: URLRequest
+        let maximumBytes: Int
         let completion: (Result<ScriptWidgetServiceHTTPResponse, ScriptWidgetServiceError>) -> Void
         var session: URLSession?
         var body = Data()
         var completed = false
         var status: Int?
-        init(request: URLRequest, completion: @escaping (Result<ScriptWidgetServiceHTTPResponse, ScriptWidgetServiceError>) -> Void) {
-            self.request = request; self.completion = completion
+        init(request: URLRequest, maximumBytes: Int, completion: @escaping (Result<ScriptWidgetServiceHTTPResponse, ScriptWidgetServiceError>) -> Void) {
+            self.request = request; self.maximumBytes = maximumBytes; self.completion = completion
         }
         func finish(_ result: Result<ScriptWidgetServiceHTTPResponse, ScriptWidgetServiceError>) {
             guard !completed else { return }; completed = true
@@ -110,7 +118,8 @@ final class ScriptWidgetServiceURLTransport: ScriptWidgetServiceHTTPTransport {
         }
         func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
                         completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
-            guard let response = response as? HTTPURLResponse, response.url == request.url else {
+            guard let response = response as? HTTPURLResponse, response.url == request.url,
+                  response.expectedContentLength <= maximumBytes else {
                 completionHandler(.cancel); finish(.failure(.unavailable)); return
             }
             do {
@@ -125,7 +134,7 @@ final class ScriptWidgetServiceURLTransport: ScriptWidgetServiceHTTPTransport {
         }
         func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
             guard !completed else { return }
-            guard data.count <= ScriptWidgetServiceURLTransport.maximumResponseBytes - body.count else {
+            guard data.count <= maximumBytes - body.count else {
                 finish(.failure(.unavailable)); return
             }
             body.append(data)
