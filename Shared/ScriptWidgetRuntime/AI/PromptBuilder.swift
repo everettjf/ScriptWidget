@@ -189,6 +189,9 @@ enum PromptBuilder {
             rotation3d is static depth and falls back with Reduce Motion. Do not
             promise device-motion parallax, continuous widget animation or system
             wallpaper control. Web CSS material is an approximation.
+            GIF input/canvas/frame/decoded-pixel limits apply. Mac and Reduce Motion
+            use a bounded static first frame; a browser mock is not proof of native
+            continuous animation. Prefer small original assets; no decoder SDK is needed.
             Reminders needs the reminders package permission and system approval.
             Use lists() for permitted IDs; items() is read-only with listIDs,
             start/end (up to 31 days), limit (up to 50) and completed Boolean.

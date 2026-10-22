@@ -948,3 +948,15 @@ Web 添加独立 playbackGranted 与播放响应，保留资料样例；可编�
 复核发现 native episode 的 artists 始终为空，而 Web 仍允许模拟非空 artists。确认当前 gate 的自有父子进程和工作目录后主动中止（exit 143，非通过），在 parent parser 和 kernel 同步拒绝该不一致数据，并新增有效 episode 和伪造 artists 反例。修正后重新从头执行完整检查；中止日志另存。
 
 最终完整 `./Scripts/release-readiness.sh` 退出 0：Mac **694 通过 / 0 失败 / 32 跳过**；iPhone 17 Simulator **704 通过 / 0 失败 / 31 跳过**，两端 xcresult runtimeWarnings 为空。Editor 52、预览引擎 163、Web Studio 104、Gallery 同步 2、服务独立 probe 44、91 模板/22 curated 包、全部浏览器操作、TypeScript/生产构建、两个 app scheme build 及独立运行时/存储/路由检查均通过。原生 Spotify 截图用例本次在完整 gate 显式开启，显示独立授权；原有 SDK/link/Sendable/Xcode 解析诊断仍保留。最终日志、summary、源文件哈希、失败及中止证据位于 `__Release/capabilities/spotify-playback/`。最终 gate 后仅更新文档、图片和验证记录，不改实现。未连接真实账户、未做签名 Keychain/物理 WidgetKit 验收；播放写入、后台刷新和 M3/M5 设备专项仍继续。没有部署、上传或提交审核，整体目标保持未完成。
+
+### 2026-10-22：M5 有界 GIF 解码和静态回退
+
+用户已确认暂时没有 Spotify Client ID，本轮先保留实现与未配置提示；真实登录验收留待有配置后进行，不阻塞其他工作。后续继续优先系统框架与官方 HTTP，减少第三方 SDK。
+
+GIF 解码从 UIImage 第三方 helper 改为共享 ImageIO pipeline：文件描述符读取拒绝链接/非 regular file，8 MiB 输入、1,048,576 像素画布、60 动画帧和每序列 4 MiB decoded bytes；缩略图按帧数缩小，核对实际 row-stride 成本。超帧数退首帧；缓存以内容 SHA256 和模式区分，路径覆写不复用旧数据。变量延时用累计角度保留相对时序，不展开重复 UIImage。Mac、Reduce Motion 和 reduced luminance 使用单帧。普通 iOS clock/mask 桥接及原 period convention 保留，不声称私有路径已移除。
+
+Web 只对使用到的 GIF 顺序预检，有界流读取或直接解码 data URL；保留页面 connect-src self。静态帧、ImageDecoder/VideoFrame 关闭、预算和失败占位覆盖到真实 Chrome。普通 image 标签中的 GIF 也静态化；原快照模式保留加权 legacy rest frame，无 ImageDecoder 时明确首帧近似。浏览器若估计整段 RGBA 超过预算会退静态图，不伪装成原生连续动画。五项 Web 单测和六项 native 专项通过；原生断言含实际 SwiftUI 渲染像素，不只检查 model。自有两帧/61 帧彩色 GIF 由 native 测试生成，作为浏览器夹具，不使用用户素材。
+
+初次 native 专项的 throws 标注编译失败已修正。一次完整检查中复核发现原有 Studio CSP 不允许 fetch(data URL)，确认自有父子进程和 cwd 后主动中止（exit 143，非通过）；改为长度/格式预检后本地 base64 解码，并增加原有 CSP 条件下的实际浏览器用例。CSP 未放宽，中止日志保留。ImageIO 对篡改为 65535×65535 逻辑画布的实际两帧样例在元数据阶段拒绝，另保留检查日志；不据此推断全部物理设备内存行为。
+
+最终完整 `./Scripts/release-readiness.sh` 退出 0：Mac **699 通过 / 0 失败 / 33 跳过**，iPhone 17 Simulator **709 通过 / 0 失败 / 32 跳过**，两端 xcresult runtimeWarnings 均为空。Editor 52、预览引擎 168、Web Studio 104、Gallery 同步 2、独立服务 probe 44、91 模板/22 curated 包、全部 browser 流程及新增 GIF smoke、TypeScript/生产构建、两端 app build 及独立运行时/存储/路由检查通过。GIF 原生实际渲染/截图在本次完整 gate 执行；Spotify 可选账户截图本次恢复默认跳过，其历史 opt-in 结果保留。SDK/link/Sendable/Xcode 解析诊断仍保留。最终日志、summary、source hashes、专项、图片和中止记录在 `__Release/capabilities/gif-bounds/`；最后 gate 后只改文档、图片和证据。未移除普通私有时钟桥接，未做物理 WidgetKit/Always On/扩展内存验收，M5 与整体目标仍未完成；没有部署、上传或送审。

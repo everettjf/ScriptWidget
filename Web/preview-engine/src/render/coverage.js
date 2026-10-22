@@ -39,7 +39,7 @@ export const coverage = Object.freeze({
       systemName: a("Look-alike Lucide icon"), name: s("Needs the package image file"), id: s("Alias of name"), url: a("data: PNG/JPEG only; remote URLs are not loaded"),
       src: a("Alias of url"), ratio: s("With mode fit or fill"), mode: s(), font: s(), ...fontProps(), accentedRenderingMode: a("Accented mode is not emulated"),
     } },
-    gif: { state: "approximated", note: "Browser GIF playback; the widget's frame sequencing differs", props: { file: s("Resolved like ScriptWidgetPackage.getGifFile"), font: s(), ...fontProps() } },
+    gif: { state: "approximated", note: "Bounded browser GIF playback; Reduce Motion/Mac and resource limits use a static frame. Native timing differs", props: { file: s("Resolved like ScriptWidgetPackage.getGifFile"), font: s(), ...fontProps() } },
     spacer: { state: "supported", props: {} },
     rect: { state: "supported", props: { corner: s(), trim: a("Trim applies to strokes only"), stroke: s(), color: s() } },
     capsule: { state: "supported", props: { trim: a("Trim applies to strokes only"), stroke: s(), color: s() } },

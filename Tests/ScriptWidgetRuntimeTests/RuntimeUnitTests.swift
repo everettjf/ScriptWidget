@@ -6199,3 +6199,74 @@ final class ExpandedHealthPolicyTests: XCTestCase {
         XCTAssertFalse(outside.valid(in:query))
     }
 }
+
+final class GifPipelineTests: XCTestCase {
+    override func tearDown() { ScriptWidgetGifPipeline.removeAll(); super.tearDown() }
+    private func gif(width: Int = 32, height: Int = 16, frames: Int = 2) throws -> Data {
+        let data = NSMutableData(), context = try XCTUnwrap(CGContext(data:nil,width:width,height:height,bitsPerComponent:8,bytesPerRow:width*4,space:CGColorSpaceCreateDeviceRGB(),bitmapInfo:CGImageAlphaInfo.premultipliedLast.rawValue))
+        let destination = try XCTUnwrap(CGImageDestinationCreateWithData(data,"com.compuserve.gif" as CFString,frames,nil))
+        for index in 0..<frames {
+            context.setFillColor(CGColor(red:index == 0 ? 1 : 0,green:CGFloat(index)/CGFloat(frames),blue:index == 0 ? 0 : 1,alpha:1))
+            context.fill(CGRect(x:0,y:0,width:width,height:height))
+            let image = try XCTUnwrap(context.makeImage())
+            CGImageDestinationAddImage(destination,image,[kCGImagePropertyGIFDictionary:[kCGImagePropertyGIFDelayTime:Double(index+1)*0.1]] as CFDictionary)
+        }
+        XCTAssertTrue(CGImageDestinationFinalize(destination)); return data as Data
+    }
+    func testFrameTimingAndStaticFirstFrameWithoutThirdPartyDecoder() throws {
+        let bytes = try gif(), sequence = try XCTUnwrap(ScriptWidgetGifPipeline.sequence(data:bytes,animated:true))
+        XCTAssertEqual(sequence.frames.count,2); XCTAssertEqual(sequence.duration,0.3,accuracy:0.001)
+        XCTAssertEqual(sequence.angle(at:1),120,accuracy:0.01); XCTAssertEqual(sequence.angle(at:2),360,accuracy:0.01)
+        let still = try XCTUnwrap(ScriptWidgetGifPipeline.sequence(data:bytes,animated:false))
+        XCTAssertEqual(still.frames.count,1); XCTAssertFalse(still.frameLimitFallback)
+        XCTAssertEqual(still.frames[0].width,32); XCTAssertEqual(still.frames[0].height,16)
+    }
+    func testFramesAreDownsampledWithinAggregateDecodedBudget() throws {
+        let sequence = try XCTUnwrap(ScriptWidgetGifPipeline.sequence(data:gif(width:256,height:256,frames:60),animated:true))
+        XCTAssertEqual(sequence.frames.count,60)
+        XCTAssertLessThanOrEqual(sequence.decodedBytes,ScriptWidgetGifPipeline.maximumDecodedBytes)
+        XCTAssertTrue(sequence.frames.allSatisfy { $0.width <= 128 && $0.height <= 128 })
+    }
+    func testFrameLimitFallsBackToFirstFrameWithoutExpandingTheSequence() throws {
+        let sequence = try XCTUnwrap(ScriptWidgetGifPipeline.sequence(data:gif(frames:61),animated:true))
+        XCTAssertTrue(sequence.frameLimitFallback); XCTAssertEqual(sequence.frames.count,1)
+    }
+    func testInputCanvasAndInvalidTypeAreRejectedBeforePixelDecode() throws {
+        XCTAssertNil(ScriptWidgetGifPipeline.sequence(data:Data(repeating:0,count:ScriptWidgetGifPipeline.maximumInputBytes+1),animated:true))
+        XCTAssertNil(ScriptWidgetGifPipeline.sequence(data:Data("GIF89a".utf8),animated:true))
+        XCTAssertNil(try ScriptWidgetGifPipeline.sequence(data:gif(width:2048,height:1024),animated:true))
+    }
+    func testBoundedFileReadsRejectLinksAndDoNotReuseStalePathCache() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("gif-"+UUID().uuidString)
+        try FileManager.default.createDirectory(at:root,withIntermediateDirectories:true); defer { try? FileManager.default.removeItem(at:root) }
+        let file = root.appendingPathComponent("sample.gif"), link = root.appendingPathComponent("linked.gif")
+        try gif().write(to:file); XCTAssertNotNil(ScriptWidgetGifPipeline.sequence(at:file,animated:true))
+        try FileManager.default.createSymbolicLink(at:link,withDestinationURL:file)
+        XCTAssertNil(ScriptWidgetGifPipeline.sequence(at:link,animated:true)); XCTAssertNil(ScriptWidgetGifPipeline.sequence(at:root,animated:true))
+        try Data("not a GIF".utf8).write(to:file); XCTAssertNil(ScriptWidgetGifPipeline.sequence(at:file,animated:true))
+        XCTAssertNil(ScriptWidgetGifPipeline.sequence(at:URL(string:"https://example.test/sample.gif")!,animated:true))
+    }
+    @MainActor func testReducedMotionViewActuallyRendersTheFirstFrame() throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString+".gif")
+        try gif().write(to:file); defer { try? FileManager.default.removeItem(at:file) }
+        let renderer = ImageRenderer(content:DynamicGifView(gifPath:file).environment(\.scriptWidgetVisualAccessibility,.init(reduceMotion:true)).frame(width:120,height:60))
+        let image = try XCTUnwrap(renderer.cgImage)
+        var pixel = [UInt8](repeating:0,count:4)
+        let context = try XCTUnwrap(CGContext(data:&pixel,width:1,height:1,bitsPerComponent:8,bytesPerRow:4,space:CGColorSpaceCreateDeviceRGB(),bitmapInfo:CGImageAlphaInfo.premultipliedLast.rawValue))
+        context.draw(image,in:CGRect(x:0,y:0,width:1,height:1))
+        XCTAssertGreaterThan(pixel[0],200); XCTAssertLessThan(pixel[2],40)
+        if let path = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_GIF"] {
+            #if os(macOS)
+            let platform = "macos"
+            #else
+            let platform = "ios"
+            #endif
+            let directory = URL(fileURLWithPath:path); try FileManager.default.createDirectory(at:directory,withIntermediateDirectories:true)
+            let data = NSMutableData(), destination = try XCTUnwrap(CGImageDestinationCreateWithData(data,"public.png" as CFString,1,nil))
+            CGImageDestinationAddImage(destination,image,nil); XCTAssertTrue(CGImageDestinationFinalize(destination))
+            try (data as Data).write(to:directory.appendingPathComponent(platform+"-reduced-motion.png"))
+            try gif().write(to:directory.appendingPathComponent("sample.gif"))
+            try gif(frames:61).write(to:directory.appendingPathComponent("many-frames.gif"))
+        }
+    }
+}

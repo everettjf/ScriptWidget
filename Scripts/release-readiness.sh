@@ -20,6 +20,7 @@ if node -e 'import("./Web/preview-engine/scripts/lib/chrome.mjs").then((m) => pr
   node Web/studio/scripts/wallpaper-crop-smoke.ts
   node Web/studio/scripts/wallpaper-smoke.ts
   node Web/studio/scripts/spotify-profile-smoke.ts
+  node Web/preview-engine/scripts/gif-smoke.mjs
 else
   echo "Skipping Web Studio browser smoke test: Chrome not found"
 fi

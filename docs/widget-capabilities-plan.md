@@ -162,6 +162,7 @@ Apple 的 [EventKit 授权](https://developer.apple.com/documentation/eventkit/a
   - Spotify 只读播放快照增量已接通条件原生配置与独立 Playback access，不依赖第三方 SDK；204 返回 null，十字段投影不包含设备标识或任意 URL。Web 十种状态、可编辑轨道和独立授权模拟，以及 80 组 native/Web 树对照已通过。播放写入、真实 provider 配置/账户及签名组件验收仍未完成，不能据 mock 勾选 M4。
   - iOS Music app 只读快照增量已接入 `$music`、原生系统授权入口、main-thread 读取及同步组件预捕获、内置/Gallery Music Playback 模板与可编辑 Web Mock。六状态 × 八尺寸的 48 组实际原生/Web 树对照已通过；公开 system player 不能代表所有播放器，macOS 明确不可用。播放操作、订阅能力、真实授权/组件与后台验收仍未完成，M4-3 保持未勾选。见 [Music API](music-api.md)。
 - [ ] M4-4 对 Spotify 等服务逐个核验官方接口、账户要求及接入资格；通过后实现适配器，未通过时提供明确的不可用状态或启动链接。
+  - 本轮按用户确认暂不配置 Spotify Client ID，保留已实现的条件接入和明确未配置提示；真实账户验收留待提供注册配置，不作为其他开发的阻塞。Web 健康 mock 不代表真实 provider 已启用。
 - [ ] M4-5 交付真实音乐模板与至少一个授权数据面板，覆盖凭据过期、服务限流和用户取消授权。
 
 出口：F19 成为可复用能力，F16 按已验证服务列出支持范围。不能以某一服务成功推导所有播放器都能读取或控制。
@@ -177,6 +178,7 @@ Apple 的 [EventKit 授权](https://developer.apple.com/documentation/eventkit/a
 - [ ] M5-3 研究玻璃材质、空间效果和动态壁纸，分别验证公开 API、系统版本、内存和静态回退。壁纸编辑/导出作为独立工具流程，不假设组件能够修改系统壁纸。
   - 公开材质增量已完成开发验证：Runtime 1.4 新增 backgroundMaterial，原生公开 SwiftUI Material / Web 明示 CSS 近似，Reduce Transparency 不透明回退、非 full-color 省略局部材质、Reduce Motion 静态深度回退和四区域预算；Material Study 内置/Gallery 模板、48 组实际 JSC/Web 树、原生/WK/Chrome 编辑与回退、App/测试进程冷预热和暖态内存/耗时记录通过。完整 gate Mac 665 / iPhone Simulator 675 均 0 失败。现有 clock/swing/GIF 仍涉及私有桥接，兼容方案已询问用户；原生/Web 壁纸裁切、PNG 导出和随包配置现已接通，浏览器真实操作/导出及原生配置/JSC 回归通过，完整 gate Mac 668 / iPhone Simulator 678 均 0 失败。真实 Clear/Tinted/扩展内存、旧动画兼容仍待验收，本项不勾选。详见 [视觉效果评估](visual-effects.md)。
 - [ ] M5-4 同步 Mac/Web 编辑流程和原生渲染能力表，发布生成 bundle、文档和代表性模板；通过现有 Gallery 安装分发。
+  - GIF 已改用有界系统 ImageIO 解码，加入字节/像素/帧数/解码成本预算、内容缓存和真实首帧回退；Web 同步预检、减少动态效果、预算和解码失败行为，并在原有 CSP 下验证 data URL。普通 iOS 时钟桥接仍保留，不能据此声称完整动画兼容或物理扩展内存验收已完成。
   - 公共材质、主题、素材已同步到原生/Web 元数据、生成 bundle、AI 指引与能力表；Gallery 现有 22 个 curated 包，Web 优先使用包清单名称而非目录 slug。Web 壁纸创作界面和原生可携带配置也已接通；仍需整体流程/设备验收，不将 canonical tree 一致视为系统材质或像素完全一致。
 
 出口：F11/F12 的创作能力扩展、F21 的首个可用编辑子集完成；F13 每种效果有实现证据或可复核限制，不能合并笼统标为全部支持。

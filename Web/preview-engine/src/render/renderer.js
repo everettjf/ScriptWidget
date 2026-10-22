@@ -7,6 +7,7 @@ import {
   alignments, cssColor, defaultFont, elementFont, fontFamily, gradientCSS, parseColor, parseFont, parseFrame,
   parsePadding, parsePaint, parseRotation3D, platform, propReader, setPlatform, styleFont, swiftDouble, systemBackground,
 } from "./props.js";
+import { prepareGif } from "./gif.js";
 import { coverage, generalProps, ignoredProp } from "./coverage.js";
 import { deviceProfiles, widgetSize } from "./profiles.js";
 import { symbolMetrics } from "./symbolMetrics.generated.js";
@@ -182,34 +183,28 @@ export async function renderWidget(treeJSON, {
   let tint = null;
   const primary = () => tint ?? color("primary");
   const root = decodeTree(treeJSON);
-  const urls = new Set();
-  for (const [path, url] of Object.entries(resources)) if (path.startsWith("image/")) urls.add(url);
+  const urls = new Set(), gifUses = new Map(), preparedGifs = new Map();
+  for (const [path, url] of Object.entries(resources)) if (path.startsWith("image/") && !/\.gif$/i.test(path)) urls.add(url);
   collectImageURLs(root, urls);
-  const imageSizes = await naturalSizes(urls, doc);
-  // "firstFrame" draws the GIF frame ImageRenderer captures (see below).
-  const stillGifs = new Map();
-  if (animations === "firstFrame") {
-    await Promise.all(Object.entries(resources).filter(([path]) => /\.gif$/i.test(path)).map(async ([, url]) => {
-      try {
-        const blob = await (await fetch(url)).blob();
-        let bitmap;
-        if (typeof ImageDecoder === "function") {
-          const decoder = new ImageDecoder({ data: blob.stream(), type: blob.type || "image/gif" });
-          await decoder.tracks.ready;
-          // The iOS GIF view masks frame i to the arc (i-1..i) x 360/n and spins
-          // the masks; at rest the top of the circle (270°) shows the frame
-          // just before that boundary.
-          const count = decoder.tracks.selectedTrack?.frameCount ?? 1;
-          bitmap = (await decoder.decode({ frameIndex: Math.max(0, Math.ceil(0.75 * count) - 1) })).image;
-        } else bitmap = await createImageBitmap(blob);
-        const canvas = doc.createElement("canvas");
-        canvas.width = bitmap.displayWidth ?? bitmap.width; canvas.height = bitmap.displayHeight ?? bitmap.height;
-        canvas.getContext("2d").drawImage(bitmap, 0, 0);
-        bitmap.close?.();
-        stillGifs.set(url, canvas.toDataURL("image/png"));
-      } catch { /* keep the animated GIF */ }
-    }));
+  const collectGifs = element => {
+    if (!isElement(element)) return;
+    const reader = propReader(element.props);
+    const found = element.tag === "gif" ? packageGif(reader.string("file") ?? "") : element.tag === "image" ? packageImage(reader.string("name", "id") ?? "") : null;
+    const url = typeof found === "string" ? found : found && /\.gif$/i.test(found.path) ? found.url : null;
+    if (url) { const use = gifUses.get(url) ?? { image:false }; use.image ||= element.tag === "image"; gifUses.set(url,use); }
+    childrenAsElements(element).forEach(collectGifs);
+  };
+  collectGifs(root);
+  // Decode only used GIFs, sequentially. Freeze failures never retain animation.
+  for (const [url, use] of gifUses) {
+    try {
+      const value = await prepareGif(url,{document:doc,firstFrame:reduceMotion || deviceProfiles[profile]?.platform === "macos",legacyStill:animations === "firstFrame",needImage:use.image});
+      preparedGifs.set(url,value);
+      if (value.firstFrame) urls.add(value.firstFrame);
+      if (value.info.frameLimit || value.memoryFallback) report("warning","gif.static_fallback","GIF uses its first frame because the preview animation budget was exceeded");
+    } catch { preparedGifs.set(url,null); report("warning","gif.unavailable","GIF could not be decoded within preview input and canvas limits"); }
   }
+  const imageSizes = await naturalSizes(urls, doc);
   const measurer = createTextMeasurer(doc);
 
   // Leaves carry a draw(node, element) callback.
@@ -473,9 +468,12 @@ export async function renderWidget(treeJSON, {
       const found = packageImage(name);
       if (found) {
         if (/\.heic$/i.test(found.path)) report("warning", "image.format", `HEIC image ${found.path} may not display in this browser`);
-        const natural = imageSizes.get(found.url) ?? [10, 10];
-        if (mode === "fit" || mode === "fill") return leaf(new AspectNode(natural, reader.double("ratio"), mode), drawPicture(found.url, mode === "fill" ? "cover" : "contain"));
-        return leaf(new FlexibleNode(natural), drawPicture(found.url, "fill"));
+        const prepared = /\.gif$/i.test(found.path) ? preparedGifs.get(found.url) : undefined;
+        if (/\.gif$/i.test(found.path) && !prepared?.firstFrame) return text("GIF unavailable",defaultFont(),null);
+        const imageURL = prepared?.firstFrame ?? found.url;
+        const natural = imageSizes.get(imageURL) ?? [10, 10];
+        if (mode === "fit" || mode === "fill") return leaf(new AspectNode(natural, reader.double("ratio"), mode), drawPicture(imageURL, mode === "fill" ? "cover" : "contain"));
+        return leaf(new FlexibleNode(natural), drawPicture(imageURL, "fill"));
       }
       report("warning", "image.missing", `Package image "${name}" was not found in image/`);
     }
@@ -700,7 +698,7 @@ export async function renderWidget(treeJSON, {
       case "image": content = imageNode(reader); break;
       case "gif": {
         const url = packageGif(reader.string("file") ?? "");
-        if (url) { report("info", "tag.approximated", "<gif> animates with the browser's GIF player"); content = leaf(new FlexibleNode(), drawPicture(stillGifs.get(url) ?? url, "contain")); }
+        if (url && preparedGifs.get(url)?.url) { report("info", "tag.approximated", "<gif> uses bounded browser playback or a static frame; native WidgetKit timing differs"); content = leaf(new FlexibleNode(), drawPicture(preparedGifs.get(url).url, "contain")); }
         else content = text("GIF unavailable", defaultFont(), null);
         break;
       }

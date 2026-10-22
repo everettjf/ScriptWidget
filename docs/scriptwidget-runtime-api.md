@@ -223,7 +223,7 @@ Display a bundled, remote, or SF Symbol image.
 
 ### `<Gif>`
 
-Display a GIF from the package.
+Display a bounded package GIF using system decoding: up to 8 MiB input and 1,048,576 canvas pixels. iOS retains at most 60 downsampled frames / 4 MiB decoded pixels; more frames fall back to the first frame. Mac, Reduce Motion and reduced luminance use a static first frame. Ordinary iOS timing still uses the legacy clock bridge; continuous WidgetKit animation is not guaranteed.
 
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
