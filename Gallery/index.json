@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-22T00:12:13.166Z",
+  "generatedAt": "2026-10-22T06:01:40.886Z",
   "items": [
     {
       "author": "ScriptWidget Community",
@@ -875,6 +875,78 @@
         "offline"
       ],
       "version": "2.0.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 3166,
+          "path": "main.jsx",
+          "sha256": "f1961ed1c507fa8bc0d019ab6943fe869804d7c1de7ca7428ad976c4c04e8b00",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/photo-album-rotator/main.jsx"
+        },
+        {
+          "bytes": 277,
+          "path": "meta.json",
+          "sha256": "f8a4fe4b3b65eae917d2539920113dd9703f181da38ac514be78f2b4f7c03b36",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/photo-album-rotator/meta.json"
+        },
+        {
+          "bytes": 708,
+          "path": "widget.json",
+          "sha256": "ca4cb7c859d49d6f2ec4bee5b9765b74bbea138e502f6cae6afc13033862235f",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/photo-album-rotator/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.photo-album-rotator",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Photo Album Rotator",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/photo-album-rotator",
+      "summary": "Requires Runtime API 1.4. Rotate bounded snapshots from photos and albums explicitly selected in Settings.",
+      "symbol": "photo.on.rectangle",
+      "tags": [
+        "fun"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 6248,
+          "path": "main.jsx",
+          "sha256": "35d81bffcac52d79ef1a53a73603d2e15b73ce1aa8b7e69ff1104f979a7b0cb0",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/reminders-agenda/main.jsx"
+        },
+        {
+          "bytes": 254,
+          "path": "meta.json",
+          "sha256": "15bdedc4bb85a3010d80da35b58a0c654ab9814145923c833d041ee547a47d97",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/reminders-agenda/meta.json"
+        },
+        {
+          "bytes": 1220,
+          "path": "widget.json",
+          "sha256": "36b50810badb50d44c13268ce7a2441b59d41157d4094cf7e0e9b1cdb5806a90",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/reminders-agenda/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.reminders-agenda",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Reminders Agenda",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/reminders-agenda",
+      "summary": "Requires Runtime API 1.4. Reminders due today from selected lists, with an explicit Complete next action.",
+      "symbol": "checklist",
+      "tags": [
+        "productivity"
+      ],
+      "version": "1.0.0"
     }
   ],
   "repository": "https://github.com/everettjf/scriptwidget",

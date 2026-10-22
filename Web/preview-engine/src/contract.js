@@ -19,12 +19,12 @@ export const runtimeContract = Object.freeze({
   globalAPIs: Object.freeze([
     "$calendar", "$component", "$console", "$device", "$dynamic_island", "$element",
     "$error", "$fetch", "$file", "$getenv", "$health", "$http", "$import",
-    "$location", "$reminders", "$render", "$runtime", "$storage", "$system", "$xml", "console", "fetch",
+    "$location", "$photos", "$reminders", "$render", "$runtime", "$storage", "$system", "$xml", "console", "fetch",
   ]),
 });
 
 /// Bumped whenever the web host changes observable execution semantics.
-export const engineVersion = "0.8.0";
+export const engineVersion = "0.9.0";
 
 export const errorCategories = Object.freeze({
   undefinedRender: Object.freeze({ category: "Render", recovery: "Call $render(...) once from the main script." }),

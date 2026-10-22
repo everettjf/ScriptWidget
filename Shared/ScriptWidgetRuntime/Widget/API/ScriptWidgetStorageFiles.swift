@@ -477,7 +477,7 @@ final class ScriptWidgetFileStorageBackend: ScriptWidgetStorageBackend {
 
     private func metadata(_ key: String) -> Bool {
         if Self.metadataKeys.contains(key) { return true }
-        return ["ScriptWidget.CalendarCache.v1.", "ScriptWidget.RemindersCache.v1.", "ScriptWidget.RemindersWrites.v1."].contains { prefix in
+        return ["ScriptWidget.CalendarCache.v1.", "ScriptWidget.RemindersCache.v1.", "ScriptWidget.RemindersWrites.v1.", "ScriptWidget.PhotosCache.v1."].contains { prefix in
             let suffix = key.dropFirst(prefix.count)
             return key.hasPrefix(prefix) && suffix.count == 64 && suffix.utf8.allSatisfy { (48...57).contains($0) || (97...102).contains($0) }
         }

@@ -14,6 +14,7 @@
 
 import XCTest
 import JavaScriptCore
+import Photos
 import Darwin
 import SwiftUI
 #if os(iOS)
@@ -4137,22 +4138,28 @@ final class LibrarySessionExecutionTests: XCTestCase {
     }
 
     func testInstalledRecordTemplatesExposeTheSameDeclaredActionsToWidgetsControlsAndShortcuts() throws {
-        let session=try start(),manager=try XCTUnwrap(session.sourceManager)
+        func step<T>(_ name: String, _ operation: () throws -> T) throws -> T {
+            try XCTContext.runActivity(named: name) { _ in
+                do { return try operation() }
+                catch { XCTFail("\(name) failed with \(type(of: error)): \(error)"); throw error }
+            }
+        }
+        let session=try step("Activate isolated library") { try start() },manager=try XCTUnwrap(session.sourceManager)
         let examples=[("Hydration Goal","addGlass","250 mL"),("Mood Check-in","moodFour","Good"),("Packing Checklist","toggleOne","Passport"),("Habit Streak Tracker","checkIn","✓"),("Habit Heatmap","checkInRead","✓")]
         for (name,actionID,expected) in examples {
             let installed=manager.createScript(fromTemplate:ScriptWidgetPackage(bundle:"Script",relativePath:"template/"+name));XCTAssertTrue(installed.0,installed.1)
-            let catalog=try ScriptWidgetHostExecution.actionCatalog(container:container){ScriptWidgetActionCatalog(packages:[])}
+            let catalog=try step("Load catalog for \(name)") { try ScriptWidgetHostExecution.actionCatalog(container:container){ScriptWidgetActionCatalog(packages:[])} }
             let resolved=try XCTUnwrap(catalog.actions().first(where:{$0.package.name==installed.1 && $0.action.id==actionID}))
             let control=try XCTUnwrap(catalog.controls(type:.button).first(where:{$0.0.identifier==resolved.identifier}))
             XCTAssertEqual(control.1.actionID,actionID)
             let executor=ScriptWidgetActionExecutor(catalog:catalog,reloadWidgets:{})
-            try executor.execute(identifier:resolved.identifier,source:.widget).get()
-            let store=try ScriptWidgetRecordStore(executionSnapshot:session.capture(name:installed.1))
-            XCTAssertTrue(try store.rows(in:store.read()).contains(where:{$0.value==expected}),name)
+            try step("Widget action for \(name)") { try executor.execute(identifier:resolved.identifier,source:.widget).get() }
+            let store=try step("Capture record store for \(name)") { try ScriptWidgetRecordStore(executionSnapshot:session.capture(name:installed.1)) }
+            XCTAssertTrue(try step("Read records for \(name)") { try store.rows(in:store.read()) }.contains(where:{$0.value==expected}),name)
             if name=="Hydration Goal" {
-                try executor.execute(identifier:resolved.identifier,source:.control).get()
-                try executor.execute(identifier:resolved.identifier,source:.shortcut).get()
-                XCTAssertEqual(try store.rows(in:store.read()).first?.value,"750 mL")
+                try step("Hydration control action") { try executor.execute(identifier:resolved.identifier,source:.control).get() }
+                try step("Hydration shortcut action") { try executor.execute(identifier:resolved.identifier,source:.shortcut).get() }
+                XCTAssertEqual(try step("Read hydration after control and shortcut") { try store.rows(in:store.read()) }.first?.value,"750 mL")
             }
         }
     }
@@ -5211,3 +5218,158 @@ extension LibrarySessionExecutionTests {
         }
     }
 }
+
+private final class PhotosFixtureProvider: ScriptWidgetPhotosProviding {
+    var authorization = "authorized"
+    var reads = 0
+    var removed = false
+    var cloudOnly = false
+    var sampleJPEG: Data?
+    var onThumbnail: (() -> Void)?
+    let ref = ScriptWidgetPhotoReference(id: "asset/one", revision: 100, width: 10, height: 10)
+    func status() -> String { authorization }
+    func references(selection: ScriptWidgetPhotoSelection, query: ScriptWidgetPhotoQuery) throws -> [ScriptWidgetPhotoReference] {
+        removed || query.offset > 0 ? [] : [ref]
+    }
+    func thumbnail(_ reference: ScriptWidgetPhotoReference, deadline: Date) -> ScriptWidgetPhotoBytes? {
+        reads += 1; onThumbnail?()
+        if cloudOnly { return nil }
+        if let sampleJPEG { return .init(reference: reference, jpeg: sampleJPEG) }
+        #if os(macOS)
+        let representation = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 10, pixelsHigh: 10, bitsPerSample: 8, samplesPerPixel: 3, hasAlpha: false, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0)!
+        for x in 0..<10 { for y in 0..<10 { representation.setColor(.green, atX: x, y: y) } }
+        let data = representation.representation(using: .jpeg, properties: [:])!
+        #else
+        let data = UIGraphicsImageRenderer(size: CGSize(width: 10, height: 10)).jpegData(withCompressionQuality: 0.6) { context in
+            UIColor.green.setFill(); context.fill(CGRect(x: 0, y: 0, width: 10, height: 10))
+        }
+        #endif
+        return .init(reference: reference, jpeg: data)
+    }
+}
+
+extension LibrarySessionExecutionTests {
+    private func photoPackage() throws -> (ScriptWidgetLibrarySession, ScriptWidgetPackage) {
+        let session = try start(), package = try XCTUnwrap(session.sourceManager).getScriptPackage(packageName: packageName)
+        var manifest = WidgetPackageManifest.newProject(name: packageName); manifest.permissions = [.photos]; manifest.minimumRuntimeVersion = "1.4"
+        XCTAssertTrue(package.writeManifest(manifest).0)
+        try ScriptWidgetPhotoSelection(assetIDs: ["asset/one"], albumIDs: []).save(container: container, replacing: .empty)
+        return (session, package)
+    }
+    private func photos(_ session: ScriptWidgetLibrarySession, _ provider: PhotosFixtureProvider, projection: Bool = false, options: String = "{}") throws -> String {
+        let source = "try{const r=await $photos.items(\(options));$render(<text>{JSON.stringify(r)}</text>);}catch(e){$render(<text>{String(e)}</text>);}"
+        let package = try XCTUnwrap(session.sourceManager).getScriptPackage(packageName: packageName)
+        XCTAssertTrue(package.writeFile(relativePath: "main.jsx", content: source).0)
+        let captured = try session.capture(name: packageName)
+        let runtime = ScriptWidgetRuntime(package: captured.package, environments: ["widget-size": "medium", "timeline-is-projection": projection ? "true" : "false"], executionSnapshot: captured)
+        runtime.runningState?.photosProviderForTesting = provider
+        let result = runtime.executeJSXSyncForWidget(source)
+        XCTAssertNil(result.1, result.1?.displayMessage ?? "")
+        func text(_ element: ScriptWidgetRuntimeElement) -> String { (element.getChildren().compactMap { $0 as? String } + element.childrenAsElements().map(text)).joined() }
+        return text(try XCTUnwrap(result.0))
+    }
+    func testPhotosReadBoundedThumbnailsAndReuseSnapshotForFutureEntries() throws {
+        let (session, _) = try photoPackage(), provider = PhotosFixtureProvider()
+        XCTAssertTrue(try photos(session, provider).contains("data:image/jpeg;base64,")); XCTAssertEqual(provider.reads, 1)
+        let future = try photos(session, provider, projection: true)
+        XCTAssertTrue(future.contains("cache")); XCTAssertEqual(provider.reads, 1)
+        provider.removed = true
+        XCTAssertTrue(try photos(session, provider, projection: true).contains("cache_miss"))
+        XCTAssertFalse(try photos(session, provider).contains("data:image"))
+    }
+    func testPhotosLimitedAccessCloudOnlyAndRevocationDoNotExposeOldData() throws {
+        let (session, _) = try photoPackage(), provider = PhotosFixtureProvider()
+        provider.authorization = "limited"
+        XCTAssertTrue(try photos(session, provider).contains("data:image"))
+        provider.authorization = "denied"
+        XCTAssertTrue(try photos(session, provider).contains("permission_denied"))
+        provider.authorization = "limited"; provider.cloudOnly = true
+        let unavailable = try photos(session, provider, options: "{maxAgeSeconds:0}")
+        XCTAssertTrue(unavailable.contains("unavailableCount")); XCTAssertFalse(unavailable.contains("data:image"))
+    }
+    func testPhotosRejectUndeclaredScopeAndMidQuerySelectionChange() throws {
+        let (session, package) = try photoPackage(), provider = PhotosFixtureProvider()
+        provider.onThumbnail = { try? ScriptWidgetPhotoSelection.empty.save(container: self.container, replacing: .init(assetIDs: ["asset/one"], albumIDs: [])) }
+        let changed = try photos(session, provider)
+        XCTAssertTrue(changed.contains("scope_changed")); XCTAssertFalse(changed.contains("data:image"))
+        var manifest = try XCTUnwrap(package.readManifest()); manifest.permissions = []
+        XCTAssertTrue(package.writeManifest(manifest).0)
+        XCTAssertTrue(try photos(session, provider).contains("permission_denied"))
+        XCTAssertEqual(provider.reads, 1)
+    }
+}
+
+
+#if os(iOS)
+extension LibrarySessionExecutionTests {
+    @MainActor
+    func testExportPhotosTemplateFixtureSnapshots() async throws {
+        guard let directory = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_PHOTOS"] else { throw XCTSkip("Set SCRIPTWIDGET_EXPORT_PHOTOS for native Photos snapshots") }
+        let output = URL(fileURLWithPath: directory); try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        let base = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let source = try String(contentsOf: base.appendingPathComponent("Shared/ScriptWidgetRuntime/Resource/Script.bundle/template/Photo Album Rotator/main.jsx"), encoding: .utf8)
+        let jpeg = try Data(contentsOf: base.appendingPathComponent("Web/preview-engine/test/fixtures/photo-landscape.jpg"))
+        let (session, package) = try photoPackage()
+        XCTAssertTrue(package.writeFile(relativePath: "main.jsx", content: source).0)
+        for mode in ["ready", "cloud", "denied"] {
+            let provider = PhotosFixtureProvider(); provider.sampleJPEG = jpeg
+            provider.cloudOnly = mode == "cloud"; provider.authorization = mode == "denied" ? "denied" : "limited"
+            for (family, size) in [("small", CGSize(width:158,height:158)),("medium",CGSize(width:338,height:158)),("large",CGSize(width:338,height:354))] {
+                let captured = try session.capture(name: packageName)
+                let runtime = ScriptWidgetRuntime(package: captured.package, environments: ["widget-size":family], executionSnapshot: captured)
+                runtime.runningState?.photosProviderForTesting = provider
+                // Force a fresh snapshot between synthetic states.
+                provider.onThumbnail = nil
+                let result = await Task.detached { runtime.executeJSXSyncForWidget(source) }.value
+                XCTAssertNil(result.1)
+                let element = try XCTUnwrap(result.0)
+                let context = ScriptWidgetElementContext(runtime:runtime,debugMode:false,scriptName:"Photos fixture",scriptParameter:"",package:captured.package,containerBackgroundElement:element)
+                let renderer = ImageRenderer(content: BrowserPreviewSnapshotView(element:element,context:context,size:size).environment(\.colorScheme,.light))
+                renderer.scale = 2
+                try XCTUnwrap(renderer.uiImage?.pngData()).write(to:output.appendingPathComponent("\(mode)-\(family).png"))
+            }
+            // A permission loss invalidates the last owner's snapshot before
+            // the next independent synthetic scenario.
+            provider.authorization = "denied"; _ = try photos(session, provider)
+            XCTAssertTrue(package.writeFile(relativePath: "main.jsx", content: source).0)
+        }
+    }
+}
+#endif
+
+
+#if os(iOS)
+extension LibrarySessionExecutionTests {
+    func testPhotoKitBridgeWithDisposableSeededSimulator() async throws {
+        guard ProcessInfo.processInfo.environment["SCRIPTWIDGET_PHOTOS_SIMULATOR_PROBE"] == "1" else { throw XCTSkip("Run the dedicated Photos simulator probe with public sample artwork") }
+        XCTAssertEqual(ScriptWidgetRuntimePhotos.systemAuthorizationStatus(), "authorized")
+        XCTAssertEqual(ProcessInfo.processInfo.environment["SCRIPTWIDGET_PHOTOS_PROBE_DEVICE"], ProcessInfo.processInfo.environment["SIMULATOR_UDID"])
+        let available = PHAsset.fetchAssets(with: ScriptWidgetPhotosSystemProvider.options(limit: 64))
+        var seeded: [PHAsset] = []
+        available.enumerateObjects { candidate, _, _ in
+            if PHAssetResource.assetResources(for: candidate).contains(where: { $0.originalFilename == "photo-landscape.jpg" }) { seeded.append(candidate) }
+        }
+        let asset = try XCTUnwrap(seeded.first, "Seed the dedicated simulator with the public sample JPEG")
+        XCTAssertEqual(seeded.count, 1); XCTAssertEqual(asset.pixelWidth, 384); XCTAssertEqual(asset.pixelHeight, 256)
+        let preview = await Task.detached {
+            ScriptWidgetPhotosSystemProvider().thumbnail(.init(id: asset.localIdentifier, revision: 0, width: asset.pixelWidth, height: asset.pixelHeight), deadline: Date().addingTimeInterval(2), maximumSize: 128)
+        }.value
+        XCTAssertTrue(try XCTUnwrap(preview).valid)
+        let (session, package) = try photoPackage()
+        let selection = ScriptWidgetPhotoSelection(assetIDs: [asset.localIdentifier], albumIDs: [])
+        try selection.save(container: container, replacing: .init(assetIDs: ["asset/one"], albumIDs: []))
+        let source = """
+        const result = await $photos.items({limit:1,maxAgeSeconds:0});
+        $render(<text>{JSON.stringify({count:result.items.length,missing:result.unavailableCount,jpeg:result.items[0]?.image.startsWith('data:image/jpeg;base64,')})}</text>);
+        """
+        XCTAssertTrue(package.writeFile(relativePath: "main.jsx", content: source).0)
+        let captured = try session.capture(name: packageName)
+        let runtime = ScriptWidgetRuntime(package: captured.package, environments: ["widget-size":"medium"], executionSnapshot: captured)
+        let result = await Task.detached { runtime.executeJSXSyncForWidget(source) }.value
+        XCTAssertNil(result.1, result.1?.displayMessage ?? "")
+        let text = try XCTUnwrap(result.0).getChildren().compactMap { $0 as? String }.joined()
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(text.utf8)) as? [String:Any])
+        XCTAssertEqual(object["count"] as? Int, 1); XCTAssertEqual(object["missing"] as? Int, 0); XCTAssertEqual(object["jpeg"] as? Bool, true)
+    }
+}
+#endif

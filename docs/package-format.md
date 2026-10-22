@@ -55,7 +55,7 @@ The machine-readable contract is [`widget.schema.json`](../Shared/ScriptWidgetRu
   contains an HTTPS `registrationURL` on a declared `networkDomains` host and a
   non-secret `channel`. ScriptWidget posts the WidgetKit token, package ID, and
   channel when the token changes; packages never receive the token in JSX.
-- `permissions`: declared capabilities: `network`, `location`, `health`, `calendar`, `reminders`, `remindersWrite`, `storage`, or `files`.
+- `permissions`: declared capabilities: `network`, `location`, `health`, `calendar`, `reminders`, `remindersWrite`, `photos`, `storage`, or `files`.
 - `networkDomains`: lowercase host allowlist. It requires `network`; use exact hosts or a leading wildcard such as `*.example.com`.
 - `plugins`: optional Data Source Plugin identifiers. Every data-source request also requires `network` and a matching `networkDomains` entry.
 - Optional discovery fields: `description`, `category`, `tags`, `icon`, `preview`, `author`, and `license`.
@@ -116,3 +116,5 @@ Web Studio uses illustrative, editable Mock Data rather than querying the device
 Activated native libraries keep compiled output in their private storage profile, separately from authored package files. Each atomic cache entry records its installation owner, manifest policy hash, compiler contract, source hash and compiled-output hash. A later source syntax error can use the last valid output only while that installation and policy remain valid. Reinstalling a same-named widget or switching libraries invalidates the previous installation's cache access.
 
 The cache uses 32 fixed slots, with a 2 MiB compiled-code limit and the storage metadata frame limit per slot. Collisions evict cached output and cause recompilation; they never select another installation's output. Unsaved editor overrides and uninstalled previews do not publish this cache. Source files remain authoritative, and cached output is disposable.
+
+The additive `photos` declaration enables bounded JPEG thumbnail reads only from the photos/albums explicitly selected in native Settings. Missing native selection allows none; system limited access is supported. Rendering cannot modify the library. See [Photos API](photos-api.md).

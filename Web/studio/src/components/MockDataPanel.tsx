@@ -5,8 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { addSampleMocks, isObject, mockAPIs, parseMocks, permissionScenario, responseFor, sampleFixtures, setResponse, type MockObject, type MockValue } from "@/mockData.ts";
 
-const groups = ["calendar", "reminders", "health", "location", "device", "system", "network", "storage", "dataSource", "json"];
-const labels: Record<string, string> = { calendar: "Calendar", reminders: "Reminders", health: "Health", location: "Location", device: "Device", system: "System", network: "Network responses", storage: "Storage", dataSource: "Data Source Plugins", json: "Full JSON" };
+const groups = ["calendar", "reminders", "photos", "health", "location", "device", "system", "network", "storage", "dataSource", "json"];
+const labels: Record<string, string> = { calendar: "Calendar", reminders: "Reminders", photos: "Photos", health: "Health", location: "Location", device: "Device", system: "System", network: "Network responses", storage: "Storage", dataSource: "Data Source Plugins", json: "Full JSON" };
 
 // Primitive leaves use normal form fields. Arrays and uncommon payloads can
 // always be edited in the return JSON without losing unknown properties.
@@ -65,9 +65,14 @@ export function MockDataPanel({ fixtures, onChange }: { fixtures: string; onChan
     {group === "json" || parseError ? <><Label htmlFor="fixtures" className="text-xs">Full mock JSON</Label><Textarea id="fixtures" spellCheck={false} aria-label="Preview fixtures JSON" className="min-h-64 font-mono text-xs" value={fixtures} onChange={(event) => onChange(event.target.value)} /></> : <>
       {!structured && <>
         <div><Label htmlFor="mock-api" className="text-xs">API</Label><select id="mock-api" className="mt-1 h-8 w-full rounded-md border bg-background px-2 font-mono text-xs" value={selected} onChange={(event) => setSelected(event.target.value)}>{methods.map((item) => <option key={item.id} value={item.id}>{item.id}()</option>)}</select></div>
-        {(group === "health" || group === "location" || group === "calendar" || group === "reminders") && <div className="flex flex-wrap gap-1">{(group === "health" ? ["granted", "empty", "unavailable"] as const : ["granted", "empty", "denied", "unavailable"] as const).map((item) => <Button key={item} variant="outline" size="xs" onClick={() => commit(() => permissionScenario(fixtures, group, item))}>{item === "granted" ? "Sample success" : item === "empty" ? (group === "health" ? "No shared data" : "No data") : item === "denied" ? "Permission denied" : "Unavailable"}</Button>)}</div>}
+        {(group === "health" || group === "location" || group === "calendar" || group === "reminders" || group === "photos") && <div className="flex flex-wrap gap-1">{(group === "health" ? ["granted", "empty", "unavailable"] as const : ["granted", "empty", "denied", "unavailable"] as const).map((item) => <Button key={item} variant="outline" size="xs" onClick={() => commit(() => permissionScenario(fixtures, group, item))}>{item === "granted" ? "Sample success" : item === "empty" ? (group === "health" ? "No shared data" : "No data") : item === "denied" ? "Permission denied" : "Unavailable"}</Button>)}</div>}
         <div className="flex items-center gap-2"><Label htmlFor="mock-mode" className="text-xs">Response</Label><select id="mock-mode" className="h-8 rounded-md border bg-background px-2 text-xs" value={mode} onChange={(event) => { setMode(event.target.value); setDraft(JSON.stringify(event.target.value === "error" ? "Simulated failure" : api.value, null, 2)); }}><option value="value">{writeResponse ? "Model-derived receipt" : "Return value"}</option><option value="error">Throw / reject error</option></select><Button size="xs" variant="ghost" className="ml-auto" onClick={() => commit(() => setResponse(fixtures, selected, responseFor(sampleFixtures(), api)))}>Reset this API</Button></div>
         {!writeResponse && mode === "value" && "value" in response && <ValueFields value={response.value!} onChange={(value) => commit(() => setResponse(fixtures, selected, { value }))} />}
+      </>}
+      {group === "photos" && <>
+        <p className="text-xs text-muted-foreground">Declare photos in widget.json. Native access defaults to no selection. The browser uses sample images; it cannot read your system photo library. In Full JSON, photosSelection lists allowed sample IDs and photosSnapshotPrepared controls future-entry cache availability. Edit authorizationStatus to limited for limited system access.</p>
+        <Button variant="outline" size="xs" onClick={() => commit(() => JSON.stringify({...parseMocks(fixtures),photosSelection:[]},null,2))}>Select no photos</Button>
+        <Button variant="outline" size="xs" onClick={() => commit(() => JSON.stringify({...parseMocks(fixtures),photosSelection:["sample.photo"]},null,2))}>Select sample photo</Button>
       </>}
       {group === "location" && <>
         <Button variant="outline" size="xs" className="self-start" onClick={() => commit(() => permissionScenario(fixtures, "location", "widgetDenied"))}>Widget access off</Button>

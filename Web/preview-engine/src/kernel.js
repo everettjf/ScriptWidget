@@ -517,6 +517,10 @@ export function scriptWidgetKernel(global, host, configJSON) {
       calendars: unavailablePromise("calendar.calendars"),
       events: unavailablePromise("calendar.events"),
     },
+    $photos: {
+      isAvailable: () => false, authorizationStatus: () => "unavailable",
+      requestAuthorization: unavailablePromise("photos.authorization"), items: unavailablePromise("photos.items"),
+    },
     $health: {
       authorizationStatus: () => fixtures.health !== undefined ? "notDisclosed" : "unavailable",
       isAvailable: () => fixtures.health !== undefined,
@@ -646,13 +650,13 @@ export function scriptWidgetKernel(global, host, configJSON) {
   // imports, runtime contracts and network policy continue to execute normally.
   // Fresh bridged values prevent a script from modifying later mock responses.
   const apiMocks = fixtures.api ?? {};
-  for (const namespace of ["$device", "$system", "$health", "$location", "$calendar", "$reminders"]) {
+  for (const namespace of ["$device", "$system", "$health", "$location", "$calendar", "$reminders", "$photos"]) {
     for (const method of ObjectKeys(apis[namespace])) {
       const mock = apiMocks[`${namespace}.${method}`];
       if (!mock || typeof mock !== "object" || ArrayIsArray(mock)) continue;
       const hasError = Object.prototype.hasOwnProperty.call(mock, "error");
       if (!hasError && !Object.prototype.hasOwnProperty.call(mock, "value")) continue;
-      const asynchronous = (["$calendar", "$reminders"].includes(namespace) && !["isAvailable", "authorizationStatus"].includes(method)) || (namespace === "$health" && !["isAvailable", "authorizationStatus"].includes(method)) ||
+      const asynchronous = (["$calendar", "$reminders", "$photos"].includes(namespace) && !["isAvailable", "authorizationStatus"].includes(method)) || (namespace === "$health" && !["isAvailable", "authorizationStatus"].includes(method)) ||
         (namespace === "$location" && (method === "current" || method === "requestAuthorization"));
       apis[namespace][method] = asynchronous
         ? () => nativePromise((resolve, reject) => hasError ? reject(nativeString(mock.error)) : resolve(bridgeValue(mock.value, 0)))
@@ -666,6 +670,48 @@ export function scriptWidgetKernel(global, host, configJSON) {
   }
   // Apply policy after fixture replacement: mocks cannot grant package access.
   let dataQueries = 0;
+  const photosDeclared = () => config.manifest?.permissions?.includes("photos") === true;
+  const photoStatusMock = apis.$photos.authorizationStatus, photoAvailableMock = apis.$photos.isAvailable;
+  apis.$photos.authorizationStatus = () => photosDeclared() ? photoStatusMock() : "undeclared";
+  apis.$photos.isAvailable = () => photosDeclared() && photoAvailableMock();
+  const photoSelection = fixtures.photosSelection ?? [];
+  const validPhotoID = (id) => typeof id === "string" && id.length > 0 && utf8ByteLength(id) <= 1024 && !/[\x00-\x1f\x7f]/.test(id);
+  const photoScopeValid = ArrayIsArray(photoSelection) && photoSelection.length <= 64 && photoSelection.every(validPhotoID) && new Set(photoSelection).size === photoSelection.length;
+  const photoAllowed = new Set(photoScopeValid ? photoSelection : []);
+  for (const method of ["requestAuthorization", "items"]) {
+    apis.$photos[method] = (options) => nativePromise((resolve, reject) => {
+      if (!photosDeclared()) { reject("[permission_denied] Declare photos in widget.json"); return; }
+      if ((method !== "requestAuthorization" || (!timelineProjection && !liveActivityPresentation)) && ++dataQueries > contract.maximumDataQueries) { reject("[query_limit] Too many system data queries"); return; }
+      if (!apis.$photos.isAvailable()) { reject("[unavailable] Photos are unavailable"); return; }
+      const authorized = ["authorized", "limited"].includes(apis.$photos.authorizationStatus());
+      if (method === "requestAuthorization") {
+        const mock = apiMocks["$photos.requestAuthorization"];
+        if (mock?.error !== undefined) reject(StringCtor(mock.error)); else resolve(authorized && mock?.value === true);
+        return;
+      }
+      if (!authorized || !photoScopeValid || photoAllowed.size === 0) { reject("[permission_denied] Allow Photos and choose photos or albums in Settings"); return; }
+      const input = bridgeDictionary(options ?? {}, 0);
+      const number = (key, fallback, min, max, integer) => {
+        const value = Object.prototype.hasOwnProperty.call(input, key) ? input[key] : fallback;
+        if (typeof value !== "number" || !Number.isFinite(value) || value < min || value > max || (integer && !Number.isInteger(value))) throw new Error("[invalid_options] Invalid photo query");
+        return value;
+      };
+      try {
+        if (ObjectKeys(input).some((key) => !["limit", "offset", "maxAgeSeconds"].includes(key))) throw new Error("[invalid_options] Unknown photo option");
+        const limit = number("limit", 4, 1, 4, true), offset = number("offset", 0, 0, 63, true), maxAge = number("maxAgeSeconds", 3600, 0, 86400, false);
+        const mock = apiMocks["$photos.items"];
+        if (mock?.error !== undefined) { reject(StringCtor(mock.error)); return; }
+        const result = unbridge(bridgeValue(mock?.value, 0));
+        if (!result || !ArrayIsArray(result.items) || result.items.length > 64 || new Set(result.items.map((row) => row.id)).size !== result.items.length || result.items.some((row) => !validPhotoID(row.id) || typeof row.image !== "string" || !/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(row.image) || utf8ByteLength(row.image) > 174787 || !Number.isInteger(row.width) || row.width < 1 || !Number.isInteger(row.height) || row.height < 1) || !Number.isInteger(result.unavailableCount) || result.unavailableCount < 0 || result.unavailableCount > 64) throw new Error("[mock_invalid] Invalid photo snapshot");
+        const age = (DateCtor.now() - DateCtor.parse(result.fetchedAt)) / 1000;
+        if (!Number.isFinite(age) || age < 0 || age > 86400 || ((timelineProjection || liveActivityPresentation) && fixtures.photosSnapshotPrepared !== true)) { reject("[cache_miss] Prepare a matching photo snapshot in the app"); return; }
+        result.items = result.items.filter((row) => photoAllowed.has(row.id)).slice(offset, offset + limit);
+        if (timelineProjection || liveActivityPresentation) { result.source = "cache"; result.stale = age > maxAge; }
+        resolve(result);
+      } catch (error) { reject(StringCtor(error.message ?? error)); }
+    });
+  }
+
   const locationDeclared = () => !config.manifest || config.manifest.permissions?.includes("location") === true;
   const locationStatus = apis.$location.authorizationStatus;
   const locationWidgetAuthorization = apis.$location.isAuthorizedForWidgetUpdates;

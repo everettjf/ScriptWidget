@@ -11,6 +11,7 @@
 		1C24B164B4EBE88815490627 /* ScriptWidgetRuntimeHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD9F1F298DF5C4FAED8AAD43 /* ScriptWidgetRuntimeHealth.swift */; };
 		2E70438FD53BEA7361410166 /* ScriptWidgetRuntimeCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F219B313B36BE844638FBC2 /* ScriptWidgetRuntimeCalendar.swift */; };
 		23478208C51144BFBBDBF54D /* ScriptWidgetRuntimeReminders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB3908F42CF43D1BB4964B5 /* ScriptWidgetRuntimeReminders.swift */; };
+		155DC3E76F1A4A83A8C7D04B /* ScriptWidgetRuntimePhotos.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8FE22EE523481B91C412C1 /* ScriptWidgetRuntimePhotos.swift */; };
 		1DA43989AC34C73FB448AB0B /* ScriptWidgetRuntimeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CAE66D10656192ADC2F9019 /* ScriptWidgetRuntimeStorage.swift */; };
 		022A74D6034D5DD74D55C23B /* ScriptWidgetStorageLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 429BB5A88E97FC3C529D6006 /* ScriptWidgetStorageLock.swift */; };
 		2748BECB1506585B128418DC /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E3B593386F820DCF99C631E /* ScriptWidgetRuntimeSystem.swift */; };
@@ -25,6 +26,7 @@
 		75F45276F84EA01B91EC0CEC /* ScriptWidgetRuntimeHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD9F1F298DF5C4FAED8AAD43 /* ScriptWidgetRuntimeHealth.swift */; };
 		404165AC81E77E3021CBD919 /* ScriptWidgetRuntimeCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F219B313B36BE844638FBC2 /* ScriptWidgetRuntimeCalendar.swift */; };
 		4D21588E2F7E493698CC46A2 /* ScriptWidgetRuntimeReminders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AB3908F42CF43D1BB4964B5 /* ScriptWidgetRuntimeReminders.swift */; };
+		AFE97E2864DB4C5AA0BE77DB /* ScriptWidgetRuntimePhotos.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8FE22EE523481B91C412C1 /* ScriptWidgetRuntimePhotos.swift */; };
 		7B77915046C30834D191319E /* RuntimeUnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A078A98942A275CF9F25103 /* RuntimeUnitTests.swift */; };
 		855878C6168D59CE4C6CB13C /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E3B593386F820DCF99C631E /* ScriptWidgetRuntimeSystem.swift */; };
 		966888252E454500AEA7852C /* ScriptWidgetRuntimeLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124FAA64786342F5A3432631 /* ScriptWidgetRuntimeLocation.swift */; };
@@ -321,6 +323,7 @@
 		CD9F1F298DF5C4FAED8AAD43 /* ScriptWidgetRuntimeHealth.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeHealth.swift; sourceTree = "<group>"; };
 		1F219B313B36BE844638FBC2 /* ScriptWidgetRuntimeCalendar.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeCalendar.swift; sourceTree = "<group>"; };
 		1AB3908F42CF43D1BB4964B5 /* ScriptWidgetRuntimeReminders.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeReminders.swift; sourceTree = "<group>"; };
+		9F8FE22EE523481B91C412C1 /* ScriptWidgetRuntimePhotos.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimePhotos.swift; sourceTree = "<group>"; };
 		D1995C5729536BB800D1BD94 /* MineGaugeView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MineGaugeView.swift; sourceTree = "<group>"; };
 		D1995C5829536BB800D1BD94 /* ScriptWidgetElementColor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementColor.swift; sourceTree = "<group>"; };
 		D1995C5929536BB800D1BD94 /* ScriptWidgetElementPoint.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementPoint.swift; sourceTree = "<group>"; };
@@ -745,6 +748,7 @@
 				CD9F1F298DF5C4FAED8AAD43 /* ScriptWidgetRuntimeHealth.swift */,
 				1F219B313B36BE844638FBC2 /* ScriptWidgetRuntimeCalendar.swift */,
 				1AB3908F42CF43D1BB4964B5 /* ScriptWidgetRuntimeReminders.swift */,
+				9F8FE22EE523481B91C412C1 /* ScriptWidgetRuntimePhotos.swift */,
 				124FAA64786342F5A3432631 /* ScriptWidgetRuntimeLocation.swift */,
 				8CAE66D10656192ADC2F9019 /* ScriptWidgetRuntimeStorage.swift */,
 				429BB5A88E97FC3C529D6006 /* ScriptWidgetStorageLock.swift */,
@@ -1310,6 +1314,7 @@
 				75F45276F84EA01B91EC0CEC /* ScriptWidgetRuntimeHealth.swift in Sources */,
 				404165AC81E77E3021CBD919 /* ScriptWidgetRuntimeCalendar.swift in Sources */,
 				4D21588E2F7E493698CC46A2 /* ScriptWidgetRuntimeReminders.swift in Sources */,
+				AFE97E2864DB4C5AA0BE77DB /* ScriptWidgetRuntimePhotos.swift in Sources */,
 				F2D2B24EA420469CBA72564F /* ReloadWidgetAppIntent.swift in Sources */,
 				A621B963FD9840DB82F74813 /* ScriptWidgetRuntimeLocation.swift in Sources */,
 				745E4E208730DB92AA537EE1 /* ScriptWidgetRuntimeStorage.swift in Sources */,
@@ -1371,6 +1376,7 @@
 				1C24B164B4EBE88815490627 /* ScriptWidgetRuntimeHealth.swift in Sources */,
 				2E70438FD53BEA7361410166 /* ScriptWidgetRuntimeCalendar.swift in Sources */,
 				23478208C51144BFBBDBF54D /* ScriptWidgetRuntimeReminders.swift in Sources */,
+				155DC3E76F1A4A83A8C7D04B /* ScriptWidgetRuntimePhotos.swift in Sources */,
 				00F55E8ADF6744239EDB3E69 /* ReloadWidgetAppIntent.swift in Sources */,
 				966888252E454500AEA7852C /* ScriptWidgetRuntimeLocation.swift in Sources */,
 				1DA43989AC34C73FB448AB0B /* ScriptWidgetRuntimeStorage.swift in Sources */,

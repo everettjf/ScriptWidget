@@ -450,7 +450,7 @@ struct RemindersAccessSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Label(status == "authorized" ? "Reminders Connected" : "Connect Reminders", systemImage: "checklist").font(.headline)
-            Text("Apple requires full Reminders access. Widget scripts currently have read-only access to the lists you choose.").font(.footnote).foregroundStyle(.secondary)
+            Text("Apple requires full Reminders access. Widgets read only the lists you choose. Explicit actions with remindersWrite can create, update or complete reminders in those lists.").font(.footnote).foregroundStyle(.secondary)
             if status == "authorized" { CalendarSourcesSettingsView(model: model) }
             else {
                 Button(requesting ? "Requesting Access…" : "Allow Reminders Access") {

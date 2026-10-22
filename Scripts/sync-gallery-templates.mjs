@@ -15,6 +15,8 @@ const curated = [
   ["Mood Check-in", "mood-check-in"],
   ["Packing Checklist", "packing-checklist"],
   ["Photo Card", "photo-card"],
+  ["Photo Album Rotator", "photo-album-rotator"],
+  ["Reminders Agenda", "reminders-agenda"],
   ["Plant Care", "plant-care"],
   ["Pocket Pet", "pocket-pet"],
   ["Quick Launcher", "quick-launcher"],

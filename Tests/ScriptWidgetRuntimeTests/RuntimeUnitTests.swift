@@ -1701,10 +1701,15 @@ final class GalleryTests: XCTestCase {
                 XCTAssertEqual(manifest.id, item.id)
                 XCTAssertEqual(manifest.runtimeVersion, item.minimumRuntimeVersion)
                 if item.id.hasPrefix("app.scriptwidget.template.") {
-                    XCTAssertEqual(manifest.minimumRuntimeVersion, "1.3")
-                    XCTAssertTrue(item.summary.contains("Requires Runtime API 1.3"))
-                    XCTAssertFalse(WidgetRuntimeRequirement.supports("1.3", current: "1.2"))
-                    _ = try ScriptWidgetRecordKind.load(package: package)
+                    let originalURL = repositoryRoot.appendingPathComponent("Shared/ScriptWidgetRuntime/Resource/Script.bundle/template").appendingPathComponent(item.name).appendingPathComponent("widget.json")
+                    let original = try JSONDecoder().decode(WidgetPackageManifest.self, from: Data(contentsOf: originalURL))
+                    XCTAssertEqual(manifest.minimumRuntimeVersion, original.minimumRuntimeVersion)
+                    let requirement = try XCTUnwrap(original.minimumRuntimeVersion)
+                    XCTAssertTrue(item.summary.contains("Requires Runtime API \(requirement)"))
+                    XCTAssertFalse(WidgetRuntimeRequirement.supports(requirement, current: "1.2"))
+                    if item.files.contains(where: { $0.path == "record-template.json" }) {
+                        _ = try ScriptWidgetRecordKind.load(package: package)
+                    }
                 }
                 let source = try String(contentsOf: package.jsxPath, encoding: .utf8)
                 guard case .success = ScriptWidgetPrecompiler.compileNow(package: package, source: source) else {
@@ -6047,5 +6052,40 @@ final class RemindersWriteReceiptTests: XCTestCase {
         enum Stopped: Error { case stopped }
         XCTAssertThrowsError(try ScriptWidgetReminderMutationLedger.perform(mutation, container: root, backend: backend, key: key, now: Date(timeIntervalSince1970: 100), validate: {}) { commit in try commit(); throw Stopped.stopped })
         XCTAssertThrowsError(try ScriptWidgetReminderMutationLedger.perform(mutation, container: root, backend: backend, key: key, now: Date(timeIntervalSince1970: 100 + 30 * 86400), validate: {}) { _ in XCTFail("Old pending operation was repeated"); return "bad" })
+    }
+}
+
+final class PhotosPolicyTests: XCTestCase {
+    func testQueriesRejectUnknownFieldsTypesAndUnboundedRequests() throws {
+        let defaults = try ScriptWidgetPhotoQuery(nil)
+        XCTAssertEqual(defaults.limit, 4); XCTAssertEqual(defaults.offset, 0); XCTAssertEqual(defaults.maxAgeSeconds, 3600)
+        for value: [String: Any] in [["limit": true], ["limit": 0], ["limit": 5], ["limit": 1.5], ["offset": -1], ["offset": 64], ["maxAgeSeconds": 86401], ["maxAgeSeconds": Double.nan], ["albumID": "forged"]] {
+            XCTAssertThrowsError(try ScriptWidgetPhotoQuery(value))
+        }
+    }
+    func testExplicitSelectionDefaultsToNoneAndRejectsStaleAndMalformedSettings() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("PhotosPolicy-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        XCTAssertEqual(try ScriptWidgetPhotoSelection.load(container: root), .empty)
+        let selected = ScriptWidgetPhotoSelection(assetIDs: ["asset/opaque"], albumIDs: ["album/opaque"])
+        try selected.save(container: root, replacing: .empty)
+        XCTAssertEqual(try ScriptWidgetPhotoSelection.load(container: root), selected)
+        XCTAssertThrowsError(try ScriptWidgetPhotoSelection.empty.save(container: root, replacing: .empty))
+        let duplicate = ScriptWidgetPhotoSelection(assetIDs: ["same", "same"], albumIDs: [])
+        XCTAssertThrowsError(try duplicate.save(container: root, replacing: selected))
+        let path = root.appendingPathComponent(ScriptWidgetPhotoSelection.fileName)
+        try Data(#"{"formatVersion":1,"assetIDs":[],"albumIDs":[],"all":true}"#.utf8).write(to: path)
+        XCTAssertThrowsError(try ScriptWidgetPhotoSelection.load(container: root))
+        try FileManager.default.removeItem(at: path)
+        try FileManager.default.createSymbolicLink(at: path, withDestinationURL: root.appendingPathComponent("absent"))
+        XCTAssertThrowsError(try ScriptWidgetPhotoSelection.load(container: root))
+    }
+    func testOpaqueIDsRemainDistinctWithoutGrantingAllPhotos() throws {
+        let composed = "café", decomposed = "cafe\u{301}"
+        XCTAssertTrue(ScriptWidgetPhotoSelection.valid([composed, decomposed], maximum: 24))
+        XCTAssertNotEqual(ScriptWidgetPhotoSelection(assetIDs: [composed], albumIDs: []).identity,
+                          ScriptWidgetPhotoSelection(assetIDs: [decomposed], albumIDs: []).identity)
+        XCTAssertFalse(ScriptWidgetPhotoSelection.valid([String(repeating: "x", count: 1025)], maximum: 24))
     }
 }

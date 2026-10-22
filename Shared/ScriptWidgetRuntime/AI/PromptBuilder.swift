@@ -155,6 +155,14 @@ enum PromptBuilder {
             Native Settings source selection also limits calendar metadata,
             events and cached snapshots. Obtain permitted IDs with calendars();
             scripts cannot enlarge this selection. Show setup for no sources.
+            Photos requires photos permission and explicit photo/album selection in
+            native Settings, empty by default. $photos.items({limit:4}) returns
+            metadata-stripped JPEG data URLs in items[].image; render with <image url>.
+            Support authorized and limited status. Up to four thumbnails per call,
+            64 candidates, maxAgeSeconds up to 86400. Cloud-only photos must be
+            downloaded in Photos first; show unavailableCount and setup states.
+            Future entries and Live Activity presentations need a prepared snapshot.
+            Do not use a Web sample as evidence of native access or seed fake photos.
             Reminders needs the reminders package permission and system approval.
             Use lists() for permitted IDs; items() is read-only with listIDs,
             start/end (up to 31 days), limit (up to 50) and completed Boolean.

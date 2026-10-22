@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ScriptWidget reads photos and albums you select to prepare private widget thumbnails.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>
 	<string>Allow ScriptWidget to read reminders from lists you choose and apply reminder actions you trigger.</string>
 	<key>NSRemindersUsageDescription</key>

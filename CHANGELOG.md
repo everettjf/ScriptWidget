@@ -11,6 +11,7 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 - Fix library opening when read-only legacy preferences cannot synchronize after a successful file-backed storage write.
 - Add selected-list Reminders reads and explicit create, update and completion actions with durable replay receipts.
 - Simulate declared widget actions in Web Studio against persistent, editable preview data.
+- Add explicit selected-photo/album access, private thumbnails and a scheduled Photo Album Rotator with equivalent Web sample data.
 - Continue expanded personal-data APIs, authenticated services/music and visual editing on the same release branch; M3–M5 remain in progress.
 
 ## Unreleased

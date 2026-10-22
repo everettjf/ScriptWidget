@@ -685,3 +685,23 @@ M1/M2 裁剪后的新构建目录验证 `./Scripts/release-readiness.sh` 已退�
 - 专项原生参数/回执/动作测试通过；Web Studio 57 项测试通过。浏览器实际操作验证“完成下一项”后事项消失，页面重新打开仍为空；截图 `__Release/capabilities/reminders-write/studio-action-persisted.png`。完整发布检查进行中。没有实际 EventKit 用户授权/写入、物理 Widget 点击、签名容器或设备性能证据，不将其计作通过。M3 相册/健康、M4、M5 仍需继续；未部署、上传或送审。
 
 本批最终 `./Scripts/release-readiness.sh` 退出 0：Mac 571 passed / 0 failed / 28 skipped，iPhone Simulator 581 passed / 0 failed / 24 skipped；editor 35、preview engine 158、Web Studio 57、Gallery 同步 1 全通过，两端 app build、Chrome smoke、存储独立进程探针通过。首轮完整检查暴露目录声明文件未包含 write operation，已修复后重跑通过。Mac 构建曾输出 SwiftCompile “exit code 0 but produced no further output”诊断，但命令返回成功；额外独立重跑 Mac app build 退出 0 且不再出现该诊断。SDK/链接/弃用提示保留。证据、完整日志及两端 xcresult 位于 `__Release/capabilities/reminders-write/`。跳过项不计为通过；实际系统授权与设备写入仍待验收。
+
+
+### 2026-10-21：照片／相册来源、缩略图快照与轮播
+
+- 独立 photos 包权限，原生 Settings 显式选择最多 24 张照片和八个相册；缺失设置默认未选，不能借系统 full/limited 授权扩大来源。选择保存有原子写入、过期草稿冲突检查，异常现有文件保持拒绝访问。UI 最多列出 64 个近期照片及 32 个相册，有限授权下相册可能不可用。
+- `$photos.items` 每次最多四张 768px/128KiB JPEG 缩略图，候选最多 64、查询共享八次预算；重新编码像素，去掉 EXIF/GPS/文件名。脚本和组件不触发 iCloud 下载，云端不可用与空源分开显示。每 owner 最新快照最多 1MiB/24小时；读取和送达前复核包/系统权限、选择、资产存在与修改版本。未来时间线与 Live Activity 只读已准备的匹配快照，不重新下载缩略图。
+- 新增 Photo Album Rotator，四个六小时时间线槽在已准备照片间轮播；实际 WidgetKit 调度由系统决定。手动导入 Photo Card 保留。修复现有 Base64 图片未 resizable、不能正确缩放到组件框的问题。
+- Web Studio 提供 Photos 成功/空/拒绝/不可用及 limited 样例，photosSelection 显式约束返回 ID；Mock 不能绕过清单与查询边界，未来快照缺失可模拟。浏览器实际验证显示样例、取消选择后的配置提示、恢复选择；截图在 `__Release/capabilities/photos/`。默认样例为代码绘制的原创几何风景，不是真实个人照片，生成器与测试 JPEG 入库。
+- 新增两个 Gallery 包（照片轮播、Reminders Agenda）并完整校验字节数/哈希；原生导出更新对照目录仅增加三个 live-data 标记，已有树完全未变。新增共享 Swift 文件已接入两平台 app/widget 源引用，两份项目文件 lint 通过；API 目录、编辑器文档/双 bundle、AI、Schema 和包文档同步。
+- 专项测试最初被已有源码捕获一致性保护拦截，修正夹具先写入实际入口后通过。照片查询参数、默认未选/损坏/链接/过期保存、有限授权、缓存与未来条目、删除、云端缺失及查询中改选均有回归；Web Studio 64 项通过。首轮完整检查因新增 Gallery 对照目录缺少标记失败，已由原生导出修正后重跑。完整 gate 与原生截图结果随后记录。未执行真实照片库授权、实际设备照片变化、系统组件或扩展内存验收，不将软件夹具视作通过。M3 健康扩展、M4、M5 仍未完成，目标继续。
+
+本批最终 `./Scripts/release-readiness.sh` 退出 0：Mac 577 passed / 0 failed / 28 skipped，iPhone Simulator 587 passed / 0 failed / 26 skipped；两端 runtime warnings 均为空。editor 35、preview engine 158、Web Studio 65、Gallery 同步测试均通过；86 个模板、17 个策展 Gallery 包、两端应用构建、Chrome smoke 和独立存储探针通过。最终运行期间源码指纹未变，随后只补本段验证记录。
+
+Gallery 回归发现旧测试假定全部模板都需要 Runtime 1.3 和记录配置文件。现逐包比对原生清单最低版本，仅对声明了 record-template.json 的包检查记录 schema，保留原有记录模板的校验；新模板分类修正为现有 fun 枚举。原生来源选择增加按需缩略图，PhotoKit 返回超出目标尺寸时显式缩放，并在 iOS 归一化方向后去元数据编码。
+
+独立新建模拟器、仅注入原创 JPEG 后，真实 PhotoKit → 本地缩略图 → JavaScriptCore 探针通过：1 passed / 0 failed / 0 skipped，runtime warnings 为空。初次探针错误假定新模拟器没有系统样例图，并在主线程等待图片；已改为精确选择注入文件并在后台调用，未放宽生产权限或图片校验。模拟器已清理。该证据不等于真实用户授权弹窗、有限照片变更、物理设备或 WidgetKit 扩展验收。
+
+导出九张原生布局夹具（正常、云端缺失、拒绝 × 小/中/大），修复小尺寸设置说明截断；默认 Web Mock 提供四张原创风景变体，并验证四个本地六小时时段显示不同图片。所有证据和完整 xcresult 位于 `__Release/capabilities/photos/`。
+
+仍跟踪一次既有记录用例 `testInstalledRecordTemplatesExposeTheSameDeclaredActionsToWidgetsControlsAndShortcuts` 的 unavailable 失败。增加步骤诊断后，该用例连续十次及最终全量均通过；未确定单次失败原因，没有把它标成已修复，也未放宽生产锁或存储边界。失败日志、重复运行详情和成功结果均保留。本批未重跑 iPad、物理组件、签名 iCloud 或分发签名；未部署、上传或送审。M3 健康扩展、M4、M5 继续在同一分支完成。

@@ -12,10 +12,10 @@ export function sampleFixtures(): MockObject {
     timeseries:Array.from({length:24},(_,index)=>({time:new Date(start+index*3600000).toISOString(),data:{instant:{details:{air_temperature:21+index/4,relative_humidity:62,wind_speed:2}},next_1_hours:{summary:{symbol_code:"partlycloudy_day"}}}}))}};
   const dayStart = new Date(now); dayStart.setHours(0,0,0,0);
   return {
-    api: Object.fromEntries(mockAPIs.filter((api) => api.id !== "$device.isdarkmode").map((api) => [api.id, { value: api.group === "health" && api.value !== null && typeof api.value === "object" && !Array.isArray(api.value) && "unit" in api.value ? {...api.value,start:dayStart.toISOString(),end:new Date(now).toISOString()} : api.group === "reminders" && api.id.endsWith(".items") ? {...api.value as MockObject, fetchedAt: new Date(now).toISOString(), items: [{id:"sample.reminder",listID:"sample.reminders",title:"Read a chapter",due:new Date(dayStart.getTime()+16*3600000).toISOString(),hasTime:true,completed:false,completedAt:null,priority:0}]} : api.value }])),
+    api: Object.fromEntries(mockAPIs.filter((api) => api.id !== "$device.isdarkmode").map((api) => [api.id, { value: api.group === "health" && api.value !== null && typeof api.value === "object" && !Array.isArray(api.value) && "unit" in api.value ? {...api.value,start:dayStart.toISOString(),end:new Date(now).toISOString()} : api.group === "photos" && api.id.endsWith(".items") ? {...api.value as MockObject,fetchedAt:new Date(now).toISOString()} : api.group === "reminders" && api.id.endsWith(".items") ? {...api.value as MockObject, fetchedAt: new Date(now).toISOString(), items: [{id:"sample.reminder",listID:"sample.reminders",title:"Read a chapter",due:new Date(dayStart.getTime()+16*3600000).toISOString(),hasTime:true,completed:false,completedAt:null,priority:0}]} : api.value }])),
     fetch: [{url:"https://api.github.com/repos/everettjf/scriptwidget",method:"GET",status:200,body:JSON.stringify({full_name:"everettjf/ScriptWidget",private:false,stargazers_count:1280,forks_count:96,open_issues_count:18}),headers:{"content-type":"application/json","cache-control":"public, max-age=3600"}}, { url: "https://api.example.com/data", method: "GET", body: '{"value":42}', status: 200, headers: {"content-type":"application/json"} },
       {url:"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=37.33&lon=-122.01",method:"GET",status:200,body:JSON.stringify(weather),headers:{"content-type":"application/json",expires:new Date(now+3600000).toUTCString(),"last-modified":new Date(start).toUTCString()}}],
-    storage: {}, storageAtomicAvailable: true, dataSource: [], calendarSelection: null, remindersSelection: null,
+    storage: {}, storageAtomicAvailable: true, dataSource: [], calendarSelection: null, remindersSelection: null, photosSelection: ["sample.photo", "sample.photo.2", "sample.photo.3", "sample.photo.4"], photosSnapshotPrepared: true,
   };
 }
 export const defaultFixtures = JSON.stringify(sampleFixtures(), null, 2);
@@ -28,6 +28,8 @@ export function parseMocks(text: string): MockObject {
   }
   if (value.remindersState !== undefined && (!isObject(value.remindersState) || value.remindersState.formatVersion !== 1 ||
       Object.keys(value.remindersState).some(key => !["formatVersion", "items", "receipts"].includes(key)) || !Array.isArray(value.remindersState.items) || !Array.isArray(value.remindersState.receipts))) throw new Error("Reminder action state needs formatVersion 1, items and receipts.");
+  if (value.photosSelection !== undefined && (!Array.isArray(value.photosSelection) || value.photosSelection.length > 64 || new Set(value.photosSelection).size !== value.photosSelection.length || value.photosSelection.some(id => typeof id !== "string" || !id || new TextEncoder().encode(id).length > 1024 || /[\x00-\x1f\x7f]/.test(id)))) throw new Error("Photo selection needs up to 64 unique IDs; [] selects none.");
+  if (value.photosSnapshotPrepared !== undefined && typeof value.photosSnapshotPrepared !== "boolean") throw new Error("photosSnapshotPrepared must be true or false.");
   if (value.remindersCommitUncertain !== undefined && typeof value.remindersCommitUncertain !== "boolean") throw new Error("remindersCommitUncertain must be true or false.");
   for (const key of ["calendarSelection", "remindersSelection"]) if (value[key] !== undefined && value[key] !== null) {
     const ids = value[key];
@@ -88,9 +90,10 @@ export function addSampleMocks(text: string): string {
   data.dataSource ??= [];
   data.calendarSelection ??= null;
   data.remindersSelection ??= null;
+  data.photosSelection ??= ["sample.photo", "sample.photo.2", "sample.photo.3", "sample.photo.4"]; data.photosSnapshotPrepared ??= true;
   return JSON.stringify(data, null, 2);
 }
-export function permissionScenario(text: string, group: "health" | "location" | "calendar" | "reminders", mode: "granted" | "denied" | "unavailable" | "empty" | "widgetDenied"): string {
+export function permissionScenario(text: string, group: "health" | "location" | "calendar" | "reminders" | "photos", mode: "granted" | "denied" | "unavailable" | "empty" | "widgetDenied"): string {
   if (mode === "widgetDenied") {
     if (group !== "location") throw new Error("Widget location authorization applies only to Location.");
     const granted = permissionScenario(text, "location", "granted");
@@ -102,18 +105,18 @@ export function permissionScenario(text: string, group: "health" | "location" | 
   const scenario = group === "health" && mode === "denied" ? "empty" : mode;
   for (const api of mockAPIs.filter((item) => item.group === group)) {
     let response: MockObject;
-    if (scenario === "granted") response = api.id === "$reminders.items" ? responseFor(sampleFixtures(), api) : { value: api.value };
+    if (scenario === "granted") response = ["$reminders.items", "$photos.items"].includes(api.id) ? responseFor(sampleFixtures(), api) : { value: api.value };
     else if (api.id.endsWith("isAvailable")) response = { value: scenario !== "unavailable" };
     else if (api.id.endsWith("isAuthorizedForWidgetUpdates")) response = { value: scenario === "empty" };
-    else if (api.id.endsWith("requestAuthorization")) response = scenario === "unavailable" && !["calendar", "reminders"].includes(group)
+    else if (api.id.endsWith("requestAuthorization")) response = scenario === "unavailable" && !["calendar", "reminders", "photos"].includes(group)
       ? { error: `${group} is unavailable` } : { value: scenario === "empty" };
     else if (group === "health" && api.id.endsWith("authorizationStatus")) response = { value: scenario === "unavailable" ? "unavailable" : "notDisclosed" };
     else if (api.id.endsWith("authorizationStatus")) response = { value: scenario === "empty" ? (group === "location" ? "authorizedWhenInUse" : "authorized")
       : scenario === "unavailable" ? (group === "location" ? "disabled" : "unavailable") : "denied" };
     else if (scenario === "empty" && group === "health") response = { value: { ...(isObject(api.value) ? api.value : {}), value: 0, hasSamples: false,
       ...(api.id.endsWith("heartRateLatest") ? { start: "", end: "" } : {}) } };
-    else if (scenario === "empty" && ["calendar", "reminders"].includes(group)) response = { value: ["calendars", "lists"].includes(api.id.split(".")[1]!) ? []
-      : { ...(isObject(api.value) ? api.value : {}), status: "empty", items: [], truncated: false } };
+    else if (scenario === "empty" && ["calendar", "reminders", "photos"].includes(group)) response = { value: ["calendars", "lists"].includes(api.id.split(".")[1]!) ? []
+      : { ...(isObject(api.value) ? api.value : {}), status: group === "photos" ? "ready" : "empty", items: [], truncated: false, ...(group === "photos" ? {fetchedAt:new Date().toISOString(),unavailableCount:0} : {}) } };
     else response = { error: scenario === "empty" ? "[no_data] No location fix is available"
       : scenario === "unavailable" ? `${group} is unavailable` : `${group} permission denied` };
     result = setResponse(result, api.id, response);

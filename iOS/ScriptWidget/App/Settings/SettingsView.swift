@@ -79,6 +79,7 @@ struct SettingsView: View {
                 Section("iCloud") { SettingsICloudView() }
                 Section("Calendar") { CalendarAccessSettingsView() }
                 Section("Reminders") { RemindersAccessSettingsView() }
+                Section("Photos") { PhotosAccessSettingsView() }
                 Section("Health") { SettingsHealthView() }
                 Section("Location") { SettingsLocationView() }
 

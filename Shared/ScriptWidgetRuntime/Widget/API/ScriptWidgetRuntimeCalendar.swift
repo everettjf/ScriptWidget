@@ -691,17 +691,20 @@ struct CalendarAccessSettingsView: View {
 struct CalendarAccessPresentationModifier: ViewModifier {
     @State private var showingAccess = false
     @State private var showingReminders = false
+    @State private var showingPhotos = false
 
     func body(content: Content) -> some View {
         content
             .onOpenURL { url in
                 if url.scheme == "scriptwidget", url.host == "calendar-access" { showingAccess = true }
                 if url.scheme == "scriptwidget", url.host == "reminders-access" { showingReminders = true }
+                if url.scheme == "scriptwidget", url.host == "photos-access" { showingPhotos = true }
             }
             .sheet(isPresented: $showingAccess) {
                 CalendarAccessSheet()
             }
             .sheet(isPresented: $showingReminders) { RemindersAccessSheet() }
+            .sheet(isPresented: $showingPhotos) { PhotosAccessSheet() }
     }
 }
 
