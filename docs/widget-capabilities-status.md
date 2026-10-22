@@ -50,3 +50,5 @@ Spotify 条件接入、授权/刷新、播放读取及内部写操作记录已�
 按 [新版规划](widget-capabilities-plan.md) 分四批：剩余缺陷 → B 三端验收 → A 真机验收 → 最终回归与发布。当前新增确认的阻塞为 [Release Readiness CI](https://github.com/everettjf/scriptwidget/actions/runs/39860010673) 探针加载 `XCTestCore.framework` 失败；与本地 gate 通过分别记录。相同源码切换文件后的旧控件行为仍为待验证风险，尚未称作已确认缺陷。规划整理未修改产品代码，未新增测试或发布证据。
 
 编辑器旧表单串改问题已修复，四项新增回归纳入两端 bundle；Mac 聚焦 19 通过/1 跳过，iPad 连同快照导出 20 通过/1 跳过，均 0 失败。水族箱八种 family 的 16 张比较为 0.98–4.66%，小号 4.06%，无旧有截断/换行；仍存在细微像素对齐差异，见 [截图](public-animations.md)。新增测试曾发生 DOM 返回值桥接错误，已修复；旧 iPhone 运行失败不计通过。本批完整 gate 已退出 0：Mac 675 / iPhone Simulator 685 通过、均 0 失败，分别跳过 32/31 项，runtimeWarnings 为空；后续测试工具调整经最终 Web gate 再验退出 0。构建矩阵通过，iPad 模拟器 685 通过/0 失败/31 跳过、runtimeWarnings 为空；远端最终 CI 待确认，当前仍不宣称 A/B 全部完成。
+
+At product source a04e3f0, [Linux/Windows browser CI](https://github.com/everettjf/scriptwidget/actions/runs/39863618548) passed. [Readiness CI](https://github.com/everettjf/scriptwidget/actions/runs/39863618515) failed in the old Material immediate-click flow. The matching negative control failed as expected; the unified helper and final local Web gate passed. The next remote result is still required.
