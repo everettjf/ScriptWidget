@@ -23,7 +23,7 @@
 | 阶段 | 必须完成的任务 | 状态 |
 | --- | --- | --- |
 | M2 | M2-1 记录模板、M2-2 数据卡片、M2-3 动作目录、M2-4 本地 Live Activity、M2-5 主题/宠物/时段、M2-6 配置与 Gallery | 未完成；复用已有基础继续实现 |
-| M3 | M3-1 日历、M3-2 提醒事项、M3-3 自动照片、M3-4 更多健康类型、M3-5 跨平台/Mock/文档/验收 | 日历只读链路进行中，其他未开始 |
+| M3 | M3-1 日历、M3-2 提醒事项、M3-3 自动照片、M3-4 更多健康类型、M3-5 跨平台/Mock/文档/验收 | 日历、提醒事项、相册和扩展健康已接入开发；真机授权/撤权及系统入口验收仍待完成 |
 | M4 | M4-1 原生凭据、M4-2 请求代理、M4-3 Apple Music、M4-4 其他服务核验、M4-5 授权面板与音乐模板 | 未开始 |
 | M5 | M5-1 可视化 JSX 子集、M5-2 主题与原创资产、M5-3 材质/壁纸效果、M5-4 编辑流程与分发 | 未开始 |
 
@@ -705,3 +705,33 @@ Gallery 回归发现旧测试假定全部模板都需要 Runtime 1.3 和记录�
 导出九张原生布局夹具（正常、云端缺失、拒绝 × 小/中/大），修复小尺寸设置说明截断；默认 Web Mock 提供四张原创风景变体，并验证四个本地六小时时段显示不同图片。所有证据和完整 xcresult 位于 `__Release/capabilities/photos/`。
 
 仍跟踪一次既有记录用例 `testInstalledRecordTemplatesExposeTheSameDeclaredActionsToWidgetsControlsAndShortcuts` 的 unavailable 失败。增加步骤诊断后，该用例连续十次及最终全量均通过；未确定单次失败原因，没有把它标成已修复，也未放宽生产锁或存储边界。失败日志、重复运行详情和成功结果均保留。本批未重跑 iPad、物理组件、签名 iCloud 或分发签名；未部署、上传或送审。M3 健康扩展、M4、M5 继续在同一分支完成。
+
+
+## 2026-10-22：M3 扩展健康与 Promise 生命周期
+
+本增量仍在 `codex/release-m1-m2` / PR #62，随 M1–M5 统一发布。新增 Runtime API 1.4 的 `sleepSummary`、`activitySummary`、`workouts`，使用真正的 HealthKit 查询提供层；不是给原生返回演示数据。每个查询有区间/条数上限，受显式 health 权限、当前安装身份、取消和共享八次预算约束。睡眠按裁切后的区间并集去重，冲突优先级与 Apple Health 的源排名不同；活动按 Gregorian 本地日、DST 边界读取真实目标及 move-time 模式；运动只返回区间内完整记录和可空能量/距离。实现不保存、导出或记录健康读数。
+
+- Health Overview 提供总览、睡眠、活动和运动四模式，八种尺寸；加入第 18 个精选 Gallery 包。同步编辑器补全、AI 提示、生成文档及两端 editor bundle。浏览器默认最佳状态和无共享数据可编辑，健康 Mock 仍不代表真实授权。
+- 实际原生 JavaScriptCore 加确定性 Health 提供层导出 128 组树；Web 逐组相等。专门检查无权限、无数据、平台不可用、错误、共享预算、跨日/DST、睡眠冲突、可空目标和运动区间。Web Studio 的 73 项测试通过，并完成生产 TypeScript 构建。
+- iPhone 17 模拟器导出 21 张原生截图，检查四种模式的小/中/大尺寸及空/不可用/错误状态。修复小尺寸页脚截断。截图使用受控测试提供层，未访问个人 Health 数据；不能替代真实设备授权和采样验收。
+- 浏览器实际操作验证修改活动值为 520 kcal 后预览同步变化，No shared data 后三类读数清空；恢复默认值、睡眠参数和总览均无诊断错误。截图在 `__Release/capabilities/health-expanded/`。
+
+连续原生渲染暴露 Promise 的实际引用循环：VM 持有 native block，block 持有 delivery，delivery 强持有 resolve/reject JSValue，又反向持有 VM，导致执行快照租约未及时释放。原 128 组测试出现弱引用未释放断言，增加 autoreleasepool 后仍可复现；没有提高快照并发上限或放宽断言。改用 JSManagedValue、弱 VM 和托管引用，在送达后解除回调托管。新增已完成/未完成 Promise 的 VM 与快照释放回归；现有只送达一次、失效身份、结束执行丢弃回调测试保持通过。14 项聚焦测试和 128 组连续渲染通过。此前 Photos 阶段偶发的记录读取 unavailable 未证明属于同一原因，仍保留原记录。
+
+聚焦测试证据：`__Release/capabilities/health-expanded/promise-and-parity-summary.json`（14 通过，0 失败/跳过）和 `native-snapshots-summary.json`（1 通过，0 失败/跳过）。完整发布 gate 另记最终结果。真实 HealthKit 同意/拒绝/撤权、各类型样本读取、物理 WidgetKit 与扩展内存尚未执行；M3 尚未整体验收。M4/M5 尚未实现，不能描述为已完成或已发布。
+
+
+本增量首轮完整 gate 的 Mac 共 616 项（587 通过、1 失败、28 跳过），失败是既有 `testRepeatedFileRendersReleaseExecutionResourcesAtAutoreleaseBoundaries` 一次返回“Execution completed without producing a result”，而非未释放租约断言。单独十次重复（640 次真实文件渲染）通过；检查同步结果锁、订阅安装和两级 Future 路径，独立十万次 Combine 组合探针也没有复现。当前根因未确认，不能将重跑通过描述为该问题已修复。保留 `gate-sync-render-empty.log`、`sync-render-empty-details.json` 和 `sync-render-repeated-summary.json`；没有调整断言、超时或快照上限。完整 gate 最终结果另记。
+
+
+### M4 下一增量：服务资格核验（尚未实现）
+
+2026-10-22 核对官方接口：Apple 推荐 [MusicKit 自动 token 管理](https://developer.apple.com/documentation/musickit/using-automatic-token-generation-for-apple-music-api)，需要在开发者门户为 App ID 启用 MusicKit；[MusicKit](https://developer.apple.com/documentation/musickit) 另要求用途说明、用户同意和订阅能力检查。本机 Xcode iPhone SDK 中 SystemMusicPlayer 可供 iOS 使用、macOS unavailable，因此 Mac 的当前系统播放器信息不能假定与 iOS 等同。原生授权能力应与已有 AI Keychain 服务隔离；脚本不接触凭据。
+
+[Spotify quota modes](https://developer.spotify.com/documentation/web-api/concepts/quota-modes) 当前开发模式要求拥有者为 Premium、最多 5 个获准用户；扩展模式另有组织和规模门槛，尚未核实本项目是否获准。可使用官方 [Authorization Code with PKCE](https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow) 设计原生登录，不能据此宣称已获得公开服务资格。后续先实现原生账户/请求代理，再接服务适配与 Web Mock；本记录只证明接口核验，M4/M5 实现状态未改变。
+
+
+后续排查：第二轮完整 Mac gate 仍出现同样的空结果完成，这次位于 `testRepositoryStatesMatchNativeTreesAcrossEveryFamily`。临时阶段诊断的 30 轮联合复现再次失败一次，事件序列为 `transform.value,native.value,sink.value,native.end,transform.end`：可以确认值曾到达最终接收回调，尚不能确定为何等待器最终认为值不存在。增加值保存/完成状态诊断后，连续文件渲染 30 轮通过；后续完整 Mac 运行卡在 XCTest/Xcode 配置握手，采样未见测试代码执行，同时另一个项目在运行 Mac UI tests。没有证明二者因果关系；仅终止本任务的测试进程，临时运行时阶段诊断已还原，不随功能提交。当前未获得本增量完整 gate 通过证据，仍不可标记发布就绪。证据在 `macos-second-summary.json`、`pipeline-diagnostics-summary.json`、`result-diagnostics-summary.json` 和 `test-host-configuration-wait.sample.txt`。
+
+
+本增量最终独立验证：Mac 应用构建与 iOS 模拟器应用构建均退出 0；iPhone 17 模拟器全套 625 项中 598 通过、0 失败、27 跳过（包含 opt-in 截图/设备项目，未算作通过）。日志为 `macos-app-build.log`、`ios-app-build.log`、`ios-full-tests.log`、`ios-final-summary.json`。编辑器 35、引擎 158、Web Studio 73、87 个模板、18 个精选 Gallery、浏览器烟测与存储进程探针通过。完整 Mac gate 的偶发空结果仍未解决，故本次仅提交开发增量，PR 维持草稿；没有部署 Web、上传新原生构建或提交审核。

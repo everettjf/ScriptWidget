@@ -176,6 +176,15 @@ enum PromptBuilder {
             Health read permissions are private: authorizationStatus returns
             notDisclosed, and completing consent review is not proof of access.
             Empty Health results may mean no records or data not shared.
+            API 1.4 sleepSummary reads at most 7 elapsed days/256 segments;
+            activitySummary reads one Gregorian local day with nullable goals
+            and kcal or move-time minutes; workouts reads at most 31 days/50
+            wholly contained items with nullable energy/distance. Sleep uses
+            interval unions with awake/rem/deep/core/unspecified precedence,
+            not Apple Health source ranking. Never persist Health readings or
+            query/prompt from future entries or Live Activity presentations.
+            Health Overview supports overview/sleep/activity/workouts parameters;
+            Web Studio supplies editable simulated aggregates, not native access.
         16. Location needs the location package permission and approval in the
             main app. Widget access is separate: use isAuthorizedForWidgetUpdates
             when explaining widget setup, never infer permission from cached data.

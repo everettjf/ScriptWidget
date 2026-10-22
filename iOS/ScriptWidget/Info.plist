@@ -378,7 +378,7 @@
 		<string>_scriptwidget._tcp</string>
 	</array>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Allow ScriptWidget to read Health data for widget templates.</string>
+	<string>Display the Health data you choose to share, including steps, heart rate, sleep, activity rings and workouts, in your widgets.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Allow ScriptWidget to update Health data if you enable it.</string>
 	<key>NSLocalNetworkUsageDescription</key>

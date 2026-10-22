@@ -1,0 +1,11 @@
+{
+  "description": "Read-only sleep, real activity rings and bounded workout summaries. No readings are saved.",
+  "category": "health",
+  "tags": [
+    "sleep",
+    "activity",
+    "workouts"
+  ],
+  "difficulty": "beginner",
+  "icon": "heart.text.square"
+}

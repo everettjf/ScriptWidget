@@ -10,6 +10,7 @@ const curated = [
   ["Habit Heatmap", "habit-heatmap"],
   ["Habit Streak Tracker", "habit-streak"],
   ["Health Steps Ring", "health-card"],
+  ["Health Overview", "health-overview"],
   ["Hydration Goal", "hydration-goal"],
   ["Local Weather (Location)", "local-weather"],
   ["Mood Check-in", "mood-check-in"],

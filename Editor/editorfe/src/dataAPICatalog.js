@@ -36,6 +36,9 @@ const samples = [
   { id: "$reminders.update", group: "reminders", value: { id: "sample.reminder", listID: "sample.reminders", status: "applied", replayed: false } },
   { id: "$reminders.setCompleted", group: "reminders", value: { id: "sample.reminder", listID: "sample.reminders", status: "applied", replayed: false } },
   { id: "$health.authorizationStatus", group: "health", value: "notDisclosed" },
+  { id: "$health.sleepSummary", group: "health", value: {start:sampleStart,end:sampleEnd,timeZone:"UTC",hasSamples:true,totalSleepSeconds:27000,inBedSeconds:30600,awakeSeconds:1800,stages:{unspecified:0,core:16200,deep:5400,rem:5400},sourceCount:1,truncated:false,conflictSeconds:0,aggregation:"union-awake-rem-deep-core-unspecified"} },
+  { id: "$health.activitySummary", group: "health", value: {date:"2026-01-01",timeZone:"UTC",hasSamples:true,moveMode:"activeEnergy",move:{value:480,goal:600,unit:"kcal"},exercise:{value:26,goal:30,unit:"min"},stand:{value:9,goal:12,unit:"count"}} },
+  { id: "$health.workouts", group: "health", value: {start:sampleStart,end:sampleEnd,timeZone:"UTC",hasSamples:true,truncated:false,items:[{id:"550e8400-e29b-41d4-a716-446655440000",activity:"running",start:"2026-01-01T09:00:00.000Z",end:"2026-01-01T09:45:00.000Z",duration:2700,energyKcal:285,distanceMeters:5200}]} },
   { id: "$health.isAvailable", group: "health", value: true },
   { id: "$health.requestAuthorization", group: "health", value: true, legacy: ["health"] },
   { id: "$health.stepCountToday", group: "health", value: measure(6840, "count"), legacy: ["health.stepCountToday"] },
@@ -54,18 +57,18 @@ const groupPolicy = {
   calendar: { platforms: ["ios", "macos"], authorization: "calendarRead", notes: "Requires calendar in widget.json and full system Calendar access. The user's native Settings source selection limits metadata, events and cached snapshots; scripts cannot enlarge it. Use calendars() for permitted IDs and show setup when no sources are selected. Queries are read-only, limited to 31 days and 50 items. Preview calendarSelection simulates this scope without granting package permission." },
   device: { platforms: ["ios", "macos"], authorization: "none", notes: "Device values depend on hardware. Some legacy Mac values are placeholders; inspect the API documentation before using them as measurements." },
   system: { platforms: ["ios", "macos"], authorization: "none", notes: "System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable." },
-  health: { platforms: ["ios"], authorization: "healthRead", notes: "Read-only HealthKit. Request access in the app. Authorization completion does not reveal whether individual read types were granted; empty results must not be labelled permission denied. API 1.3 readings add hasSamples: false means no readable samples, never a read-denial verdict. Existing value/unit/start/end fields remain." },
+  health: { platforms: ["ios"], authorization: "healthRead", notes: "Read-only HealthKit. Request access in the app. Runtime 1.4 adds sleepSummary (up to 7 days / 256 samples, union with explicit stage-conflict precedence), activitySummary (one local Gregorian day including active-energy or move-time mode and optional goals), and workouts (up to 31 days / 50 fully-contained summaries, optional kcal/meters). These require an explicit health manifest; all share the query budget and cannot run in future/Live Activity presentations. No Health readings are persisted by the API. Authorization completion does not reveal whether individual read types were granted; empty results must not be labelled permission denied. API 1.3 readings add hasSamples: false means no readable samples, never a read-denial verdict. Existing value/unit/start/end fields remain." },
   location: { platforms: ["ios"], authorization: "locationWhenInUse", notes: "Package 2.0 requires location permission. Request system access in the app. Widgets also require isAuthorizedForWidgetUpdates. Cache is rechecked against authorization and precision, discarded after 24 hours or revocation, and reports age/isStale." },
 };
 export const dataAPICatalog = samples.map((sample) => {
   const method = sample.id.split(".")[1];
   const asynchronous = (["calendar", "reminders", "photos"].includes(sample.group) && !["isAvailable", "authorizationStatus"].includes(method)) || (sample.group === "health" && !["isAvailable", "authorizationStatus"].includes(method)) ||
     (sample.group === "location" && ["current", "requestAuthorization"].includes(method));
-  const options = (sample.group === "location" && ["current", "requestAuthorization"].includes(method)) || (["calendar", "reminders", "photos"].includes(sample.group) && ["events", "items"].includes(method));
+  const options = (sample.group === "health" && ["sleepSummary", "activitySummary", "workouts"].includes(method)) || (sample.group === "location" && ["current", "requestAuthorization"].includes(method)) || (["calendar", "reminders", "photos"].includes(sample.group) && ["events", "items"].includes(method));
   return {
     ...sample,
     ...groupPolicy[sample.group],
-    minimumRuntimeVersion: ["reminders", "photos"].includes(sample.group) ? "1.4" : ["calendar"].includes(sample.group) || ["$health.authorizationStatus", "$location.isAuthorizedForWidgetUpdates"].includes(sample.id) ? "1.3" : "1.0",
+    minimumRuntimeVersion: ["reminders", "photos"].includes(sample.group) || (sample.group === "health" && ["sleepSummary", "activitySummary", "workouts"].includes(method)) ? "1.4" : ["calendar"].includes(sample.group) || ["$health.authorizationStatus", "$location.isAuthorizedForWidgetUpdates"].includes(sample.id) ? "1.3" : "1.0",
     arguments: sample.group === "reminders" && ["create", "update", "setCompleted"].includes(method) ? ["options"] : options ? ["options?"] : [],
     ...(sample.group === "reminders" && ["create", "update", "setCompleted"].includes(method) ? { authorization: "remindersWrite" } : {}),
     asynchronous,

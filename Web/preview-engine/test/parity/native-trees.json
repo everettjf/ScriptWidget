@@ -160,6 +160,9 @@
     "gallery/health-card": {
       "tree": "{\"$element\":\"vstack\",\"props\":{\"background\":\"#eff6ff\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"color\":\"#2563eb\",\"size\":\"32\",\"systemName\":\"figure.walk\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"color\":\"#1e3a8a\",\"font\":\"title3\",\"weight\":\"bold\"},\"children\":[\"Health on iPhone\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#475569\",\"font\":\"caption\"},\"children\":[\"Install on iPhone and enable Health in ScriptWidget Settings.\"]}]}"
     },
+    "gallery/health-overview": {
+      "skipped": "live-data"
+    },
     "gallery/hello-card": {
       "tree": "{\"$element\":\"vstack\",\"props\":{\"background\":\"#17213A\",\"corner\":\"18\",\"padding\":\"16\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"text\",\"props\":{\"color\":\"#9CB4FF\",\"font\":\"caption\"},\"children\":[\"SCRIPTWIDGET GALLERY\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#FFFFFF\",\"font\":\"title\",\"fontWeight\":\"bold\"},\"children\":[\"Hello from GitHub\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#BEC8E5\",\"font\":\"caption\"},\"children\":[\"Edit me in Studio · \",\"medium\"]},{\"$element\":\"button\",\"props\":{\"actionID\":\"refresh\"},\"children\":[{\"$element\":\"label\",\"props\":{\"systemName\":\"arrow.clockwise\",\"title\":\"Refresh\"},\"children\":[]}]}]}"
     },
@@ -300,6 +303,9 @@
     },
     "template/Habit Streak Tracker": {
       "tree": "{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"background\":\"#FFF7ED\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"hstack\",\"props\":null,\"children\":[{\"$element\":\"icon\",\"props\":{\"color\":\"#C2410C\",\"size\":\"16\",\"systemName\":\"flame.fill\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"color\":\"#7C2D12\",\"font\":\"headline\"},\"children\":[\"Daily habit\"]}]},{\"$element\":\"text\",\"props\":{\"color\":\"#7C2D12\",\"font\":\"largeTitle\"},\"children\":[\"0 days\"]},{\"$element\":\"hstack\",\"props\":{\"spacing\":\"16\"},\"children\":[{\"$element\":\"button\",\"props\":{\"actionID\":\"checkIn\"},\"children\":[{\"$element\":\"text\",\"props\":{\"color\":\"#C2410C\",\"font\":\"caption\"},\"children\":[\"Check in\"]}]},{\"$element\":\"button\",\"props\":{\"actionID\":\"undoRecord\"},\"children\":[{\"$element\":\"text\",\"props\":{\"color\":\"#C2410C\",\"font\":\"caption\"},\"children\":[\"Undo\"]}]},{\"$element\":\"button\",\"props\":{\"actionID\":\"resetToday\"},\"children\":[{\"$element\":\"text\",\"props\":{\"color\":\"#C2410C\",\"font\":\"caption\"},\"children\":[\"Reset today\"]}]}]},false,false]}"
+    },
+    "template/Health Overview": {
+      "skipped": "live-data"
     },
     "template/Health Steps Ring": {
       "tree": "{\"$element\":\"vstack\",\"props\":{\"background\":\"#eff6ff\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"color\":\"#2563eb\",\"size\":\"32\",\"systemName\":\"figure.walk\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"color\":\"#1e3a8a\",\"font\":\"title3\",\"weight\":\"bold\"},\"children\":[\"Health on iPhone\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#475569\",\"font\":\"caption\"},\"children\":[\"Install on iPhone and enable Health in ScriptWidget Settings.\"]}]}"

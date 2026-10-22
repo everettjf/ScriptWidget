@@ -2612,6 +2612,32 @@ final class NativeAPIIdentityTests: XCTestCase {
         XCTAssertEqual(values(callbacks.0, state: state), ["ok:first"])
     }
 
+    func testPromiseCallbacksDoNotKeepTheirOwnVirtualMachineAndSnapshotAlive() throws {
+        for settles in [false, true] {
+            weak var virtualMachine: JSVirtualMachine?
+            weak var resources: ScriptWidgetExecutionFiles?
+            try autoreleasepool {
+                let state = try state(), callbacks = try callbacks(state)
+                virtualMachine = callbacks.0.virtualMachine
+                resources = state.executionSnapshot?.package.executionFiles
+                let promise = ScriptWidgetRuntimePromise { resolve, reject in
+                    // JS retains the native blocks; their callbacks must not
+                    // root the VM in return, even for an unresolved producer.
+                    callbacks.0.setObject(resolve, forKeyedSubscript: "pendingResolve" as NSString)
+                    callbacks.0.setObject(reject, forKeyedSubscript: "pendingReject" as NSString)
+                    if settles { resolve.call(withArguments: ["done"]) }
+                }
+                promise.then(callbacks.1, callbacks.2)
+                state.executionSession.callbackQueue.sync {}
+                state.executionSession.finish()
+            }
+            let deadline = Date().addingTimeInterval(1)
+            while (virtualMachine != nil || resources != nil) && Date() < deadline { Thread.sleep(forTimeInterval: 0.001) }
+            XCTAssertNil(virtualMachine, "Promise VM retained; settled=\(settles)")
+            XCTAssertNil(resources, "Promise snapshot retained; settled=\(settles)")
+        }
+    }
+
     func testLateNativePayloadFromReplacedIdentityIsNeverDeliveredToUserCode() throws {
         let state = try state(), callbacks = try callbacks(state)
         var pending: JSValue?
@@ -4147,6 +4173,7 @@ final class LibrarySessionExecutionTests: XCTestCase {
         let session=try step("Activate isolated library") { try start() },manager=try XCTUnwrap(session.sourceManager)
         let examples=[("Hydration Goal","addGlass","250 mL"),("Mood Check-in","moodFour","Good"),("Packing Checklist","toggleOne","Passport"),("Habit Streak Tracker","checkIn","✓"),("Habit Heatmap","checkInRead","✓")]
         for (name,actionID,expected) in examples {
+            try autoreleasepool {
             let installed=manager.createScript(fromTemplate:ScriptWidgetPackage(bundle:"Script",relativePath:"template/"+name));XCTAssertTrue(installed.0,installed.1)
             let catalog=try step("Load catalog for \(name)") { try ScriptWidgetHostExecution.actionCatalog(container:container){ScriptWidgetActionCatalog(packages:[])} }
             let resolved=try XCTUnwrap(catalog.actions().first(where:{$0.package.name==installed.1 && $0.action.id==actionID}))
@@ -4160,6 +4187,7 @@ final class LibrarySessionExecutionTests: XCTestCase {
                 try step("Hydration control action") { try executor.execute(identifier:resolved.identifier,source:.control).get() }
                 try step("Hydration shortcut action") { try executor.execute(identifier:resolved.identifier,source:.shortcut).get() }
                 XCTAssertEqual(try step("Read hydration after control and shortcut") { try store.rows(in:store.read()) }.first?.value,"750 mL")
+            }
             }
         }
     }
@@ -5373,3 +5401,137 @@ extension LibrarySessionExecutionTests {
     }
 }
 #endif
+
+private final class ExpandedHealthFixtureProvider: ScriptWidgetExpandedHealthProviding {
+    var available = true
+    var calls = 0
+    var empty = false
+    var failing = false
+    var onFetch: (() -> Void)?
+    func isAvailable() -> Bool { available }
+    func fetch(_ query: ScriptWidgetHealthReadQuery, session: ScriptWidgetExecutionSession, completion: @escaping (Result<ScriptWidgetHealthReadout, Error>) -> Void) {
+        calls += 1
+        if failing { completion(.failure(ScriptWidgetHealthReadError.queryFailed)); return }
+        let result: ScriptWidgetHealthReadout
+        switch query.kind {
+        case .sleepSummary:
+            result = .sleep(empty ? [] : [
+                .init(start:query.end.addingTimeInterval(-8*3600),end:query.end.addingTimeInterval(-3.5*3600),stage:.core,source:"fixture"),
+                .init(start:query.end.addingTimeInterval(-3.5*3600),end:query.end.addingTimeInterval(-2*3600),stage:.deep,source:"fixture"),
+                .init(start:query.end.addingTimeInterval(-2*3600),end:query.end.addingTimeInterval(-1800),stage:.rem,source:"fixture")],truncated:false)
+        case .activitySummary:
+            result = .activity(empty ? nil : .init(moveMode:"activeEnergy",move:480,moveGoal:600,exercise:26,exerciseGoal:30,stand:9,standGoal:12))
+        case .workouts:
+            result = .workouts(empty ? [] : [.init(id:"550e8400-e29b-41d4-a716-446655440000",activity:"running",start:query.end.addingTimeInterval(-3600),end:query.end.addingTimeInterval(-900),duration:2700,energyKcal:285,distanceMeters:5200)],truncated:false)
+        }
+        onFetch?(); completion(.success(result))
+    }
+}
+extension LibrarySessionExecutionTests {
+    private func expandedHealth(_ provider: ExpandedHealthFixtureProvider, code: String, permissions: [WidgetPackagePermission] = [.health], environments: [String:String] = [:]) throws -> String {
+        try autoreleasepool {
+        let session = try start(), package = try XCTUnwrap(session.sourceManager).getScriptPackage(packageName: packageName)
+        var manifest = WidgetPackageManifest.newProject(name: packageName); manifest.permissions = permissions; manifest.minimumRuntimeVersion = "1.4"
+        XCTAssertTrue(package.writeManifest(manifest).0);XCTAssertTrue(package.writeFile(relativePath:"main.jsx",content:code).0)
+        let captured = try session.capture(name:packageName)
+        let runtime = ScriptWidgetRuntime(package:captured.package,environments:environments,executionSnapshot:captured)
+        runtime.runningState?.expandedHealthProviderForTesting = provider
+        let result = runtime.executeJSXSyncForWidget(code)
+        XCTAssertNil(result.1,result.1?.displayMessage ?? "")
+        func text(_ element: ScriptWidgetRuntimeElement) -> String { (element.getChildren().compactMap{$0 as? String}+element.childrenAsElements().map(text)).joined() }
+        return text(try XCTUnwrap(result.0))
+        }
+    }
+    func testExpandedHealthUsesRealBridgeForAllThreeTypedReadoutsWithoutSavingReadings() throws {
+        let provider=ExpandedHealthFixtureProvider()
+        let output=try expandedHealth(provider,code:"const sleep=await $health.sleepSummary(),activity=await $health.activitySummary(),workouts=await $health.workouts();$render(<text>{JSON.stringify({sleep,activity,workouts,status:$health.authorizationStatus()})}</text>);")
+        let object=try XCTUnwrap(JSONSerialization.jsonObject(with:Data(output.utf8)) as? [String:Any])
+        XCTAssertEqual((object["sleep"] as? [String:Any])?["totalSleepSeconds"] as? Double,27000)
+        XCTAssertEqual((object["activity"] as? [String:Any])?["hasSamples"] as? Bool,true)
+        XCTAssertEqual(((object["workouts"] as? [String:Any])?["items"] as? [[String:Any]])?.count,1)
+        XCTAssertEqual(object["status"] as? String,"notDisclosed");XCTAssertEqual(provider.calls,3)
+        let session=try ScriptWidgetLibrarySession(profiles:profiles),captured=try session.capture(name:packageName)
+        let records = try captured.context.defaults.values(in:captured.storageNamespace)
+        XCTAssertEqual(records.map { $0.0 }, [captured.storageNamespace + "count"])
+        XCTAssertEqual(records.first?.1 as? String, "7")
+    }
+    func testExpandedHealthRejectsMissingPermissionFutureAndLiveActivityBeforeProviderCalls() throws {
+        let source="let errors=[];for(const name of ['sleepSummary','activitySummary','workouts']){try{await $health[name]();}catch(e){errors.push(String(e));}}$render(<text>{errors.join('|')}</text>);"
+        let provider=ExpandedHealthFixtureProvider()
+        XCTAssertTrue(try expandedHealth(provider,code:source,permissions:[]).contains("permission_denied"))
+        for env in [["timeline-is-projection":"true"],["widget-size":"live-activity"]] {
+            XCTAssertTrue(try expandedHealth(provider,code:source,environments:env).contains("timeline_read_only"))
+        }
+        XCTAssertEqual(provider.calls,0)
+    }
+    func testExpandedHealthRechecksAvailabilityAndSharesTheQueryBudget() throws {
+        let provider=ExpandedHealthFixtureProvider()
+        provider.onFetch={provider.available=false}
+        XCTAssertTrue(try expandedHealth(provider,code:"try{await $health.sleepSummary();$render(<text>bad</text>);}catch(e){$render(<text>{String(e)}</text>);}").contains("unavailable"))
+        provider.available=true;provider.onFetch=nil;provider.calls=0
+        let output=try expandedHealth(provider,code:"let error='';try{for(let i=0;i<9;i++)await $health.activitySummary();}catch(e){error=String(e);}$render(<text>{error}</text>);")
+        XCTAssertTrue(output.contains("query_limit"));XCTAssertEqual(provider.calls,8)
+    }
+    func testBasicHealthCannotReadOrPromptFromLiveActivityPresentations() throws {
+        let output=try expandedHealth(ExpandedHealthFixtureProvider(),code:"let count=0;for(const name of ['requestAuthorization','stepCountToday','activeEnergyToday','heartRateLatest']){try{await $health[name]();}catch(e){if(String(e).includes('timeline_read_only'))count++;}}$render(<text>{String(count)}</text>);",environments:["widget-size":"live-activity"])
+        XCTAssertEqual(output,"4")
+    }
+}
+
+extension LibrarySessionExecutionTests {
+    private func healthOverviewPackage() throws -> (ScriptWidgetLibrarySession, ScriptWidgetPackage, String) {
+        let session=try start(),package=try XCTUnwrap(session.sourceManager).getScriptPackage(packageName:packageName)
+        let template=ScriptWidgetPackage(bundle:"Script",relativePath:"template/Health Overview")
+        let source=try XCTUnwrap(template.readMainFile().0)
+        var manifest=WidgetPackageManifest.newProject(name:packageName);manifest.permissions=[.health];manifest.minimumRuntimeVersion="1.4";manifest.supportedFamilies=WidgetPackageFamily.allCases
+        XCTAssertTrue(package.writeManifest(manifest).0);XCTAssertTrue(package.writeFile(relativePath:"main.jsx",content:source).0)
+        return (session,package,source)
+    }
+    private func healthFixture(_ state: String) -> ExpandedHealthFixtureProvider {
+        let provider=ExpandedHealthFixtureProvider();provider.empty=state=="empty";provider.available=state != "unavailable";provider.failing=state=="error";return provider
+    }
+    func testExpandedHealthTemplateNativeAndWebCanonicalTrees() throws {
+        let (session,_,source)=try healthOverviewPackage()
+        var trees:[String:String]=[:]
+        for state in ["ready","empty","unavailable","error"] { for mode in ["overview","sleep","activity","workouts"] { for family in ["small","medium","large","extraLarge","extraLargePortrait","accessoryInline","accessoryCircular","accessoryRectangular"] {
+            weak var resources: ScriptWidgetExecutionFiles?
+            try autoreleasepool {
+                let snapshot=try session.capture(name:packageName),runtime=ScriptWidgetRuntime(package:snapshot.package,environments:["widget-size":family,"widget-param":mode],executionSnapshot:snapshot,isDarkMode:false)
+                resources=snapshot.package.executionFiles
+                runtime.runningState?.expandedHealthProviderForTesting=healthFixture(state)
+                let result=runtime.executeJSXSyncForWidget(source)
+                XCTAssertNil(result.1,"\(state)/\(mode)/\(family): \(result.1?.displayMessage ?? "")")
+                trees["\(state)/\(mode)/\(family)"]=ScriptWidgetElementTreeJSON.encode(try XCTUnwrap(result.0))
+            }
+            let deadline=Date().addingTimeInterval(1)
+            while resources != nil && Date()<deadline { Thread.sleep(forTimeInterval:0.001) }
+            XCTAssertNil(resources,"Each completed fixture render must release its snapshot lease")
+        } } }
+        let root=URL(fileURLWithPath:#filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let output=root.appendingPathComponent("Web/preview-engine/test/parity/health-overview-trees.json")
+        if ProcessInfo.processInfo.environment["SCRIPTWIDGET_UPDATE_HEALTH_OVERVIEW_PARITY"]=="1" {
+            let data=try JSONSerialization.data(withJSONObject:["generator":"Native managed JavaScriptCore with deterministic Health provider; no real readings", "trees":trees],options:[.prettyPrinted,.sortedKeys,.withoutEscapingSlashes])
+            try data.write(to:output,options:.atomic)
+        } else {
+            let expected=try XCTUnwrap((try JSONSerialization.jsonObject(with:Data(contentsOf:output)) as? [String:Any])?["trees"] as? [String:String])
+            XCTAssertEqual(trees,expected)
+        }
+    }
+    #if os(iOS)
+    @MainActor
+    func testExportExpandedHealthNativeSnapshots() async throws {
+        guard let directory=ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_EXPANDED_HEALTH"] else { throw XCTSkip("Set SCRIPTWIDGET_EXPORT_EXPANDED_HEALTH for isolated native Health captures") }
+        let output=URL(fileURLWithPath:directory);try FileManager.default.createDirectory(at:output,withIntermediateDirectories:true)
+        let (session,_,source)=try healthOverviewPackage()
+        for state in ["ready","empty","unavailable","error"] { for mode in ["overview","sleep","activity","workouts"] where state=="ready" || mode=="overview" { for (family,size) in [("small",CGSize(width:158,height:158)),("medium",CGSize(width:338,height:158)),("large",CGSize(width:338,height:354))] {
+            let snapshot=try session.capture(name:packageName),runtime=ScriptWidgetRuntime(package:snapshot.package,environments:["widget-size":family,"widget-param":mode],executionSnapshot:snapshot,isDarkMode:false)
+            runtime.runningState?.expandedHealthProviderForTesting=healthFixture(state)
+            let result=await Task.detached { runtime.executeJSXSyncForWidget(source) }.value
+            XCTAssertNil(result.1)
+            let element=try XCTUnwrap(result.0),context=ScriptWidgetElementContext(runtime:runtime,debugMode:false,scriptName:"Health fixture",scriptParameter:mode,package:snapshot.package,containerBackgroundElement:element)
+            let renderer=ImageRenderer(content:BrowserPreviewSnapshotView(element:element,context:context,size:size).environment(\.colorScheme,.light));renderer.scale=2
+            try XCTUnwrap(renderer.uiImage?.pngData()).write(to:output.appendingPathComponent("\(state)-\(mode)-\(family).png"))
+        } } }
+    }
+    #endif
+}

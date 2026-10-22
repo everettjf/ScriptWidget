@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-22T06:01:40.886Z",
+  "generatedAt": "2026-10-22T07:09:20.197Z",
   "items": [
     {
       "author": "ScriptWidget Community",
@@ -945,6 +945,42 @@
       "symbol": "checklist",
       "tags": [
         "productivity"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 9590,
+          "path": "main.jsx",
+          "sha256": "09056da00937c18a6ed222a87752b2aab321f6242795b586bd6f896a3c858217",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/health-overview/main.jsx"
+        },
+        {
+          "bytes": 258,
+          "path": "meta.json",
+          "sha256": "e9a70d1777fb3f20690ec1557293f44173e1686b79fc9c3f2b8d2f4610c7d749",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/health-overview/meta.json"
+        },
+        {
+          "bytes": 604,
+          "path": "widget.json",
+          "sha256": "b63c66368fa1fd700f6e421534bfc4704e0efa307c5a520103558373b63fcf9d",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/health-overview/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.health-overview",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Health Overview",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/health-overview",
+      "summary": "Requires Runtime API 1.4. Read-only sleep, real activity rings and bounded workout summaries. No readings are saved.",
+      "symbol": "heart.text.square",
+      "tags": [
+        "health"
       ],
       "version": "1.0.0"
     }

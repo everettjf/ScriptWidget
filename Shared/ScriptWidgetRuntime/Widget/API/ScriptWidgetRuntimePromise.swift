@@ -42,15 +42,29 @@ class ScriptWidgetRuntimePromise: NSObject, ScriptWidgetRuntimePromiseExports {
 
 /// At most one callback can cross back into JS. Native payloads from a finished
 /// or replaced execution are discarded before invoking user continuations.
-final class ScriptWidgetPromiseDelivery {
+final class ScriptWidgetPromiseDelivery: NSObject {
     private let state: ScriptWidgetRunningState
-    private let resolve: JSValue
-    private let reject: JSValue
+    private let resolve: JSManagedValue
+    private let reject: JSManagedValue
+    private weak var virtualMachine: JSVirtualMachine?
     private let lock = NSLock()
     private var settled = false
 
     init(state: ScriptWidgetRunningState, resolve: JSValue, reject: JSValue) {
-        self.state = state; self.resolve = resolve; self.reject = reject
+        self.state = state
+        self.resolve = JSManagedValue(value: resolve)
+        self.reject = JSManagedValue(value: reject)
+        self.virtualMachine = resolve.context?.virtualMachine
+        super.init()
+        // The VM owns the native callback blocks, which own this delivery.
+        // Strong JSValues here would root that same VM through a native cycle.
+        virtualMachine?.addManagedReference(self.resolve, withOwner: self)
+        virtualMachine?.addManagedReference(self.reject, withOwner: self)
+    }
+
+    deinit {
+        virtualMachine?.removeManagedReference(resolve, withOwner: self)
+        virtualMachine?.removeManagedReference(reject, withOwner: self)
     }
 
     func finish(_ value: JSValue, rejected: Bool) {
@@ -62,11 +76,15 @@ final class ScriptWidgetPromiseDelivery {
         guard !settled else { lock.unlock(); return }
         settled = true
         lock.unlock()
+        let success = resolve.value
+        let failure = reject.value
+        virtualMachine?.removeManagedReference(resolve, withOwner: self)
+        virtualMachine?.removeManagedReference(reject, withOwner: self)
         guard state.executionSession.isActive else { return }
         guard state.isCurrentExecution else {
-            reject.call(withArguments: ["[execution_identity_changed] Reload the widget before continuing"])
+            failure?.call(withArguments: ["[execution_identity_changed] Reload the widget before continuing"])
             return
         }
-        (rejected ? reject : resolve).call(withArguments: [value])
+        (rejected ? failure : success)?.call(withArguments: [value])
     }
 }

@@ -8,7 +8,7 @@ import type { WidgetManifest } from "../../preview-engine/src/types.js";
 import { createProject } from "../src/project.ts";
 import { dataAPICatalog } from "../../../Editor/editorfe/src/dataAPICatalog.js";
 const execute = (source: string, fixtures = parseMocks(defaultFixtures)) => {
-  const manifest: WidgetManifest = { ...newManifest("API Mocks"), permissions: ["calendar", "reminders", "photos", "location"] };
+  const manifest: WidgetManifest = { ...newManifest("API Mocks"), permissions: ["calendar", "reminders", "photos", "location", "health"] };
   return executePackageInNode({ files: { "main.jsx": source, "widget.json": JSON.stringify(manifest) }, fixtures, manifest });
 };
 
@@ -36,23 +36,28 @@ test("new projects can read healthy system samples and authorize without setup",
   assert.equal(output.memory.physical, 8589934592);
 });
 
+function mockCall(api: {id:string}, fixtures: ReturnType<typeof parseMocks>): string {
+  const value=(fixtures.api as any)[api.id]?.value;
+  const options=api.id==="$health.sleepSummary"||api.id==="$health.workouts"?{start:value.start,end:value.end}:api.id==="$health.activitySummary"?{date:value.date}:null;
+  return `${api.id}(${options?JSON.stringify(options):""})`;
+}
+
 test("every read API returns its configured value with the right sync or async shape", async () => {
-  const calls = mockAPIs.filter((api) => api.id !== "$device.isdarkmode" && api.operation !== "write").map((api) => `${JSON.stringify(api.id)}: await ${api.id}()`);
-  const result = await execute(`$render(<text>{JSON.stringify({${calls.join(",")}})}</text>);`);
-  assert.equal(result.error, null);
-  const actual = JSON.parse(JSON.parse(result.tree!).children[0]);
-  for (const api of mockAPIs.filter((item) => item.id !== "$device.isdarkmode" && item.operation !== "write")) assert.deepEqual(actual[api.id], (parseMocks(defaultFixtures).api as Record<string, {value: unknown}>)[api.id]!.value, api.id);
+  // One execution per API: catalog growth must not bypass the real entry budget.
+  for(const api of mockAPIs.filter(api=>api.id!=="$device.isdarkmode"&&api.operation!=="write")) {
+    const fixtures=parseMocks(defaultFixtures);
+    const result=await execute(`$render(<text>{JSON.stringify(await ${mockCall(api,fixtures)})}</text>);`,fixtures);
+    assert.equal(result.error,null,api.id);
+    assert.deepEqual(JSON.parse(JSON.parse(result.tree!).children[0]),(fixtures.api as any)[api.id].value,api.id);
+  }
 });
 
 test("catalog Promise semantics hold before awaiting, including simulated failures", async () => {
-  const checks = dataAPICatalog.map((api) => `{
-    const response = ${api.id}();
-    const asynchronous = response !== null && typeof response === 'object' && typeof response.then === 'function';
-    if (asynchronous !== ${api.asynchronous}) throw new Error(${JSON.stringify(api.id)} + ' Promise shape mismatch');
-    ${api.operation === "write" ? "try { await response; throw new Error('write unexpectedly allowed'); } catch (error) { if (!String(error).includes('permission_denied')) throw error; }" : "await response;"}
-  }`);
-  const result = await execute(`${checks.join("\n")} $render(<text>ok</text>);`);
-  assert.equal(result.error, null);
+  for(const api of dataAPICatalog) {
+    const fixtures=parseMocks(defaultFixtures);
+    const code=`const response=${mockCall(api,fixtures)};const asynchronous=response!==null&&typeof response==='object'&&typeof response.then==='function';if(asynchronous!==${api.asynchronous})throw new Error('Promise shape mismatch');${api.operation==="write"?"try{await response;throw new Error('unexpected write');}catch(e){if(!String(e).includes('permission_denied'))throw e;}":"await response;"}$render(<text>ok</text>);`;
+    const result=await execute(code,fixtures);assert.equal(result.error,null,api.id);
+  }
   for (const id of ["$health.stepCountToday", "$location.current", "$system.locale", "$device.battery"]) {
     const api = dataAPICatalog.find((item) => item.id === id)!;
     const fixtures = parseMocks(setResponse(defaultFixtures, id, { error: "Simulated failure" }));

@@ -212,6 +212,7 @@ class ScriptWidgetRunningState {
     var storageContainerForTesting: URL?
     var storageDefaultsForTesting: UserDefaults?
     var fetchManagerForTesting: ScriptWidgetFetchManager?
+    var expandedHealthProviderForTesting: (any ScriptWidgetExpandedHealthProviding)?
     var calendarProviderForTesting: ScriptWidgetCalendarProvider?
     var photosProviderForTesting: (any ScriptWidgetPhotosProviding)?
     var remindersProviderForTesting: (any ScriptWidgetRemindersProviding)?

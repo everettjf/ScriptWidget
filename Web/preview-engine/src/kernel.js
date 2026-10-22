@@ -528,6 +528,9 @@ export function scriptWidgetKernel(global, host, configJSON) {
       stepCountToday: unavailablePromise("health.stepCountToday"),
       activeEnergyToday: unavailablePromise("health.activeEnergyToday"),
       heartRateLatest: unavailablePromise("health.heartRateLatest"),
+      sleepSummary: unavailablePromise("health.sleepSummary"),
+      activitySummary: unavailablePromise("health.activitySummary"),
+      workouts: unavailablePromise("health.workouts"),
     },
     $location: {
       isAuthorizedForWidgetUpdates: () => fixtures.location !== undefined,
@@ -663,13 +666,84 @@ export function scriptWidgetKernel(global, host, configJSON) {
         : () => { if (hasError) throw new Error(nativeString(mock.error)); return unbridge(bridgeValue(mock.value, 0)); };
     }
   }
-  if (timelineProjection) {
-    for (const method of ["requestAuthorization", "stepCountToday", "activeEnergyToday", "heartRateLatest"]) {
-      apis.$health[method] = () => nativePromise((resolve, reject) => reject("[timeline_read_only] Future entries cannot query live Health data"));
-    }
-  }
   // Apply policy after fixture replacement: mocks cannot grant package access.
   let dataQueries = 0;
+  const healthStatus = apis.$health.authorizationStatus;
+  apis.$health.authorizationStatus = () => config.hasManifest && !config.manifest?.permissions?.includes("health") ? "undeclared" : healthStatus();
+  const healthNow = () => datePrototypeGetTime.call(new DateCtor());
+  const healthZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const healthISO = Date.prototype.toISOString;
+  const healthInstant = (raw) => {
+    if (typeof raw !== "string" || !/^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,9})?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/.test(raw) || !healthDay(raw.slice(0,10))) throw new Error("[invalid_options] Invalid Health date");
+    const date = new DateCtor(raw), time = datePrototypeGetTime.call(date);
+    if (!Number.isFinite(time)) throw new Error("[invalid_options] Invalid Health date"); return time;
+  };
+  const healthDay = (raw) => {
+    if (typeof raw !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(raw)) return false;
+    const [year,month,day]=raw.split("-").map(Number), date=new DateCtor(0);
+    if(year<1)return false;date.setUTCFullYear(year,month-1,day);date.setUTCHours(0,0,0,0);
+    return healthISO.call(date).slice(0,10)===raw;
+  };
+  const healthLocalDay = (time) => {const d=new DateCtor(time);return `${StringCtor(d.getFullYear()).padStart(4,"0")}-${StringCtor(d.getMonth()+1).padStart(2,"0")}-${StringCtor(d.getDate()).padStart(2,"0")}`;};
+  for (const method of ["requestAuthorization", "stepCountToday", "activeEnergyToday", "heartRateLatest"]) {
+    const call = apis.$health[method];
+    apis.$health[method] = (...args) => nativePromise((resolve,reject) => {
+      if(config.hasManifest && !config.manifest?.permissions?.includes("health")){reject("[permission_denied] Declare health in widget.json");return;}
+      if(timelineProjection || liveActivityPresentation){reject("[timeline_read_only] Health presentations cannot query live readings");return;}
+      if(++dataQueries>contract.maximumDataQueries){reject("[query_limit] Too many system data queries");return;}
+      if(!apis.$health.isAvailable()){reject("[unavailable] Health data is unavailable");return;}
+      call(...args).then(resolve,reject);
+    });
+  }
+  for(const method of ["sleepSummary","activitySummary","workouts"]) {
+    apis.$health[method] = (options) => nativePromise((resolve,reject)=>{
+      try {
+        if(!config.manifest?.permissions?.includes("health")){reject("[permission_denied] Declare health in widget.json");return;}
+        if(timelineProjection || liveActivityPresentation){reject("[timeline_read_only] Read Health in the current entry");return;}
+        const input=bridgeDictionary(options??{},0), fields=method==="activitySummary"?["date"]:method==="workouts"?["start","end","limit"]:["start","end"];
+        if(ObjectKeys(input).some(key=>!fields.includes(key)))throw new Error("[invalid_options] Unknown Health query option");
+        const now=healthNow();let start,end,date,limit=5;
+        if(method==="activitySummary") {
+          date=input.date===undefined?healthLocalDay(now):input.date;
+          if(!healthDay(date)||date>healthLocalDay(now))throw new Error("[invalid_options] Invalid Health activity day");
+        } else {
+          end=input.end===undefined?now:healthInstant(input.end);start=input.start===undefined?end-(method==="sleepSummary"?86400000:7*86400000):healthInstant(input.start);
+          if(end<=start||end>now+1000||end-start>(method==="sleepSummary"?7:31)*86400000)throw new Error("[invalid_options] Invalid Health query range");
+          if(input.limit!==undefined){limit=input.limit;if(typeof limit!=="number"||!Number.isInteger(limit)||limit<1||limit>50)throw new Error("[invalid_options] Invalid workout limit");}
+        }
+        if(++dataQueries>contract.maximumDataQueries){reject("[query_limit] Too many system data queries");return;}
+        if(!apis.$health.isAvailable()){reject("[unavailable] Health data is unavailable");return;}
+        const mock=apiMocks[`$health.${method}`];if(mock?.error!==undefined){reject(StringCtor(mock.error));return;}
+        const value=unbridge(bridgeValue(mock?.value,0));
+        const invalid=()=>{throw new Error("[mock_invalid] Invalid Health summary sample");};
+        const finite=(x,max=1e9)=>typeof x==="number"&&Number.isFinite(x)&&x>=0&&x<=max;
+        if(!value||typeof value!=="object"||ArrayIsArray(value)||typeof value.hasSamples!=="boolean")invalid();
+        if(method==="sleepSummary") {
+          const span=(end-start)/1000, stages=value.stages;
+          if(!stages||ObjectKeys(stages).sort().join(",")!=="core,deep,rem,unspecified"||Object.values(stages).some(x=>!finite(x,span))||![value.totalSleepSeconds,value.inBedSeconds,value.awakeSeconds,value.conflictSeconds].every(x=>finite(x,span))||Math.abs(Object.values(stages).reduce((a,b)=>a+b,0)-value.totalSleepSeconds)>0.01||value.totalSleepSeconds+value.awakeSeconds>span+0.01||!Number.isInteger(value.sourceCount)||value.sourceCount<0||value.sourceCount>256||typeof value.truncated!=="boolean"||value.aggregation!=="union-awake-rem-deep-core-unspecified")invalid();
+          if(!value.hasSamples&&(value.totalSleepSeconds||value.inBedSeconds||value.awakeSeconds||value.sourceCount||value.conflictSeconds))invalid();
+        } else if(method==="activitySummary") {
+          if(!["activeEnergy","moveTime"].includes(value.moveMode))invalid();
+          for(const [key,unit] of [["move",value.moveMode==="moveTime"?"min":"kcal"],["exercise","min"],["stand","count"]]) {
+            const item=value[key];if(!item||item.unit!==unit||!finite(item.value)||(item.goal!==null&&!finite(item.goal))||(!value.hasSamples&&(item.value!==0||item.goal!==null)))invalid();
+          }
+          value.date=date;
+        } else {
+          if(!ArrayIsArray(value.items)||value.items.length>50||typeof value.truncated!=="boolean"||new Set(value.items.map(row=>row.id)).size!==value.items.length)invalid();
+          const activities=["walking","running","cycling","swimming","hiking","yoga","strength","rowing","elliptical","pilates","dance","other"];
+          for(const row of value.items) {
+            const a=healthInstant(row.start),b=healthInstant(row.end);
+            if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(row.id)||!activities.includes(row.activity)||b<=a||!finite(row.duration,(b-a)/1000+0.01)||[row.energyKcal,row.distanceMeters].some(x=>x!==null&&!finite(x)))invalid();
+          }
+          value.items=value.items.filter(row=>healthInstant(row.start)>=start&&healthInstant(row.end)<=end).sort((a,b)=>healthInstant(b.start)-healthInstant(a.start)||a.id.localeCompare(b.id));
+          value.truncated=value.truncated||value.items.length>limit;value.items=value.items.slice(0,limit);value.hasSamples=value.items.length>0;
+        }
+        if(method!=="activitySummary"){value.start=healthISO.call(new DateCtor(start));value.end=healthISO.call(new DateCtor(end));}
+        value.timeZone=healthZone;resolve(value);
+      } catch(error){reject(StringCtor(error.message??error));}
+    });
+  }
+
   const photosDeclared = () => config.manifest?.permissions?.includes("photos") === true;
   const photoStatusMock = apis.$photos.authorizationStatus, photoAvailableMock = apis.$photos.isAvailable;
   apis.$photos.authorizationStatus = () => photosDeclared() ? photoStatusMock() : "undeclared";

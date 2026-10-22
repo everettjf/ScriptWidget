@@ -6089,3 +6089,65 @@ final class PhotosPolicyTests: XCTestCase {
         XCTAssertFalse(ScriptWidgetPhotoSelection.valid([String(repeating: "x", count: 1025)], maximum: 24))
     }
 }
+
+final class ExpandedHealthPolicyTests: XCTestCase {
+    let now = Date(timeIntervalSince1970: 1793664000)
+    func testRangesDatesUnitsAndLocalDSTBoundaries() throws {
+        let sleep = try ScriptWidgetHealthReadQuery(kind: .sleepSummary, options: nil, now: now)
+        XCTAssertEqual(sleep.end.timeIntervalSince(sleep.start), 86400)
+        for options: [String:Any] in [["limit": 4],["start":"2026-02-29T00:00:00Z"],["end":"2026-03-01T24:00:00Z"],["start":true],["unknown":0],["end":NSNull()]] {
+            XCTAssertThrowsError(try ScriptWidgetHealthReadQuery(kind: .sleepSummary, options: options, now: now))
+        }
+        for raw: Any in [0,51,true,1.5,NSNull()] { XCTAssertThrowsError(try ScriptWidgetHealthReadQuery(kind:.workouts,options:["limit":raw],now:now)) }
+        var calendar=Calendar(identifier:.gregorian);calendar.timeZone=TimeZone(identifier:"America/New_York")!
+        let march=try ScriptWidgetHealthReadQuery(kind:.activitySummary,options:["date":"2026-03-08"],now:now,calendar:calendar)
+        let november=try ScriptWidgetHealthReadQuery(kind:.activitySummary,options:["date":"2026-11-01"],now:now,calendar:calendar)
+        XCTAssertEqual(march.end.timeIntervalSince(march.start),23*3600);XCTAssertEqual(november.end.timeIntervalSince(november.start),25*3600)
+        XCTAssertThrowsError(try ScriptWidgetHealthReadQuery(kind:.activitySummary,options:["date":"9999-01-01"],now:now))
+    }
+    func testSleepUnionsDuplicateSourcesClipsAndDoesNotAddInBedToSleep() throws {
+        let base=Date(timeIntervalSince1970:0)
+        let query=try ScriptWidgetHealthReadQuery(kind:.sleepSummary,options:["start":"1970-01-01T00:00:00Z","end":"1970-01-01T00:10:00Z"],now:now)
+        let segments:[ScriptWidgetSleepSegment]=[
+            .init(start:base.addingTimeInterval(-60),end:base.addingTimeInterval(660),stage:.inBed,source:"bed"),
+            .init(start:base,end:base.addingTimeInterval(600),stage:.core,source:"watch"),
+            .init(start:base,end:base.addingTimeInterval(600),stage:.core,source:"duplicate"),
+            .init(start:base.addingTimeInterval(60),end:base.addingTimeInterval(180),stage:.deep,source:"watch"),
+            .init(start:base.addingTimeInterval(150),end:base.addingTimeInterval(210),stage:.awake,source:"watch"),
+            .init(start:base.addingTimeInterval(300),end:base.addingTimeInterval(600),stage:.unspecified,source:"other")]
+        let result=try ScriptWidgetHealthReadout.sleep(segments,truncated:false).object(for:query)
+        XCTAssertEqual(result["totalSleepSeconds"] as? Double,540)
+        XCTAssertEqual(result["inBedSeconds"] as? Double,600);XCTAssertEqual(result["awakeSeconds"] as? Double,60)
+        XCTAssertEqual((result["stages"] as? [String:Double])?["deep"],90)
+        XCTAssertEqual(result["conflictSeconds"] as? Double,450)
+        XCTAssertNil(result["sources"]);XCTAssertEqual(result["sourceCount"] as? Int,4)
+    }
+    func testSleepEmptyAndBoundsNeverInventSamples() throws {
+        let query=try ScriptWidgetHealthReadQuery(kind:.sleepSummary,options:nil,now:now)
+        let empty=try ScriptWidgetHealthReadout.sleep([],truncated:false).object(for:query)
+        XCTAssertEqual(empty["hasSamples"] as? Bool,false);XCTAssertEqual(empty["totalSleepSeconds"] as? Double,0)
+        let segment=ScriptWidgetSleepSegment(start:query.start,end:query.end,stage:.core,source:"watch")
+        XCTAssertThrowsError(try ScriptWidgetHealthReadout.sleep(Array(repeating:segment,count:257),truncated:true).object(for:query))
+        let partial=try ScriptWidgetHealthReadout.sleep([segment],truncated:true).object(for:query)
+        XCTAssertEqual(partial["truncated"] as? Bool,true)
+    }
+    func testActivitySupportsMoveTimeMissingGoalsAndKnownZero() throws {
+        let query=try ScriptWidgetHealthReadQuery(kind:.activitySummary,options:nil,now:now)
+        let known=try ScriptWidgetHealthReadout.activity(.init(moveMode:"moveTime",move:0,moveGoal:60,exercise:0,exerciseGoal:nil,stand:0,standGoal:nil)).object(for:query)
+        XCTAssertEqual(known["hasSamples"] as? Bool,true)
+        XCTAssertEqual((known["move"] as? [String:Any])?["unit"] as? String,"min")
+        XCTAssertTrue((known["exercise"] as? [String:Any])?["goal"] is NSNull)
+        let empty=try ScriptWidgetHealthReadout.activity(nil).object(for:query)
+        XCTAssertEqual(empty["hasSamples"] as? Bool,false)
+        XCTAssertThrowsError(try ScriptWidgetHealthReadout.activity(.init(moveMode:"activeEnergy",move:-1,moveGoal:0,exercise:0,exerciseGoal:0,stand:0,standGoal:0)).object(for:query))
+    }
+    func testWorkoutsEnforceContainmentOrderingAndOptionalStatistics() throws {
+        let query=try ScriptWidgetHealthReadQuery(kind:.workouts,options:nil,now:now)
+        let row=ScriptWidgetHealthWorkout(id:UUID().uuidString.lowercased(),activity:"running",start:now.addingTimeInterval(-3600),end:now.addingTimeInterval(-900),duration:2700,energyKcal:nil,distanceMeters:nil)
+        let result=try ScriptWidgetHealthReadout.workouts([row],truncated:false).object(for:query)
+        XCTAssertTrue((result["items"] as? [[String:Any]])?.first?["energyKcal"] is NSNull)
+        XCTAssertThrowsError(try ScriptWidgetHealthReadout.workouts([row,row],truncated:false).object(for:query))
+        let outside=ScriptWidgetHealthWorkout(id:UUID().uuidString,activity:"running",start:query.start.addingTimeInterval(-1),end:query.end,duration:10,energyKcal:0,distanceMeters:0)
+        XCTAssertFalse(outside.valid(in:query))
+    }
+}

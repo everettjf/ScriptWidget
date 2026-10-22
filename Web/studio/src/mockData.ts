@@ -6,20 +6,29 @@ export type MockObject = { [key: string]: MockValue };
 export interface MockAPI { operation?: string; id: string; group: string; value: MockValue; legacy?: string[] }
 export const mockAPIs: MockAPI[] = dataAPICatalog;
 // Dark appearance follows the preview setting until a user explicitly mocks it.
+export const isObject = (value: unknown): value is MockObject => value !== null && typeof value === "object" && !Array.isArray(value);
 export function sampleFixtures(): MockObject {
   const now = Date.now(), start = Math.floor(now / 3600000) * 3600000;
   const weather = {properties:{meta:{updated_at:new Date(start).toISOString(),units:{air_temperature:"celsius",relative_humidity:"%",wind_speed:"m/s"}},
     timeseries:Array.from({length:24},(_,index)=>({time:new Date(start+index*3600000).toISOString(),data:{instant:{details:{air_temperature:21+index/4,relative_humidity:62,wind_speed:2}},next_1_hours:{summary:{symbol_code:"partlycloudy_day"}}}}))}};
   const dayStart = new Date(now); dayStart.setHours(0,0,0,0);
+  const zone=Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const day=`${dayStart.getFullYear()}-${String(dayStart.getMonth()+1).padStart(2,"0")}-${String(dayStart.getDate()).padStart(2,"0")}`;
+  const healthSample=(id:string,value:MockValue):MockValue=>{
+    if(!isObject(value))return value;
+    if(id==="$health.sleepSummary")return {...value,start:new Date(now-86400000).toISOString(),end:new Date(now).toISOString(),timeZone:zone};
+    if(id==="$health.activitySummary")return {...value,date:day,timeZone:zone};
+    if(id==="$health.workouts")return {...value,start:new Date(now-7*86400000).toISOString(),end:new Date(now).toISOString(),timeZone:zone,items:[{id:"550e8400-e29b-41d4-a716-446655440000",activity:"running",start:new Date(now-3600000).toISOString(),end:new Date(now-900000).toISOString(),duration:2700,energyKcal:285,distanceMeters:5200}]};
+    return {...value,start:dayStart.toISOString(),end:new Date(now).toISOString()};
+  };
   return {
-    api: Object.fromEntries(mockAPIs.filter((api) => api.id !== "$device.isdarkmode").map((api) => [api.id, { value: api.group === "health" && api.value !== null && typeof api.value === "object" && !Array.isArray(api.value) && "unit" in api.value ? {...api.value,start:dayStart.toISOString(),end:new Date(now).toISOString()} : api.group === "photos" && api.id.endsWith(".items") ? {...api.value as MockObject,fetchedAt:new Date(now).toISOString()} : api.group === "reminders" && api.id.endsWith(".items") ? {...api.value as MockObject, fetchedAt: new Date(now).toISOString(), items: [{id:"sample.reminder",listID:"sample.reminders",title:"Read a chapter",due:new Date(dayStart.getTime()+16*3600000).toISOString(),hasTime:true,completed:false,completedAt:null,priority:0}]} : api.value }])),
+    api: Object.fromEntries(mockAPIs.filter((api) => api.id !== "$device.isdarkmode").map((api) => [api.id, { value: api.group === "health" && isObject(api.value) ? healthSample(api.id,api.value) : api.group === "photos" && api.id.endsWith(".items") ? {...api.value as MockObject,fetchedAt:new Date(now).toISOString()} : api.group === "reminders" && api.id.endsWith(".items") ? {...api.value as MockObject, fetchedAt: new Date(now).toISOString(), items: [{id:"sample.reminder",listID:"sample.reminders",title:"Read a chapter",due:new Date(dayStart.getTime()+16*3600000).toISOString(),hasTime:true,completed:false,completedAt:null,priority:0}]} : api.value }])),
     fetch: [{url:"https://api.github.com/repos/everettjf/scriptwidget",method:"GET",status:200,body:JSON.stringify({full_name:"everettjf/ScriptWidget",private:false,stargazers_count:1280,forks_count:96,open_issues_count:18}),headers:{"content-type":"application/json","cache-control":"public, max-age=3600"}}, { url: "https://api.example.com/data", method: "GET", body: '{"value":42}', status: 200, headers: {"content-type":"application/json"} },
       {url:"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=37.33&lon=-122.01",method:"GET",status:200,body:JSON.stringify(weather),headers:{"content-type":"application/json",expires:new Date(now+3600000).toUTCString(),"last-modified":new Date(start).toUTCString()}}],
     storage: {}, storageAtomicAvailable: true, dataSource: [], calendarSelection: null, remindersSelection: null, photosSelection: ["sample.photo", "sample.photo.2", "sample.photo.3", "sample.photo.4"], photosSnapshotPrepared: true,
   };
 }
 export const defaultFixtures = JSON.stringify(sampleFixtures(), null, 2);
-export const isObject = (value: unknown): value is MockObject => value !== null && typeof value === "object" && !Array.isArray(value);
 export function parseMocks(text: string): MockObject {
   const value: unknown = JSON.parse(text || "{}");
   if (!isObject(value)) throw new Error("Mock data must be a JSON object.");
@@ -105,7 +114,7 @@ export function permissionScenario(text: string, group: "health" | "location" | 
   const scenario = group === "health" && mode === "denied" ? "empty" : mode;
   for (const api of mockAPIs.filter((item) => item.group === group)) {
     let response: MockObject;
-    if (scenario === "granted") response = ["$reminders.items", "$photos.items"].includes(api.id) ? responseFor(sampleFixtures(), api) : { value: api.value };
+    if (scenario === "granted") response = ["$reminders.items", "$photos.items", "$health.sleepSummary", "$health.activitySummary", "$health.workouts"].includes(api.id) ? responseFor(sampleFixtures(), api) : { value: api.value };
     else if (api.id.endsWith("isAvailable")) response = { value: scenario !== "unavailable" };
     else if (api.id.endsWith("isAuthorizedForWidgetUpdates")) response = { value: scenario === "empty" };
     else if (api.id.endsWith("requestAuthorization")) response = scenario === "unavailable" && !["calendar", "reminders", "photos"].includes(group)
@@ -113,6 +122,9 @@ export function permissionScenario(text: string, group: "health" | "location" | 
     else if (group === "health" && api.id.endsWith("authorizationStatus")) response = { value: scenario === "unavailable" ? "unavailable" : "notDisclosed" };
     else if (api.id.endsWith("authorizationStatus")) response = { value: scenario === "empty" ? (group === "location" ? "authorizedWhenInUse" : "authorized")
       : scenario === "unavailable" ? (group === "location" ? "disabled" : "unavailable") : "denied" };
+    else if (scenario === "empty" && group === "health" && api.id === "$health.sleepSummary") response = {value:{...(isObject(responseFor(sampleFixtures(),api).value)?responseFor(sampleFixtures(),api).value as MockObject:{}),hasSamples:false,totalSleepSeconds:0,inBedSeconds:0,awakeSeconds:0,stages:{unspecified:0,core:0,deep:0,rem:0},sourceCount:0,conflictSeconds:0,truncated:false}};
+    else if (scenario === "empty" && group === "health" && api.id === "$health.activitySummary") response = {value:{...(isObject(responseFor(sampleFixtures(),api).value)?responseFor(sampleFixtures(),api).value as MockObject:{}),hasSamples:false,move:{value:0,goal:null,unit:"kcal"},exercise:{value:0,goal:null,unit:"min"},stand:{value:0,goal:null,unit:"count"}}};
+    else if (scenario === "empty" && group === "health" && api.id === "$health.workouts") response = {value:{...(isObject(responseFor(sampleFixtures(),api).value)?responseFor(sampleFixtures(),api).value as MockObject:{}),hasSamples:false,items:[],truncated:false}};
     else if (scenario === "empty" && group === "health") response = { value: { ...(isObject(api.value) ? api.value : {}), value: 0, hasSamples: false,
       ...(api.id.endsWith("heartRateLatest") ? { start: "", end: "" } : {}) } };
     else if (scenario === "empty" && ["calendar", "reminders", "photos"].includes(group)) response = { value: ["calendars", "lists"].includes(api.id.split(".")[1]!) ? []

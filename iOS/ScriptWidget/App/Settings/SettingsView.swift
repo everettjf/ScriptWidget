@@ -170,7 +170,7 @@ private struct SettingsHealthView: View {
         switch authorizationState {
         case .checking: "Checking whether the Health permission review is needed."
         case .unavailable: "Health data is not available on this device."
-        case .reviewRequired: "Choose which Health data to share for steps, active energy, and heart rate."
+        case .reviewRequired: "Choose which Health data to share for steps, heart rate, sleep, activity rings and workout summaries."
         case .reviewCompleted: "Health keeps individual read permissions private. Empty results can mean no records or data you chose not to share. Review access in Health if needed."
         case .failed: "Try reviewing Health access again or check ScriptWidget in the Health app."
         }

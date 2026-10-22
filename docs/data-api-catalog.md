@@ -53,6 +53,9 @@ Existing data-method return formats are unchanged. Present manifests now undergo
 | `$reminders.update(options)` | 1.4 | ios, macos | Promise | remindersWrite | write |
 | `$reminders.setCompleted(options)` | 1.4 | ios, macos | Promise | remindersWrite | write |
 | `$health.authorizationStatus()` | 1.3 | ios | Synchronous | healthRead | availability |
+| `$health.sleepSummary(options?)` | 1.4 | ios | Promise | healthRead | read |
+| `$health.activitySummary(options?)` | 1.4 | ios | Promise | healthRead | read |
+| `$health.workouts(options?)` | 1.4 | ios | Promise | healthRead | read |
 | `$health.isAvailable()` | 1.0 | ios | Synchronous | healthRead | availability |
 | `$health.requestAuthorization()` | 1.0 | ios | Promise | healthRead | authorization |
 | `$health.stepCountToday()` | 1.0 | ios | Promise | healthRead | read |
@@ -553,7 +556,7 @@ Default editable preview sample:
 
 ## health
 
-Read-only HealthKit. Request access in the app. Authorization completion does not reveal whether individual read types were granted; empty results must not be labelled permission denied. API 1.3 readings add hasSamples: false means no readable samples, never a read-denial verdict. Existing value/unit/start/end fields remain.
+Read-only HealthKit. Request access in the app. Runtime 1.4 adds sleepSummary (up to 7 days / 256 samples, union with explicit stage-conflict precedence), activitySummary (one local Gregorian day including active-energy or move-time mode and optional goals), and workouts (up to 31 days / 50 fully-contained summaries, optional kcal/meters). These require an explicit health manifest; all share the query budget and cannot run in future/Live Activity presentations. No Health readings are persisted by the API. Authorization completion does not reveal whether individual read types were granted; empty results must not be labelled permission denied. API 1.3 readings add hasSamples: false means no readable samples, never a read-denial verdict. Existing value/unit/start/end fields remain.
 
 ### `$health.authorizationStatus`
 
@@ -561,6 +564,85 @@ Default editable preview sample:
 
 ```json
 "notDisclosed"
+```
+
+### `$health.sleepSummary`
+
+Default editable preview sample:
+
+```json
+{
+  "start": "2026-01-01T00:00:00Z",
+  "end": "2026-01-01T12:00:00Z",
+  "timeZone": "UTC",
+  "hasSamples": true,
+  "totalSleepSeconds": 27000,
+  "inBedSeconds": 30600,
+  "awakeSeconds": 1800,
+  "stages": {
+    "unspecified": 0,
+    "core": 16200,
+    "deep": 5400,
+    "rem": 5400
+  },
+  "sourceCount": 1,
+  "truncated": false,
+  "conflictSeconds": 0,
+  "aggregation": "union-awake-rem-deep-core-unspecified"
+}
+```
+
+### `$health.activitySummary`
+
+Default editable preview sample:
+
+```json
+{
+  "date": "2026-01-01",
+  "timeZone": "UTC",
+  "hasSamples": true,
+  "moveMode": "activeEnergy",
+  "move": {
+    "value": 480,
+    "goal": 600,
+    "unit": "kcal"
+  },
+  "exercise": {
+    "value": 26,
+    "goal": 30,
+    "unit": "min"
+  },
+  "stand": {
+    "value": 9,
+    "goal": 12,
+    "unit": "count"
+  }
+}
+```
+
+### `$health.workouts`
+
+Default editable preview sample:
+
+```json
+{
+  "start": "2026-01-01T00:00:00Z",
+  "end": "2026-01-01T12:00:00Z",
+  "timeZone": "UTC",
+  "hasSamples": true,
+  "truncated": false,
+  "items": [
+    {
+      "id": "550e8400-e29b-41d4-a716-446655440000",
+      "activity": "running",
+      "start": "2026-01-01T09:00:00.000Z",
+      "end": "2026-01-01T09:45:00.000Z",
+      "duration": 2700,
+      "energyKcal": 285,
+      "distanceMeters": 5200
+    }
+  ]
+}
 ```
 
 ### `$health.isAvailable`

@@ -1,6 +1,6 @@
 # Widget 能力扩展计划
 
-更新：2026-10-21。状态：实施计划，尚未代表功能已发布。
+更新：2026-10-22。状态：实施计划，尚未代表功能已发布。
 
 ## 当前后续开发范围（最新确认）
 
@@ -141,6 +141,7 @@ A 表示已有主要基础；B 表示需要完善产品流程；C 表示需要�
 - [ ] M3-3 实现用户选定照片/相册的缓存与轮播，支持有限照片权限，处理资源删除、云端资源暂不可用和权限变化。
   - 已接入独立 photos 权限、默认未选的原生照片/相册选择、PhotoKit 有界 JPEG 缩略图、私有 owner 快照、有限授权与送达前范围/资产复核；新增 Photo Album Rotator 与 Web Photos Mock。最多 64 个候选、四张 768px/128KiB 缩略图，未来条目只读准备好的快照。Gallery 与新模板同步，完整验证记录见执行文档；实际系统授权、照片库变化、物理组件与扩展内存验收仍待完成。
 - [ ] M3-4 分批添加睡眠、活动统计和运动记录。逐类型规定查询范围、单位、聚合及跨日规则，不一次开放无限量原始健康记录。
+  - 已开发 sleepSummary、activitySummary、workouts 和 Health Overview，限制区间/条数、定义单位与睡眠去重优先级，区分无共享数据和可读零值；Web 支持可编辑聚合样例，128 组原生/Web 树对照通过。真实 HealthKit 授权与撤权、各类型读取及真机扩展内存仍待验收，不能据此勾选 M3-4。
 - [ ] M3-5 为各平台提供清楚的能力判断和回退，同步完成 Web Mock、编辑器提示、AI 上下文、模板与真机证据。
 
 Apple 的 [EventKit 授权](https://developer.apple.com/documentation/eventkit/accessing-calendar-using-eventkit-and-eventkitui) 区分只写和完整访问；读取日历的系统授权范围不能简单称为系统提供的“只读权限”，最小数据范围还需应用和包层约束。[PhotoKit 有限照片访问](https://developer.apple.com/documentation/photokit/delivering-an-enhanced-privacy-experience-in-your-photos-app) 必须作为正常路径处理。
