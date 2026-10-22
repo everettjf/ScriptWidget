@@ -27,3 +27,11 @@ Input files are bounded to 25 MiB, 20,000 pixels per dimension and 100 million s
 Configuration backups preserve titles, content choices and resource references. Export the widget package separately to preserve its PNG files. A missing selected image shows **Restore this crop**, rather than invented image data. `$file.exists` checks presence; damaged image bytes still require replacing the file.
 
 Imports and exports stay user initiated. Package paths are bounded and generated resource names cannot refer outside the current installation. An import draft cannot write into a removed, reinstalled or switched widget library. The wizard uses no network, photo-library-wide query or system wallpaper permission.
+
+## Web Studio implementation status
+
+The browser crop pipeline is implemented in `Web/studio/src/wallpaperCrop.ts`. It preflights PNG/JPEG encoded dimensions before decoding, normalizes EXIF orientation into a bounded in-memory canvas, validates integer crop coordinates and re-encodes the selected region as a metadata-free sRGB PNG. Starting shapes and image limits match the native wizard. Browser import currently accepts PNG/JPEG; unsupported formats must be converted before importing.
+
+This pipeline is not yet connected to a Web Studio dialog. Portable configuration and project/session identity guards are still required before exposing it: preview mock storage is not included in an exported widget package and must not be used as a substitute for portable wallpaper settings. Existing native saved settings must take precedence over any package defaults.
+
+Run `node --test Web/studio/test/wallpaperCrop.test.ts` for allocation and geometry boundaries, and `node Web/studio/scripts/wallpaper-crop-smoke.ts` for real browser decoding, EXIF rotation, pixel selection, output dimensions and PNG metadata checks. The browser check is included in the release-readiness gate when Chrome is available.

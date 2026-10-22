@@ -862,3 +862,13 @@ Layout Starter 的说明和元数据已更新，Gallery 摘要/哈希同步，�
 最终 `./Scripts/release-readiness.sh` 退出 0：Mac **665 通过 / 0 失败 / 32 跳过**，iPhone 17 Simulator **675 通过 / 0 失败 / 31 跳过**，两个 xcresult runtimeWarnings 均为空。Editor 52、预览引擎 162、Web Studio 89、Gallery 同步 2 项、91 内置模板/22 curated 包、TypeScript/生产构建、两端 app build、全部 browser smoke 和独立服务/存储/运行时探针通过。完整日志、两端 summary、附件和验证记录在 `__Release/capabilities/effects/`。完整 gate 后只补文档、截图、证据和 PR，不改产品代码。
 
 研究确认现有 clock 私有类型动态查找也被 swing 和 iOS GIF 调用。Apple 2.5.1 与公共接口不保证持续动画的事实均已留官方依据；已向用户询问旧功能兼容选择，尚未实施其默认行为迁移。Native GIF 的额外回退/资源预算、真实 Clear/Tinted/WidgetKit、物理扩展内存、Web 裁切导出、M4 授权/播放与设备专项继续；M5-3/4 和整体目标保持未完成。未部署 Web、未上传构建、未送审。
+
+### 2026-10-22：Web 壁纸图片处理基础
+
+新增浏览器 PNG/JPEG 裁切管线：先验证编码尺寸和 25 MiB / 20,000 边长 / 100M 像素上限，再解码并校正 EXIF 方向，生成最长边 3072 的会话内工作画布。整数选区必须完全位于图内；五种 starting shape 与原生算法一致。导出只重新编码选区，最长边 1024、sRGB PNG，不附带源文件名和 EXIF/GPS 信息。解码 bitmap 在成功和失败路径均关闭。
+
+4 项 Node 测试覆盖边界、截断 JPEG/PNG、带偏移的 byte view、元数据段、渐进 JPEG 标记、像素取整及选区越界。真实 Chrome 验证 EXIF 旋转、红绿测试图的选区像素、工作/输出尺寸、PNG 中无 EXIF/text chunks 和坏输入拒绝；已加入完整 gate。
+
+最终 `./Scripts/release-readiness.sh` 退出 0：Editor 52、预览引擎 162、Web Studio 93、Gallery 同步 2 项、全部浏览器验证通过；Mac **665 通过 / 0 失败 / 32 跳过**，iPhone 17 Simulator **675 通过 / 0 失败 / 31 跳过**。两端 xcresult runtimeWarnings 为空，保留 Xcode 目标选择和 SDK 版本解析诊断；两端 app scheme build 及独立探针通过。证据位于 `__Release/capabilities/wallpaper-web-crop/`。
+
+这次仅交付图片处理基础，尚未暴露 Web 操作界面。接下来需连接裁切对话框、项目切换的异步身份保护，以及可随包导出的配置；Web mock storage 不参与包导出，不能替代这项配置。原生已保存的设置需要优先保留。M5-3/4、M4 剩余工作和设备验收继续；无新增 Web 部署、构建上传或送审。
