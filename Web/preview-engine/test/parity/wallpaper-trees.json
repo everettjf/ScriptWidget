@@ -1,0 +1,359 @@
+{
+  "configurations" : {
+    "date" : {
+      "backgrounds" : [
+        {
+          "appearance" : "light",
+          "family" : "small",
+          "image" : "background-00000000-0000-4000-8000-000000000001",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "small",
+          "image" : "background-00000000-0000-4000-8000-000000000006",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "light",
+          "family" : "medium",
+          "image" : "background-00000000-0000-4000-8000-000000000002",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "medium",
+          "image" : "background-00000000-0000-4000-8000-000000000007",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "light",
+          "family" : "large",
+          "image" : "background-00000000-0000-4000-8000-000000000003",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "large",
+          "image" : "background-00000000-0000-4000-8000-000000000008",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "light",
+          "family" : "extraLarge",
+          "image" : "background-00000000-0000-4000-8000-000000000004",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "extraLarge",
+          "image" : "background-00000000-0000-4000-8000-000000000009",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "light",
+          "family" : "extraLargePortrait",
+          "image" : "background-00000000-0000-4000-8000-000000000005",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "extraLargePortrait",
+          "image" : "background-00000000-0000-4000-8000-000000000010",
+          "label" : "Calibrated position"
+        }
+      ],
+      "caption" : "A little room to breathe",
+      "content" : "date",
+      "ink" : "adaptive",
+      "title" : "Quiet space"
+    },
+    "empty" : null,
+    "missing" : {
+      "backgrounds" : [
+        {
+          "appearance" : "light",
+          "family" : "small",
+          "image" : "background-00000000-0000-4000-8000-000000000001",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "small",
+          "image" : "background-00000000-0000-4000-8000-000000000006",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "light",
+          "family" : "medium",
+          "image" : "background-00000000-0000-4000-8000-000000000002",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "medium",
+          "image" : "background-00000000-0000-4000-8000-000000000007",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "light",
+          "family" : "large",
+          "image" : "background-00000000-0000-4000-8000-000000000003",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "large",
+          "image" : "background-00000000-0000-4000-8000-000000000008",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "light",
+          "family" : "extraLarge",
+          "image" : "background-00000000-0000-4000-8000-000000000004",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "extraLarge",
+          "image" : "background-00000000-0000-4000-8000-000000000009",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "light",
+          "family" : "extraLargePortrait",
+          "image" : "background-00000000-0000-4000-8000-000000000005",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "extraLargePortrait",
+          "image" : "background-00000000-0000-4000-8000-000000000010",
+          "label" : "Calibrated position"
+        }
+      ],
+      "caption" : "A little room to breathe",
+      "content" : "text",
+      "ink" : "adaptive",
+      "title" : "Quiet space"
+    },
+    "none" : {
+      "backgrounds" : [
+        {
+          "appearance" : "light",
+          "family" : "small",
+          "image" : "background-00000000-0000-4000-8000-000000000001",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "small",
+          "image" : "background-00000000-0000-4000-8000-000000000006",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "light",
+          "family" : "medium",
+          "image" : "background-00000000-0000-4000-8000-000000000002",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "medium",
+          "image" : "background-00000000-0000-4000-8000-000000000007",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "light",
+          "family" : "large",
+          "image" : "background-00000000-0000-4000-8000-000000000003",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "large",
+          "image" : "background-00000000-0000-4000-8000-000000000008",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "light",
+          "family" : "extraLarge",
+          "image" : "background-00000000-0000-4000-8000-000000000004",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "extraLarge",
+          "image" : "background-00000000-0000-4000-8000-000000000009",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "light",
+          "family" : "extraLargePortrait",
+          "image" : "background-00000000-0000-4000-8000-000000000005",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "extraLargePortrait",
+          "image" : "background-00000000-0000-4000-8000-000000000010",
+          "label" : "Calibrated position"
+        }
+      ],
+      "caption" : "A little room to breathe",
+      "content" : "none",
+      "ink" : "adaptive",
+      "title" : "Quiet space"
+    },
+    "text" : {
+      "backgrounds" : [
+        {
+          "appearance" : "light",
+          "family" : "small",
+          "image" : "background-00000000-0000-4000-8000-000000000001",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "small",
+          "image" : "background-00000000-0000-4000-8000-000000000006",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "light",
+          "family" : "medium",
+          "image" : "background-00000000-0000-4000-8000-000000000002",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "medium",
+          "image" : "background-00000000-0000-4000-8000-000000000007",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "light",
+          "family" : "large",
+          "image" : "background-00000000-0000-4000-8000-000000000003",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "large",
+          "image" : "background-00000000-0000-4000-8000-000000000008",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "light",
+          "family" : "extraLarge",
+          "image" : "background-00000000-0000-4000-8000-000000000004",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "extraLarge",
+          "image" : "background-00000000-0000-4000-8000-000000000009",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "light",
+          "family" : "extraLargePortrait",
+          "image" : "background-00000000-0000-4000-8000-000000000005",
+          "label" : "Calibrated position"
+        },
+        {
+          "appearance" : "dark",
+          "family" : "extraLargePortrait",
+          "image" : "background-00000000-0000-4000-8000-000000000010",
+          "label" : "Calibrated position"
+        }
+      ],
+      "caption" : "A little room to breathe",
+      "content" : "text",
+      "ink" : "adaptive",
+      "title" : "Quiet space"
+    }
+  },
+  "trees" : {
+    "date/accessoryCircular/dark" : "{\"$element\":\"vstack\",\"props\":{\"spacing\":\"2\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"systemName\":\"photo\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"1\"]}]}",
+    "date/accessoryCircular/light" : "{\"$element\":\"vstack\",\"props\":{\"spacing\":\"2\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"systemName\":\"photo\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"1\"]}]}",
+    "date/accessoryInline/dark" : "{\"$element\":\"date\",\"props\":{\"date\":1767268800000,\"style\":\"date\"},\"children\":[]}",
+    "date/accessoryInline/light" : "{\"$element\":\"date\",\"props\":{\"date\":1767268800000,\"style\":\"date\"},\"children\":[]}",
+    "date/accessoryRectangular/dark" : "{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"spacing\":\"3\"},\"children\":[{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"date\",\"props\":{\"date\":1767268800000,\"font\":\"caption\",\"style\":\"date\"},\"children\":[]}]}",
+    "date/accessoryRectangular/light" : "{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"spacing\":\"3\"},\"children\":[{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"date\",\"props\":{\"date\":1767268800000,\"font\":\"caption\",\"style\":\"date\"},\"children\":[]}]}",
+    "date/extraLarge/dark" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000009\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[{\"$element\":\"date\",\"props\":{\"color\":\"#ffffff\",\"date\":1767268800000,\"font\":\"title2\",\"style\":\"date\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}",
+    "date/extraLarge/light" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000004\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[{\"$element\":\"date\",\"props\":{\"color\":\"#111827\",\"date\":1767268800000,\"font\":\"title2\",\"style\":\"date\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}",
+    "date/extraLargePortrait/dark" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000010\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[{\"$element\":\"date\",\"props\":{\"color\":\"#ffffff\",\"date\":1767268800000,\"font\":\"title2\",\"style\":\"date\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}",
+    "date/extraLargePortrait/light" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000005\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[{\"$element\":\"date\",\"props\":{\"color\":\"#111827\",\"date\":1767268800000,\"font\":\"title2\",\"style\":\"date\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}",
+    "date/large/dark" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000008\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[{\"$element\":\"date\",\"props\":{\"color\":\"#ffffff\",\"date\":1767268800000,\"font\":\"title2\",\"style\":\"date\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}",
+    "date/large/light" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000003\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[{\"$element\":\"date\",\"props\":{\"color\":\"#111827\",\"date\":1767268800000,\"font\":\"title2\",\"style\":\"date\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}",
+    "date/medium/dark" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000007\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[{\"$element\":\"date\",\"props\":{\"color\":\"#ffffff\",\"date\":1767268800000,\"font\":\"title2\",\"style\":\"date\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}",
+    "date/medium/light" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000002\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[{\"$element\":\"date\",\"props\":{\"color\":\"#111827\",\"date\":1767268800000,\"font\":\"title2\",\"style\":\"date\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}",
+    "date/small/dark" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000006\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[{\"$element\":\"date\",\"props\":{\"color\":\"#ffffff\",\"date\":1767268800000,\"font\":\"caption\",\"style\":\"date\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}",
+    "date/small/light" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000001\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[{\"$element\":\"date\",\"props\":{\"color\":\"#111827\",\"date\":1767268800000,\"font\":\"caption\",\"style\":\"date\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}",
+    "empty/accessoryCircular/dark" : "{\"$element\":\"vstack\",\"props\":{\"spacing\":\"2\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"systemName\":\"photo\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"Match\"]}]}",
+    "empty/accessoryCircular/light" : "{\"$element\":\"vstack\",\"props\":{\"spacing\":\"2\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"systemName\":\"photo\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"Match\"]}]}",
+    "empty/accessoryInline/dark" : "{\"$element\":\"text\",\"props\":null,\"children\":[\"My space\"]}",
+    "empty/accessoryInline/light" : "{\"$element\":\"text\",\"props\":null,\"children\":[\"My space\"]}",
+    "empty/accessoryRectangular/dark" : "{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"spacing\":\"3\"},\"children\":[{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"My space\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption\"},\"children\":[\"Backgrounds apply on the Home Screen\"]}]}",
+    "empty/accessoryRectangular/light" : "{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"spacing\":\"3\"},\"children\":[{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"My space\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption\"},\"children\":[\"Backgrounds apply on the Home Screen\"]}]}",
+    "empty/extraLarge/dark" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#1e293b\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Match your wallpaper\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"Add a dark crop for this size in Records & Configuration.\"]}]}",
+    "empty/extraLarge/light" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#f1f5f9\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Match your wallpaper\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"Add a light crop for this size in Records & Configuration.\"]}]}",
+    "empty/extraLargePortrait/dark" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#1e293b\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Match your wallpaper\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"Add a dark crop for this size in Records & Configuration.\"]}]}",
+    "empty/extraLargePortrait/light" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#f1f5f9\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Match your wallpaper\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"Add a light crop for this size in Records & Configuration.\"]}]}",
+    "empty/large/dark" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#1e293b\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Match your wallpaper\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"Add a dark crop for this size in Records & Configuration.\"]}]}",
+    "empty/large/light" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#f1f5f9\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Match your wallpaper\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"Add a light crop for this size in Records & Configuration.\"]}]}",
+    "empty/medium/dark" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#1e293b\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Match your wallpaper\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"Add a dark crop for this size in Records & Configuration.\"]}]}",
+    "empty/medium/light" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#f1f5f9\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Match your wallpaper\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"Add a light crop for this size in Records & Configuration.\"]}]}",
+    "empty/small/dark" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#1e293b\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Match your wallpaper\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"Add a dark crop for this size in Records & Configuration.\"]}]}",
+    "empty/small/light" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#f1f5f9\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Match your wallpaper\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"Add a light crop for this size in Records & Configuration.\"]}]}",
+    "missing/accessoryCircular/dark" : "{\"$element\":\"vstack\",\"props\":{\"spacing\":\"2\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"systemName\":\"photo\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"Match\"]}]}",
+    "missing/accessoryCircular/light" : "{\"$element\":\"vstack\",\"props\":{\"spacing\":\"2\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"systemName\":\"photo\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"Match\"]}]}",
+    "missing/accessoryInline/dark" : "{\"$element\":\"text\",\"props\":null,\"children\":[\"Quiet space\"]}",
+    "missing/accessoryInline/light" : "{\"$element\":\"text\",\"props\":null,\"children\":[\"Quiet space\"]}",
+    "missing/accessoryRectangular/dark" : "{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"spacing\":\"3\"},\"children\":[{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}",
+    "missing/accessoryRectangular/light" : "{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"spacing\":\"3\"},\"children\":[{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}",
+    "missing/extraLarge/dark" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#1e293b\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Restore this crop\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"The selected image file is unavailable.\"]}]}",
+    "missing/extraLarge/light" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#f1f5f9\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Restore this crop\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"The selected image file is unavailable.\"]}]}",
+    "missing/extraLargePortrait/dark" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#1e293b\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Restore this crop\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"The selected image file is unavailable.\"]}]}",
+    "missing/extraLargePortrait/light" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#f1f5f9\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Restore this crop\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"The selected image file is unavailable.\"]}]}",
+    "missing/large/dark" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#1e293b\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Restore this crop\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"The selected image file is unavailable.\"]}]}",
+    "missing/large/light" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#f1f5f9\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Restore this crop\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"The selected image file is unavailable.\"]}]}",
+    "missing/medium/dark" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#1e293b\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Restore this crop\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"The selected image file is unavailable.\"]}]}",
+    "missing/medium/light" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#f1f5f9\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Restore this crop\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"The selected image file is unavailable.\"]}]}",
+    "missing/small/dark" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#1e293b\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Restore this crop\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"The selected image file is unavailable.\"]}]}",
+    "missing/small/light" : "{\"$element\":\"vstack\",\"props\":{\"background\":\"#f1f5f9\",\"frame\":\"max\",\"padding\":\"14\",\"spacing\":\"8\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"size\":\"26\",\"systemName\":\"photo.on.rectangle\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Restore this crop\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"The selected image file is unavailable.\"]}]}",
+    "none/accessoryCircular/dark" : "{\"$element\":\"vstack\",\"props\":{\"spacing\":\"2\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"systemName\":\"photo\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"Match\"]}]}",
+    "none/accessoryCircular/light" : "{\"$element\":\"vstack\",\"props\":{\"spacing\":\"2\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"systemName\":\"photo\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"Match\"]}]}",
+    "none/accessoryInline/dark" : "{\"$element\":\"text\",\"props\":null,\"children\":[\"Quiet space\"]}",
+    "none/accessoryInline/light" : "{\"$element\":\"text\",\"props\":null,\"children\":[\"Quiet space\"]}",
+    "none/accessoryRectangular/dark" : "{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"spacing\":\"3\"},\"children\":[{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}",
+    "none/accessoryRectangular/light" : "{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"spacing\":\"3\"},\"children\":[{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}",
+    "none/extraLarge/dark" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000009\"},\"children\":[]},false]}",
+    "none/extraLarge/light" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000004\"},\"children\":[]},false]}",
+    "none/extraLargePortrait/dark" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000010\"},\"children\":[]},false]}",
+    "none/extraLargePortrait/light" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000005\"},\"children\":[]},false]}",
+    "none/large/dark" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000008\"},\"children\":[]},false]}",
+    "none/large/light" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000003\"},\"children\":[]},false]}",
+    "none/medium/dark" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000007\"},\"children\":[]},false]}",
+    "none/medium/light" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000002\"},\"children\":[]},false]}",
+    "none/small/dark" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000006\"},\"children\":[]},false]}",
+    "none/small/light" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000001\"},\"children\":[]},false]}",
+    "text/accessoryCircular/dark" : "{\"$element\":\"vstack\",\"props\":{\"spacing\":\"2\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"systemName\":\"photo\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"Match\"]}]}",
+    "text/accessoryCircular/light" : "{\"$element\":\"vstack\",\"props\":{\"spacing\":\"2\"},\"children\":[{\"$element\":\"icon\",\"props\":{\"systemName\":\"photo\"},\"children\":[]},{\"$element\":\"text\",\"props\":{\"font\":\"caption2\"},\"children\":[\"Match\"]}]}",
+    "text/accessoryInline/dark" : "{\"$element\":\"text\",\"props\":null,\"children\":[\"Quiet space\"]}",
+    "text/accessoryInline/light" : "{\"$element\":\"text\",\"props\":null,\"children\":[\"Quiet space\"]}",
+    "text/accessoryRectangular/dark" : "{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"spacing\":\"3\"},\"children\":[{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}",
+    "text/accessoryRectangular/light" : "{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"spacing\":\"3\"},\"children\":[{\"$element\":\"text\",\"props\":{\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}",
+    "text/extraLarge/dark" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000009\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[false,{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}",
+    "text/extraLarge/light" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000004\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[false,{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}",
+    "text/extraLargePortrait/dark" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000010\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[false,{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}",
+    "text/extraLargePortrait/light" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000005\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[false,{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}",
+    "text/large/dark" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000008\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[false,{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}",
+    "text/large/light" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000003\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[false,{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}",
+    "text/medium/dark" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000007\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[false,{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}",
+    "text/medium/light" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000002\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[false,{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}",
+    "text/small/dark" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000006\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[false,{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#ffffff\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}",
+    "text/small/light" : "{\"$element\":\"zstack\",\"props\":{\"frame\":\"max\"},\"children\":[{\"$element\":\"image\",\"props\":{\"accentedRenderingMode\":\"fullColor\",\"clip\":\"rect\",\"frame\":\"max\",\"mode\":\"fill\",\"name\":\"background-00000000-0000-4000-8000-000000000001\"},\"children\":[]},{\"$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"frame\":\"max\",\"padding\":\"16\",\"spacing\":\"7\"},\"children\":[false,{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"headline\"},\"children\":[\"Quiet space\"]},{\"$element\":\"text\",\"props\":{\"color\":\"#111827\",\"font\":\"caption\"},\"children\":[\"A little room to breathe\"]}]}]}"
+  }
+}

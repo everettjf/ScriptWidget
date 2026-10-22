@@ -34,6 +34,8 @@
 	<string>Allow ScriptWidget to read Health data for widget templates.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Allow ScriptWidget to update Health data if you enable it.</string>
+	<key>NSWidgetWantsLocation</key>
+	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Allow ScriptWidget to access your location for widget templates.</string>
 	<key>NSLocationTemporaryUsageDescriptionDictionary</key>

@@ -7,6 +7,8 @@
 
 import Foundation
 import CryptoKit
+import ImageIO
+import Darwin
 #if os(macOS)
 import AppKit
 #else
@@ -251,6 +253,7 @@ struct ScriptWidgetBuildManifest: Codable, Equatable {
 
 enum ScriptWidgetBuildContract {
     static let runtimeAPIVersion = "1.0"
+    static let nativeRuntimeAPIVersion = "1.3"
     static let compilerFingerprint = "scriptwidget-babel-v3"
 }
 
@@ -289,6 +292,45 @@ enum ScriptWidgetCompiledArtifactStore {
     static let manifestName = "build-manifest.json"
     static let javaScriptName = "main.js"
 
+    // Fixed slots bound total cache size; collisions only evict compiled output.
+    private struct NativeEnvelope: Codable {
+        let version: Int
+        let owner: String
+        let policyHash: String
+        let manifest: ScriptWidgetBuildManifest
+        let javaScript: String
+    }
+
+    private static func nativeLocation(_ package: ScriptWidgetPackage) throws -> (ScriptWidgetStorageFiles, String, ScriptWidgetManagedPackageScope, String)? {
+        guard let scope = package.compiledScope, let binding = scope.binding else { return nil }
+        try scope.validate(name: package.name)
+        guard let backend = scope.context.defaults as? ScriptWidgetFileStorageBackend else { return nil }
+        let policy: Data
+        if package.hasManifest {
+            guard let manifest = package.readManifest() else { return nil }
+            let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
+            policy = try encoder.encode(manifest)
+        } else { policy = Data("legacy".utf8) }
+        let slot = Int(SHA256.hash(data: Data(binding.ownerID.utf8)).first(where: { _ in true })!) % 32
+        return (backend.files, "CompiledArtifact.v1.slot.\(slot)", scope, hash(policy))
+    }
+
+    private static func loadNative(_ package: ScriptWidgetPackage) -> ScriptWidgetCompiledArtifact? {
+        guard let location = try? nativeLocation(package),
+              let bytes = try? location.0.readMetadata(key: location.1),
+              let envelope = try? JSONDecoder().decode(NativeEnvelope.self, from: bytes),
+              envelope.version == 1, envelope.owner == location.2.binding?.ownerID,
+              envelope.policyHash == location.3,
+              envelope.javaScript.utf8.count <= 2 * 1_024 * 1_024,
+              envelope.manifest.formatVersion == ScriptWidgetBuildManifest.formatVersion,
+              envelope.manifest.runtimeAPIVersion == ScriptWidgetBuildContract.runtimeAPIVersion,
+              envelope.manifest.compilerFingerprint == ScriptWidgetBuildContract.compilerFingerprint,
+              envelope.manifest.compiledBytes == envelope.javaScript.utf8.count,
+              envelope.manifest.compiledHash == compiledHash(envelope.javaScript),
+              (try? location.2.validate(name: package.name)) != nil else { return nil }
+        return .init(javaScript: envelope.javaScript, manifest: envelope.manifest)
+    }
+
     static func sourceHash(_ source: String) -> String { hash(Data(source.utf8)) }
     static func compiledHash(_ source: String) -> String { hash(Data(source.utf8)) }
 
@@ -311,13 +353,15 @@ enum ScriptWidgetCompiledArtifactStore {
     /// after a new source revision fails to compile, preserving a working widget
     /// without ever executing partially-written or hash-mismatched bytes.
     static func loadLastKnownGood(package: ScriptWidgetPackage) -> ScriptWidgetCompiledArtifact? {
-        guard let directory = artifactDirectory(package: package),
-              let manifestData = try? Data(contentsOf: directory.appendingPathComponent(manifestName)),
+        if package.compiledScope != nil { return loadNative(package) }
+        guard artifactDirectory(package: package) != nil, let root = ScriptManager.getSandboxBuildDirectoryURL(),
+              let manifestData = ScriptWidgetPackageFiles.read(root: root, relative: package.name + "/" + directoryName + "/" + manifestName, maximumBytes: 256 * 1_024),
               let manifest = try? JSONDecoder().decode(ScriptWidgetBuildManifest.self, from: manifestData),
               manifest.formatVersion == ScriptWidgetBuildManifest.formatVersion,
               manifest.runtimeAPIVersion == ScriptWidgetBuildContract.runtimeAPIVersion,
               manifest.compilerFingerprint == ScriptWidgetBuildContract.compilerFingerprint,
-              let javaScript = try? String(contentsOf: directory.appendingPathComponent(javaScriptName), encoding: .utf8),
+              let bytes = ScriptWidgetPackageFiles.read(root: root, relative: package.name + "/" + directoryName + "/" + javaScriptName, maximumBytes: 2 * 1_024 * 1_024),
+              let javaScript = String(data: bytes, encoding: .utf8),
               manifest.compiledBytes == javaScript.utf8.count,
               manifest.compiledHash == compiledHash(javaScript) else {
             return nil
@@ -327,7 +371,7 @@ enum ScriptWidgetCompiledArtifactStore {
 
     @discardableResult
     static func save(package: ScriptWidgetPackage, source: String, javaScript: String) -> Bool {
-        guard let directory = artifactDirectory(package: package) else { return false }
+        guard javaScript.utf8.count <= 2 * 1_024 * 1_024 else { return false }
         let manifest = ScriptWidgetBuildManifest(
             formatVersion: ScriptWidgetBuildManifest.formatVersion,
             runtimeAPIVersion: ScriptWidgetBuildContract.runtimeAPIVersion,
@@ -339,14 +383,23 @@ enum ScriptWidgetCompiledArtifactStore {
             libraries: inferredLibraries(source: source),
             createdAt: Date()
         )
+        if package.compiledScope != nil {
+            do {
+                guard let location = try nativeLocation(package), let owner = location.2.binding?.ownerID else { return false }
+                let envelope = NativeEnvelope(version: 1, owner: owner, policyHash: location.3, manifest: manifest, javaScript: javaScript)
+                let encoder = JSONEncoder(); encoder.outputFormatting = [.sortedKeys]
+                try location.0.writeMetadata(key: location.1, data: encoder.encode(envelope))
+                try location.2.validate(name: package.name)
+                return true
+            } catch { return false }
+        }
+        guard artifactDirectory(package: package) != nil, let root = ScriptManager.getSandboxBuildDirectoryURL() else { return false }
         do {
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [
-                .protectionKey: FileProtectionType.none
-            ])
+            guard ScriptWidgetPackageFiles.ensureDirectory(root: root, relative: package.name + "/" + directoryName) else { return false }
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.sortedKeys]
-            try Data(javaScript.utf8).write(to: directory.appendingPathComponent(javaScriptName), options: .atomic)
-            try encoder.encode(manifest).write(to: directory.appendingPathComponent(manifestName), options: .atomic)
+            guard ScriptWidgetPackageFiles.write(Data(javaScript.utf8), root: root, relative: package.name + "/" + directoryName + "/" + javaScriptName),
+                  ScriptWidgetPackageFiles.write(try encoder.encode(manifest), root: root, relative: package.name + "/" + directoryName + "/" + manifestName) else { return false }
             return true
         } catch {
             print("compiled artifact write failed: \(error.localizedDescription)")
@@ -355,14 +408,13 @@ enum ScriptWidgetCompiledArtifactStore {
     }
 
     static func remove(package: ScriptWidgetPackage) {
-        guard let directory = artifactDirectory(package: package) else { return }
-        try? FileManager.default.removeItem(at: directory)
+        guard artifactDirectory(package: package) != nil, let root = ScriptManager.getSandboxBuildDirectoryURL() else { return }
+        _ = ScriptWidgetPackageFiles.removeTree(root: root, relative: package.name + "/" + directoryName)
     }
 
     static func artifactDirectory(package: ScriptWidgetPackage) -> URL? {
-        ScriptManager.getSandboxBuildDirectoryURL()?
-            .appendingPathComponent(package.name, isDirectory: true)
-            .appendingPathComponent(directoryName, isDirectory: true)
+        guard !package.readonly, package.managedScope == nil, package.executionFiles == nil, ScriptWidgetPackageName.isValid(package.name), let root = ScriptManager.getSandboxBuildDirectoryURL() else { return nil }
+        return ScriptWidgetPackageFiles.safeURL(root: root, relative: package.name + "/" + directoryName)
     }
 
     private static func hash(_ data: Data) -> String {
@@ -370,7 +422,562 @@ enum ScriptWidgetCompiledArtifactStore {
     }
 }
 
-struct ScriptWidgetPackage {
+/// Reads package metadata without following user-controlled links. The OS-owned
+/// ancestor may have canonical aliases (e.g. /var), but package entries may not.
+enum ScriptWidgetMetadataFile {
+    static let maximumBytes = 256 * 1_024
+
+    static func exists(_ url: URL) -> Bool {
+        var info = stat()
+        // lstat also sees dangling links. Errors other than absence fail closed.
+        return lstat(url.path, &info) == 0 || (errno != ENOENT && errno != ENOTDIR)
+    }
+
+    static func isLink(_ url: URL) -> Bool {
+        var info = stat()
+        return lstat(url.path, &info) == 0 && (info.st_mode & S_IFMT) == S_IFLNK
+    }
+
+    static func read(root: URL, components: [String]) -> Data? {
+        guard !components.isEmpty, components.allSatisfy({
+            !$0.isEmpty && $0 != "." && $0 != ".." && !$0.contains("/") && !$0.contains("\\") && !$0.contains("\0")
+        }) else { return nil }
+        var directory = open(root.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+        guard directory >= 0 else { return nil }
+        defer { close(directory) }
+        for component in components.dropLast() {
+            let next = openat(directory, component, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+            guard next >= 0 else { return nil }
+            close(directory)
+            directory = next
+        }
+        let descriptor = openat(directory, components.last!, O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC)
+        guard descriptor >= 0 else { return nil }
+        defer { close(descriptor) }
+        var info = stat()
+        guard fstat(descriptor, &info) == 0, (info.st_mode & S_IFMT) == S_IFREG,
+              info.st_size >= 0, info.st_size <= maximumBytes else { return nil }
+        var data = Data()
+        var buffer = [UInt8](repeating: 0, count: 8_192)
+        while true {
+            let count = Darwin.read(descriptor, &buffer, buffer.count)
+            if count < 0 {
+                if errno == EINTR { continue }
+                return nil
+            }
+            if count == 0 { return data }
+            guard data.count <= maximumBytes - count else { return nil }
+            data.append(contentsOf: buffer.prefix(count))
+        }
+    }
+}
+
+/// Package-relative operations use directory descriptors so swapping a child
+/// for a symlink cannot redirect a read or atomic write outside the package.
+enum ScriptWidgetPackageFiles {
+    #if os(iOS) && !targetEnvironment(simulator)
+    private static let unprotectedClass: Int32? = {
+        // Obtain Foundation's public .noFileProtection policy through a private
+        // reference file, then apply it to our open descriptor. No path-based
+        // attribute change can be redirected through an untrusted child link.
+        let reference = FileManager.default.temporaryDirectory.appendingPathComponent("ScriptWidgetProtection-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: reference) }
+        do { try Data().write(to: reference, options: [.withoutOverwriting, .noFileProtection]) } catch { return nil }
+        let fd = open(reference.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
+        guard fd >= 0 else { return nil }
+        defer { close(fd) }
+        let value = fcntl(fd, F_GETPROTECTIONCLASS)
+        return value >= 0 ? value : nil
+    }()
+    #endif
+
+    private static func preserveWidgetProtection(_ fd: Int32) -> Bool {
+        #if os(iOS) && !targetEnvironment(simulator)
+        guard let value = unprotectedClass else { return false }
+        return fcntl(fd, F_SETPROTECTIONCLASS, value) == 0
+        #else
+        return true // Simulator/macOS do not validate iOS Data Protection.
+        #endif
+    }
+
+    static func components(_ relative: String) -> [String]? {
+        let parts = relative.split(separator: "/", omittingEmptySubsequences: false).map(String.init)
+        guard relative.range(of: "^[A-Za-z]:", options: .regularExpression) == nil,
+              (1...16).contains(parts.count), parts.allSatisfy({
+            !$0.isEmpty && $0 != "." && $0 != ".." && !$0.contains("\\") &&
+            $0.utf8.count <= 255 && $0.unicodeScalars.allSatisfy { !CharacterSet.controlCharacters.contains($0) || $0.value == 0x200C || $0.value == 0x200D }
+        }) else { return nil }
+        return parts
+    }
+
+    static func identity(_ name: String) -> String { name.precomposedStringWithCanonicalMapping.lowercased() }
+
+    static func names(_ directory: Int32, maximumCount: Int = 100_000) -> [String]? {
+        let copy = dup(directory)
+        guard copy >= 0 else { return nil }
+        guard let stream = fdopendir(copy) else { close(copy); return nil }
+        defer { closedir(stream) }
+        rewinddir(stream)
+        var result: [String] = []
+        errno = 0
+        while let entry = readdir(stream) {
+            let name = withUnsafePointer(to: &entry.pointee.d_name) { String(cString: UnsafeRawPointer($0).assumingMemoryBound(to: CChar.self)) }
+            if name != "." && name != ".." { result.append(name) }
+            // Archive/package limits bound authored trees, but a library can
+            // legitimately hold more than 500 packages.
+            if result.count > maximumCount { return nil }
+            errno = 0
+        }
+        return errno == 0 ? result : nil
+    }
+
+    private static func unambiguous(_ name: String, in directory: Int32) -> Bool {
+        guard let entries = names(directory) else { return false }
+        return !entries.contains { identity($0) == identity(name) && $0 != name }
+    }
+
+    static func safeURL(root: URL, relative: String, allowMissing: Bool = true) -> URL? {
+        guard let parts = components(relative) else { return nil }
+        let root = root.standardizedFileURL
+        var directory = open(root.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+        if directory < 0 {
+            guard allowMissing, errno == ENOENT, !ScriptWidgetMetadataFile.exists(root),
+                  components(root.lastPathComponent)?.count == 1 else { return nil }
+            let parent = open(root.deletingLastPathComponent().path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+            guard parent >= 0 else { return nil }
+            defer { close(parent) }
+            guard unambiguous(root.lastPathComponent, in: parent) else { return nil }
+            return root.appendingPathComponent(relative)
+        }
+        defer { close(directory) }
+        for (index, name) in parts.enumerated() {
+            guard unambiguous(name, in: directory) else { return nil }
+            var info = stat()
+            if fstatat(directory, name, &info, AT_SYMLINK_NOFOLLOW) != 0 {
+                return allowMissing && errno == ENOENT ? root.appendingPathComponent(relative) : nil
+            }
+            let kind = info.st_mode & S_IFMT
+            guard kind == S_IFDIR || kind == S_IFREG, kind != S_IFREG || info.st_nlink == 1 else { return nil }
+            if index < parts.count - 1 {
+                let next = openat(directory, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+                guard next >= 0 else { return nil }
+                close(directory); directory = next
+            }
+        }
+        return root.appendingPathComponent(relative)
+    }
+
+    static func withParent<T>(root: URL, relative: String, create: Bool = false, operation: (Int32, String) -> T?) -> T? {
+        guard let parts = components(relative) else { return nil }
+        var directory = open(root.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+        guard directory >= 0 else { return nil }
+        defer { close(directory) }
+        for name in parts.dropLast() {
+            guard unambiguous(name, in: directory) else { return nil }
+            if create && mkdirat(directory, name, 0o700) != 0 && errno != EEXIST { return nil }
+            let next = openat(directory, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+            guard next >= 0 else { return nil }
+            close(directory); directory = next
+            if create && !preserveWidgetProtection(directory) { return nil }
+        }
+        guard let last = parts.last, unambiguous(last, in: directory) else { return nil }
+        return operation(directory, last)
+    }
+
+    static func list(root: URL, relative: String? = nil) -> [String]? {
+        if let relative {
+            return withParent(root: root, relative: relative) { directory, name in
+                let child = openat(directory, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+                guard child >= 0 else { return nil }
+                defer { close(child) }
+                return names(child)
+            }
+        }
+        let fd = open(root.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+        guard fd >= 0 else { return nil }
+        defer { close(fd) }
+        return names(fd)
+    }
+
+    static func kind(root: URL, relative: String) -> mode_t? {
+        withParent(root: root, relative: relative) { directory, name in
+            var info = stat()
+            guard fstatat(directory, name, &info, AT_SYMLINK_NOFOLLOW) == 0 else { return nil }
+            let kind = info.st_mode & S_IFMT
+            return kind == S_IFDIR || (kind == S_IFREG && info.st_nlink == 1) ? kind : nil
+        }
+    }
+
+    static func ensureDirectory(root: URL, relative: String) -> Bool {
+        withParent(root: root, relative: relative, create: true) { directory, name in
+            guard mkdirat(directory, name, 0o700) == 0 || errno == EEXIST else { return false }
+            let child = openat(directory, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+            guard child >= 0 else { return false }
+            defer { close(child) }
+            return preserveWidgetProtection(child)
+        } ?? false
+    }
+
+    static func read(root: URL, relative: String, maximumBytes: Int = 25 * 1_024 * 1_024) -> Data? {
+        withParent(root: root, relative: relative) { directory, name in
+            let fd = openat(directory, name, O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC)
+            guard fd >= 0 else { return nil }
+            defer { close(fd) }
+            var info = stat()
+            // A concurrent atomic replacement may unlink the old inode after
+            // openat. Its descriptor still holds a complete private snapshot;
+            // zero links is valid here, while multiple links remain rejected.
+            guard fstat(fd, &info) == 0, info.st_mode & S_IFMT == S_IFREG, info.st_nlink <= 1,
+                  info.st_size >= 0, info.st_size <= maximumBytes else { return nil }
+            var data = Data()
+            var bytes = [UInt8](repeating: 0, count: 16_384)
+            while true {
+                let count = Darwin.read(fd, &bytes, bytes.count)
+                if count < 0 { if errno == EINTR { continue }; return nil }
+                if count == 0 { return data }
+                guard data.count <= maximumBytes - count else { return nil }
+                data.append(contentsOf: bytes.prefix(count))
+            }
+        }
+    }
+
+    static func write(_ data: Data, root: URL, relative: String) -> Bool {
+        guard data.count <= 25 * 1_024 * 1_024 else { return false }
+        return withParent(root: root, relative: relative, create: true) { directory, name in
+            var existing = stat()
+            if fstatat(directory, name, &existing, AT_SYMLINK_NOFOLLOW) == 0 {
+                guard existing.st_mode & S_IFMT == S_IFREG, existing.st_nlink == 1 else { return false }
+            } else if errno != ENOENT { return false }
+            let temporary = ".write-\(UUID().uuidString)"
+            let fd = openat(directory, temporary, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)
+            guard fd >= 0 else { return false }
+            defer { close(fd); _ = unlinkat(directory, temporary, 0) }
+            let saved = data.withUnsafeBytes { bytes -> Bool in
+                var offset = 0
+                while offset < bytes.count {
+                    let count = Darwin.write(fd, bytes.baseAddress!.advanced(by: offset), bytes.count - offset)
+                    if count < 0 { if errno == EINTR { continue }; return false }
+                    if count == 0 { return false }
+                    offset += count
+                }
+                return true
+            }
+            return saved && preserveWidgetProtection(fd) && fsync(fd) == 0 && renameat(directory, temporary, directory, name) == 0
+        } ?? false
+    }
+
+    static func move(root: URL, source: String, destination: String, expectedReceipt: ScriptWidgetStoragePublicationReceipt? = nil) -> Bool {
+        withParent(root: root, relative: source) { sourceDirectory, sourceName in
+            var info = stat()
+            guard fstatat(sourceDirectory, sourceName, &info, AT_SYMLINK_NOFOLLOW) == 0,
+                  info.st_mode & S_IFMT == S_IFREG || info.st_mode & S_IFMT == S_IFDIR else { return false }
+            if let expectedReceipt {
+                guard info.st_mode & S_IFMT == S_IFDIR, expectedReceipt.device == UInt64(UInt32(bitPattern: info.st_dev)),
+                      expectedReceipt.inode == info.st_ino else { return false }
+            }
+            return withParent(root: root, relative: destination) { destinationDirectory, destinationName in
+                renameatx_np(sourceDirectory, sourceName, destinationDirectory, destinationName, UInt32(RENAME_EXCL)) == 0
+            } ?? false
+        } ?? false
+    }
+
+    static func publishDirectory(_ source: URL, root: URL, name: String) -> Bool {
+        publishDirectory(source, root: root, name: name, expectedReceipt: nil)
+    }
+
+    /// Directory identities come from descriptors, never package metadata.
+    /// Nil means a verified absent child; unsafe/inaccessible paths throw.
+    static func directoryReceipt(root: URL, relative: String) throws -> ScriptWidgetStoragePublicationReceipt? {
+        let result: Result<ScriptWidgetStoragePublicationReceipt?, Error>? = withParent(root: root, relative: relative) { parent, name in
+            var entry = stat()
+            if fstatat(parent, name, &entry, AT_SYMLINK_NOFOLLOW) != 0 {
+                return errno == ENOENT ? .success(nil) : .failure(ScriptWidgetStorageNamespaceError.unavailable)
+            }
+            guard entry.st_mode & S_IFMT == S_IFDIR else { return .failure(ScriptWidgetStorageNamespaceError.conflict) }
+            let child = openat(parent, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+            guard child >= 0 else { return .failure(ScriptWidgetStorageNamespaceError.unavailable) }
+            defer { close(child) }
+            var opened = stat()
+            guard fstat(child, &opened) == 0, opened.st_dev == entry.st_dev, opened.st_ino == entry.st_ino else {
+                return .failure(ScriptWidgetStorageNamespaceError.conflict)
+            }
+            return .success(.init(device: UInt64(UInt32(bitPattern: opened.st_dev)), inode: opened.st_ino))
+        }
+        guard let result else { throw ScriptWidgetStorageNamespaceError.unavailable }
+        return try result.get()
+    }
+
+    static func publishDirectory(_ source: URL, root: URL, name: String, expectedReceipt: ScriptWidgetStoragePublicationReceipt?) -> Bool {
+        guard ScriptWidgetPackageName.isValid(name), !ScriptWidgetMetadataFile.isLink(root.deletingLastPathComponent()) else { return false }
+        return withParent(root: source.deletingLastPathComponent(), relative: source.lastPathComponent) { sourceParent, sourceName in
+            var info = stat()
+            guard fstatat(sourceParent, sourceName, &info, AT_SYMLINK_NOFOLLOW) == 0, info.st_mode & S_IFMT == S_IFDIR else { return false }
+            if let expectedReceipt {
+                guard expectedReceipt.device == UInt64(UInt32(bitPattern: info.st_dev)), expectedReceipt.inode == info.st_ino else { return false }
+            }
+            return withParent(root: root, relative: name) { parent, finalName in
+                renameatx_np(sourceParent, sourceName, parent, finalName, UInt32(RENAME_EXCL)) == 0
+            } ?? false
+        } ?? false
+    }
+
+    /// Disposable cache replacement: atomically exchange two directories.
+    /// After a swap the old cache is at source, for bounded caller cleanup.
+    static func replaceCacheDirectory(_ source: URL, root: URL, name: String, expectedReceipt: ScriptWidgetStoragePublicationReceipt) -> Bool {
+        guard ScriptWidgetPackageName.isValid(name), !ScriptWidgetMetadataFile.isLink(root.deletingLastPathComponent()) else { return false }
+        return withParent(root: source.deletingLastPathComponent(), relative: source.lastPathComponent) { sourceParent, sourceName in
+            var prepared = stat()
+            guard fstatat(sourceParent, sourceName, &prepared, AT_SYMLINK_NOFOLLOW) == 0,
+                  prepared.st_mode & S_IFMT == S_IFDIR, expectedReceipt.device == UInt64(UInt32(bitPattern: prepared.st_dev)),
+                  expectedReceipt.inode == prepared.st_ino else { return false }
+            return withParent(root: root, relative: name) { parent, finalName in
+                var existing = stat()
+                if fstatat(parent, finalName, &existing, AT_SYMLINK_NOFOLLOW) != 0 {
+                    guard errno == ENOENT else { return false }
+                    return renameatx_np(sourceParent, sourceName, parent, finalName, UInt32(RENAME_EXCL)) == 0
+                }
+                guard existing.st_mode & S_IFMT == S_IFDIR,
+                      existing.st_dev != prepared.st_dev || existing.st_ino != prepared.st_ino else { return false }
+                return renameatx_np(sourceParent, sourceName, parent, finalName, UInt32(RENAME_SWAP)) == 0
+            } ?? false
+        } ?? false
+    }
+
+    static func removeTree(root: URL, relative: String, maximumDepth: Int = 16, expectedReceipt: ScriptWidgetStoragePublicationReceipt? = nil) -> Bool {
+        guard (0...32).contains(maximumDepth) else { return false }
+        var remaining = 10_000
+        func remove(_ parent: Int32, _ name: String, _ depth: Int) -> Bool {
+            guard remaining > 0, depth <= maximumDepth else { return false }
+            remaining -= 1
+            var info = stat()
+            guard fstatat(parent, name, &info, AT_SYMLINK_NOFOLLOW) == 0 else { return false }
+            if depth == 0, let expectedReceipt {
+                guard info.st_mode & S_IFMT == S_IFDIR, expectedReceipt.device == UInt64(UInt32(bitPattern: info.st_dev)),
+                      expectedReceipt.inode == info.st_ino else { return false }
+            }
+            if info.st_mode & S_IFMT == S_IFDIR {
+                let child = openat(parent, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+                guard child >= 0 else { return false }
+                defer { close(child) }
+                var opened = stat()
+                guard fstat(child, &opened) == 0, opened.st_dev == info.st_dev, opened.st_ino == info.st_ino,
+                      let children = names(child) else { return false }
+                for entry in children { if !remove(child, entry, depth + 1) { return false } }
+                var final = stat()
+                guard fstatat(parent, name, &final, AT_SYMLINK_NOFOLLOW) == 0,
+                      final.st_dev == opened.st_dev, final.st_ino == opened.st_ino else { return false }
+                return unlinkat(parent, name, AT_REMOVEDIR) == 0
+            }
+            // Uninstall can remove an unsafe child entry without following it.
+            guard depth > 0 || info.st_mode & S_IFMT == S_IFREG else { return false }
+            return unlinkat(parent, name, 0) == 0
+        }
+        return withParent(root: root, relative: relative) { remove($0, $1, 0) } ?? false
+    }
+
+    static func removeFile(root: URL, relative: String) -> Bool {
+        withParent(root: root, relative: relative) { directory, name in
+            var info = stat()
+            guard fstatat(directory, name, &info, AT_SYMLINK_NOFOLLOW) == 0, info.st_mode & S_IFMT == S_IFREG else { return false }
+            return unlinkat(directory, name, 0) == 0
+        } ?? false
+    }
+
+    /// Streaming, bounded copy from a pinned source directory into a new private
+    /// execution package. Neither path traversal nor per-file fallback is used.
+    static func copyExecutionPackage(root: URL, relative: String, receipt: ScriptWidgetStoragePublicationReceipt,
+                                     destination: URL, limits: ScriptWidgetExecutionSnapshotLimits) throws {
+        guard limits.isValid else { throw ScriptWidgetStorageNamespaceError.limitExceeded }
+        let result: Result<Void, Error>? = withParent(root: root, relative: relative) { parent, name in
+            Result {
+                let source = openat(parent, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+                guard source >= 0 else { throw ScriptWidgetStorageNamespaceError.unavailable }
+                defer { close(source) }
+                var info = stat()
+                guard fstat(source, &info) == 0, UInt64(UInt32(bitPattern: info.st_dev)) == receipt.device, info.st_ino == receipt.inode else {
+                    throw ScriptWidgetStorageNamespaceError.conflict
+                }
+                let target = open(destination.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+                guard target >= 0 else { throw ScriptWidgetStorageNamespaceError.unavailable }
+                defer { close(target) }
+                var count = 0, total = 0
+                func unchanged(_ a: stat, _ b: stat) -> Bool {
+                    a.st_dev == b.st_dev && a.st_ino == b.st_ino && a.st_size == b.st_size &&
+                    a.st_mtimespec.tv_sec == b.st_mtimespec.tv_sec && a.st_mtimespec.tv_nsec == b.st_mtimespec.tv_nsec &&
+                    a.st_ctimespec.tv_sec == b.st_ctimespec.tv_sec && a.st_ctimespec.tv_nsec == b.st_ctimespec.tv_nsec
+                }
+                func copy(_ source: Int32, _ target: Int32, depth: Int) throws {
+                    guard let children = names(source, maximumCount: limits.maximumEntries + 1) else {
+                        throw ScriptWidgetStorageNamespaceError.limitExceeded
+                    }
+                    var identities = Set<String>()
+                    for name in children.sorted() {
+                        if depth == 0 && name == "__Build" { continue }
+                        guard components(name)?.count == 1, identities.insert(identity(name)).inserted else {
+                            throw ScriptWidgetStorageNamespaceError.invalidName
+                        }
+                        count += 1
+                        guard count <= limits.maximumEntries, depth < limits.maximumDepth else { throw ScriptWidgetStorageNamespaceError.limitExceeded }
+                        var listed = stat()
+                        guard fstatat(source, name, &listed, AT_SYMLINK_NOFOLLOW) == 0 else { throw ScriptWidgetStorageNamespaceError.conflict }
+                        if listed.st_mode & S_IFMT == S_IFDIR {
+                            let input = openat(source, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+                            guard input >= 0 else { throw ScriptWidgetStorageNamespaceError.unavailable }
+                            defer { close(input) }
+                            var opened = stat()
+                            guard fstat(input, &opened) == 0, opened.st_dev == listed.st_dev, opened.st_ino == listed.st_ino,
+                                  mkdirat(target, name, 0o700) == 0 else { throw ScriptWidgetStorageNamespaceError.conflict }
+                            let output = openat(target, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+                            guard output >= 0 else { throw ScriptWidgetStorageNamespaceError.unavailable }
+                            defer { close(output) }
+                            guard preserveWidgetProtection(output) else { throw ScriptWidgetStorageNamespaceError.unavailable }
+                            try copy(input, output, depth: depth + 1)
+                        } else {
+                            guard listed.st_mode & S_IFMT == S_IFREG, listed.st_nlink == 1, listed.st_size >= 0,
+                                  listed.st_size <= limits.maximumFileBytes else { throw ScriptWidgetStorageNamespaceError.limitExceeded }
+                            let input = openat(source, name, O_RDONLY | O_NONBLOCK | O_NOFOLLOW | O_CLOEXEC)
+                            guard input >= 0 else { throw ScriptWidgetStorageNamespaceError.unavailable }
+                            defer { close(input) }
+                            var opened = stat()
+                            guard fstat(input, &opened) == 0, opened.st_mode & S_IFMT == S_IFREG, opened.st_nlink == 1, unchanged(opened, listed) else {
+                                throw ScriptWidgetStorageNamespaceError.conflict
+                            }
+                            let output = openat(target, name, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)
+                            guard output >= 0 else { throw ScriptWidgetStorageNamespaceError.unavailable }
+                            defer { close(output) }
+                            guard preserveWidgetProtection(output) else { throw ScriptWidgetStorageNamespaceError.unavailable }
+                            var bytes = [UInt8](repeating: 0, count: 16_384), size = 0
+                            while true {
+                                let n = Darwin.read(input, &bytes, bytes.count)
+                                if n < 0 { if errno == EINTR { continue }; throw ScriptWidgetStorageNamespaceError.unavailable }
+                                if n == 0 { break }
+                                guard size <= limits.maximumFileBytes - n, total <= limits.maximumTotalBytes - n else {
+                                    throw ScriptWidgetStorageNamespaceError.limitExceeded
+                                }
+                                size += n; total += n
+                                let written = bytes.withUnsafeBytes { buffer -> Bool in
+                                    var offset = 0
+                                    while offset < n {
+                                        let m = Darwin.write(output, buffer.baseAddress!.advanced(by: offset), n - offset)
+                                        if m < 0 { if errno == EINTR { continue }; return false }
+                                        if m == 0 { return false }
+                                        offset += m
+                                    }
+                                    return true
+                                }
+                                guard written else { throw ScriptWidgetStorageNamespaceError.unavailable }
+                            }
+                            var final = stat(), current = stat()
+                            guard size == opened.st_size, fstat(input, &final) == 0, unchanged(opened, final),
+                                  fstatat(source, name, &current, AT_SYMLINK_NOFOLLOW) == 0, unchanged(opened, current) else {
+                                throw ScriptWidgetStorageNamespaceError.conflict
+                            }
+                        }
+                    }
+                }
+                try copy(source, target, depth: 0)
+            }
+        }
+        guard let result else { throw ScriptWidgetStorageNamespaceError.unavailable }
+        return try result.get()
+    }
+}
+
+struct ScriptWidgetExecutionSnapshotLimits {
+    var maximumEntries = 500
+    var maximumFileBytes = 25 * 1024 * 1024
+    var maximumTotalBytes = 64 * 1024 * 1024
+    var maximumDepth = 16
+    var isValid: Bool {
+        (1...500).contains(maximumEntries) && (1...(25 * 1024 * 1024)).contains(maximumFileBytes) &&
+        (1...(64 * 1024 * 1024)).contains(maximumTotalBytes) && (1...16).contains(maximumDepth)
+    }
+}
+
+enum ScriptWidgetPackageName {
+    static func isValid(_ name: String) -> Bool {
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && name.count <= 80 && name.utf8.count <= 240 &&
+        !name.hasPrefix(".") && ScriptWidgetPackageFiles.identity(name) != "__build" &&
+        ScriptWidgetPackageFiles.components(name)?.count == 1
+    }
+}
+
+/// Keeps private execution resources alive with their rendered package. A
+/// process exit releases the kernel lease; a later acquisition removes stale
+/// unleased folders. Imported files can never choose these directory names.
+final class ScriptWidgetExecutionFiles: Sendable {
+    static let maximumActiveSnapshots = 32
+    let directory: URL
+    private let parent: URL
+    private let lease: Int32
+
+    init(temporaryRoot: URL? = nil) throws {
+        let temporary = (temporaryRoot ?? FileManager.default.temporaryDirectory).standardizedFileURL.resolvingSymlinksInPath()
+        let rootName = "__ScriptWidgetExecutions.v1"
+        guard ScriptWidgetPackageFiles.ensureDirectory(root: temporary, relative: rootName) else {
+            throw ScriptWidgetStorageNamespaceError.unavailable
+        }
+        let parent = temporary.appendingPathComponent(rootName)
+        guard let result = ScriptWidgetStorageLock.withExclusiveAccess(container: parent, namespace: "execution-folder-allocation", operation: { () -> (URL, Int32)? in
+            guard let entries = ScriptWidgetPackageFiles.list(root: parent) else { return nil }
+            var retained = 0
+            for name in entries where UUID(uuidString: name) != nil {
+                let fd = ScriptWidgetPackageFiles.withParent(root: parent, relative: name + "/lease.lock") {
+                    openat($0, $1, O_RDWR | O_NOFOLLOW | O_CLOEXEC)
+                } ?? -1
+                if fd >= 0 {
+                    var info = stat()
+                    if fstat(fd, &info) == 0, info.st_mode & S_IFMT == S_IFREG, info.st_nlink == 1, flock(fd, LOCK_EX | LOCK_NB) == 0 {
+                        if !ScriptWidgetPackageFiles.removeTree(root: parent, relative: name, maximumDepth: 18) { retained += 1 }
+                        _ = flock(fd, LOCK_UN)
+                    } else { retained += 1 }
+                    close(fd)
+                } else {
+                    // An allocation interrupted before its lease was created.
+                    if !ScriptWidgetPackageFiles.removeTree(root: parent, relative: name, maximumDepth: 18) { retained += 1 }
+                }
+            }
+            guard retained < Self.maximumActiveSnapshots else { return nil }
+            let name = UUID().uuidString.lowercased()
+            guard ScriptWidgetPackageFiles.ensureDirectory(root: parent, relative: name) else { return nil }
+            let directory = parent.appendingPathComponent(name)
+            let fd = open(directory.appendingPathComponent("lease.lock").path, O_RDWR | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)
+            guard fd >= 0 else { _ = ScriptWidgetPackageFiles.removeTree(root: parent, relative: name); return nil }
+            guard flock(fd, LOCK_EX | LOCK_NB) == 0 else {
+                close(fd); _ = ScriptWidgetPackageFiles.removeTree(root: parent, relative: name); return nil
+            }
+            return (directory, fd)
+        }), let result else { throw ScriptWidgetStorageNamespaceError.unavailable }
+        self.parent = parent
+        self.directory = result.0
+        self.lease = result.1
+    }
+
+    deinit {
+        _ = ScriptWidgetPackageFiles.removeTree(root: parent, relative: directory.lastPathComponent, maximumDepth: 18)
+        _ = flock(lease, LOCK_UN)
+        close(lease)
+    }
+}
+
+struct ScriptWidgetManagedPackageScope: Sendable {
+    let context: ScriptWidgetPackageStorageContext
+    let role: ScriptWidgetStorageDirectoryRole
+    let binding: ScriptWidgetStorageDirectoryBinding?
+
+    init(context: ScriptWidgetPackageStorageContext, role: ScriptWidgetStorageDirectoryRole, binding: ScriptWidgetStorageDirectoryBinding? = nil) {
+        self.context = context; self.role = role; self.binding = binding
+    }
+
+    func validate(name: String) throws {
+        guard let binding, binding.name == name, binding.role == role,
+              try context.boundDirectory(name: name, role: role) == binding else {
+            throw ScriptWidgetStorageNamespaceError.conflict
+        }
+    }
+}
+
+struct ScriptWidgetPackage: Sendable {
     let path: URL
     let name: String
     var jsxPath: URL {
@@ -383,9 +990,18 @@ struct ScriptWidgetPackage {
     let metaPath: URL
     let manifestPath: URL
     let readonly: Bool
+    let accessError: String?
+    let executionFiles: ScriptWidgetExecutionFiles?
+    let managedScope: ScriptWidgetManagedPackageScope?
+    let compiledScope: ScriptWidgetManagedPackageScope?
 
-    init(path: URL, readonly: Bool) {
+    init(path: URL, readonly: Bool, accessError: String? = nil, executionFiles: ScriptWidgetExecutionFiles? = nil,
+         managedScope: ScriptWidgetManagedPackageScope? = nil, compiledScope: ScriptWidgetManagedPackageScope? = nil) {
+        self.accessError = accessError
         self.readonly = readonly
+        self.executionFiles = executionFiles
+        self.managedScope = managedScope
+        self.compiledScope = compiledScope
         self.path = path
         self.imagePath = self.path.appendingPathComponent("image")
         self.metaPath = self.path.appendingPathComponent("meta.json")
@@ -393,36 +1009,81 @@ struct ScriptWidgetPackage {
         self.name = self.path.lastPathComponent
     }
 
+    private var canMutate: Bool {
+        guard !readonly else { return false }
+        guard let managedScope else { return true }
+        guard managedScope.role == .source else { return false }
+        return (try? managedScope.validate(name: name)) != nil
+    }
+
+    private var canRead: Bool {
+        accessError == nil && (managedScope == nil || (try? managedScope?.validate(name: name)) != nil)
+    }
+
+    static func unavailable() -> ScriptWidgetPackage {
+        // A non-materialized, read-only descriptor keeps legacy callers able to
+        // display an error without crashing or resolving a user-controlled name.
+        ScriptWidgetPackage(path: FileManager.default.temporaryDirectory.appendingPathComponent("ScriptWidgetUnavailable-\(UUID().uuidString)"), readonly: true, accessError: "Invalid or ambiguous package name")
+    }
+
     func readMetadata() -> ScriptMetadata? {
-        guard FileManager.default.fileExists(atPath: metaPath.path) else { return nil }
-        guard let data = try? Data(contentsOf: metaPath) else { return nil }
+        guard canRead, let data = ScriptWidgetPackageFiles.read(root: path, relative: "meta.json", maximumBytes: ScriptWidgetMetadataFile.maximumBytes) else { return nil }
         return try? JSONDecoder().decode(ScriptMetadata.self, from: data)
     }
 
+    private func withLegacyCache<T>(_ operation: (URL) throws -> T) -> T? {
+        guard !readonly, managedScope == nil, ScriptWidgetPackageName.isValid(name),
+              let root = ScriptManager.getSandboxBuildDirectoryURL() else { return nil }
+        return try? ScriptWidgetStorageProfiles.withLegacyAccess(container: root.deletingLastPathComponent()) { try operation(root) }
+    }
+
+    private func legacyCachedFile(_ relative: String, maximumBytes: Int? = nil) -> (Data, URL)? {
+        withLegacyCache { root in
+            let bytes: Data?
+            if let maximumBytes { bytes = ScriptWidgetPackageFiles.read(root: root, relative: name + "/" + relative, maximumBytes: maximumBytes) }
+            else { bytes = ScriptWidgetPackageFiles.read(root: root, relative: name + "/" + relative) }
+            guard let data = bytes else { throw ScriptWidgetStorageNamespaceError.unavailable }
+            return (data, root.appendingPathComponent(name).appendingPathComponent(relative))
+        }
+    }
+
     var hasManifest: Bool {
-        FileManager.default.fileExists(atPath: manifestPath.path) ||
-            FileManager.default.fileExists(atPath: path.appendingPathComponent(".widget.json.icloud").path) ||
-            (!readonly && buildCachePath(for: manifestPath).map { FileManager.default.fileExists(atPath: $0.path) } == true)
+        if accessError != nil || (!readonly && managedScope == nil && ScriptManager.hasUnsafeBuildCacheDirectory) { return true } // Invalid descriptors cannot become legacy packages.
+        if ScriptWidgetMetadataFile.isLink(path) ||
+            ScriptWidgetPackageFiles.list(root: path)?.contains(where: { $0.lowercased() == "widget.json" }) == true || ScriptWidgetMetadataFile.exists(manifestPath) ||
+            ScriptWidgetMetadataFile.exists(path.appendingPathComponent(".widget.json.icloud")) { return true }
+        return withLegacyCache { root in
+            let cachedPackage = root.appendingPathComponent(name)
+            return ScriptWidgetMetadataFile.isLink(cachedPackage) ||
+                ScriptWidgetPackageFiles.list(root: root, relative: name)?.contains(where: { $0.lowercased() == "widget.json" }) == true ||
+                ScriptWidgetMetadataFile.exists(cachedPackage.appendingPathComponent("widget.json"))
+        } ?? false
     }
 
     func readManifest() -> WidgetPackageManifest? {
-        // A present but malformed manifest is authoritative; never fall back to
-        // an older manifest or reinterpret the package as legacy.
+        guard canRead,
+              ScriptWidgetPackageFiles.list(root: path)?.contains(where: { $0.lowercased() == "widget.json" && $0 != "widget.json" }) != true else { return nil }
+        // A present malformed, linked or nonregular manifest is authoritative.
+        // Only an absent primary may use the per-package iCloud fallback.
+        guard !ScriptWidgetMetadataFile.isLink(path) else { return nil }
         let data: Data
-        if FileManager.default.fileExists(atPath: manifestPath.path) {
-            guard let primary = try? Data(contentsOf: manifestPath) else { return nil }
+        if ScriptWidgetMetadataFile.exists(manifestPath) {
+            guard let primary = ScriptWidgetPackageFiles.read(root: path, relative: "widget.json", maximumBytes: ScriptWidgetMetadataFile.maximumBytes) else { return nil }
             data = primary
-        } else if !readonly, let cached = buildCachePath(for: manifestPath),
-                  let fallback = try? Data(contentsOf: cached) {
-            data = fallback
+        } else if ScriptWidgetMetadataFile.isLink(path.appendingPathComponent(".widget.json.icloud")) {
+            return nil
+        } else if let fallback = legacyCachedFile("widget.json", maximumBytes: ScriptWidgetMetadataFile.maximumBytes) {
+            data = fallback.0
         } else { return nil }
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
         let allowedKeys: Set<String> = [
-            "formatVersion", "id", "name", "version", "runtimeVersion", "entry",
+            "formatVersion", "id", "name", "version", "runtimeVersion", "minimumRuntimeVersion", "timeline", "entry",
             "supportedFamilies", "permissions", "networkDomains", "plugins", "actions", "controls", "pushUpdates", "description",
             "category", "tags", "icon", "preview", "author", "license"
         ]
         guard Set(object.keys).isSubset(of: allowedKeys) else { return nil }
+        if let timeline = object["timeline"] as? [String: Any],
+           !Set(timeline.keys).isSubset(of: ["dailyTimes", "timeZone"]) { return nil }
         if let author = object["author"] as? [String: Any],
            !Set(author.keys).isSubset(of: ["name", "url"]) {
             return nil
@@ -448,7 +1109,7 @@ struct ScriptWidgetPackage {
 
     @discardableResult
     func writeManifest(_ manifest: WidgetPackageManifest) -> (Bool, String) {
-        guard !readonly else { return (false, "Package is readonly") }
+        guard canMutate else { return (false, "Package is readonly") }
         let report = WidgetPackageManifestValidator.validate(manifest, package: self)
         guard report.isValid else {
             return (false, report.errors.map(\.message).joined(separator: "\n"))
@@ -458,12 +1119,8 @@ struct ScriptWidgetPackage {
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
             let data = try encoder.encode(manifest)
-            try data.write(to: manifestPath, options: .atomic)
+            guard ScriptWidgetPackageFiles.write(data, root: path, relative: "widget.json") else { return (false, "Manifest could not be saved") }
             syncBuildCache(fullPath: manifestPath, data: data)
-            try FileManager.default.setAttributes(
-                [.protectionKey: FileProtectionType.none],
-                ofItemAtPath: manifestPath.path
-            )
             return (true, "")
         } catch {
             return (false, error.localizedDescription)
@@ -482,15 +1139,16 @@ struct ScriptWidgetPackage {
         }
         guard !hasManifest else { return (false, "Invalid or unavailable widget.json") }
         guard !readonly else { return (true, "") }
+        guard canMutate else { return (false, "The widget library changed. Reopen it before saving.") }
         return writeManifest(.legacy(name: name, metadata: readMetadata()))
     }
 
     func previewImageURL() -> URL? {
         let name = readManifest()?.preview ?? readMetadata()?.preview ?? "preview.png"
-        let url = self.path.appendingPathComponent(name)
-        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+        guard let url = resolvedPackageURL(relativePath: name) else { return nil }
+        return locallyAvailableFileURL(fullPath: url)
     }
-    
+
     // readwrite
     init(path: URL) {
         self.init(path: path, readonly: false)
@@ -567,20 +1225,43 @@ struct ScriptWidgetPackage {
     /// Resolves an untrusted script path while keeping it inside this package.
     /// Standardising both URLs also rejects `..`, absolute paths and symlink escapes.
     func resolvedPackageURL(relativePath: String) -> URL? {
-        guard !relativePath.isEmpty, !relativePath.hasPrefix("/") else { return nil }
-        let root = path.standardizedFileURL.resolvingSymlinksInPath()
-        let standardized = root.appendingPathComponent(relativePath).standardizedFileURL
-        let rootPrefix = root.path.hasSuffix("/") ? root.path : root.path + "/"
-        guard standardized.path.hasPrefix(rootPrefix) else { return nil }
-        let candidate: URL
-        if FileManager.default.fileExists(atPath: standardized.path) {
-            candidate = standardized.resolvingSymlinksInPath()
+        guard canRead else { return nil }
+        return ScriptWidgetPackageFiles.safeURL(root: path, relative: relativePath)
+    }
+
+    private func relativePath(for fullPath: URL) -> String? {
+        guard accessError == nil, !fullPath.pathComponents.contains(".."), !fullPath.pathComponents.contains(".") else { return nil }
+        let root = path.standardizedFileURL.path
+        let target = fullPath.standardizedFileURL.path
+        var relative: String?
+        if target.hasPrefix(root + "/") {
+            relative = String(target.dropFirst(root.count + 1))
+        } else if !ScriptWidgetMetadataFile.exists(path) {
+            let canonicalRoot = Self.canonicalPath(path)
+            let canonicalTarget = Self.canonicalPath(fullPath)
+            if canonicalTarget.hasPrefix(canonicalRoot + "/") { relative = String(canonicalTarget.dropFirst(canonicalRoot.count + 1)) }
         } else {
-            candidate = standardized.deletingLastPathComponent().resolvingSymlinksInPath()
-                .appendingPathComponent(standardized.lastPathComponent)
+            var rootInfo = stat()
+            let rootFD = open(path.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+            guard rootFD >= 0 else { return nil }
+            defer { close(rootFD) }
+            guard fstat(rootFD, &rootInfo) == 0 else { return nil }
+            var ancestor = fullPath.deletingLastPathComponent()
+            var parts = [fullPath.lastPathComponent]
+            for _ in 0..<16 {
+                let fd = open(ancestor.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+                if fd >= 0 {
+                    var info = stat()
+                    let matches = fstat(fd, &info) == 0 && info.st_dev == rootInfo.st_dev && info.st_ino == rootInfo.st_ino
+                    close(fd)
+                    if matches { relative = parts.joined(separator: "/"); break }
+                }
+                parts.insert(ancestor.lastPathComponent, at: 0)
+                ancestor.deleteLastPathComponent()
+            }
         }
-        guard candidate.path.hasPrefix(rootPrefix) else { return nil }
-        return candidate
+        guard let relative, ScriptWidgetPackageFiles.safeURL(root: path, relative: relative) != nil else { return nil }
+        return relative
     }
 
     /// Legacy tuple API kept for existing callers. The second element preserves
@@ -598,23 +1279,31 @@ struct ScriptWidgetPackage {
     /// fallback. Requesting the iCloud download is deferred until the primary read
     /// fails, so a normal read stays cheap.
     func readFileResult(fullPath: URL) -> ScriptFileReadResult {
+        guard canRead else {
+            return ScriptFileReadResult(content: nil, source: nil, icloud: .error("The widget installation changed"), message: "The widget installation changed. Reopen it before editing.")
+        }
+        guard let relative = relativePath(for: fullPath) else {
+            return ScriptFileReadResult(content: nil, source: nil, icloud: .error("Invalid package-relative path"), message: "Invalid package-relative path")
+        }
         // 1) Primary path — when present this is authoritative and (re)caches.
-        if let content = try? String(contentsOf: fullPath, encoding: .utf8) {
+        if let data = ScriptWidgetPackageFiles.read(root: path, relative: relative), let content = String(data: data, encoding: .utf8) {
             syncBuildCache(fullPath: fullPath, content: content)
             let state: ICloudItemState = isUbiquitous(fullPath) ? .downloaded : .local
             return ScriptFileReadResult(content: content, source: .file, icloud: state, message: "succeed")
         }
 
+        if ScriptWidgetMetadataFile.exists(fullPath) {
+            return ScriptFileReadResult(content: nil, source: nil, icloud: .error("Package file is not readable"), message: "Package file is not readable")
+        }
         // 2) Primary unavailable — ask iCloud to bring it back and check status.
         let icloud = requestICloudDownloadState(for: fullPath)
 
         // 3) Local build-cache fallback so widgets keep rendering offline.
-        if let buildCachePath = buildCachePath(for: fullPath),
-           let content = try? String(contentsOf: buildCachePath, encoding: .utf8) {
+        if let cached = legacyCachedFile(relative), let content = String(data: cached.0, encoding: .utf8) {
             return ScriptFileReadResult(content: content,
                                         source: .buildCache,
                                         icloud: icloud,
-                                        message: "read from build cache: \(buildCachePath.path)")
+                                        message: "read from build cache: \(cached.1.path)")
         }
 
         // 4) Nothing to serve — describe why for the UI.
@@ -691,24 +1380,12 @@ struct ScriptWidgetPackage {
     }
 
     private func buildCachePath(for fullPath: URL) -> URL? {
-        guard let buildDirectory = ScriptManager.getSandboxBuildDirectoryURL() else {
-            return nil
+        guard canMutate, managedScope == nil, ScriptWidgetPackageName.isValid(name),
+              let relative = relativePath(for: fullPath),
+              let root = ScriptManager.getSandboxBuildDirectoryURL() else { return nil }
+        return try? ScriptWidgetStorageProfiles.withLegacyAccess(container: root.deletingLastPathComponent()) {
+            ScriptWidgetPackageFiles.safeURL(root: root, relative: name + "/" + relative)
         }
-        let packageRootPath = Self.canonicalPath(self.path)
-        let fullPathValue = Self.canonicalPath(fullPath)
-        let packageRootPrefix = packageRootPath.hasSuffix("/") ? packageRootPath : packageRootPath + "/"
-        guard fullPathValue == packageRootPath || fullPathValue.hasPrefix(packageRootPrefix) else {
-            return nil
-        }
-        var relativePath = String(fullPathValue.dropFirst(packageRootPath.count))
-        if relativePath.hasPrefix("/") {
-            relativePath.removeFirst()
-        }
-        var cacheFilePath = buildDirectory.appendingPathComponent(self.name)
-        if !relativePath.isEmpty {
-            cacheFilePath = cacheFilePath.appendingPathComponent(relativePath)
-        }
-        return cacheFilePath
     }
 
     private func syncBuildCache(fullPath: URL, content: String) {
@@ -726,13 +1403,9 @@ struct ScriptWidgetPackage {
         var coordinationError: NSError?
         NSFileCoordinator().coordinate(writingItemAt: buildRoot.appendingPathComponent(name), options: .forMerging,
                                        error: &coordinationError) { _ in
-            do {
-                try FileManager.default.createDirectory(at: cacheFilePath.deletingLastPathComponent(),
-                    withIntermediateDirectories: true, attributes: [.protectionKey: FileProtectionType.none])
-                try data.write(to: cacheFilePath, options: .atomic)
-                try FileManager.default.setAttributes([.protectionKey: FileProtectionType.none], ofItemAtPath: cacheFilePath.path)
-            } catch {
-                print("Could not refresh the widget cache.")
+            _ = withLegacyCache { root in
+                guard let relative = relativePath(for: fullPath) else { return false }
+                return ScriptWidgetPackageFiles.write(data, root: root, relative: name + "/" + relative)
             }
         }
     }
@@ -742,7 +1415,8 @@ struct ScriptWidgetPackage {
     /// bounding which resource types and sizes are admitted.
     @discardableResult
     func cacheResource(fullPath: URL) -> Bool {
-        guard let data = try? Data(contentsOf: fullPath) else { return false }
+        guard canMutate, let relative = relativePath(for: fullPath),
+              let data = ScriptWidgetPackageFiles.read(root: path, relative: relative) else { return false }
         syncBuildCache(fullPath: fullPath, data: data)
         return buildCachePath(for: fullPath).map {
             FileManager.default.fileExists(atPath: $0.path)
@@ -753,40 +1427,32 @@ struct ScriptWidgetPackage {
     /// locally cached copy. This keeps package images and animations available
     /// to WidgetKit while iCloud Drive is unavailable on cellular data.
     func locallyAvailableFileURL(fullPath: URL) -> URL? {
-        if FileManager.default.fileExists(atPath: fullPath.path) {
-            return fullPath
+        guard relativePath(for: fullPath) != nil else { return nil }
+        if ScriptWidgetMetadataFile.exists(fullPath) {
+            return (try? fullPath.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true ? fullPath : nil
         }
         guard let cached = buildCachePath(for: fullPath),
-              FileManager.default.fileExists(atPath: cached.path) else { return nil }
+              (try? cached.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true else { return nil }
         return cached
     }
-    
+
     func makePackageDirectory() throws {
-        try FileManager.default.createDirectory(at: self.path, withIntermediateDirectories: true, attributes: [
-            FileAttributeKey.protectionKey : FileProtectionType.none
-        ])
-    }
-    
-    func writeFile(fullPath: URL , content: String) -> (Bool, String) {
-        if self.readonly { return (false, "Package is readonly") }
-        
-        guard let data = content.data(using: .utf8) else { return (false, "Failed to convert code to utf8 encoding") }
-        do {
-            try FileManager.default.createDirectory(at: fullPath.deletingLastPathComponent(),
-                                                    withIntermediateDirectories: true,
-                                                    attributes: [.protectionKey: FileProtectionType.none])
-            
-            try data.write(to: fullPath, options: .atomic)
-            
-            try FileManager.default.setAttributes([FileAttributeKey.protectionKey: FileProtectionType.none], ofItemAtPath: fullPath.path)
-            syncBuildCache(fullPath: fullPath, content: content)
-            
-        } catch {
-            return (false, "Failed write code to path :\(fullPath) error: \(error)")
+        try managedScope?.context.validateLibraryRoot()
+        guard canMutate, accessError == nil,
+              ScriptWidgetPackageFiles.ensureDirectory(root: path.deletingLastPathComponent().resolvingSymlinksInPath(), relative: path.lastPathComponent) else {
+            throw CocoaError(.fileWriteNoPermission)
         }
+    }
+
+    func writeFile(fullPath: URL, content: String) -> (Bool, String) {
+        guard canMutate, let relative = relativePath(for: fullPath) else { return (false, "Invalid or readonly package path") }
+        do { try makePackageDirectory() } catch { return (false, "Package directory could not be opened") }
+        let data = Data(content.utf8)
+        guard ScriptWidgetPackageFiles.write(data, root: path, relative: relative) else { return (false, "Package file could not be saved") }
+        syncBuildCache(fullPath: fullPath, data: data)
         return (true, "")
     }
-    
+
     func writeMainFile(content: String) -> (Bool,String) {
         let result = self.writeFile(fullPath: self.jsxPath, content: content)
         guard result.0 else { return result }
@@ -805,7 +1471,7 @@ struct ScriptWidgetPackage {
     /// de-duplicated instead of overwriting existing work, and the destination
     /// is resolved through the same package-boundary guard as script writes.
     func importProjectFile(from sourceURL: URL, maximumBytes: Int = 25 * 1024 * 1024) -> (Bool, String) {
-        guard !readonly else { return (false, "Package is readonly") }
+        guard canMutate else { return (false, "Package is readonly") }
         guard let values = try? sourceURL.resourceValues(forKeys: [.fileSizeKey]),
               let size = values.fileSize,
               size <= maximumBytes else {
@@ -835,16 +1501,7 @@ struct ScriptWidgetPackage {
         }
         do {
             try makePackageDirectory()
-            try FileManager.default.createDirectory(
-                at: destination.deletingLastPathComponent(),
-                withIntermediateDirectories: true,
-                attributes: [.protectionKey: FileProtectionType.none]
-            )
-            try data.write(to: destination, options: .atomic)
-            try FileManager.default.setAttributes(
-                [.protectionKey: FileProtectionType.none],
-                ofItemAtPath: destination.path
-            )
+            guard ScriptWidgetPackageFiles.write(data, root: path, relative: importedRelativePath) else { return (false, "The selected file could not be saved") }
             if ["jsx", "js", "json", "txt", "csv", "svg", "md"].contains(pathExtension.lowercased()) {
                 syncBuildCache(fullPath: destination, data: data)
             }
@@ -855,61 +1512,49 @@ struct ScriptWidgetPackage {
     }
     
     func renameFile(relativePath: String, destRelativePath: String) -> (Bool, String) {
-        guard let destFullPath = resolvedPackageURL(relativePath: destRelativePath),
-              let fullPath = resolvedPackageURL(relativePath: relativePath) else {
-            return (false, "Invalid package-relative path")
-        }
-        if FileManager.default.fileExists(atPath: destFullPath.path) {
-            return (false, "new name existed")
-        }
-        do {
-            try FileManager.default.moveItem(at: fullPath, to: destFullPath)
-        } catch {
-            return (false, "\(error)")
+        guard canMutate, accessError == nil,
+              resolvedPackageURL(relativePath: relativePath) != nil,
+              resolvedPackageURL(relativePath: destRelativePath) != nil,
+              ScriptWidgetPackageFiles.move(root: path, source: relativePath, destination: destRelativePath) else { return (false, "File could not be renamed") }
+        if let cache = ScriptManager.getSandboxBuildDirectoryURL() {
+            _ = ScriptWidgetPackageFiles.removeFile(root: cache, relative: name + "/" + relativePath)
         }
         return (true, "")
     }
-    
+
     func isFileExist(relativePath: String) -> Bool {
         guard let fullPath = resolvedPackageURL(relativePath: relativePath) else { return false }
         return FileManager.default.fileExists(atPath: fullPath.path)
     }
     
     func deleteFile(relativePath: String) {
-        guard let fullPath = resolvedPackageURL(relativePath: relativePath) else { return }
-        try? FileManager.default.removeItem(at: fullPath)
-        if let cached = buildCachePath(for: fullPath) {
-            try? FileManager.default.removeItem(at: cached)
+        guard canMutate, let fullPath = resolvedPackageURL(relativePath: relativePath),
+              ScriptWidgetPackageFiles.removeFile(root: path, relative: relativePath) else { return }
+        if buildCachePath(for: fullPath) != nil {
+            if let root = ScriptManager.getSandboxBuildDirectoryURL(), let relative = self.relativePath(for: fullPath) {
+                _ = ScriptWidgetPackageFiles.removeFile(root: root, relative: name + "/" + relative)
+            }
         }
     }
     
     func rename(destPath: URL) -> (Bool, String) {
-        if self.readonly { return (false, "Bundle file not movable")}
-        
-        if FileManager.default.fileExists(atPath: destPath.path) {
-            return (false, "New package name already exists")
-        }
-        
-        do {
-            try FileManager.default.moveItem(at: self.path, to: destPath)
-        } catch {
-            return (false, "\(error)")
-        }
+        guard canMutate, accessError == nil, ScriptWidgetPackageName.isValid(destPath.lastPathComponent),
+              path.deletingLastPathComponent().standardizedFileURL == destPath.deletingLastPathComponent().standardizedFileURL,
+              ScriptWidgetPackageFiles.safeURL(root: path.deletingLastPathComponent(), relative: path.lastPathComponent, allowMissing: false) != nil,
+              ScriptWidgetPackageFiles.move(root: path.deletingLastPathComponent(), source: path.lastPathComponent, destination: destPath.lastPathComponent) else { return (false, "Package could not be renamed") }
         return (true, "")
     }
-    
+
     func delete() -> Bool {
-        do {
-            try FileManager.default.removeItem(at: self.path)
-        } catch {
-            return false
-        }
-        return true
+        guard canMutate, accessError == nil,
+              ScriptWidgetPackageFiles.safeURL(root: path.deletingLastPathComponent(), relative: path.lastPathComponent, allowMissing: false) != nil else { return false }
+        return ScriptWidgetPackageFiles.removeTree(root: path.deletingLastPathComponent().resolvingSymlinksInPath(), relative: path.lastPathComponent)
     }
-    
+
     func getImage(_ imageName: String) -> ImageModel? {
+        guard canRead else { return nil }
         let trimmedName = imageName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedName.isEmpty else { return nil }
+        guard ScriptWidgetPackageFiles.components(trimmedName)?.count == 1 else { return nil }
         let requested = imagePath.appendingPathComponent(trimmedName)
         let candidates: [URL]
         if requested.pathExtension.isEmpty {
@@ -928,9 +1573,8 @@ struct ScriptWidgetPackage {
     
     func getGifFile(_ fileName: String) -> URL? {
         let trimmedName = fileName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedName.isEmpty {
-            return nil
-        }
+        guard ScriptWidgetPackageFiles.components(trimmedName)?.count == 1,
+              resolvedPackageURL(relativePath: "image/" + trimmedName) != nil else { return nil }
 
         // 1) Accept direct file name (with extension), e.g. "cat.gif" / "cat.GIF".
         let directPath = self.imagePath.appendingPathComponent(trimmedName)
@@ -962,7 +1606,7 @@ struct ScriptWidgetPackage {
             let itemFullName = itemURL.lastPathComponent.lowercased()
             let itemNameNoExt = itemURL.deletingPathExtension().lastPathComponent.lowercased()
             if itemFullName == trimmedName.lowercased() || itemNameNoExt == targetNameNoExt {
-                return itemURL
+                return locallyAvailableFileURL(fullPath: itemURL)
             }
         }
 
@@ -970,114 +1614,87 @@ struct ScriptWidgetPackage {
     }
 
     func getImageList() -> [ImageModel] {
-        do {
-            let items = try FileManager.default.contentsOfDirectory(atPath: self.imagePath.path)
-            var models = [ImageModel]()
-            for item in items {
-                let imagePath = self.imagePath.appendingPathComponent(item)
-                let imageName = imagePath.deletingPathExtension().lastPathComponent
-                models.append(ImageModel(name: imageName, path: imagePath))
-            }
-            models.sort { a, b in
-                return a.name.compare(b.name) == .orderedAscending
-            }
-            return models
-        } catch {
-            print("get image list exception: \(error)")
-        }
-        return []
+        guard canRead else { return [] }
+        guard let items = ScriptWidgetPackageFiles.list(root: path, relative: "image") else { return [] }
+        return items.compactMap { item in
+            let imageURL = imagePath.appendingPathComponent(item)
+            guard locallyAvailableFileURL(fullPath: imageURL) != nil else { return nil }
+            return ImageModel(name: imageURL.deletingPathExtension().lastPathComponent, path: imageURL)
+        }.sorted { $0.name.compare($1.name) == .orderedAscending }
     }
     
 #if os(macOS)
-    func saveImage(imagePath: URL) -> Bool {
-        try? FileManager.default.createDirectory(at: self.imagePath, withIntermediateDirectories: true, attributes: [FileAttributeKey.protectionKey: FileProtectionType.none])
-        
-        if imagePath.pathExtension != "png" {
-            return false
-        }
-        let fileName = imagePath.lastPathComponent
-        var newFileName = fileName
-        var newFilePath = self.imagePath.appendingPathComponent(newFileName)
-        if FileManager.default.fileExists(atPath: newFilePath.path) {
-            // file name existed, get a new name
-            let count = self.getImageList().count
-            newFileName = "image\(count).png"
-            newFilePath = self.imagePath.appendingPathComponent(newFileName)
-        }
-        
-        do {
-            try FileManager.default.copyItem(at: imagePath, to: newFilePath)
-        } catch {
-            print("error = \(error)")
-            return false
-        }
-        
-        return true
+    func saveImage(imagePath source: URL) -> Bool {
+        guard canMutate, source.pathExtension.lowercased() == "png",
+              let data = try? Data(contentsOf: source), data.count <= 25 * 1_024 * 1_024 else { return false }
+        var filename = source.lastPathComponent
+        var index = 1
+        while isFileExist(relativePath: "image/" + filename) { filename = "image\(index).png"; index += 1 }
+        return saveImageData(data, name: filename)
     }
+
     func saveImage(image: NSImage, imageName: String) -> Bool {
-        try? FileManager.default.createDirectory(at: self.imagePath, withIntermediateDirectories: true, attributes: [FileAttributeKey.protectionKey: FileProtectionType.none])
-        
-        let imagePath = self.imagePath.appendingPathComponent(imageName).appendingPathExtension("png")
-        do {
-            guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-                return false
-            }
-            let bitmap = NSBitmapImageRep(cgImage: cgImage)
-            bitmap.size = image.size
-            guard let imageData = bitmap.representation(using: .png, properties: [:]) else {
-                return false
-            }
-            try imageData.write(to: imagePath)
-            
-            try FileManager.default.setAttributes([FileAttributeKey.protectionKey: FileProtectionType.none], ofItemAtPath: imagePath.path)
-        } catch {
-            print("save image \(error)")
-            return false
-        }
-        return true
+        guard let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil),
+              let data = NSBitmapImageRep(cgImage: cg).representation(using: .png, properties: [:]) else { return false }
+        return saveImageData(data, name: imageName + ".png")
     }
 #else
     func saveImage(image: UIImage, imageName: String) -> Bool {
-        try? FileManager.default.createDirectory(at: self.imagePath, withIntermediateDirectories: true, attributes: [FileAttributeKey.protectionKey: FileProtectionType.none])
-        
-        let imagePath = self.imagePath.appendingPathComponent(imageName).appendingPathExtension("png")
-        do {
-            guard let imageData = image.pngData() else { return false }
-            try imageData.write(to: imagePath)
-            
-            try FileManager.default.setAttributes([FileAttributeKey.protectionKey: FileProtectionType.none], ofItemAtPath: imagePath.path)
-        } catch {
-            print("save image \(error)")
-            return false
-        }
-        return true
+        guard let data = image.pngData() else { return false }
+        return saveImageData(data, name: imageName + ".png")
     }
 #endif
+
+    /// Native photo configuration publishes immutable, normalized PNG assets.
+    /// No original EXIF, GPS, filename or album identifier is retained.
+    func savePhotoImage(_ image: CGImage) -> String? {
+        guard canMutate, image.width > 0, image.height > 0, image.width <= 768, image.height <= 768,
+              getImageList().filter({ $0.name.hasPrefix("photo-") }).count < 12 else { return nil }
+        let bytes = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(bytes, "public.png" as CFString, 1, nil) else { return nil }
+        CGImageDestinationAddImage(destination, image, nil)
+        guard CGImageDestinationFinalize(destination), bytes.length <= 3 * 1_024 * 1_024 else { return nil }
+        let name = "photo-" + UUID().uuidString.lowercased()
+        return saveImageData(bytes as Data, name: name + ".png") ? name : nil
+    }
+
+    static func isWallpaperImageName(_ name:String)->Bool {
+        name.range(of:"^background-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",options:.regularExpression) != nil
+    }
+    /// Saves only the normalized crop, never the user's whole source screenshot or metadata.
+    func saveWallpaperImage(_ image:CGImage)->String? {
+        guard canMutate,image.width>0,image.height>0,image.width<=1024,image.height<=1024,
+              getImageList().filter({Self.isWallpaperImageName($0.name) && $0.path.pathExtension=="png"}).count<12 else { return nil }
+        let data=NSMutableData()
+        guard let destination=CGImageDestinationCreateWithData(data,"public.png" as CFString,1,nil) else { return nil }
+        CGImageDestinationAddImage(destination,image,nil)
+        guard CGImageDestinationFinalize(destination),data.length<=5*1_024*1_024 else { return nil }
+        let name="background-"+UUID().uuidString.lowercased()
+        return saveImageData(data as Data,name:name+".png") ? name : nil
+    }
+
+    private func saveImageData(_ data: Data, name: String) -> Bool {
+        guard canMutate, ScriptWidgetPackageFiles.components(name)?.count == 1 else { return false }
+        do { try makePackageDirectory() } catch { return false }
+        guard ScriptWidgetPackageFiles.write(data, root: path, relative: "image/" + name) else { return false }
+        syncBuildCache(fullPath: imagePath.appendingPathComponent(name), data: data)
+        return true
+    }
+
     func renameImage(name: String, newName: String) -> (Bool, String) {
-        let newPath = self.imagePath.appendingPathComponent("\(newName).png")
-        if FileManager.default.fileExists(atPath: newPath.path) {
-            return (false, "new name existed")
-        }
-        let oldPath = self.imagePath.appendingPathComponent("\(name).png")
-        do {
-            try FileManager.default.moveItem(at: oldPath, to: newPath)
-            return (true, "succeed")
-        } catch {
-            return (false, "move failed : \(error)")
-        }
+        guard ScriptWidgetPackageFiles.components(name)?.count == 1, ScriptWidgetPackageFiles.components(newName)?.count == 1 else { return (false, "Invalid image name") }
+        return renameFile(relativePath: "image/\(name).png", destRelativePath: "image/\(newName).png")
     }
-    
-    
+
     func deleteImage(name: String) -> (Bool, String) {
-        let path = self.imagePath.appendingPathComponent("\(name).png")
-        do {
-            try FileManager.default.removeItem(at: path)
-            return (true, "succeed")
-        } catch {
-            return (false, "delete failed : \(error)")
+        guard canMutate, ScriptWidgetPackageFiles.components(name)?.count == 1,
+              ScriptWidgetPackageFiles.removeFile(root: path, relative: "image/\(name).png") else { return (false, "Image could not be removed") }
+        if let cached = buildCachePath(for: imagePath.appendingPathComponent(name + ".png")) {
+            _ = ScriptWidgetPackageFiles.removeFile(root: cached.deletingLastPathComponent(), relative: cached.lastPathComponent)
         }
+        return (true, "")
     }
-    
+
     func listFiles() -> [FileModel] {
         return self.listFilesInternal()
     }
@@ -1088,21 +1705,16 @@ struct ScriptWidgetPackage {
             curDir = self.path.appendingPathComponent(leadingPath)
         }
         
-        guard let files = try? FileManager.default.contentsOfDirectory(atPath: curDir.path) else {
-            return []
-        }
+        guard accessError == nil, let files = ScriptWidgetPackageFiles.list(root: path, relative: leadingPath.isEmpty ? nil : leadingPath) else { return [] }
         
         var items = [FileModel]()
         
         for file in files {
             let fullPath = curDir.appendingPathComponent(file)
             
-            var isDir: ObjCBool = false
-            if !FileManager.default.fileExists(atPath: fullPath.path, isDirectory: &isDir) {
-                continue
-            }
-            
-            if isDir.boolValue {
+            let relative = leadingPath.isEmpty ? file : leadingPath + "/" + file
+            guard let kind = ScriptWidgetPackageFiles.kind(root: path, relative: relative) else { continue }
+            if kind == S_IFDIR {
                 var nextLeadingPath = ""
                 if leadingPath.isEmpty {
                     nextLeadingPath = file
@@ -1124,37 +1736,10 @@ struct ScriptWidgetPackage {
     }
     
     func listRootFiles() -> [FileModel] {
-        let curDir = self.path
-        guard let files = try? FileManager.default.contentsOfDirectory(atPath: curDir.path) else {
-            return []
-        }
-        
-        var items = [FileModel]()
-        for file in files {
-            let fullPath = curDir.appendingPathComponent(file)
-            var isDir: ObjCBool = false
-            if !FileManager.default.fileExists(atPath: fullPath.path, isDirectory: &isDir) {
-                continue
-            }
-            if isDir.boolValue {
-                continue
-            }
-            if file.suffix(4).lowercased() == ".jsx"
-                || file.suffix(3).lowercased() == ".js"
-                || file.suffix(5).lowercased() == ".json"
-            {
-                items.append(FileModel(name: file, relativePath: file, path: fullPath))
-            }
-        }
-        
-        return items.sorted { a, b in
-            if a.name == "main.jsx" {
-                return true
-            }
-            if b.name == "main.jsx" {
-                return false
-            }
-            return a.name < b.name
+        guard accessError == nil, let names = ScriptWidgetPackageFiles.list(root: path) else { return [] }
+        return names.compactMap { name in
+            guard ScriptWidgetPackageFiles.kind(root: path, relative: name) == S_IFREG else { return nil }
+            return FileModel(name: name, relativePath: name, path: path.appendingPathComponent(name))
         }
     }
 }

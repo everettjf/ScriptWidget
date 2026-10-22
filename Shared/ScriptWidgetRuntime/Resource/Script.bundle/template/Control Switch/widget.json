@@ -1,0 +1,62 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.control-switch",
+  "name": "Control Switch",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.3",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait",
+    "accessoryCircular",
+    "accessoryRectangular",
+    "accessoryInline"
+  ],
+  "permissions": [
+    "storage"
+  ],
+  "networkDomains": [],
+  "description": "One persistent local switch shared by widgets, Control Center and Shortcuts. This does not change a system setting.",
+  "category": "productivity",
+  "tags": [
+    "controls",
+    "switch",
+    "shortcuts"
+  ],
+  "icon": "switch.2",
+  "actions": [
+    {
+      "id": "setFlag",
+      "title": "Toggle local switch",
+      "systemImage": "switch.2",
+      "function": "setFlag"
+    },
+    {
+      "id": "enableFlag",
+      "title": "Turn local switch on",
+      "systemImage": "switch.2",
+      "function": "enableFlag"
+    },
+    {
+      "id": "disableFlag",
+      "title": "Turn local switch off",
+      "systemImage": "switch.2",
+      "function": "disableFlag"
+    }
+  ],
+  "controls": [
+    {
+      "id": "local-switch",
+      "type": "toggle",
+      "title": "Local switch",
+      "systemImage": "switch.2",
+      "actionID": "setFlag",
+      "stateKey": "switch.enabled"
+    }
+  ],
+  "preview": "preview.png"
+}

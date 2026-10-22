@@ -1,0 +1,32 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.quick-launcher",
+  "name": "Quick Launcher",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.3",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait",
+    "accessoryCircular",
+    "accessoryRectangular",
+    "accessoryInline"
+  ],
+  "permissions": [
+    "storage"
+  ],
+  "networkDomains": [],
+  "description": "Save and reorder web links, app URLs and named Shortcuts. Test draft links in Records & Configuration.",
+  "category": "productivity",
+  "tags": [
+    "launcher",
+    "shortcuts",
+    "links"
+  ],
+  "icon": "square.grid.2x2.fill",
+  "preview": "preview.png"
+}

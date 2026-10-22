@@ -1,0 +1,13 @@
+{
+  "description": "Real calendar events, explicit access, and a calm agenda for every widget size.",
+  "category": "productivity",
+  "tags": [
+    "calendar",
+    "agenda",
+    "events",
+    "real-data"
+  ],
+  "difficulty": "intermediate",
+  "icon": "calendar.badge.clock",
+  "featured": true
+}

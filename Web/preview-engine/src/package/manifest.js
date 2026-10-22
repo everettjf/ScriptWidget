@@ -1,11 +1,13 @@
 // Package 2.0 manifest handling, mirroring ScriptWidgetPackage.readManifest
 // (strict keys + Codable decoding) and WidgetPackageManifestValidator.
+import { validTimelineSchedule } from "../timeline.js";
+import { runtimeContract } from "../contract.js";
 import { normalizePackagePath } from "../packageFiles.js";
 
 export const runtimeAPIVersion = "1.0";
 export const families = ["systemSmall", "systemMedium", "systemLarge", "systemExtraLarge", "systemExtraLargePortrait", "accessoryCircular", "accessoryRectangular", "accessoryInline"];
-export const permissions = ["network", "location", "health", "storage", "files"];
-const manifestKeys = new Set(["formatVersion", "id", "name", "version", "runtimeVersion", "entry", "supportedFamilies", "permissions", "networkDomains", "plugins", "actions", "controls", "pushUpdates", "description", "category", "tags", "icon", "preview", "author", "license"]);
+export const permissions = ["network", "location", "health", "calendar", "storage", "files"];
+const manifestKeys = new Set(["formatVersion", "id", "name", "version", "runtimeVersion", "minimumRuntimeVersion", "timeline", "entry", "supportedFamilies", "permissions", "networkDomains", "plugins", "actions", "controls", "pushUpdates", "description", "category", "tags", "icon", "preview", "author", "license"]);
 const actionKeys = new Set(["id", "title", "description", "systemImage", "function"]);
 const controlKeys = new Set(["id", "type", "title", "subtitle", "systemImage", "action", "actionID", "stateKey"]);
 
@@ -26,6 +28,11 @@ export function decodeManifest(text) {
   if (Array.isArray(object.actions) && !object.actions.every((item) => isObject(item) && subset(item, actionKeys))) return { error: "actions have unknown fields." };
   if (isObject(object.pushUpdates) && !subset(object.pushUpdates, new Set(["registrationURL", "channel"]))) return { error: "pushUpdates has unknown fields." };
 
+  if (object.timeline !== undefined && object.timeline !== null) {
+    const value = object.timeline;
+    if (!isObject(value) || !subset(value, new Set(["dailyTimes", "timeZone"])) || !Array.isArray(value.dailyTimes) || !value.dailyTimes.every((time) => typeof time === "string") ||
+        (value.timeZone !== undefined && value.timeZone !== null && typeof value.timeZone !== "string")) return { error: "timeline is malformed." };
+  }
   // Codable: required keys with exact types; enum arrays reject unknown values.
   const stringFields = ["id", "name", "version", "runtimeVersion", "entry"];
   if (!isInteger(object.formatVersion)) return { error: "formatVersion must be an integer." };
@@ -34,7 +41,7 @@ export function decodeManifest(text) {
   if (!stringArray(object.supportedFamilies) || !object.supportedFamilies.every((item) => families.includes(item))) return { error: "supportedFamilies contains an unknown family." };
   if (!stringArray(object.permissions) || !object.permissions.every((item) => permissions.includes(item))) return { error: "permissions contains an unknown permission." };
   if (!stringArray(object.networkDomains)) return { error: "networkDomains must be an array of strings." };
-  for (const field of ["description", "category", "icon", "preview", "license"]) if (field in object && object[field] !== null && typeof object[field] !== "string") return { error: `${field} must be a string.` };
+  for (const field of ["description", "category", "icon", "preview", "license", "minimumRuntimeVersion"]) if (field in object && object[field] !== null && typeof object[field] !== "string") return { error: `${field} must be a string.` };
   for (const field of ["plugins", "tags"]) if (field in object && object[field] !== null && !stringArray(object[field])) return { error: `${field} must be an array of strings.` };
   if ("actions" in object && object.actions !== null) {
     if (!Array.isArray(object.actions) || !object.actions.every((item) => ["id", "title", "systemImage", "function"].every((key) => typeof item[key] === "string") && (item.description === undefined || item.description === null || typeof item.description === "string"))) return { error: "actions are malformed." };
@@ -90,19 +97,41 @@ const validFunction = pattern(/^[A-Za-z_$][A-Za-z0-9_$]{0,63}$/);
 const validStateKey = pattern(/^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/);
 const swiftLength = (text) => [...text].length;
 
+export function validPackageName(name) {
+  if (typeof name !== "string" || name.trim() === "" || name.startsWith(".")) return false;
+  if (name.normalize("NFC").toLowerCase() === "__build" || /[/\\]/u.test(name) || /^[A-Za-z]:/u.test(name)) return false;
+  if (/[\p{Cc}\p{Cf}]/u.test(name.replace(/[\u200c\u200d]/gu, ""))) return false;
+  const count = typeof Intl.Segmenter === "function"
+    ? [...new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(name)].length
+    : [...name.normalize("NFC")].length;
+  return count <= 80 && new TextEncoder().encode(name).byteLength <= 240;
+}
+
+
+export function supportsMinimumRuntime(minimum, current = runtimeContract.nativeAPIVersion) {
+  const parse = (text) => typeof text === "string" && /^(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,2})$/.test(text) ? text.split(".").map(Number) : null;
+  const required = parse(minimum), supported = parse(current);
+  return required !== null && supported !== null && required[0] === supported[0] && required[1] <= supported[1];
+}
+
 /// WidgetPackageManifestValidator.validate. `paths` lists package files.
 export function validateManifest(manifest, paths, { checkEntryExists = true } = {}) {
   const issues = [];
   const error = (code, message) => issues.push({ severity: "error", code, message });
   const warning = (code, message) => issues.push({ severity: "warning", code, message });
   const files = new Set(paths);
+  if (paths.some((path) => path.toLowerCase() === "widget.json" && path !== "widget.json")) error("invalid_manifest_case", "Use the exact file name widget.json.");
 
   if (manifest.formatVersion !== 2) error("unsupported_format", `Package format ${manifest.formatVersion} is not supported.`);
   if (!validId(manifest.id)) error("invalid_id", "id must contain 3–128 letters, numbers, dots, or hyphens.");
-  const name = manifest.name.trim();
-  if (name === "" || swiftLength(name) > 80) error("invalid_name", "name must contain 1–80 characters.");
+  if (!validPackageName(manifest.name)) error("invalid_name", "name must be a nonreserved package name, at most 80 characters/240 UTF-8 bytes, without path separators or control characters.");
   if (!/^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?$/.test(manifest.version)) error("invalid_version", "version must use semantic versioning, for example 1.0.0.");
   if (manifest.runtimeVersion !== runtimeAPIVersion) error("unsupported_runtime", `Runtime ${manifest.runtimeVersion} is incompatible with ${runtimeAPIVersion}.`);
+  if (manifest.minimumRuntimeVersion != null) {
+    if (!/^(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,2})$/.test(manifest.minimumRuntimeVersion)) error("invalid_minimum_runtime", "minimumRuntimeVersion must be a canonical major.minor API version.");
+    else if (!supportsMinimumRuntime(manifest.minimumRuntimeVersion)) error("unsupported_minimum_runtime", "This package requires a newer or incompatible ScriptWidget Runtime. Update the app before running it.");
+  }
+  if (manifest.timeline != null && !validTimelineSchedule(manifest.timeline)) error("invalid_timeline", "timeline requires sorted dailyTimes and a valid timeZone.");
   if (manifest.entry.startsWith("/") || manifest.entry.includes("\\")) error("invalid_entry", "entry must be a package-relative POSIX path.");
   else {
     const entry = normalizePackagePath(manifest.entry);

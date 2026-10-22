@@ -9,8 +9,14 @@ import Foundation
 import AppKit
 
 class AppDelegate: NSObject, NSApplicationDelegate {
-    var openWidgetURL: (URL) -> Void = { url in
+    var openWidgetURL: (URL) -> Bool = { url in
         NSWorkspace.shared.open(url)
+    }
+
+    var reportUnavailableLink: () -> Void = {
+        let alert=NSAlert();alert.messageText="Couldn’t Open Link"
+        alert.informativeText="Check the link and make sure its target app is installed. Test saved launcher links in Records & Configuration."
+        alert.addButton(withTitle:"OK");alert.runModal()
     }
 
     func application(_ application: NSApplication, open urls: [URL]) {
@@ -18,7 +24,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             guard let scheme = url.scheme?.lowercased(),
                   scheme != kDeepLinkDefaultScheme,
                   scheme != "scriptwidget" else { continue }
-            openWidgetURL(url)
+            if !openWidgetURL(url) { reportUnavailableLink() }
         }
     }
 

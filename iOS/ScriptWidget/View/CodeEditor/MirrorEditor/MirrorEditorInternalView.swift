@@ -66,6 +66,7 @@ struct MirrorEditorInternalActionProvider {
 }
 
 class MirrorEditorInternalView: WKWebView {
+    var libraryEditorLease: UUID?
     public var accessoryView: UIView?
     
     var bridge: WKWebViewJavascriptBridge?
@@ -174,6 +175,7 @@ class MirrorEditorInternalView: WKWebView {
     }
     
     deinit {
+        ScriptWidgetEditorPresence.unregister(libraryEditorLease)
         print("de-init editor")
         isTearingDown = true
         pendingActions.removeAll()

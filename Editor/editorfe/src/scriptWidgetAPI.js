@@ -1,9 +1,12 @@
+import { storageAPICatalog } from "./storageAPICatalog.js";
+import { dataAPICatalog } from "./dataAPICatalog.js";
+
 // Editor metadata for the native JSX components selected by
 // ScriptWidgetElementView's switch. The native switch remains the runtime
 // authority; tests verify that this metadata stays aligned with it.
 export const scriptWidgetAPI = {
   "schemaVersion": 1,
-  "runtimeVersion": "26.6",
+  "runtimeVersion": "1.3",
   "documentation": "Public JSX surface shared by ScriptWidget Runtime and Studio.",
   "platforms": {
     "ios": "16.0",
@@ -61,10 +64,20 @@ export const scriptWidgetAPI = {
     "Toggle": { "documentation": "Interactive widget toggle. A declared actionID requires a package-relative storage stateKey.", "children": true, "availability": { "interactiveIos": "17.0" }, "requiredAny": ["onClick", "actionID"], "properties": { "on": { "type": "boolean", "required": true }, "onClick": { "type": "function", "conflicts": ["actionID"] }, "actionID": { "type": "action-id", "requires": ["stateKey"], "conflicts": ["onClick"] }, "stateKey": { "type": "storage-key", "requires": ["actionID"] } } }
   },
   "functions": {
-    "fetch": { "documentation": "Perform a network request." },
+    ...Object.fromEntries(storageAPICatalog.map((api) => [api.id, api])),
+    ...Object.fromEntries(dataAPICatalog.map((api) => [api.id, {
+      documentation: api.notes,
+      arguments: api.arguments,
+      returns: api.asynchronous ? "Promise<json>" : typeof api.value === "object" ? "json" : typeof api.value,
+    }])),
+    "$file.exists": { "documentation": "Return whether a regular file is locally present inside this package, including binary assets. Missing files, directories, unsafe paths and links return false. Does not download iCloud files or read outside the package. Web preview uses workspace file presence.", "arguments": ["path"], "returns": "boolean", "minimumRuntimeVersion": "1.3" },
+    "$file.read": { "documentation": "Read package-relative UTF-8 text. Missing or unavailable files return an empty string.", "arguments": ["path"], "returns": "string" },
+    "$file.readJSON": { "documentation": "Read a package-relative JSON object.", "arguments": ["path"], "returns": "json" },
+    "fetch": { "documentation": "Perform a network request and return its response text. Existing HTTP methods keep this string result." },
+    "$http.getResponse": { "documentation": "GET response metadata: {status, body, headers}. Headers are limited to content-type, cache-control, expires, last-modified, date and retry-after (lowercase; each at most 2048 UTF-8 bytes). Network permissions, public-host policy, redirects, body limits and timeline restrictions still apply. HTTP error statuses resolve; transport errors reject.", "arguments": ["url", "options?"], "returns": "Promise<json>", "minimumRuntimeVersion": "1.3" },
     "importJS": { "documentation": "Import a package-relative JavaScript file." },
     "$dataSource.request": { "documentation": "Call a declared Data Source Plugin operation. Requires Package 2.0 plugins, network permission, and networkDomains declarations.", "arguments": ["pluginID", "operationID", "parameters"], "returns": "Promise<json|string>" },
     "$xml.parse": { "documentation": "Parse up to 256 KiB of XML into {name, attributes, text, children}. DTDs and external entities are rejected; depth and node limits apply.", "arguments": ["source"], "returns": "XMLNode" }
   },
-  "environmentValues": ["widget-size", "widget-param", "widget-rendering-mode", "live-activity-state", "live-activity-surface", "action-id", "action-source", "action-value", "control-id", "control-value"]
+  "environmentValues": ["timeline-date", "timeline-time-zone", "timeline-slot", "timeline-is-projection", "widget-size", "widget-param", "widget-rendering-mode", "live-activity-state", "live-activity-is-stale", "live-activity-surface", "action-id", "action-source", "action-value", "control-id", "control-value"]
 };

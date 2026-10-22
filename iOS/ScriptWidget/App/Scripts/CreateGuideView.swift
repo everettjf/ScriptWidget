@@ -49,6 +49,8 @@ struct CreateGuideView: View {
     @State private var showingGallery = false
     @State private var selectedCategory: ScriptCategory? = nil
     @State private var searchText: String = ""
+    @State private var showingCreationError = false
+    @State private var creationError = ""
 
     var body: some View {
         NavigationStack(path: $templatePath) {
@@ -116,6 +118,9 @@ struct CreateGuideView: View {
             .sheet(isPresented: $showingGallery) {
                 ScriptWidgetGalleryView()
             }
+            .alert("Create failed", isPresented: $showingCreationError) {
+                Button("OK", role: .cancel) { }
+            } message: { Text(creationError) }
             .alert("Configure AI First", isPresented: $showingAIConfigAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
@@ -223,9 +228,8 @@ struct CreateGuideView: View {
     @ViewBuilder
     private func editorDestination(for item: ScriptModel) -> some View {
         ScriptCodeEditorView(mode: .creator, scriptModel: item, actionCreate: {
-            guard let content = item.package.readMainFile().0 else { return }
-            let imageCopyPath = item.package.imagePath
-            _ = sharedScriptManager.createScript(content: content, recommendPackageName: item.name, imageCopyPath: imageCopyPath)
+            let result = sharedScriptManager.createScript(fromTemplate: item.package)
+            guard result.0 else { creationError = result.1; showingCreationError = true; return }
             NotificationCenter.default.post(name: ScriptWidgetHomeViewDataObject.scriptCreateNotification, object: nil)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: {
                 dismiss()

@@ -135,12 +135,7 @@ struct EmptyHelloView: View {
     }
 
     private func createFromTemplate(_ item: ScriptModel) {
-        guard let content = item.package.readMainFile().0 else { return }
-        let result = sharedScriptManager.createScript(
-            content: content,
-            recommendPackageName: item.name,
-            imageCopyPath: item.package.imagePath
-        )
+        let result = sharedScriptManager.createScript(fromTemplate: item.package)
         if result.0 {
             NotificationCenter.default.post(name: SharedAppStore.scriptCreateNotification, object: nil)
         } else {

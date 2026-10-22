@@ -1,0 +1,75 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.hydration-goal",
+  "name": "Hydration Goal",
+  "version": "1.2.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.3",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait",
+    "accessoryCircular",
+    "accessoryRectangular",
+    "accessoryInline"
+  ],
+  "permissions": [
+    "storage"
+  ],
+  "networkDomains": [],
+  "description": "Log real water intake with a configurable glass size, seven-day history, reset and undo.",
+  "category": "health",
+  "tags": [
+    "water",
+    "hydration",
+    "ring",
+    "goal"
+  ],
+  "icon": "drop.fill",
+  "actions": [
+    {
+      "id": "addGlass",
+      "title": "Record a glass",
+      "systemImage": "drop.fill",
+      "function": "addGlass"
+    },
+    {
+      "id": "undoRecord",
+      "title": "Undo last water change",
+      "systemImage": "arrow.uturn.backward",
+      "function": "undoRecord"
+    },
+    {
+      "id": "resetToday",
+      "title": "Reset today’s water",
+      "systemImage": "arrow.counterclockwise",
+      "function": "resetToday"
+    }
+  ],
+  "controls": [
+    {
+      "id": "addGlass",
+      "type": "button",
+      "title": "Record a glass",
+      "systemImage": "drop.fill",
+      "actionID": "addGlass"
+    },
+    {
+      "id": "undoRecord",
+      "type": "button",
+      "title": "Undo last water change",
+      "systemImage": "arrow.uturn.backward",
+      "actionID": "undoRecord"
+    },
+    {
+      "id": "resetToday",
+      "type": "button",
+      "title": "Reset today’s water",
+      "systemImage": "arrow.counterclockwise",
+      "actionID": "resetToday"
+    }
+  ]
+}

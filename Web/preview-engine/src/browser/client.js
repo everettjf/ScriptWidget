@@ -69,7 +69,7 @@ export function createPreviewSandbox({ sandboxDocument, sandboxURL, assetBaseURL
     ready,
     async execute({
       files,
-      entry = "main.jsx",
+      entry,
       manifest = null,
       environments = { "widget-size": "medium", "widget-param": "" },
       preview = { appearance: "light" },

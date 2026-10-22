@@ -393,6 +393,14 @@ final class GalleryInstaller {
     }
 
     func state(for item: GalleryItem) -> GalleryInstallState {
+        if item.kind == .widget, let context = scriptManager.storageContext {
+            guard let binding = try? context.gallerySource(itemID: item.id),
+                  let manifest = scriptManager.getScriptPackage(packageName: binding.name).readManifest() else { return .notInstalled }
+            if let record = registry.record(for: item.id), record.localIdentifier == binding.name, record.version == manifest.version {
+                return registry.state(for: item)
+            }
+            return .updateAvailable(current: manifest.version)
+        }
         guard let record = registry.record(for: item.id) else { return .notInstalled }
         switch record.kind {
         case .widget:
@@ -460,11 +468,24 @@ final class GalleryInstaller {
         let validation = WidgetPackageManifestValidator.validate(manifest, package: package)
         guard validation.isValid else { throw GalleryError.install(validation.errors.map(\.message).joined(separator: "\n")) }
 
+        if let context = scriptManager.storageContext {
+            guard context.libraryRoot == scriptManager.scriptDirectory.standardizedFileURL.resolvingSymlinksInPath() else {
+                throw GalleryError.install("The native Gallery library changed. Reopen ScriptWidget and try again.")
+            }
+            let name = try context.installGallerySource(source, itemID: item.id, version: item.version,
+                freshName: scriptManager.getValidPackageName(recommendPackageName: manifest.name))
+            if buildAfterInstall {
+                let result = scriptManager.buildScriptPackage(package: scriptManager.getScriptPackage(packageName: name))
+                guard result.0 else { throw GalleryError.install("The widget was installed, but its preview cache could not be rebuilt. Retry to rebuild it. " + result.1) }
+            }
+            return name
+        }
+
         let existing = registry.record(for: item.id)
         let localName = existing?.kind == .widget && scriptManager.isExist(packageName: existing!.localIdentifier)
             ? existing!.localIdentifier
             : scriptManager.getValidPackageName(recommendPackageName: manifest.name)
-        let destination = scriptManager.getPackagePathFromPackageName(packageName: localName)
+        guard let destination = scriptManager.getPackagePathFromPackageName(packageName: localName) else { throw GalleryError.install("Invalid widget package name.") }
         try replaceDirectory(at: destination, with: source) {
             if buildAfterInstall {
                 let build = scriptManager.buildScriptPackage(package: scriptManager.getScriptPackage(packageName: localName))

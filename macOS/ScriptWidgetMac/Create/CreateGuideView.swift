@@ -251,15 +251,7 @@ struct CreateGuideView: View {
     }
 
     private func createFromTemplate(_ item: ScriptModel) {
-        guard let content = item.package.readMainFile().0 else {
-            MacKitUtil.alertWarn(title: "Failed to read template", message: "Please retry or relaunch the app.")
-            return
-        }
-        let result = sharedScriptManager.createScript(
-            content: content,
-            recommendPackageName: item.name,
-            imageCopyPath: item.package.imagePath
-        )
+        let result = sharedScriptManager.createScript(fromTemplate: item.package)
         if !result.0 {
             MacKitUtil.alertWarn(title: "Create failed", message: result.1)
             return

@@ -20,7 +20,7 @@ export function compilerBootstrap(prepare) {
     if (message.type === "prepare" && compiler !== null) {
       let prepared;
       try {
-        prepared = prepare.preparePackage(compiler, { files: message.files, entry: message.entry, prelude: message.prelude ?? "" });
+        prepared = prepare.preparePackage(compiler, { files: message.files, entry: message.entry, prelude: message.prelude ?? "", manifest: message.manifest ?? null });
       } catch (error) {
         prepared = { ok: false, error: { kind: "internalError", message: String(error) } };
       }

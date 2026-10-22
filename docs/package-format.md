@@ -31,9 +31,10 @@ The machine-readable contract is [`widget.schema.json`](../Shared/ScriptWidgetRu
 
 - `formatVersion`: package contract version; currently exactly `2`.
 - `id`: stable reverse-DNS-style identifier, 3–128 characters.
-- `name`: human-readable project name, 1–80 characters.
+- `name`: human-readable project name, 1–80 Unicode grapheme clusters and at most 240 UTF-8 bytes. Chinese names and joined emoji are supported. Names cannot start with a dot, equal `__Build` (case insensitive), contain path separators or control characters (except ZWNJ/ZWJ), or begin with a Windows drive prefix. Installed directory names must also be unambiguous after case folding and Unicode normalization. JSON Schema provides a conservative scalar bound; native/Web semantic validators enforce the grapheme and UTF-8 limits.
 - `version`: semantic version such as `1.2.0` or `1.2.0-beta.1`.
-- `runtimeVersion`: required ScriptWidget runtime API; currently exactly `1.0`.
+- `runtimeVersion`: Package 2.0 compiler/runtime ABI; currently exactly `1.0`.
+- `minimumRuntimeVersion`: optional minimum native public API version, such as `1.3`. Omit it for the 1.0 baseline. Only canonical `major.minor` strings are accepted; incompatible major versions and newer minor requirements fail closed. This field does not change the Package 2.0 ABI. Older readers reject the new field instead of silently ignoring it.
 - `entry`: a relative `.js` or `.jsx` file inside the package.
 - `supportedFamilies`: one or more WidgetKit families.
   iOS, iPadOS, and macOS 27 add `systemExtraLargePortrait`; packages may
@@ -54,12 +55,12 @@ The machine-readable contract is [`widget.schema.json`](../Shared/ScriptWidgetRu
   contains an HTTPS `registrationURL` on a declared `networkDomains` host and a
   non-secret `channel`. ScriptWidget posts the WidgetKit token, package ID, and
   channel when the token changes; packages never receive the token in JSX.
-- `permissions`: declared capabilities: `network`, `location`, `health`, `storage`, or `files`.
+- `permissions`: declared capabilities: `network`, `location`, `health`, `calendar`, `storage`, or `files`.
 - `networkDomains`: lowercase host allowlist. It requires `network`; use exact hosts or a leading wildcard such as `*.example.com`.
 - `plugins`: optional Data Source Plugin identifiers. Every data-source request also requires `network` and a matching `networkDomains` entry.
 - Optional discovery fields: `description`, `category`, `tags`, `icon`, `preview`, `author`, and `license`.
 
-The Mac Studio Config panel edits and validates these values before saving. New widgets get a manifest automatically. A legacy package containing `main.jsx` and optional `meta.json` is migrated when it is imported or exported.
+The Mac Studio Config panel edits and validates these values before saving. New blank projects get a manifest automatically; source, optional images and the manifest are prepared before atomic publication, so failed creation leaves no partial package. Saving an existing package rejects a present invalid manifest before changing its main file. Installing, remixing or editing a manifestless legacy template preserves its format and existing permission behavior; it does not invent an empty permission list. Remixing an existing Package 2.0 widget refreshes its manifest ID and name while preserving its declarations and resources. A legacy package containing `main.jsx` and optional `meta.json` is migrated when it is imported or exported.
 
 ## Reusable actions
 
@@ -86,8 +87,32 @@ ScriptWidget treats every imported `.swt` as untrusted. Before extraction it che
 
 Extraction uses a unique temporary directory that is removed after every attempt. The extracted tree is checked again before copying. The archive filename does not control the installed project directory; the validated manifest name does.
 
-Permission declarations are surfaced for review during import and enforced by the Package 2.0 runtime. Network calls require `network`, use HTTPS, and must match `networkDomains`. Legacy packages remain compatible but do not gain access to the new plugin API.
+Permission declarations are surfaced for review during import and enforced by the Package 2.0 runtime. Generic network calls require `network`, use public HTTP(S) endpoints, and must match `networkDomains`; Data Source Plugin mappings remain HTTPS-only. Legacy packages remain compatible but do not gain access to the new plugin or Calendar APIs. The additive `calendar` declaration enables read-only `$calendar` calls after system approval; it does not enable event writes. Older readers reject the unknown permission rather than silently running the package without it. See [Calendar API](calendar-api.md).
 
 ## Compatibility
 
 `meta.json` remains readable for bundled and existing projects. Package 2.0 makes `widget.json` authoritative when both exist. A package requiring an unknown format or runtime is rejected instead of being opened with undefined behavior.
+
+
+Before compiling or running a package, native widget rendering, Dynamic Island rendering and action execution validate a present manifest, including its minimum API requirement. Preview compilation does the same. The package file takes precedence over any host-provided manifest object; a malformed or incompatible present file is never treated as a legacy package. Legacy projects without `widget.json` keep their existing execution behavior.
+
+A minimum version is an availability floor, not a permission grant. Declare the permissions required by the selected APIs separately, and obtain system approval in the application where needed. See the [data API catalog](data-api-catalog.md) for per-method availability. Calendar packages should declare `minimumRuntimeVersion: "1.3"`.
+
+Runtime 1.3 adds optional `timeline` with 1–4 sorted `dailyTimes` and an optional IANA `timeZone`. It does not grant capabilities or change the execution clock. See [scheduled widget states](timeline-api.md) for DST behavior, projections and resource limits.
+
+
+Package file access uses package-relative paths (at most 16 components, each at most 255 UTF-8 bytes). Reads and atomic writes reject links, multiply linked regular files, special files, and case aliases. Individual resource reads/writes are bounded to 25 MiB; metadata has its stricter 256 KiB limit. A present `Widget.json` or other incorrectly cased manifest is rejected rather than treated as a legacy package. Nested source and resource folders remain supported. These checks supplement archive validation; they do not grant package permissions.
+
+## Native previews and personal data
+
+An uninstalled native Gallery, template or AI trial preview uses a read-only package and fresh in-memory `$storage`. It cannot request or query personal calendar, location or Health data, even if the app already has system authorization. These APIs report unavailable in that preview and reject queries with `permission_denied`; install the widget, declare the capability and grant the relevant system access to use real data. AI trial runs do not retain records between executions.
+
+Installed widgets execute from a frozen, read-only copy of their package, but retain their native installation identity, records and declared capabilities. This execution copy is not an uninstalled preview. Package 2.0 Health queries require `health`; genuine legacy scripts retain their existing authorization behavior. HealthKit read grants remain undisclosed.
+
+Web Studio uses illustrative, editable Mock Data rather than querying the device's personal stores. A successful browser preview does not establish native system authorization.
+
+### Native compiled fallback
+
+Activated native libraries keep compiled output in their private storage profile, separately from authored package files. Each atomic cache entry records its installation owner, manifest policy hash, compiler contract, source hash and compiled-output hash. A later source syntax error can use the last valid output only while that installation and policy remain valid. Reinstalling a same-named widget or switching libraries invalidates the previous installation's cache access.
+
+The cache uses 32 fixed slots, with a 2 MiB compiled-code limit and the storage metadata frame limit per slot. Collisions evict cached output and cause recompilation; they never select another installation's output. Unsaved editor overrides and uninstalled previews do not publish this cache. Source files remain authoritative, and cached output is disposable.

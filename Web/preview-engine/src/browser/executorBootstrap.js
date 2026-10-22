@@ -84,12 +84,16 @@ export function executorBootstrap(kernel) {
       evaluateScript,
       compiledImport(relativePath) {
         const path = normalize(relativePath);
-        if (path === null || !has(files, path)) return null;
+        if (path === null || !has(files, path) || typeof files[path] !== "string") return null;
         return has(imports, path) ? imports[path] : JSON.stringify({ ok: false, kind: "transformError", message: "Not a script file" });
       },
       readFile(relativePath) {
         const path = normalize(relativePath);
         return path !== null && has(files, path) ? files[path] : null;
+      },
+      fileExists(relativePath) {
+        const path = normalize(relativePath);
+        return path !== null && has(files,path);
       },
       supportScript(name) { return has(supportScripts, name) ? supportScripts[name] : null; },
       parseXML() { return JSON.stringify({ ok: false, error: "$xml.parse is not available in the web preview yet" }); },

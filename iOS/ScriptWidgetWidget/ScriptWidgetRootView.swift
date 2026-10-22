@@ -18,7 +18,7 @@ struct ScriptWidgetWidgetElementRootView: View {
     let scriptName: String
     let scriptParameter: String
 
-    init(widgetFamily: WidgetFamily, renderingMode: WidgetRenderingMode, entry: ScriptWidgetTimelineProvider.Entry) {
+    init(widgetFamily: WidgetFamily, renderingMode: WidgetRenderingMode, colorScheme: ColorScheme, entry: ScriptWidgetTimelineProvider.Entry) {
         self.widgetFamily = widgetFamily
         self.scriptName = entry.configuration.Script ?? ""
         self.scriptParameter = entry.configuration.Parameter ?? ""
@@ -33,7 +33,9 @@ struct ScriptWidgetWidgetElementRootView: View {
             scriptName: self.scriptName,
             scriptParameter: self.scriptParameter,
             widgetFamily: self.widgetFamily,
-            widgetRenderingMode: renderingModeValue
+            widgetRenderingMode: renderingModeValue,
+            timelineEnvironments: entry.timelineEnvironments,
+            isDarkMode: colorScheme == .dark
         )
         NSLog("!! will run script sync")
         self.data.runScriptSync()

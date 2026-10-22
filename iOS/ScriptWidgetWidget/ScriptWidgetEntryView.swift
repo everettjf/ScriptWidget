@@ -14,6 +14,7 @@ import Combine
 
 struct ScriptWidgetWidgetEntryView : View {
     @Environment(\.widgetFamily) var widgetFamily
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.widgetRenderingMode) private var widgetRenderingMode
     var entry: ScriptWidgetTimelineProvider.Entry
     
@@ -27,7 +28,7 @@ struct ScriptWidgetWidgetEntryView : View {
             ScriptWidgetPlaceholderView(widgetFamily: self.widgetFamily)
                 .containerBackground(.background, for: .widget)
         } else {
-            ScriptWidgetWidgetElementRootView(widgetFamily: self.widgetFamily, renderingMode: widgetRenderingMode, entry: self.entry)
+            ScriptWidgetWidgetElementRootView(widgetFamily: self.widgetFamily, renderingMode: widgetRenderingMode, colorScheme: colorScheme, entry: self.entry)
         }
     }
 }

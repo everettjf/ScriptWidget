@@ -26,7 +26,7 @@ export function corpusPackages() {
 }
 
 export function usesLiveData(source) {
-  return ["fetch(", "$http.", "$location.", "$health.", "$dataSource."].some((token) => source.includes(token));
+  return ["$getenv(\"timeline-date\")", "fetch(", "$http.", "$location.", "$health.", "$calendar.", "$dataSource."].some((token) => source.includes(token));
 }
 
 export function readNativeTrees() {

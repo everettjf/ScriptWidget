@@ -1,6 +1,6 @@
 # ScriptWidget Runtime API
 
-> Generated from Studio's static API metadata (schema v1, runtime 26.6). The native runtime switch is authoritative. Do not edit by hand.
+> Generated from Studio's static API metadata (schema v1, runtime 1.3). The native runtime switch is authoritative. Do not edit by hand.
 
 ## Components
 
@@ -784,17 +784,78 @@ Interactive widget toggle. A declared actionID requires a package-relative stora
 
 ## Runtime functions
 
-- `fetch`: Perform a network request.
+- `$storage.getString`: Read a package-scoped string. Missing keys return an empty string.
+- `$storage.setString`: Set a package-scoped string, limited to 256 KiB of UTF-8. Check the success result.
+- `$storage.getJSON`: Read a package-scoped JSON object. Missing or invalid values return an empty object.
+- `$storage.setJSON`: Store a valid JSON object, limited to 256 KiB encoded. Check the success result.
+- `$storage.compareAndSetString`: Atomically replace a string only when it still matches expected. A missing key matches an empty string. Conflicts return false; reread and retry a bounded number of times. Requires the shared storage container.
+- `$storage.compareAndSetJSON`: Atomically replace a JSON object if its current value equals expected, independent of property order. A missing key matches an empty object. Wrong types and conflicts return false. Requires the shared storage container.
+- `$storage.remove`: Remove a key from this package only.
+- `$storage.keys`: List keys in this package's namespace.
+- `$storage.clear`: Clear this package's storage. Other packages are unaffected.
+- `$device.screen`: Device values depend on hardware. Some legacy Mac values are placeholders; inspect the API documentation before using them as measurements.
+- `$device.language`: Device values depend on hardware. Some legacy Mac values are placeholders; inspect the API documentation before using them as measurements.
+- `$device.model`: Device values depend on hardware. Some legacy Mac values are placeholders; inspect the API documentation before using them as measurements.
+- `$device.name`: Device values depend on hardware. Some legacy Mac values are placeholders; inspect the API documentation before using them as measurements.
+- `$device.battery`: Device values depend on hardware. Some legacy Mac values are placeholders; inspect the API documentation before using them as measurements.
+- `$device.systemVersion`: Device values depend on hardware. Some legacy Mac values are placeholders; inspect the API documentation before using them as measurements.
+- `$device.isdarkmode`: Device values depend on hardware. Some legacy Mac values are placeholders; inspect the API documentation before using them as measurements.
+- `$device.totalDiskSpace`: Device values depend on hardware. Some legacy Mac values are placeholders; inspect the API documentation before using them as measurements.
+- `$device.freeDiskSpace`: Device values depend on hardware. Some legacy Mac values are placeholders; inspect the API documentation before using them as measurements.
+- `$system.appInfo`: System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable.
+- `$system.locale`: System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable.
+- `$system.preferredLanguages`: System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable.
+- `$system.timeZone`: System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable.
+- `$system.is24HourClock`: System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable.
+- `$system.calendarInfo`: System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable.
+- `$system.systemUptime`: System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable.
+- `$system.memory`: System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable.
+- `$system.thermalState`: System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable.
+- `$system.lowPowerMode`: System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable.
+- `$system.brightness`: System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable.
+- `$system.reduceMotionEnabled`: System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable.
+- `$system.platform`: System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable.
+- `$system.hostName`: System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable.
+- `$system.processName`: System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable.
+- `$system.osVersionString`: System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable.
+- `$system.processorCount`: System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable.
+- `$system.activeProcessorCount`: System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable.
+- `$calendar.isAvailable`: Requires calendar in widget.json and full system Calendar access. The user's native Settings source selection limits metadata, events and cached snapshots; scripts cannot enlarge it. Use calendars() for permitted IDs and show setup when no sources are selected. Queries are read-only, limited to 31 days and 50 items. Preview calendarSelection simulates this scope without granting package permission.
+- `$calendar.authorizationStatus`: Requires calendar in widget.json and full system Calendar access. The user's native Settings source selection limits metadata, events and cached snapshots; scripts cannot enlarge it. Use calendars() for permitted IDs and show setup when no sources are selected. Queries are read-only, limited to 31 days and 50 items. Preview calendarSelection simulates this scope without granting package permission.
+- `$calendar.requestAuthorization`: Requires calendar in widget.json and full system Calendar access. The user's native Settings source selection limits metadata, events and cached snapshots; scripts cannot enlarge it. Use calendars() for permitted IDs and show setup when no sources are selected. Queries are read-only, limited to 31 days and 50 items. Preview calendarSelection simulates this scope without granting package permission.
+- `$calendar.calendars`: Requires calendar in widget.json and full system Calendar access. The user's native Settings source selection limits metadata, events and cached snapshots; scripts cannot enlarge it. Use calendars() for permitted IDs and show setup when no sources are selected. Queries are read-only, limited to 31 days and 50 items. Preview calendarSelection simulates this scope without granting package permission.
+- `$calendar.events`: Requires calendar in widget.json and full system Calendar access. The user's native Settings source selection limits metadata, events and cached snapshots; scripts cannot enlarge it. Use calendars() for permitted IDs and show setup when no sources are selected. Queries are read-only, limited to 31 days and 50 items. Preview calendarSelection simulates this scope without granting package permission.
+- `$health.authorizationStatus`: Read-only HealthKit. Request access in the app. Authorization completion does not reveal whether individual read types were granted; empty results must not be labelled permission denied. API 1.3 readings add hasSamples: false means no readable samples, never a read-denial verdict. Existing value/unit/start/end fields remain.
+- `$health.isAvailable`: Read-only HealthKit. Request access in the app. Authorization completion does not reveal whether individual read types were granted; empty results must not be labelled permission denied. API 1.3 readings add hasSamples: false means no readable samples, never a read-denial verdict. Existing value/unit/start/end fields remain.
+- `$health.requestAuthorization`: Read-only HealthKit. Request access in the app. Authorization completion does not reveal whether individual read types were granted; empty results must not be labelled permission denied. API 1.3 readings add hasSamples: false means no readable samples, never a read-denial verdict. Existing value/unit/start/end fields remain.
+- `$health.stepCountToday`: Read-only HealthKit. Request access in the app. Authorization completion does not reveal whether individual read types were granted; empty results must not be labelled permission denied. API 1.3 readings add hasSamples: false means no readable samples, never a read-denial verdict. Existing value/unit/start/end fields remain.
+- `$health.activeEnergyToday`: Read-only HealthKit. Request access in the app. Authorization completion does not reveal whether individual read types were granted; empty results must not be labelled permission denied. API 1.3 readings add hasSamples: false means no readable samples, never a read-denial verdict. Existing value/unit/start/end fields remain.
+- `$health.heartRateLatest`: Read-only HealthKit. Request access in the app. Authorization completion does not reveal whether individual read types were granted; empty results must not be labelled permission denied. API 1.3 readings add hasSamples: false means no readable samples, never a read-denial verdict. Existing value/unit/start/end fields remain.
+- `$location.isAvailable`: Package 2.0 requires location permission. Request system access in the app. Widgets also require isAuthorizedForWidgetUpdates. Cache is rechecked against authorization and precision, discarded after 24 hours or revocation, and reports age/isStale.
+- `$location.authorizationStatus`: Package 2.0 requires location permission. Request system access in the app. Widgets also require isAuthorizedForWidgetUpdates. Cache is rechecked against authorization and precision, discarded after 24 hours or revocation, and reports age/isStale.
+- `$location.isAuthorizedForWidgetUpdates`: Package 2.0 requires location permission. Request system access in the app. Widgets also require isAuthorizedForWidgetUpdates. Cache is rechecked against authorization and precision, discarded after 24 hours or revocation, and reports age/isStale.
+- `$location.requestAuthorization`: Package 2.0 requires location permission. Request system access in the app. Widgets also require isAuthorizedForWidgetUpdates. Cache is rechecked against authorization and precision, discarded after 24 hours or revocation, and reports age/isStale.
+- `$location.current`: Package 2.0 requires location permission. Request system access in the app. Widgets also require isAuthorizedForWidgetUpdates. Cache is rechecked against authorization and precision, discarded after 24 hours or revocation, and reports age/isStale.
+- `$file.exists`: Return whether a regular file is locally present inside this package, including binary assets. Missing files, directories, unsafe paths and links return false. Does not download iCloud files or read outside the package. Web preview uses workspace file presence.
+- `$file.read`: Read package-relative UTF-8 text. Missing or unavailable files return an empty string.
+- `$file.readJSON`: Read a package-relative JSON object.
+- `fetch`: Perform a network request and return its response text. Existing HTTP methods keep this string result.
+- `$http.getResponse`: GET response metadata: {status, body, headers}. Headers are limited to content-type, cache-control, expires, last-modified, date and retry-after (lowercase; each at most 2048 UTF-8 bytes). Network permissions, public-host policy, redirects, body limits and timeline restrictions still apply. HTTP error statuses resolve; transport errors reject.
 - `importJS`: Import a package-relative JavaScript file.
 - `$dataSource.request`: Call a declared Data Source Plugin operation. Requires Package 2.0 plugins, network permission, and networkDomains declarations.
 - `$xml.parse`: Parse up to 256 KiB of XML into {name, attributes, text, children}. DTDs and external entities are rejected; depth and node limits apply.
 
 ## Environment values
 
+- `timeline-date`
+- `timeline-time-zone`
+- `timeline-slot`
+- `timeline-is-projection`
 - `widget-size`
 - `widget-param`
 - `widget-rendering-mode`
 - `live-activity-state`
+- `live-activity-is-stale`
 - `live-activity-surface`
 - `action-id`
 - `action-source`

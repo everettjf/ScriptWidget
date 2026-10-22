@@ -1,0 +1,32 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.photo-card",
+  "name": "Photo Card",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.3",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait",
+    "accessoryCircular",
+    "accessoryRectangular",
+    "accessoryInline"
+  ],
+  "permissions": [
+    "storage"
+  ],
+  "networkDomains": [],
+  "description": "Import and crop your own photos, then make a single card, duo or four-photo collage. Photos stay in the widget package.",
+  "category": "fun",
+  "tags": [
+    "photo",
+    "collage",
+    "offline"
+  ],
+  "icon": "photo.on.rectangle.angled",
+  "preview": "preview.png"
+}

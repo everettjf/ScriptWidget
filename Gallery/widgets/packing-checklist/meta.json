@@ -1,0 +1,11 @@
+{
+  "description": "Check off a configurable daily packing list with saved history, reset and undo.",
+  "category": "productivity",
+  "tags": [
+    "packing",
+    "travel",
+    "checklist"
+  ],
+  "difficulty": "beginner",
+  "icon": "suitcase.rolling.fill"
+}

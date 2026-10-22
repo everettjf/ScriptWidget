@@ -22,6 +22,7 @@ struct SidebarView: View {
     // setup guide
     @State private var widgetGuideShowingSheet = false
     @State private var searchText = ""
+    @State private var selectedRecordItem: ScriptModel?
 
     // rename
     @State private var renameCurrentName = ""
@@ -36,6 +37,7 @@ struct SidebarView: View {
     var body: some View {
         content
             .frame(minWidth: 230, idealWidth: 260, maxWidth: 320)
+            .sheet(item: $selectedRecordItem) { item in ScriptWidgetRecordsView(package: item.package) }
             .sheet(isPresented: $renameShowingSheet) {
                 RenameConfirmView(currentName: $renameCurrentName, inputName: $renameInputName)
             }
@@ -139,6 +141,9 @@ struct SidebarView: View {
                                 .padding(.vertical, 2)
                         }
                         .contextMenu(menuItems: {
+                            if (try? ScriptWidgetRecordKind.load(package: item.package)) != nil {
+                                Button("Records & Configuration", systemImage: "list.bullet.rectangle") { selectedRecordItem = item }
+                            }
                             Button("Reveal in Finder") {
                                 MacKitUtil.revealInFinder(item.package.path.path)
                             }

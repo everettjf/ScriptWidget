@@ -17,6 +17,14 @@
   Date = ParityDate;
   var seed = 42;
   Math.random = function () { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+  // Imported helpers can hide network calls from the entry-source classifier.
+  // The generic corpus must never contact a live service. Dedicated template
+  // fixtures exercise successful HTTP/cache states separately.
+  function offline() { throw new Error("[parity_offline] No network fixture in the generic corpus"); }
+  fetch = offline;
+  $fetch = offline;
+  $http = {getResponse: offline, get: offline, post: offline, put: offline, patch: offline, delete: offline, head: offline};
+  $dataSource = {request: offline};
   $device = {
     screen: function () { return { width: 390, height: 844, scale: 3 }; },
     language: function () { return "en"; },

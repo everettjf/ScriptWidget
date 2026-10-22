@@ -26,6 +26,7 @@ function initialSettings(colorScheme: "light" | "dark"): PreviewSettings {
     appearance: preferences.read("appearance", colorScheme),
     renderingMode: "fullColor",
     parameter: "",
+    timelineDate: "",
   };
 }
 

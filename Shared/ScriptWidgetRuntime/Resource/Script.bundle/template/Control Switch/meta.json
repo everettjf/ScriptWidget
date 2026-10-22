@@ -1,0 +1,11 @@
+{
+  "description": "One persistent local switch shared by widgets, Control Center and Shortcuts. This does not change a system setting.",
+  "category": "productivity",
+  "tags": [
+    "controls",
+    "switch",
+    "shortcuts"
+  ],
+  "difficulty": "beginner",
+  "icon": "switch.2"
+}

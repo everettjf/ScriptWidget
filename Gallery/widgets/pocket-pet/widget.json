@@ -1,0 +1,78 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.pocket-pet",
+  "name": "Pocket Pet",
+  "version": "2.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.3",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait",
+    "accessoryCircular",
+    "accessoryRectangular",
+    "accessoryInline"
+  ],
+  "permissions": [
+    "storage"
+  ],
+  "networkDomains": [],
+  "description": "Local explicit daily care with saved history, undo and original JSX artwork.",
+  "category": "fun",
+  "tags": [
+    "local",
+    "care",
+    "interactive"
+  ],
+  "icon": "heart",
+  "actions": [
+    {
+      "id": "feedPet",
+      "title": "Feed pet",
+      "systemImage": "carrot",
+      "function": "feedPet"
+    },
+    {
+      "id": "playPet",
+      "title": "Play with pet",
+      "systemImage": "sparkles",
+      "function": "playPet"
+    },
+    {
+      "id": "restPet",
+      "title": "Rest pet",
+      "systemImage": "moon",
+      "function": "restPet"
+    },
+    {
+      "id": "undoRecord",
+      "title": "Undo last care",
+      "systemImage": "arrow.uturn.backward",
+      "function": "undoRecord"
+    },
+    {
+      "id": "resetToday",
+      "title": "Clear today",
+      "systemImage": "trash",
+      "function": "resetToday"
+    }
+  ],
+  "controls": [
+    {
+      "id": "feedPet",
+      "type": "button",
+      "title": "Feed pet",
+      "systemImage": "carrot",
+      "actionID": "feedPet"
+    }
+  ],
+  "timeline": {
+    "dailyTimes": [
+      "00:00"
+    ]
+  },
+  "preview": "preview.png"
+}

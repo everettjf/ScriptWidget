@@ -35,6 +35,12 @@ export function scriptWidgetKernel(global, host, configJSON) {
   const logs = [];
   const diagnostics = [];
 
+  function utf8ByteLength(text) {
+    let count = 0;
+    for (const character of text) { const cp = character.codePointAt(0); count += cp <= 0x7f ? 1 : cp <= 0x7ff ? 2 : cp <= 0xffff ? 3 : 4; }
+    return count;
+  }
+
   function diagnostic(severity, code, message) {
     if (diagnostics.length < 200) diagnostics.push({ severity, code, message: StringCtor(message) });
   }
@@ -330,10 +336,14 @@ export function scriptWidgetKernel(global, host, configJSON) {
   }
 
   const environments = config.environments ?? {};
+  const timelineProjection = environments["timeline-is-projection"] === "true";
+  const liveActivityPresentation = ["live-activity","dynamic-island"].includes(environments["widget-size"]);
   const fixtures = config.fixtures ?? {};
   let networkRequests = 0;
 
   function fetchPolicyError(url) {
+    if (liveActivityPresentation) return ["[live_activity_unavailable] Live Activity presentations cannot request network data; update their state from the app", null];
+    if (timelineProjection) return ["[timeline_read_only] Future entries cannot make live network requests", null];
     const match = /^([A-Za-z][A-Za-z0-9+.-]*):\/\/([^/?#]*)/.exec(url);
     if (!match) return ["Only HTTP and HTTPS URLs are allowed", null];
     const scheme = match[1].toLowerCase();
@@ -367,7 +377,7 @@ export function scriptWidgetKernel(global, host, configJSON) {
     return (manifest.permissions ?? []).includes("network") && hostMatches(host, manifest.networkDomains ?? []);
   }
 
-  function internalFetch(method, url, params) {
+  function internalFetch(method, url, params, metadata = false) {
     const urlString = nativeString(url);
     const bridgedParams = params === undefined || params === null ? null : bridgeValue(params, 0);
     return nativePromise((resolve, reject) => {
@@ -385,8 +395,17 @@ export function scriptWidgetKernel(global, host, configJSON) {
       }
       if (fixture.error) { reject(nativeString(fixture.error)); return; }
       const body = nativeString(fixture.body ?? "");
-      if (bridgedParams && bridgedParams.responseType === "base64") resolve(fixture.base64 ?? body);
-      else resolve(body);
+      const encodedBody = bridgedParams?.responseType === "base64" ? nativeString(fixture.base64 ?? body) : body;
+      if (utf8ByteLength(body) > 2097152) { reject("Response exceeds the 2097152-byte limit"); return; }
+      if (metadata) {
+        const headers = {};
+        const allowed = ["content-type", "cache-control", "expires", "last-modified", "date", "retry-after"];
+        for (const [key,value] of Object.entries(fixture.headers ?? {})) {
+          const name = key.toLowerCase();
+          if (allowed.includes(name) && typeof value === "string" && utf8ByteLength(value) <= 2048) headers[name] = value;
+        }
+        resolve({status:fixture.status ?? 200,body:encodedBody,headers});
+      } else resolve(encodedBody);
     });
   }
 
@@ -400,6 +419,22 @@ export function scriptWidgetKernel(global, host, configJSON) {
   }
 
   const storage = new Map(Object.entries(config.storage ?? fixtures.storage ?? {}));
+  const validStorageKey = (key) => key !== "" && utf8ByteLength(key) <= 256;
+  function storageJSON(value) {
+    if (value === null || typeof value !== "object") return null;
+    try {
+      const dictionary = bridgeDictionary(value, 0);
+      const normalize = (item) => {
+        if (item === null || typeof item === "string" || typeof item === "boolean") return item;
+        if (typeof item === "number") { if (!Number.isFinite(item)) throw new Error("Nonfinite JSON"); return item; }
+        if (item instanceof DateCtor || isElement(item)) throw new Error("Unsupported JSON value");
+        if (ArrayIsArray(item)) return item.map(normalize);
+        return Object.fromEntries(ObjectKeys(item).sort().map((key) => [key, normalize(item[key])]));
+      };
+      const encoded = JSONStringify(normalize(dictionary));
+      return utf8ByteLength(encoded) <= 256 * 1024 ? { encoded, value: dictionary } : null;
+    } catch { return null; }
+  }
   const device = config.device ?? fixtures.device ?? {};
   const system = config.system ?? fixtures.system ?? {};
   const constant = (value) => () => unbridge(bridgeValue(value, 0));
@@ -432,12 +467,18 @@ export function scriptWidgetKernel(global, host, configJSON) {
     },
     $http: {
       get: (url, params) => internalFetch("GET", url, params),
+      getResponse: (url, params) => internalFetch("GET", url, params, true),
       post: (url, params) => internalFetch("POST", url, params),
       put: (url, params) => internalFetch("PUT", url, params),
       patch: (url, params) => internalFetch("PATCH", url, params),
       delete: (url, params) => internalFetch("DELETE", url, params),
     },
     $file: {
+      exists(path) {
+        const name = nativeString(path), parts = name.split("/");
+        if (/^[A-Za-z]:/.test(name) || parts.length > 16 || parts.some((part) => !part || part === "." || part === ".." || part.includes("\\") || utf8ByteLength(part) > 255 || [...part].some((character) => /[\p{Cc}\p{Cf}]/u.test(character) && character !== "\u200c" && character !== "\u200d"))) return false;
+        return host.fileExists?.(name) === true;
+      },
       read(path) { const text = host.readFile(nativeString(path)); return text ?? ""; },
       readJSON(path) { return readJSON(host.readFile(nativeString(path))); },
     },
@@ -461,7 +502,15 @@ export function scriptWidgetKernel(global, host, configJSON) {
       processorCount: constant(system.processorCount ?? 6),
       activeProcessorCount: constant(system.activeProcessorCount ?? 6),
     },
+    $calendar: {
+      isAvailable: () => false,
+      authorizationStatus: () => "unavailable",
+      requestAuthorization: unavailablePromise("calendar.authorization"),
+      calendars: unavailablePromise("calendar.calendars"),
+      events: unavailablePromise("calendar.events"),
+    },
     $health: {
+      authorizationStatus: () => fixtures.health !== undefined ? "notDisclosed" : "unavailable",
       isAvailable: () => fixtures.health !== undefined,
       requestAuthorization: unavailablePromise("health"),
       stepCountToday: unavailablePromise("health.stepCountToday"),
@@ -469,27 +518,50 @@ export function scriptWidgetKernel(global, host, configJSON) {
       heartRateLatest: unavailablePromise("health.heartRateLatest"),
     },
     $location: {
+      isAuthorizedForWidgetUpdates: () => fixtures.location !== undefined,
       isAvailable: () => fixtures.location !== undefined,
       authorizationStatus: () => (fixtures.location !== undefined ? "authorizedWhenInUse" : "notDetermined"),
       requestAuthorization: unavailablePromise("location.authorization"),
       current: unavailablePromise("location"),
     },
     $storage: {
-      getString(key) { const value = storage.get(nativeString(key)); return typeof value === "string" ? value : ""; },
+      getString(key) { const name = nativeString(key); const value = validStorageKey(name) ? storage.get(name) : undefined; return typeof value === "string" ? value : ""; },
       setString(key, value) {
+        if (timelineProjection) return false;
         const name = nativeString(key); const text = nativeString(value);
-        if (name === "" || name.length > 256 || text.length > 256 * 1024) return false;
+        if (!validStorageKey(name) || utf8ByteLength(text) > 256 * 1024) return false;
         storage.set(name, text); return true;
       },
-      getJSON(key) { const value = storage.get(nativeString(key)); return value && typeof value === "object" ? unbridge(value) : {}; },
-      setJSON(key, value) {
-        const name = nativeString(key);
-        if (name === "" || value === null || typeof value !== "object") return false;
-        storage.set(name, bridgeDictionary(value, 0)); return true;
+      getJSON(key) {
+        const name = nativeString(key); const value = validStorageKey(name) ? storage.get(name) : undefined;
+        return value && typeof value === "object" && !ArrayIsArray(value) ? unbridge(value) : {};
       },
-      remove(key) { storage.delete(nativeString(key)); return true; },
+      setJSON(key, value) {
+        if (timelineProjection) return false;
+        const name = nativeString(key), json = storageJSON(value);
+        if (!validStorageKey(name) || json === null) return false;
+        storage.set(name, json.value); return true;
+      },
+      compareAndSetString(key, expected, value) {
+        if (timelineProjection || fixtures.storageAtomicAvailable === false) return false;
+        const name = nativeString(key), before = nativeString(expected), next = nativeString(value);
+        if (!validStorageKey(name) || utf8ByteLength(before) > 256 * 1024 || utf8ByteLength(next) > 256 * 1024) return false;
+        if ((storage.has(name) && typeof storage.get(name) !== "string") || (storage.get(name) ?? "") !== before) return false;
+        storage.set(name, next); return true;
+      },
+      compareAndSetJSON(key, expected, value) {
+        if (timelineProjection || fixtures.storageAtomicAvailable === false) return false;
+        const name = nativeString(key), before = storageJSON(expected), next = storageJSON(value);
+        if (!validStorageKey(name) || before === null || next === null) return false;
+        if (storage.has(name)) {
+          const current = storage.get(name);
+          if (!current || typeof current !== "object" || ArrayIsArray(current) || storageJSON(current)?.encoded !== before.encoded) return false;
+        } else if (before.encoded !== "{}") return false;
+        storage.set(name, next.value); return true;
+      },
+      remove(key) { if (timelineProjection) return false; const name = nativeString(key); if (!validStorageKey(name)) return false; storage.delete(name); return true; },
       keys() { return [...storage.keys()].sort(); },
-      clear() { storage.clear(); return true; },
+      clear() { if (timelineProjection) return false; storage.clear(); return true; },
     },
     $runtime: {
       apiVersion: contract.apiVersion,
@@ -500,10 +572,13 @@ export function scriptWidgetKernel(global, host, configJSON) {
         elementNodes: contract.maximumElementNodes,
         elementDepth: contract.maximumElementDepth,
         propsPerElement: contract.maximumPropsPerElement,
+        systemDataQueries: contract.maximumDataQueries,
       },
     },
     $dataSource: {
       request: (pluginID, operationID) => nativePromise((resolve, reject) => {
+        if (liveActivityPresentation) { reject("[live_activity_unavailable] Live Activity presentations cannot request service data; update their state from the app"); return; }
+        if (timelineProjection) { reject("[timeline_read_only] Future entries cannot make live service requests"); return; }
         const plugin = nativeString(pluginID), operation = nativeString(operationID);
         const fixture = (fixtures.dataSource ?? []).find((item) => item.pluginID === plugin && item.operationID === operation);
         if (!fixture) {
@@ -562,18 +637,108 @@ export function scriptWidgetKernel(global, host, configJSON) {
   // imports, runtime contracts and network policy continue to execute normally.
   // Fresh bridged values prevent a script from modifying later mock responses.
   const apiMocks = fixtures.api ?? {};
-  for (const namespace of ["$device", "$system", "$health", "$location"]) {
+  for (const namespace of ["$device", "$system", "$health", "$location", "$calendar"]) {
     for (const method of ObjectKeys(apis[namespace])) {
       const mock = apiMocks[`${namespace}.${method}`];
       if (!mock || typeof mock !== "object" || ArrayIsArray(mock)) continue;
       const hasError = Object.prototype.hasOwnProperty.call(mock, "error");
       if (!hasError && !Object.prototype.hasOwnProperty.call(mock, "value")) continue;
-      const asynchronous = (namespace === "$health" && method !== "isAvailable") ||
+      const asynchronous = (["$calendar"].includes(namespace) && !["isAvailable", "authorizationStatus"].includes(method)) || (namespace === "$health" && !["isAvailable", "authorizationStatus"].includes(method)) ||
         (namespace === "$location" && (method === "current" || method === "requestAuthorization"));
       apis[namespace][method] = asynchronous
         ? () => nativePromise((resolve, reject) => hasError ? reject(nativeString(mock.error)) : resolve(bridgeValue(mock.value, 0)))
         : () => { if (hasError) throw new Error(nativeString(mock.error)); return unbridge(bridgeValue(mock.value, 0)); };
     }
+  }
+  if (timelineProjection) {
+    for (const method of ["requestAuthorization", "stepCountToday", "activeEnergyToday", "heartRateLatest"]) {
+      apis.$health[method] = () => nativePromise((resolve, reject) => reject("[timeline_read_only] Future entries cannot query live Health data"));
+    }
+  }
+  // Apply policy after fixture replacement: mocks cannot grant package access.
+  let dataQueries = 0;
+  const locationDeclared = () => !config.manifest || config.manifest.permissions?.includes("location") === true;
+  const locationStatus = apis.$location.authorizationStatus;
+  const locationWidgetAuthorization = apis.$location.isAuthorizedForWidgetUpdates;
+  apis.$location.authorizationStatus = () => locationDeclared() ? locationStatus() : "undeclared";
+  apis.$location.isAuthorizedForWidgetUpdates = () => locationDeclared() && apis.$location.isAvailable() === true &&
+    ["authorizedAlways", "authorizedWhenInUse"].includes(apis.$location.authorizationStatus()) && locationWidgetAuthorization() === true;
+  for (const method of ["requestAuthorization", "current"]) {
+    const implementation = apis.$location[method];
+    apis.$location[method] = (options) => nativePromise((resolve, reject) => {
+      if (liveActivityPresentation) { reject("[live_activity_unavailable] Live Activity presentations cannot request location updates; update their state from the app"); return; }
+      if (!locationDeclared()) { reject("[permission_denied] Declare location in widget.json"); return; }
+      if (++dataQueries > contract.maximumDataQueries) { reject("[query_limit] System data query limit exceeded"); return; }
+      if (method === "current") {
+        if (!apis.$location.isAvailable()) { reject("[unavailable] Location services are disabled on this device"); return; }
+        if (!["authorizedAlways", "authorizedWhenInUse"].includes(apis.$location.authorizationStatus())) { reject("[permission_denied] Location permission denied"); return; }
+        if (!apis.$location.isAuthorizedForWidgetUpdates()) { reject("[widget_not_authorized] Allow location for widgets in Settings"); return; }
+      }
+      implementation(options).then(resolve, reject);
+    });
+  }
+  const rawCalendarSelection = fixtures.calendarSelection;
+  const calendarSelectionValid = rawCalendarSelection == null || (ArrayIsArray(rawCalendarSelection) && rawCalendarSelection.length <= 64 && new Set(rawCalendarSelection).size === rawCalendarSelection.length && rawCalendarSelection.every((id) => typeof id === "string" && id.length > 0 && utf8ByteLength(id) <= 256));
+  const selectedCalendars = rawCalendarSelection == null ? null : calendarSelectionValid ? new Set(rawCalendarSelection) : new Set();
+  const calendarDeclared = () => config.manifest?.permissions?.includes("calendar") === true;
+  const calendarStatus = apis.$calendar.authorizationStatus;
+  apis.$calendar.authorizationStatus = () => calendarDeclared() ? calendarStatus() : "undeclared";
+  for (const method of ["requestAuthorization", "calendars", "events"]) {
+    const implementation = apis.$calendar[method];
+    apis.$calendar[method] = (options) => nativePromise((resolve, reject) => {
+      if (!calendarDeclared()) { reject("[permission_denied] Declare calendar in widget.json"); return; }
+      let calendarQuery = {};
+      if (method === "events") {
+        try {
+          const query = options == null ? {} : bridgeDictionary(options, 0);
+          calendarQuery = query;
+          if (ObjectKeys(query).some((key) => !["start", "end", "limit", "calendarIDs", "maxAgeSeconds"].includes(key))) throw new Error("Unknown calendar query option");
+          const parseDate = (value) => {
+            if (typeof value !== "string" || value.length > 64 || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,9})?(?:Z|[+-]\d{2}:\d{2})$/.test(value) || !Number.isFinite(new DateCtor(value).getTime())) throw new Error("Invalid calendar date");
+            return new DateCtor(value);
+          };
+          const start = query.start === undefined ? new DateCtor(new DateCtor().setHours(0, 0, 0, 0)) : parseDate(query.start);
+          const end = query.end === undefined ? new DateCtor(new DateCtor(start).setDate(start.getDate() + 1)) : parseDate(query.end);
+          if (!(end > start) || end - start > 31 * 86400000) throw new Error("Calendar range must be positive and at most 31 days");
+          if (query.limit !== undefined && (!Number.isInteger(query.limit) || query.limit < 1 || query.limit > 50)) throw new Error("Invalid limit");
+          if (query.maxAgeSeconds !== undefined && (typeof query.maxAgeSeconds !== "number" || !Number.isFinite(query.maxAgeSeconds) || query.maxAgeSeconds < 0 || query.maxAgeSeconds > 86400)) throw new Error("Invalid maxAgeSeconds");
+          const ids = query.calendarIDs;
+          if (ids !== undefined && (!ArrayIsArray(ids) || ids.length < 1 || ids.length > 16 || new Set(ids).size !== ids.length || ids.some((id) => typeof id !== "string" || !id || utf8ByteLength(id) > 256))) throw new Error("Invalid calendarIDs");
+        } catch (error) { reject(`[invalid_options] ${StringCtor(error.message)}`); return; }
+      }
+      if (method !== "requestAuthorization" && ++dataQueries > contract.maximumDataQueries) { reject("[query_limit] Too many system data queries"); return; }
+      if (method !== "requestAuthorization" && !apis.$calendar.isAvailable()) { reject("[unavailable] Calendar is unavailable"); return; }
+      if (method !== "requestAuthorization" && apis.$calendar.authorizationStatus() !== "authorized") { reject("[permission_denied] Allow calendar access in ScriptWidget"); return; }
+      if (method !== "requestAuthorization") {
+        if (!calendarSelectionValid) { reject("[permission_denied] Calendar source settings are unavailable"); return; }
+        if (method === "events" && selectedCalendars?.size === 0) { reject("[permission_denied] No Calendar sources are selected in ScriptWidget Settings"); return; }
+        const available = apiMocks["$calendar.calendars"]?.value;
+        if (method === "events" && selectedCalendars !== null && ArrayIsArray(available) && !available.some((item) => selectedCalendars.has(item?.id))) {
+          reject("[invalid_options] A requested Calendar source is unavailable or outside your selection"); return;
+        }
+        if (method === "events" && calendarQuery.calendarIDs?.some((id) => (selectedCalendars !== null && !selectedCalendars.has(id)) || (ArrayIsArray(available) && !available.some((item) => item?.id === id)))) {
+          reject("[invalid_options] A requested Calendar source is unavailable or outside your selection"); return;
+        }
+      }
+      if (timelineProjection) {
+        if (method === "requestAuthorization") { resolve(apis.$calendar.authorizationStatus() === "authorized"); return; }
+        const snapshot = apiMocks["$calendar.events"]?.value;
+        if (method === "calendars" || snapshot?.source !== "cache") { reject("[timeline_read_only] No matching Calendar snapshot is available"); return; }
+      }
+      implementation(options).then((value) => {
+        if (method === "requestAuthorization") { resolve(value); return; }
+        const available = apiMocks["$calendar.calendars"]?.value;
+        const allowed = (id) => typeof id === "string" && (selectedCalendars === null || selectedCalendars.has(id)) && (!ArrayIsArray(available) || available.some((item) => item?.id === id));
+        if (method === "calendars") {
+          if (!ArrayIsArray(value)) { reject("[mock_invalid] Calendar sources must be an array"); return; }
+          resolve(value.filter((item) => allowed(item?.id)).slice(0,64)); return;
+        }
+        if (!value || !ArrayIsArray(value.items)) { reject("[mock_invalid] Calendar events need an items array"); return; }
+        const items = value.items.filter((item) => allowed(item?.calendarID) && (!calendarQuery.calendarIDs || calendarQuery.calendarIDs.includes(item.calendarID)));
+        const limit = calendarQuery.limit ?? 10;
+        resolve({ ...value, items: items.slice(0, limit), status: items.length ? "ready" : "empty", truncated: value.truncated === true || items.length > limit });
+      }, reject);
+    });
   }
   apis.$fetch = apis.fetch;
   apis.console = apis.$console;

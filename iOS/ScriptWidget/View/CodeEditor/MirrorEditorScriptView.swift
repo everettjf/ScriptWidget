@@ -47,11 +47,17 @@ struct MirrorEditorScriptView: UIViewRepresentable {
     func makeUIView(context: Context) -> MirrorEditorInternalView {
         print("MirrorEditorScriptView make ui view : \(filePath.lastPathComponent)")
         let uiView = MirrorEditorInternalView()
+        uiView.libraryEditorLease = ScriptWidgetEditorPresence.register()
         uiView.updateDocument(action: createActionProvider())
         
         return uiView;
     }
     
+    static func dismantleUIView(_ uiView: MirrorEditorInternalView, coordinator: ()) {
+        ScriptWidgetEditorPresence.unregister(uiView.libraryEditorLease)
+        uiView.libraryEditorLease = nil
+    }
+
     func updateUIView(_ uiView: MirrorEditorInternalView, context: Context) {
         print("MirrorEditorScriptView update ui view: \(filePath.lastPathComponent)")
         uiView.updateDocument(action: createActionProvider())

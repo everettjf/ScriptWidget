@@ -35,6 +35,35 @@ for (const name of names) {
   if (Buffer.byteLength(source) > 512 * 1024) failures.push(`${name}: source exceeds runtime limit`);
 }
 
+const recordBackupSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/Resource/record-backup.schema.json"), "utf8"));
+if (recordBackupSchema.properties?.formatVersion?.const !== 1 || recordBackupSchema.additionalProperties !== false) {
+  failures.push("Record Backup 1 schema must declare its closed versioned envelope");
+}
+const recordKinds = recordBackupSchema.properties?.kind?.enum ?? [];
+const recordBranches = recordBackupSchema.allOf ?? [];
+const descriptorKinds = new Set();
+for (const name of names) {
+  const files = await readdir(join(templateRoot, name));
+  if (!files.includes("record-template.json")) continue;
+  const descriptor = JSON.parse(await readFile(join(templateRoot, name, "record-template.json"), "utf8"));
+  const manifest = JSON.parse(await readFile(join(templateRoot, name, "widget.json"), "utf8"));
+  descriptorKinds.add(descriptor.kind);
+  if (descriptor.formatVersion !== 1 || !recordKinds.includes(descriptor.kind) || Object.keys(descriptor).length !== 2 || !manifest.permissions.includes("storage") || manifest.minimumRuntimeVersion !== "1.3") {
+    failures.push(`${name}: record descriptor or storage requirements are invalid`);
+  }
+}
+if (new Set(recordKinds).size !== recordKinds.length || recordKinds.length !== descriptorKinds.size || recordBranches.length !== recordKinds.length) {
+  failures.push("Record Backup 1 schema kinds and branches must cover every record template exactly once");
+}
+for (const kind of recordKinds) {
+  const branches = recordBranches.filter((branch) => branch.if?.properties?.kind?.const === kind);
+  const values = branches[0]?.then?.properties?.values?.propertyNames?.enum;
+  const diagnostics = branches[0]?.then?.properties?.unsupportedValues?.propertyNames?.enum;
+  if (!descriptorKinds.has(kind) || branches.length !== 1 || !Array.isArray(values) || !values.includes("recordTemplate.config.v1") || JSON.stringify(values) !== JSON.stringify(diagnostics)) {
+    failures.push(`Record Backup 1 ${kind}: missing template, duplicate branch, or mismatched diagnostic key scope`);
+  }
+}
+
 const generatedDocs = await readFile(join(root, "docs/scriptwidget-runtime-api.md"), "utf8");
 if (!generatedDocs.includes(`schema v${schema.schemaVersion}`) || !generatedDocs.includes(`runtime ${schema.runtimeVersion}`)) {
   failures.push("runtime docs do not match schema/runtime version");
@@ -80,8 +109,8 @@ if (!aiSettings.includes("apiKey is intentionally omitted") || !aiSettings.inclu
 }
 
 const packageSource = await readFile(join(root, "Shared/ScriptWidgetRuntime/Common/ScriptWidgetPackage.swift"), "utf8");
-if (!packageSource.includes("write(to: fullPath, options: .atomic)")) {
-  failures.push("script source saves must remain atomic");
+for (const guardrail of ["ScriptWidgetPackageFiles.write(data, root: path, relative: relative)", "O_CREAT | O_EXCL | O_NOFOLLOW", "fsync(fd) == 0 && renameat(directory, temporary, directory, name) == 0"]) {
+  if (!packageSource.includes(guardrail)) failures.push(`atomic package saves are missing ${guardrail}`);
 }
 const managerSource = await readFile(join(root, "Shared/ScriptWidgetRuntime/Common/ScriptManager.swift"), "utf8");
 for (const guardrail of ["ScriptPackageArchivePreflight", "maximumExpandedBytes", "isSymbolicLinkKey", "WidgetPackageManifestValidator"]) {

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-09T20:00:00Z",
+  "generatedAt": "2026-10-22T00:12:13.166Z",
   "items": [
     {
       "author": "ScriptWidget Community",
@@ -62,6 +62,819 @@
         "review"
       ],
       "version": "1.0.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 5468,
+          "path": "lib/countdown.js",
+          "sha256": "27c45e3501e11a640003a9a98a36558d372e09384805178b7fa7b1a8ee3298a9",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/countdown/lib/countdown.js"
+        },
+        {
+          "bytes": 3328,
+          "path": "main.jsx",
+          "sha256": "5c64dbd16aaa1573a4b87b9266f2c21aba778cda167df121eda43e5a5f2a639f",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/countdown/main.jsx"
+        },
+        {
+          "bytes": 309,
+          "path": "meta.json",
+          "sha256": "39b7871585067ab45c41d6edfee577a50a2b09223a044c78309f094212a91bf8",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/countdown/meta.json"
+        },
+        {
+          "bytes": 17838,
+          "path": "preview.png",
+          "sha256": "0c8edc8035363312e41af17d20c16b3695aac7bd359e3a5df2548b49592ce83f",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/countdown/preview.png"
+        },
+        {
+          "bytes": 48,
+          "path": "record-template.json",
+          "sha256": "9fac535c54867d9e93de1887506da3acd464da911d3f67856caf6d61358c57cc",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/countdown/record-template.json"
+        },
+        {
+          "bytes": 543,
+          "path": "widget.json",
+          "sha256": "ce31a124fcb695ee526e34d984b6e59beec0f68ecac7504450dd4ce2f03199db",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/countdown/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.countdown",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Countdown",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/countdown",
+      "summary": "Requires Runtime API 1.3. A calm countdown with saved dates, yearly repeats and three accent colors. Configure it in Records & Configuration or use a date parameter.",
+      "symbol": "hourglass",
+      "tags": [
+        "productivity"
+      ],
+      "version": "2.0.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 9577,
+          "path": "lib/repository.js",
+          "sha256": "61a6a03539a48c90c8ecdde12b73c4c9c0e065d8732c267430d3bad2ead942ab",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/github-repo-stats/lib/repository.js"
+        },
+        {
+          "bytes": 4567,
+          "path": "main.jsx",
+          "sha256": "c072ea74fba5915bb32e02332218207ed49fd614233d40d87d7bb66b1b32d943",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/github-repo-stats/main.jsx"
+        },
+        {
+          "bytes": 219,
+          "path": "meta.json",
+          "sha256": "0cbba931b75ce9af2b95b5f8a864c605484f1ba47a0fc618a1ff3741ef67e09a",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/github-repo-stats/meta.json"
+        },
+        {
+          "bytes": 31057,
+          "path": "preview.png",
+          "sha256": "58ab11c7242f532b963421347a9905d85809031b6af7160b3ac7b37065f3282b",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/github-repo-stats/preview.png"
+        },
+        {
+          "bytes": 39,
+          "path": "record-template.json",
+          "sha256": "ea1e21f15021d0e63475b803f3dabce0275bf70bc40d80dfd31d8ebd0a689f7a",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/github-repo-stats/record-template.json"
+        },
+        {
+          "bytes": 804,
+          "path": "widget.json",
+          "sha256": "94ecf950fbec03299a4fd50ab0666376e1afff8cba3dfe965e1f5ee489296cc4",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/github-repo-stats/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.github-repo-stats",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "GitHub Repo Stats",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/github-repo-stats",
+      "summary": "Requires Runtime API 1.3. Public GitHub repository counts with saved configuration, bounded cache and clear offline/rate-limit states.",
+      "symbol": "star.fill",
+      "tags": [
+        "github",
+        "data",
+        "offline"
+      ],
+      "version": "2.0.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 7140,
+          "path": "lib/records.js",
+          "sha256": "32b406d5d26352eca3eedd45a211c2fef21ad2769c8f556b5929cfba62659776",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/habit-heatmap/lib/records.js"
+        },
+        {
+          "bytes": 7709,
+          "path": "main.jsx",
+          "sha256": "5740fd43e3d158f773aeba6f18618807a90c262c27f1c356032800fbc688251a",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/habit-heatmap/main.jsx"
+        },
+        {
+          "bytes": 348,
+          "path": "meta.json",
+          "sha256": "ba59da6191fb92724d426e4f64d857e53df5e3bd8594fb56e061e22d9af2f964",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/habit-heatmap/meta.json"
+        },
+        {
+          "bytes": 51,
+          "path": "record-template.json",
+          "sha256": "e2d08b24bf02c576001f3b40d8a3376b5bb3c86757526fbdc9fe4cee803bfc3b",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/habit-heatmap/record-template.json"
+        },
+        {
+          "bytes": 1487,
+          "path": "widget.json",
+          "sha256": "a8e22985d811dd1623081a16e5622a775f8819e9c8205da2320786c5916217f1",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/habit-heatmap/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.habit-heatmap",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Habit Heatmap",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/habit-heatmap",
+      "summary": "Requires Runtime API 1.3. Tap to check in each day. Local saved history powers a calendar heatmap and streak for Read, Run and Meditate. Interactive widgets require iOS 17+ or macOS 14+.",
+      "symbol": "square.grid.3x3.fill",
+      "tags": [
+        "productivity"
+      ],
+      "version": "1.2.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 7140,
+          "path": "lib/records.js",
+          "sha256": "32b406d5d26352eca3eedd45a211c2fef21ad2769c8f556b5929cfba62659776",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/habit-streak/lib/records.js"
+        },
+        {
+          "bytes": 3833,
+          "path": "main.jsx",
+          "sha256": "a3b03c27036cf078071c75aa10328d1f7efb42aaeaaf8e2570a1d543eeb56ce2",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/habit-streak/main.jsx"
+        },
+        {
+          "bytes": 288,
+          "path": "meta.json",
+          "sha256": "850faf29663b8c8e7c8824321589bfdcbccf389e4cebee3d7dcdcc0c92ad0195",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/habit-streak/meta.json"
+        },
+        {
+          "bytes": 213809,
+          "path": "preview.png",
+          "sha256": "457b655963f3cd1e059644e62ace3786d904b79503e74a242c74b7774075ffe3",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/habit-streak/preview.png"
+        },
+        {
+          "bytes": 50,
+          "path": "record-template.json",
+          "sha256": "4065ca87f1f7b79e25c409afcd30767fa2235326d5c1652b1484977151e3234a",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/habit-streak/record-template.json"
+        },
+        {
+          "bytes": 1766,
+          "path": "widget.json",
+          "sha256": "32a14e0dd1c59838de04a71f62e52b767587cb9004acb41aa4e9479a52590b77",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/habit-streak/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.habit-streak-tracker",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Habit Streak Tracker",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/habit-streak",
+      "summary": "Requires Runtime API 1.3. Explicit daily check-ins with a real streak, recent history, reset and undo. Earlier automatic counters remain untouched.",
+      "symbol": "flame.fill",
+      "tags": [
+        "habit",
+        "streak"
+      ],
+      "version": "1.2.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 4975,
+          "path": "lib/health.js",
+          "sha256": "c686cd140c830a90bb88b630f3c142096e2b75b353d04106aed78d2bfdc2c3af",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/health-card/lib/health.js"
+        },
+        {
+          "bytes": 4016,
+          "path": "main.jsx",
+          "sha256": "39c24b3b1f2b3749a53c8baa751210c3b90c7230e69f34da7be0bf6687434a79",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/health-card/main.jsx"
+        },
+        {
+          "bytes": 296,
+          "path": "meta.json",
+          "sha256": "f66c7109ebe643ec498421d52ed76cc2abd36c6ddb5a6e2c6e6e8c309c4f3db6",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/health-card/meta.json"
+        },
+        {
+          "bytes": 32219,
+          "path": "preview.png",
+          "sha256": "a8356ff6ad413dbc0bd21e091e7c6616a0824f8fe6b475abca2301b21070197b",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/health-card/preview.png"
+        },
+        {
+          "bytes": 40,
+          "path": "record-template.json",
+          "sha256": "211ac37358e361f772927f285e1f08218152faf285b8988f11264d10d1db66ff",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/health-card/record-template.json"
+        },
+        {
+          "bytes": 794,
+          "path": "widget.json",
+          "sha256": "8ab0d13a2b3b46a32f37697cec26a50aede795133dcad50e9afcc7145775db4c",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/health-card/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.health-card",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Health Steps Ring",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/health-card",
+      "summary": "Requires Runtime API 1.3. Read-only HealthKit steps, active energy or latest heart rate, with saved goals and clear unavailable states.",
+      "symbol": "heart.text.square.fill",
+      "tags": [
+        "health",
+        "steps",
+        "energy",
+        "heart"
+      ],
+      "version": "2.0.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 7140,
+          "path": "lib/records.js",
+          "sha256": "32b406d5d26352eca3eedd45a211c2fef21ad2769c8f556b5929cfba62659776",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/hydration-goal/lib/records.js"
+        },
+        {
+          "bytes": 4454,
+          "path": "main.jsx",
+          "sha256": "7675102ccb166bbb2452e3333458ba5f45af6247cad2ca1d1e00b7d2e4ad1a66",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/hydration-goal/main.jsx"
+        },
+        {
+          "bytes": 277,
+          "path": "meta.json",
+          "sha256": "42cb2d5efdadef19608eb4c4e12f310ef89de71a95f15a1d73a033023b41702e",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/hydration-goal/meta.json"
+        },
+        {
+          "bytes": 48,
+          "path": "record-template.json",
+          "sha256": "65a5dcdc02938981684ca41d9802a91ff81d2fe0f1a1256a7e58c7b7b7ee348c",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/hydration-goal/record-template.json"
+        },
+        {
+          "bytes": 1721,
+          "path": "widget.json",
+          "sha256": "37378b8c31fdc73ac380804c040924bf061d39c2bb0665ec8c61f68a718185dd",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/hydration-goal/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.hydration-goal",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Hydration Goal",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/hydration-goal",
+      "summary": "Requires Runtime API 1.3. Log real water intake with a configurable glass size, seven-day history, reset and undo.",
+      "symbol": "drop.fill",
+      "tags": [
+        "water",
+        "hydration",
+        "ring",
+        "goal"
+      ],
+      "version": "1.2.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 15633,
+          "path": "lib/weather.js",
+          "sha256": "008d18bb0b090d9de29cc323b2c72998bfbf3712221e6af2758b75f0610b2d4f",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/local-weather/lib/weather.js"
+        },
+        {
+          "bytes": 4517,
+          "path": "main.jsx",
+          "sha256": "d610566038c7fb0b2ea3d79cfcbf14bdf05d4dd8915c6270e8a2b0790f1b661a",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/local-weather/main.jsx"
+        },
+        {
+          "bytes": 303,
+          "path": "meta.json",
+          "sha256": "eb6783ebd77579b2ea4e18bdbe9d06216196310a0156f2b038c58ba107789a40",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/local-weather/meta.json"
+        },
+        {
+          "bytes": 24974,
+          "path": "preview.png",
+          "sha256": "726fd73f92a7a9b25184acf0b835c11b250d7286dba1b8001f416ad4dcfd949d",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/local-weather/preview.png"
+        },
+        {
+          "bytes": 46,
+          "path": "record-template.json",
+          "sha256": "384e70856ff24bea5967dcad3f2de38ad22551866690d2def3335321ab1a548a",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/local-weather/record-template.json"
+        },
+        {
+          "bytes": 863,
+          "path": "widget.json",
+          "sha256": "7bfe868faf47f0667edbb43d82e6db80bcd2cade0a2704f930fa998ac24106bc",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/local-weather/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.local-weather-location",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Local Weather (Location)",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/local-weather",
+      "summary": "Requires Runtime API 1.3. MET Norway forecasts with a saved-city fallback, response-aware cache and Celsius/Fahrenheit. Configure a city in Records & Configuration.",
+      "symbol": "cloud.sun.fill",
+      "tags": [
+        "weather",
+        "location",
+        "offline"
+      ],
+      "version": "2.0.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 7140,
+          "path": "lib/records.js",
+          "sha256": "32b406d5d26352eca3eedd45a211c2fef21ad2769c8f556b5929cfba62659776",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/mood-check-in/lib/records.js"
+        },
+        {
+          "bytes": 3827,
+          "path": "main.jsx",
+          "sha256": "03080a3a6a8ed5c07b1e3b354561504eafc0de6524b6369b1ed8165aead7cf9e",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/mood-check-in/main.jsx"
+        },
+        {
+          "bytes": 243,
+          "path": "meta.json",
+          "sha256": "a2a2fa48a586700eda961c141d81618b6329da635f0276b3067e043bdc5fef6e",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/mood-check-in/meta.json"
+        },
+        {
+          "bytes": 43,
+          "path": "record-template.json",
+          "sha256": "281babe2c31c2b9c3d4552881417cfedfa044b642d0ff35f9545c3831eef7e4d",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/mood-check-in/record-template.json"
+        },
+        {
+          "bytes": 2877,
+          "path": "widget.json",
+          "sha256": "43c93a3154708f35065d601c1d50b13aa706eb8c4ec177a6e0cb406777f66548",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/mood-check-in/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.mood-check-in",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Mood Check-in",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/mood-check-in",
+      "summary": "Requires Runtime API 1.3. Save a daily mood with a personal intention, seven-day history, reset and undo.",
+      "symbol": "face.smiling",
+      "tags": [
+        "mood",
+        "mindfulness",
+        "journal"
+      ],
+      "version": "1.2.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 7140,
+          "path": "lib/records.js",
+          "sha256": "32b406d5d26352eca3eedd45a211c2fef21ad2769c8f556b5929cfba62659776",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/packing-checklist/lib/records.js"
+        },
+        {
+          "bytes": 4478,
+          "path": "main.jsx",
+          "sha256": "0291b25e88a58c19fbf0e547237ffdf674b7a12ec049e513d71f5af023832e81",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/packing-checklist/main.jsx"
+        },
+        {
+          "bytes": 258,
+          "path": "meta.json",
+          "sha256": "f7040de66fd2bc95c5614b3a469dac2e47a32979b0864dbaa14a4713a36cf493",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/packing-checklist/meta.json"
+        },
+        {
+          "bytes": 48,
+          "path": "record-template.json",
+          "sha256": "3289b970fb16c0548106e61dbcae1e1fec92860a16ea1a1a8f6ebe4c7bf4fb6c",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/packing-checklist/record-template.json"
+        },
+        {
+          "bytes": 3608,
+          "path": "widget.json",
+          "sha256": "7dba071e39bf9eb813af0cd6225a5c4a8e9821db561c00933371a5cdf7ab6bdb",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/packing-checklist/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.packing-checklist",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Packing Checklist",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/packing-checklist",
+      "summary": "Requires Runtime API 1.3. Check off a configurable daily packing list with saved history, reset and undo.",
+      "symbol": "suitcase.rolling.fill",
+      "tags": [
+        "packing",
+        "travel",
+        "checklist"
+      ],
+      "version": "1.2.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 2042,
+          "path": "lib/configuration.js",
+          "sha256": "d5da443e2654ba2a15651b31bcd6ea4622f77cacbb90effad8795427ffdc73ea",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/photo-card/lib/configuration.js"
+        },
+        {
+          "bytes": 2938,
+          "path": "main.jsx",
+          "sha256": "72060f8ce77b27af0b680f46a7e06b976f4989aacc36510114e1df5b17d977fc",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/photo-card/main.jsx"
+        },
+        {
+          "bytes": 290,
+          "path": "meta.json",
+          "sha256": "b40d099190b3fc1d2d4121c12b1eb428aa491b32f1e82c87adf4f36ccbec2ea2",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/photo-card/meta.json"
+        },
+        {
+          "bytes": 29893,
+          "path": "preview.png",
+          "sha256": "72294b01349e2d35cef8082c1f0e6a75e969f3bd82c8fd3627cf40a1a0f96ec8",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/photo-card/preview.png"
+        },
+        {
+          "bytes": 48,
+          "path": "record-template.json",
+          "sha256": "f53072ee8cd52c4a18e85dca9a14bb7c1ba4c4ac973606612f46c940b4096e7c",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/photo-card/record-template.json"
+        },
+        {
+          "bytes": 771,
+          "path": "widget.json",
+          "sha256": "b5160f5fccd5e4e2719b038fecdaeeecf6672611b364185cbd585c5900ea284b",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/photo-card/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.photo-card",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Photo Card",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/photo-card",
+      "summary": "Requires Runtime API 1.3. Import and crop your own photos, then make a single card, duo or four-photo collage. Photos stay in the widget package.",
+      "symbol": "photo.on.rectangle.angled",
+      "tags": [
+        "photo",
+        "collage",
+        "offline"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 7140,
+          "path": "lib/records.js",
+          "sha256": "32b406d5d26352eca3eedd45a211c2fef21ad2769c8f556b5929cfba62659776",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/plant-care/lib/records.js"
+        },
+        {
+          "bytes": 3955,
+          "path": "main.jsx",
+          "sha256": "18ae5cba70b3aca155a7568d180f8751a0673cb09d0c8d6e85bcbd2efea0d80d",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/plant-care/main.jsx"
+        },
+        {
+          "bytes": 227,
+          "path": "meta.json",
+          "sha256": "e58adb6ad0d0e801c709ce3742182cc6ab83a78baa1b75b1d9f896f07bcfaf10",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/plant-care/meta.json"
+        },
+        {
+          "bytes": 27972,
+          "path": "preview.png",
+          "sha256": "a2ac0071ace250abd4620725df2941632ebd20517d9151d21b2556c32e4afc97",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/plant-care/preview.png"
+        },
+        {
+          "bytes": 48,
+          "path": "record-template.json",
+          "sha256": "cd533f029003b3c9205726dfb68909d4e2f918d8ab27c46d5f700fde1c90e4bd",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/plant-care/record-template.json"
+        },
+        {
+          "bytes": 1380,
+          "path": "widget.json",
+          "sha256": "ea57fd0bbb4aa8c8e8a3e29980983db4edaa447155fb0a59d651d0a0a08dd556",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/plant-care/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.plant-care",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Plant Care",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/plant-care",
+      "summary": "Requires Runtime API 1.3. Local explicit daily care with saved history, undo and original JSX artwork.",
+      "symbol": "leaf",
+      "tags": [
+        "local",
+        "care",
+        "interactive"
+      ],
+      "version": "2.0.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 7140,
+          "path": "lib/records.js",
+          "sha256": "32b406d5d26352eca3eedd45a211c2fef21ad2769c8f556b5929cfba62659776",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/pocket-pet/lib/records.js"
+        },
+        {
+          "bytes": 4893,
+          "path": "main.jsx",
+          "sha256": "f6e4bc4e646faf6fb9131ad1fcf34be62735664d1a16827fd3873db29d624ead",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/pocket-pet/main.jsx"
+        },
+        {
+          "bytes": 228,
+          "path": "meta.json",
+          "sha256": "139493ac4b6af2d620ce2f0d00daaae33ab8e9f519c4f022e9b38ea5adbeb594",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/pocket-pet/meta.json"
+        },
+        {
+          "bytes": 26075,
+          "path": "preview.png",
+          "sha256": "af0cf515b2b8482d3c1bdcf4955f24757920cfb65a5624cbeaedd691ecf19775",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/pocket-pet/preview.png"
+        },
+        {
+          "bytes": 48,
+          "path": "record-template.json",
+          "sha256": "867064701e42c1b8489c49df91c3f20ec5b6b19beb8ba437176a925f468330c6",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/pocket-pet/record-template.json"
+        },
+        {
+          "bytes": 1604,
+          "path": "widget.json",
+          "sha256": "232f4a53c005fdc34f13bac0e87913c8346a6e9d19c2aecf5b882880f939a504",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/pocket-pet/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.pocket-pet",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Pocket Pet",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/pocket-pet",
+      "summary": "Requires Runtime API 1.3. Local explicit daily care with saved history, undo and original JSX artwork.",
+      "symbol": "heart",
+      "tags": [
+        "local",
+        "care",
+        "interactive"
+      ],
+      "version": "2.0.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 4227,
+          "path": "lib/launcher.js",
+          "sha256": "642ccca4c9bf96744d30583b6a7d5cc6b47697bf5b3a7d2afb1b99640b59b742",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/quick-launcher/lib/launcher.js"
+        },
+        {
+          "bytes": 2144,
+          "path": "main.jsx",
+          "sha256": "a619bf5026c4cfd4da975450e52cdc30d2dd2011fd0f4305d21273dc63d0439b",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/quick-launcher/main.jsx"
+        },
+        {
+          "bytes": 337,
+          "path": "meta.json",
+          "sha256": "af89fea0afae1dc9fed83d34f694de1a69f8f1df3ba1b7f4f13bd352da1447c5",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/quick-launcher/meta.json"
+        },
+        {
+          "bytes": 18923,
+          "path": "preview.png",
+          "sha256": "a2a31afc341bb7849deb147851154ee0a2c7d363f4f08eddbe8d57dbcbf3581f",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/quick-launcher/preview.png"
+        },
+        {
+          "bytes": 38,
+          "path": "record-template.json",
+          "sha256": "0156350bc3dd756fd16e7b7009afd3948d788ed79a7a6c7b594acf350cbdd03b",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/quick-launcher/record-template.json"
+        },
+        {
+          "bytes": 769,
+          "path": "widget.json",
+          "sha256": "9b8fac333540094e893265ed2bfc248c12cec6c647c3ec9a0b3a452fd71f34cb",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/quick-launcher/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.quick-launcher",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Quick Launcher",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/quick-launcher",
+      "summary": "Requires Runtime API 1.3. Save and reorder web links, app URLs and named Shortcuts. Test draft links in Records & Configuration.",
+      "symbol": "square.grid.2x2.fill",
+      "tags": [
+        "launcher",
+        "shortcuts",
+        "links"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 2273,
+          "path": "lib/configuration.js",
+          "sha256": "38c2b2391248b0bc72279ed14b87ea6f6fa9dbe146797e9cb2f1d2a12f7c2895",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/wallpaper-match/lib/configuration.js"
+        },
+        {
+          "bytes": 2843,
+          "path": "main.jsx",
+          "sha256": "5d7ccb457de92b66c6f36e43860e0cc7ebcba066383708f3f7ad55b5b7ef7d35",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/wallpaper-match/main.jsx"
+        },
+        {
+          "bytes": 286,
+          "path": "meta.json",
+          "sha256": "74ba860392b5abcc2c3b2bb4492923e74836acd1ec9a64fc1567dbf7bb4053df",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/wallpaper-match/meta.json"
+        },
+        {
+          "bytes": 21100,
+          "path": "preview.png",
+          "sha256": "825d1060d20cdf7d8931e79af97363f5eb57b62be8c161a74002340d35a3e54c",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/wallpaper-match/preview.png"
+        },
+        {
+          "bytes": 48,
+          "path": "record-template.json",
+          "sha256": "36c57f8f53b030b1270dc32d667974e6e4f9312ac5da41dd8c27318043faf5f0",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/wallpaper-match/record-template.json"
+        },
+        {
+          "bytes": 838,
+          "path": "widget.json",
+          "sha256": "fa8c31c10491b1e78883c9f52e88d0ae861de2ffcafa1d9f228b65509bd44794",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/wallpaper-match/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.wallpaper-match",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Wallpaper Match",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/wallpaper-match",
+      "summary": "Requires Runtime API 1.3. Calibrate crops from your own wallpaper, separately for each size and appearance. Optional title, caption and date.",
+      "symbol": "photo.on.rectangle",
+      "tags": [
+        "wallpaper",
+        "background",
+        "offline"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 15633,
+          "path": "lib/weather.js",
+          "sha256": "008d18bb0b090d9de29cc323b2c72998bfbf3712221e6af2758b75f0610b2d4f",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/weather-now/lib/weather.js"
+        },
+        {
+          "bytes": 4517,
+          "path": "main.jsx",
+          "sha256": "d610566038c7fb0b2ea3d79cfcbf14bdf05d4dd8915c6270e8a2b0790f1b661a",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/weather-now/main.jsx"
+        },
+        {
+          "bytes": 303,
+          "path": "meta.json",
+          "sha256": "eb6783ebd77579b2ea4e18bdbe9d06216196310a0156f2b038c58ba107789a40",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/weather-now/meta.json"
+        },
+        {
+          "bytes": 24974,
+          "path": "preview.png",
+          "sha256": "726fd73f92a7a9b25184acf0b835c11b250d7286dba1b8001f416ad4dcfd949d",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/weather-now/preview.png"
+        },
+        {
+          "bytes": 46,
+          "path": "record-template.json",
+          "sha256": "384e70856ff24bea5967dcad3f2de38ad22551866690d2def3335321ab1a548a",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/weather-now/record-template.json"
+        },
+        {
+          "bytes": 856,
+          "path": "widget.json",
+          "sha256": "6201bdb29ed0396eae16409e4ec12b4230f33485f78ef79890aec819b1282c4d",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/weather-now/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.weather-now-met",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Weather Now (MET Norway)",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/weather-now",
+      "summary": "Requires Runtime API 1.3. MET Norway forecasts with a saved-city fallback, response-aware cache and Celsius/Fahrenheit. Configure a city in Records & Configuration.",
+      "symbol": "cloud.sun.fill",
+      "tags": [
+        "weather",
+        "location",
+        "offline"
+      ],
+      "version": "2.0.0"
     }
   ],
   "repository": "https://github.com/everettjf/scriptwidget",

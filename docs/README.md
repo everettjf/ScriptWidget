@@ -9,6 +9,11 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 - [ScriptWidget Studio](studio.md) — Mac editor, multi-size preview, Copilot, and Skills.
 - [Web Studio in the browser](web-studio-browser.md) — design and preview on Windows, macOS, or Linux, then install on iPhone.
 - [Runtime API](runtime-api.md) — supported components, properties, globals, and limits.
+- [Package storage](storage-api.md) — saved records, bounded compare-and-set updates, and contention handling.
+- [Calendar API](calendar-api.md) — real read-only events, package permission, bounded queries, and cache behavior.
+- [Location API](location-api.md) — app/widget authorization, precision-aware snapshots, and revocation.
+- [Scheduled widget states](timeline-api.md) — daily transitions, planned dates, read-only future entries and preview.
+- [Data API capability catalog](data-api-catalog.md) — native platforms, authorization, sync/async behavior, and editable preview samples.
 - [AI generation](ai-generate.md) — provider setup, prompting, iteration, privacy, and troubleshooting.
 - [AI quality testing](ai-quality-testing.md) — bounded live generation, native snapshots, offline replay, and visual review.
 - [Apple PCC AI plan](apple-pcc-ai-plan.md) — feasibility, constraints, architecture, and zero-key rollout.
@@ -17,9 +22,14 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 - [Data Source Plugins](data-source-plugins.md) — safe third-party API connectors and the Mac Data Source Lab.
 - [Package 2.0](package-format.md) — `widget.json`, compatibility, and secure imports.
 - [Modern WidgetKit features](widgetkit-modern-features.md) — rendering modes, Live Activities, controls, intents, and push updates.
+- [Local Live Activities](live-activities.md) — start, update, restore and finish installation-bound activities; local demo and platform limits.
+- [Local plants and pets](local-companions.md) — explicit care, saved history, personal schedules and original JSX companions.
+- [Wallpaper Match](wallpaper-match.md) — crop calibration, size/appearance backgrounds and PNG export.
+- [Package files](file-api.md) — text reads and bounded local binary-resource presence.
 
 ## Build and ship
 
+- [Widget capability expansion plan](widget-capabilities-plan.md) — phased coverage of 22 competitor-inspired capabilities, dependencies, acceptance criteria, and release gates.
 - [Runtime API contract](scriptwidget-runtime-api.md) — versioning and compatibility policy.
 - [Studio architecture](scriptwidget-studio-plan.md) — editor and bridge design.
 - [Browser widget preview research](browser-widget-preview-research.md) — browser-first fast preview proposal, fidelity model, and staged validation plan.
@@ -31,4 +41,4 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 
 ## Supported platforms
 
-ScriptWidget focuses on iOS, iPadOS, and macOS. A single `main.jsx` can adapt its layout with `$getenv("widget-size")`. watchOS and visionOS are outside the current roadmap.
+ScriptWidget focuses on iOS, iPadOS, and macOS. A single `main.jsx` can adapt its layout with `$getenv("widget-size")`. Native watchOS support is a gated later track in the [capability expansion plan](widget-capabilities-plan.md); it is not currently supported. visionOS is outside this plan.

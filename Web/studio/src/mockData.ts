@@ -1,41 +1,21 @@
+import { dataAPICatalog } from "../../../Editor/editorfe/src/dataAPICatalog.js";
+
 // Preview data only. Kept with the browser draft, never in exported packages.
 export type MockValue = null | boolean | number | string | MockValue[] | { [key: string]: MockValue };
 export type MockObject = { [key: string]: MockValue };
 export interface MockAPI { id: string; group: string; value: MockValue; legacy?: string[] }
-const sampleStart = "2026-01-01T00:00:00Z";
-const sampleEnd = "2026-01-01T12:00:00Z";
-const measure = (value: number, unit: string) => ({ value, unit, start: sampleStart, end: sampleEnd });
-const group = (name: string, values: Record<string, MockValue>, legacy: string) => Object.entries(values).map(([method, value]) => ({ id: `$${name}.${method}`, group: name, value, legacy: [legacy, method] }));
-export const mockAPIs: MockAPI[] = [
-  ...group("device", {
-    screen: { width: 390, height: 844, scale: 3 }, language: "en", model: "iPhone", name: "My iPhone",
-    battery: { level: 0.8, state: "unplugged" }, systemVersion: "26.0", isdarkmode: false,
-    totalDiskSpace: 128000000000, freeDiskSpace: 64000000000,
-  }, "device"),
-  ...group("system", {
-    appInfo: { name: "ScriptWidget", bundleId: "com.everettjf.scriptwidget", version: "27.1.2", build: "27012" },
-    locale: "en_US", preferredLanguages: ["en-US"], timeZone: { identifier: "UTC", abbreviation: "GMT", offsetSeconds: 0 },
-    is24HourClock: false, calendarInfo: { identifier: "gregorian", firstWeekday: 1, minimumDaysInFirstWeek: 1 },
-    systemUptime: 3600, memory: { physical: 8589934592 }, thermalState: "nominal", lowPowerMode: false,
-    brightness: 0.5, reduceMotionEnabled: false, platform: "ios", hostName: "My iPhone", processName: "ScriptWidgetWidget",
-    osVersionString: "Version 26.0", processorCount: 6, activeProcessorCount: 6,
-  }, "system"),
-  { id: "$health.isAvailable", group: "health", value: true },
-  { id: "$health.requestAuthorization", group: "health", value: true, legacy: ["health"] },
-  { id: "$health.stepCountToday", group: "health", value: measure(6840, "count"), legacy: ["health.stepCountToday"] },
-  { id: "$health.activeEnergyToday", group: "health", value: measure(420, "kcal"), legacy: ["health.activeEnergyToday"] },
-  { id: "$health.heartRateLatest", group: "health", value: measure(72, "bpm"), legacy: ["health.heartRateLatest"] },
-  { id: "$location.isAvailable", group: "location", value: true },
-  { id: "$location.authorizationStatus", group: "location", value: "authorizedWhenInUse" },
-  { id: "$location.requestAuthorization", group: "location", value: true, legacy: ["location.authorization"] },
-  { id: "$location.current", group: "location", value: { latitude: 37.3349, longitude: -122.009, altitude: 0, horizontalAccuracy: 10, verticalAccuracy: 10, timestamp: sampleEnd }, legacy: ["location"] },
-];
+export const mockAPIs: MockAPI[] = dataAPICatalog;
 // Dark appearance follows the preview setting until a user explicitly mocks it.
 export function sampleFixtures(): MockObject {
+  const now = Date.now(), start = Math.floor(now / 3600000) * 3600000;
+  const weather = {properties:{meta:{updated_at:new Date(start).toISOString(),units:{air_temperature:"celsius",relative_humidity:"%",wind_speed:"m/s"}},
+    timeseries:Array.from({length:24},(_,index)=>({time:new Date(start+index*3600000).toISOString(),data:{instant:{details:{air_temperature:21+index/4,relative_humidity:62,wind_speed:2}},next_1_hours:{summary:{symbol_code:"partlycloudy_day"}}}}))}};
+  const dayStart = new Date(now); dayStart.setHours(0,0,0,0);
   return {
-    api: Object.fromEntries(mockAPIs.filter((api) => api.id !== "$device.isdarkmode").map((api) => [api.id, { value: api.value }])),
-    fetch: [{ url: "https://api.example.com/data", method: "GET", body: '{"value":42}' }],
-    storage: {}, dataSource: [],
+    api: Object.fromEntries(mockAPIs.filter((api) => api.id !== "$device.isdarkmode").map((api) => [api.id, { value: api.group === "health" && api.value !== null && typeof api.value === "object" && !Array.isArray(api.value) && "unit" in api.value ? {...api.value,start:dayStart.toISOString(),end:new Date(now).toISOString()} : api.value }])),
+    fetch: [{url:"https://api.github.com/repos/everettjf/scriptwidget",method:"GET",status:200,body:JSON.stringify({full_name:"everettjf/ScriptWidget",private:false,stargazers_count:1280,forks_count:96,open_issues_count:18}),headers:{"content-type":"application/json","cache-control":"public, max-age=3600"}}, { url: "https://api.example.com/data", method: "GET", body: '{"value":42}', status: 200, headers: {"content-type":"application/json"} },
+      {url:"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=37.33&lon=-122.01",method:"GET",status:200,body:JSON.stringify(weather),headers:{"content-type":"application/json",expires:new Date(now+3600000).toUTCString(),"last-modified":new Date(start).toUTCString()}}],
+    storage: {}, storageAtomicAvailable: true, dataSource: [], calendarSelection: null,
   };
 }
 export const defaultFixtures = JSON.stringify(sampleFixtures(), null, 2);
@@ -46,6 +26,13 @@ export function parseMocks(text: string): MockObject {
   for (const key of ["api", "device", "system", "storage"]) {
     if (value[key] !== undefined && !isObject(value[key])) throw new Error(`${key} must be a JSON object.`);
   }
+  for (const key of ["calendarSelection"]) if (value[key] !== undefined && value[key] !== null) {
+    const ids = value[key];
+    if (!Array.isArray(ids) || ids.length > 64 || new Set(ids).size !== ids.length || ids.some((id) => typeof id !== "string" || !id || new TextEncoder().encode(id).length > 256)) {
+      throw new Error(`Calendar selection must be null (all sources) or up to 64 unique source IDs; [] selects none.`);
+    }
+  }
+  if (value.storageAtomicAvailable !== undefined && typeof value.storageAtomicAvailable !== "boolean") throw new Error("storageAtomicAvailable must be true or false.");
   if (isObject(value.api)) for (const [name, response] of Object.entries(value.api)) {
     if (!isObject(response) || (("value" in response) === ("error" in response))) throw new Error(`${name} needs either value or error.`);
     if ("error" in response && typeof response.error !== "string") throw new Error(`${name} error must be text.`);
@@ -57,6 +44,8 @@ export function parseMocks(text: string): MockObject {
       if (item.error !== undefined && typeof item.error !== "string") throw new Error(`${key} errors must be text.`);
       if (key === "fetch" && item.method !== undefined && (typeof item.method !== "string" || !["GET", "POST", "PUT", "PATCH", "DELETE"].includes(item.method.toUpperCase()))) throw new Error("Network methods must be GET, POST, PUT, PATCH or DELETE.");
       if (key === "fetch" && item.body !== undefined && typeof item.body !== "string") throw new Error("Network body must be response text.");
+      if (key === "fetch" && item.status !== undefined && (typeof item.status !== "number" || !Number.isInteger(item.status) || item.status < 100 || item.status > 599)) throw new Error("HTTP mock status must be an integer from 100 to 599.");
+      if (key === "fetch" && item.headers !== undefined && (!isObject(item.headers) || Object.values(item.headers).some(value => typeof value !== "string"))) throw new Error("HTTP mock headers must be an object of strings.");
       if (key === "dataSource" && (("value" in item) === ("error" in item))) throw new Error("Data Source rules need either value or error.");
       if (key === "dataSource" && (typeof item.pluginID !== "string" || typeof item.operationID !== "string")) throw new Error("Data Source rules need pluginID and operationID.");
     }
@@ -68,7 +57,8 @@ export function responseFor(data: MockObject, api: MockAPI): MockObject {
   if (isObject(override)) return override;
   let legacy: MockValue | undefined = data;
   for (const key of api.legacy ?? []) legacy = isObject(legacy) ? legacy[key] : undefined;
-  return { value: api.legacy && legacy !== undefined ? legacy : api.value };
+  if (api.legacy && legacy !== undefined) return { value: legacy };
+  return { value: api.value };
 }
 export function setResponse(text: string, id: string, response: MockObject): string {
   const data = parseMocks(text);
@@ -84,17 +74,37 @@ export function addSampleMocks(text: string): string {
   data.api = api;
   data.fetch ??= sampleFixtures().fetch!;
   data.storage ??= {};
+  data.storageAtomicAvailable ??= true;
   data.dataSource ??= [];
+  data.calendarSelection ??= null;
   return JSON.stringify(data, null, 2);
 }
-export function permissionScenario(text: string, group: "health" | "location", mode: "granted" | "denied" | "unavailable"): string {
+export function permissionScenario(text: string, group: "health" | "location" | "calendar", mode: "granted" | "denied" | "unavailable" | "empty" | "widgetDenied"): string {
+  if (mode === "widgetDenied") {
+    if (group !== "location") throw new Error("Widget location authorization applies only to Location.");
+    const granted = permissionScenario(text, "location", "granted");
+    return setResponse(setResponse(granted, "$location.isAuthorizedForWidgetUpdates", { value: false }), "$location.requestAuthorization", { value: false });
+  }
   let result = text;
+  // HealthKit deliberately does not reveal denied read scopes. Its no-data
+  // scenario keeps review completion true and returns zero/empty measurements.
+  const scenario = group === "health" && mode === "denied" ? "empty" : mode;
   for (const api of mockAPIs.filter((item) => item.group === group)) {
-    const response: MockObject = mode === "granted" ? { value: api.value }
-      : api.id.endsWith("isAvailable") ? { value: mode !== "unavailable" }
-      : api.id.endsWith("requestAuthorization") ? { value: false }
-      : api.id.endsWith("authorizationStatus") ? { value: mode === "unavailable" ? "disabled" : "denied" }
-      : { error: mode === "unavailable" ? `${group} is unavailable` : `${group} permission denied` };
+    let response: MockObject;
+    if (scenario === "granted") response = { value: api.value };
+    else if (api.id.endsWith("isAvailable")) response = { value: scenario !== "unavailable" };
+    else if (api.id.endsWith("isAuthorizedForWidgetUpdates")) response = { value: scenario === "empty" };
+    else if (api.id.endsWith("requestAuthorization")) response = scenario === "unavailable" && group !== "calendar"
+      ? { error: `${group} is unavailable` } : { value: scenario === "empty" };
+    else if (group === "health" && api.id.endsWith("authorizationStatus")) response = { value: scenario === "unavailable" ? "unavailable" : "notDisclosed" };
+    else if (api.id.endsWith("authorizationStatus")) response = { value: scenario === "empty" ? (group === "location" ? "authorizedWhenInUse" : "authorized")
+      : scenario === "unavailable" ? (group === "location" ? "disabled" : "unavailable") : "denied" };
+    else if (scenario === "empty" && group === "health") response = { value: { ...(isObject(api.value) ? api.value : {}), value: 0, hasSamples: false,
+      ...(api.id.endsWith("heartRateLatest") ? { start: "", end: "" } : {}) } };
+    else if (scenario === "empty" && group === "calendar") response = { value: api.id.endsWith("calendars") ? []
+      : { ...(isObject(api.value) ? api.value : {}), status: "empty", items: [], truncated: false } };
+    else response = { error: scenario === "empty" ? "[no_data] No location fix is available"
+      : scenario === "unavailable" ? `${group} is unavailable` : `${group} permission denied` };
     result = setResponse(result, api.id, response);
   }
   return result;

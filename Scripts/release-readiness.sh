@@ -6,6 +6,8 @@ DERIVED_DATA=${SCRIPTWIDGET_DERIVED_DATA:-/tmp/scriptwidget-release-readiness}
 cd "$ROOT"
 
 node Scripts/validate-release.mjs
+node Scripts/sync-gallery-templates.mjs
+node --test Scripts/tests/gallery-sync.test.mjs
 node Scripts/validate-doc-links.mjs
 (cd Editor/editorfe && npm test && npm run release)
 (cd Web/preview-engine && npm test)
@@ -20,6 +22,8 @@ git diff --exit-code -- \
   macOS/ScriptWidgetMac/StudioEditor.bundle
 
 if [ "${SCRIPTWIDGET_SKIP_XCODE:-0}" != "1" ]; then
+  node Scripts/test-storage-atomic.mjs
+  node Scripts/test-storage-files.mjs
   sh Scripts/macos-widget-link-tests.sh
   xcodebuild -quiet -project macOS/ScriptWidgetMac.xcodeproj -scheme ScriptWidgetRuntimeTests \
     -destination 'platform=macOS' -derivedDataPath "$DERIVED_DATA/macos-tests" \

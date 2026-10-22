@@ -3,11 +3,11 @@
 // the Swift sources and fails when these values drift.
 
 export const runtimeContract = Object.freeze({
-  // Native 1.2 uses cooperative checks and disallows dynamic code. The web
-  // host keeps its disposable Worker and 1.1 semantics; caches are distinct.
-  nativeAPIVersion: "1.2",
+  // Native 1.3 uses cooperative checks and disallows dynamic code. The web
+  // host keeps its disposable Worker; both expose Calendar, with distinct caches.
+  nativeAPIVersion: "1.3",
   nativeCompilerFingerprint: "scriptwidget-babel-v3",
-  apiVersion: "1.1",
+  apiVersion: "1.2",
   compilerFingerprint: "scriptwidget-babel-v2",
   maximumSourceBytes: 512 * 1024,
   maximumTranspiledBytes: 2 * 1024 * 1024,
@@ -15,15 +15,16 @@ export const runtimeContract = Object.freeze({
   maximumElementNodes: 1000,
   maximumElementDepth: 64,
   maximumPropsPerElement: 128,
+  maximumDataQueries: 8,
   globalAPIs: Object.freeze([
-    "$component", "$console", "$device", "$dynamic_island", "$element",
+    "$calendar", "$component", "$console", "$device", "$dynamic_island", "$element",
     "$error", "$fetch", "$file", "$getenv", "$health", "$http", "$import",
     "$location", "$render", "$runtime", "$storage", "$system", "$xml", "console", "fetch",
   ]),
 });
 
 /// Bumped whenever the web host changes observable execution semantics.
-export const engineVersion = "0.3.0";
+export const engineVersion = "0.7.0";
 
 export const errorCategories = Object.freeze({
   undefinedRender: Object.freeze({ category: "Render", recovery: "Call $render(...) once from the main script." }),

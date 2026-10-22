@@ -47,7 +47,7 @@ const emptyResult = (error) => ({ tree: null, error, logs: [], diagnostics: [] }
 /// `files` maps package-relative paths to UTF-8 text.
 export async function executePackageInNode({
   files,
-  entry = "main.jsx",
+  entry,
   manifest = null,
   environments = { "widget-size": "medium", "widget-param": "" },
   preview = { appearance: "light" },
@@ -59,14 +59,14 @@ export async function executePackageInNode({
   timeoutMilliseconds = runtimeContract.executionTimeoutMilliseconds,
   timeZone,
 }) {
-  const prepared = preparePackage(nodeCompiler(), { files, entry, prelude });
+  const prepared = preparePackage(nodeCompiler(), { files, entry, prelude, manifest });
   if (!prepared.ok) return emptyResult(prepared.error);
 
   const config = JSON.stringify({
     contract: runtimeContract,
-    environments, preview, fixtures, device, system, storage,
-    manifest: manifest ?? null,
-    hasManifest: manifest !== null && manifest !== undefined,
+    environments: { ...prepared.timelineEnvironment, ...environments }, preview, fixtures, device, system, storage,
+    manifest: prepared.manifest,
+    hasManifest: prepared.hasManifest,
   });
   // ICU reads the time zone per process; Node re-reads it when the main
   // thread assigns process.env.TZ, and workers inherit it.
@@ -136,7 +136,10 @@ export function readPackageDirectory(directory) {
       if (entry.name.startsWith(".") || entry.name === "__Build") continue;
       const childRelative = relative ? `${relative}/${entry.name}` : entry.name;
       if (entry.isDirectory()) visit(childRelative);
-      else if (/\.(jsx?|json|txt|md|csv|svg)$/i.test(entry.name)) files[childRelative] = fs.readFileSync(path.join(directory, childRelative), "utf8");
+      else if (entry.isFile() && fs.lstatSync(path.join(directory, childRelative)).nlink === 1) {
+        const bytes=fs.readFileSync(path.join(directory,childRelative));
+        files[childRelative]=/\.(jsx?|json|txt|md|csv|svg)$/i.test(entry.name) ? bytes.toString("utf8") : new Uint8Array(bytes);
+      }
     }
   };
   visit("");

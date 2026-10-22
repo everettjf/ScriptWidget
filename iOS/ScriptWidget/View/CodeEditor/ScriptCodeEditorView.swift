@@ -171,14 +171,17 @@ struct ScriptCodeEditorView: View {
                         let package = dataObject.scriptModel.package
                         isSaving = true
                         DispatchQueue.global(qos: .userInitiated).async {
+                            let expected=(try? ScriptWidgetLiveActivityBinding.capture(name:package.name,cacheOnly:false))?.0
                             let result = sharedScriptManager.buildScriptPackage(package: package, requireSharedContainer: true)
                             DispatchQueue.main.async {
                                 isSaving = false
                                 guard result.0 else { showAlert(result.1); return }
-                                if sharedLiveActivityManager.create(scriptName: package.name, scriptParameter: "") != nil {
+                                guard let expected,expected.ownerID==package.managedScope?.binding?.ownerID,
+                                      (try? package.managedScope?.validate(name:package.name)) != nil else { showAlert("This widget installation changed. Reopen it and try again.");return }
+                                if sharedLiveActivityManager.create(scriptName: package.name, scriptParameter: "",expectedBinding:expected) != nil {
                                     showAlert("Lock screen live activity created.")
                                 } else {
-                                    showAlert("Live Activity could not be started. Check that Live Activities are enabled and try again.")
+                                    showAlert(sharedLiveActivityManager.message ?? "Live Activity could not be started. Check device support and Settings.")
                                 }
                             }
                         }

@@ -35,7 +35,8 @@ enum ScriptWidgetStorageAvailability {
     }
 }
 
-private struct ScriptWidgetLaunchView: View {
+private struct ScriptWidgetLegacyLaunchView: View {
+    let onReady: () async -> Void
     private enum StorageState: Equatable {
         case checking, available, unavailable
     }
@@ -49,7 +50,7 @@ private struct ScriptWidgetLaunchView: View {
             case .checking:
                 ProgressView("Opening ScriptWidget…")
             case .available:
-                ContentView()
+                ContentView().task { await onReady() }
             case .unavailable:
                 VStack(spacing: 16) {
                     Image(systemName: "externaldrive.badge.exclamationmark")
@@ -66,10 +67,24 @@ private struct ScriptWidgetLaunchView: View {
                 .padding(32)
             }
         }
-        .task { refreshStorageState() }
+        .modifier(CalendarAccessPresentationModifier())
+        .onReceive(NotificationCenter.default.publisher(for: .NSSystemTimeZoneDidChange)
+            .merge(with: NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification),
+                   NotificationCenter.default.publisher(for: .NSCalendarDayChanged))) { _ in
+            WidgetCenter.shared.reloadAllTimelines()
+        }
+        .task {
+            refreshStorageState()
+            DispatchQueue.global(qos: .utility).async {
+                ScriptWidgetRuntimeLocation.refreshAuthorizationState()
+            }
+        }
         .onChange(of: scenePhase) { phase in
-            if phase == .active && storageState == .unavailable {
-                refreshStorageState()
+            if phase == .active {
+                DispatchQueue.global(qos: .utility).async {
+                    ScriptWidgetRuntimeLocation.refreshAuthorizationState()
+                }
+                if storageState == .unavailable { refreshStorageState() }
             }
         }
     }
@@ -79,19 +94,50 @@ private struct ScriptWidgetLaunchView: View {
     }
 }
 
+private struct ScriptWidgetLaunchView: View {
+    @Environment(\.scenePhase) private var scenePhase
+    let onReady: () async -> Void
+    var body: some View {
+        Group {
+            if ScriptWidgetApplicationTestHost.isActive || ScriptWidgetApplicationTestHost.simulatesUnavailableStorage {
+                ScriptWidgetLegacyLaunchView(onReady: onReady)
+            } else {
+                ScriptWidgetLibraryLaunchView(model: .shared) {
+                    ContentView().task { await onReady() }
+                }
+                .modifier(CalendarAccessPresentationModifier())
+                .onReceive(NotificationCenter.default.publisher(for: .NSSystemTimeZoneDidChange)
+                    .merge(with: NotificationCenter.default.publisher(for: UIApplication.significantTimeChangeNotification),
+                           NotificationCenter.default.publisher(for: .NSCalendarDayChanged))) { _ in
+                    WidgetCenter.shared.reloadAllTimelines()
+                }
+                .task {
+                    DispatchQueue.global(qos: .utility).async { ScriptWidgetRuntimeLocation.refreshAuthorizationState() }
+                }
+                .onChange(of: scenePhase) { phase in
+                    if phase == .active {
+                        DispatchQueue.global(qos: .utility).async { ScriptWidgetRuntimeLocation.refreshAuthorizationState() }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @main
 struct ScriptWidgetApp: App {
+    @State private var showingLinkFailure = false
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate;
 
     init() {
-        _ = sharedLiveActivityManager
+        if #available(iOS 16.2,*) { _ = sharedLiveActivityManager }
         ScriptWidgetPrecompiler.install()
     }
     
     var body: some Scene {
         WindowGroup {
-            ScriptWidgetLaunchView()
-                .task {
+            ScriptWidgetLaunchView(onReady: {
+                    if #available(iOS 16.2,*) { await sharedLiveActivityManager.reconcile() }
                     if #available(iOS 26.0, *) {
                         await registerWidgetPushSubscriptions()
                     }
@@ -100,28 +146,21 @@ struct ScriptWidgetApp: App {
                         WebStudioServer.shared.start()
                     }
 #endif
+                })
+                .alert("Couldn’t Open Link",isPresented:$showingLinkFailure) {
+                    Button("OK",role:.cancel) {}
+                } message: {
+                    Text("Check the link and make sure its target app is installed. You can test saved launcher links in Records & Configuration.")
                 }
                 .onOpenURL(perform: { url in
-                    print("onOpenURL \(url)")
-                    
-                    guard let host = url.host() else {
+                    if url.scheme?.lowercased()=="scriptwidget" {
+                        guard let host=url.host() else { return }
+                        dealWithSelfScheme(host:host,url:url)
                         return
                     }
-                    
-                    if let scheme = url.scheme {
-                        if scheme == "scriptwidget" {
-                            dealWithSelfScheme(host: host, url: url)
-                            return
-                        }
-                    }
-                    
-                    if host == "xnu.app/scriptwidget" {
-                        print("ignore open url for : xnu.app/scriptwidget")
-                        UIApplication.shared.open(url)
-                        return
-                    }
-                    
-                    DeepLinkManager.openDeepLink(url: url)
+                    DeepLinkManager.openDeepLink(url:url,completion: { accepted in
+                        if !accepted { DispatchQueue.main.async { showingLinkFailure=true } }
+                    })
                 })
         }
     }

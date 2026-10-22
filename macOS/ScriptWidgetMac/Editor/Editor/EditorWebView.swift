@@ -37,6 +37,7 @@ private final class EditorSnapshotRequest {
 }
 
 final class EditorInternalWebView: WKWebView {
+    fileprivate var libraryEditorLease: UUID?
     private var bridge: WKWebViewJavascriptBridge?
     private var scriptModel: ScriptModel?
     private var currentRelativePath = "main.jsx"
@@ -86,6 +87,7 @@ final class EditorInternalWebView: WKWebView {
     }
 
     deinit {
+        ScriptWidgetEditorPresence.unregister(libraryEditorLease)
         stopLoading()
         draftWorkItem?.cancel()
         pendingActions.removeAll()
@@ -294,9 +296,15 @@ struct EditorWebView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> EditorInternalWebView {
         let webView = EditorInternalWebView()
+        webView.libraryEditorLease = ScriptWidgetEditorPresence.register()
         webView.loadEditorIfNeeded()
         webView.updateDocument(scriptModel, relativePath: relativePath)
         return webView
+    }
+
+    static func dismantleNSView(_ view: EditorInternalWebView, coordinator: ()) {
+        ScriptWidgetEditorPresence.unregister(view.libraryEditorLease)
+        view.libraryEditorLease = nil
     }
 
     func updateNSView(_ view: EditorInternalWebView, context: Context) {

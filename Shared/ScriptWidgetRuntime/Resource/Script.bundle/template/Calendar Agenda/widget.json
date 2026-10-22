@@ -1,0 +1,24 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.calendar-agenda",
+  "name": "Calendar Agenda",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait",
+    "accessoryCircular",
+    "accessoryRectangular",
+    "accessoryInline"
+  ],
+  "permissions": [
+    "calendar"
+  ],
+  "networkDomains": [],
+  "description": "A real, read-only calendar agenda with explicit authorization and bounded queries.",
+  "minimumRuntimeVersion": "1.3"
+}

@@ -1,0 +1,18 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.api.calendar",
+  "name": "Calendar API",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge"
+  ],
+  "permissions": [
+    "calendar"
+  ],
+  "networkDomains": [],
+  "minimumRuntimeVersion": "1.3"
+}

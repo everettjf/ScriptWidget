@@ -1,0 +1,73 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.habit-streak-tracker",
+  "name": "Habit Streak Tracker",
+  "version": "1.2.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.3",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait",
+    "accessoryCircular",
+    "accessoryRectangular",
+    "accessoryInline"
+  ],
+  "permissions": [
+    "storage"
+  ],
+  "networkDomains": [],
+  "description": "Explicit daily check-ins with a real streak, recent history, reset and undo. Earlier automatic counters remain untouched.",
+  "category": "productivity",
+  "tags": [
+    "habit",
+    "streak"
+  ],
+  "icon": "flame.fill",
+  "actions": [
+    {
+      "id": "checkIn",
+      "title": "Check in today",
+      "systemImage": "checkmark.circle.fill",
+      "function": "checkIn"
+    },
+    {
+      "id": "undoRecord",
+      "title": "Undo last habit change",
+      "systemImage": "arrow.uturn.backward",
+      "function": "undoRecord"
+    },
+    {
+      "id": "resetToday",
+      "title": "Reset today’s habit",
+      "systemImage": "arrow.counterclockwise",
+      "function": "resetToday"
+    }
+  ],
+  "controls": [
+    {
+      "id": "checkIn",
+      "type": "button",
+      "title": "Check in today",
+      "systemImage": "checkmark.circle.fill",
+      "actionID": "checkIn"
+    },
+    {
+      "id": "undoRecord",
+      "type": "button",
+      "title": "Undo last habit change",
+      "systemImage": "arrow.uturn.backward",
+      "actionID": "undoRecord"
+    },
+    {
+      "id": "resetToday",
+      "type": "button",
+      "title": "Reset today’s habit",
+      "systemImage": "arrow.counterclockwise",
+      "actionID": "resetToday"
+    }
+  ]
+}

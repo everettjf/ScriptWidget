@@ -1,0 +1,11 @@
+{
+  "description": "Import and crop your own photos, then make a single card, duo or four-photo collage. Photos stay in the widget package.",
+  "category": "fun",
+  "tags": [
+    "photo",
+    "collage",
+    "offline"
+  ],
+  "difficulty": "beginner",
+  "icon": "photo.on.rectangle.angled"
+}

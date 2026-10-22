@@ -52,6 +52,7 @@ enum WidgetPackagePermission: String, Codable, CaseIterable, Identifiable {
     case network
     case location
     case health
+    case calendar
     case storage
     case files
 
@@ -96,6 +97,75 @@ struct WidgetPackagePushUpdates: Codable, Equatable {
     var channel: String
 }
 
+/// Opt-in local time transitions. Unknown fields are rejected by manifest decoding.
+struct WidgetPackageTimeline: Codable, Equatable {
+    var dailyTimes: [String]
+    var timeZone: String?
+
+    var isValid: Bool {
+        guard (1...4).contains(dailyTimes.count), dailyTimes == dailyTimes.sorted(),
+              Set(dailyTimes).count == dailyTimes.count,
+              dailyTimes.allSatisfy({ $0.range(of: #"^(?:[01][0-9]|2[0-3]):[0-5][0-9]$"#, options: .regularExpression) != nil }) else { return false }
+        return timeZone.map {
+            $0.utf8.count <= 128 && ($0 == "UTC" || TimeZone.knownTimeZoneIdentifiers.contains($0)) && TimeZone(identifier: $0) != nil
+        } ?? true
+    }
+}
+
+/// Bounded planning without executing scripts, fetching data or granting access.
+struct ScriptWidgetTimelinePlan {
+    struct Entry {
+        let date: Date
+        let slot: Int
+        let isProjection: Bool
+
+        func environments(timeZone: TimeZone) -> [String: String] {
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            return ["timeline-date": formatter.string(from: date), "timeline-time-zone": timeZone.identifier,
+                    "timeline-slot": String(slot), "timeline-is-projection": isProjection ? "true" : "false"]
+        }
+    }
+
+    static let maximumEntries = 5
+    let entries: [Entry]
+    let reloadAfter: Date
+    let timeZone: TimeZone
+
+    init(schedule: WidgetPackageTimeline?, now: Date, fallbackReload: Date, timeZone systemZone: TimeZone = .current) {
+        guard let schedule, schedule.isValid else {
+            entries = [.init(date: now, slot: -1, isProjection: false)]
+            reloadAfter = max(now.addingTimeInterval(60), fallbackReload)
+            timeZone = systemZone
+            return
+        }
+        timeZone = schedule.timeZone.flatMap(TimeZone.init(identifier:)) ?? systemZone
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = timeZone
+        let horizon = now.addingTimeInterval(86_400)
+        let today = calendar.startOfDay(for: now)
+        var transitions: [Date: Int] = [:]
+        for day in -1...2 {
+            guard let date = calendar.date(byAdding: .day, value: day, to: today) else { continue }
+            for (slot, text) in schedule.dailyTimes.enumerated() {
+                let parts = text.split(separator: ":").compactMap { Int($0) }
+                guard let boundary = calendar.date(bySettingHour: parts[0], minute: parts[1], second: 0, of: date,
+                                                   matchingPolicy: .nextTime, repeatedTimePolicy: .first, direction: .forward) else { continue }
+                // A DST gap can collapse multiple times onto the same instant.
+                transitions[boundary] = max(transitions[boundary] ?? -1, slot)
+            }
+        }
+        let ordered = transitions.sorted { $0.key < $1.key }
+        let currentSlot = ordered.last(where: { $0.key <= now })?.value ?? schedule.dailyTimes.count - 1
+        let future = ordered.filter { $0.key > now && $0.key <= horizon }
+        let projected = Array(future.prefix(Self.maximumEntries - 1))
+        entries = [.init(date: now, slot: currentSlot, isProjection: false)] + projected
+            .map { .init(date: $0.key, slot: $0.value, isProjection: true) }
+        let capacityDeadline = future.count > projected.count ? projected.last!.key : horizon
+        reloadAfter = max(now.addingTimeInterval(60), min(fallbackReload, horizon, capacityDeadline))
+    }
+}
+
 /// Public, versioned contract for a shareable ScriptWidget project. `meta.json`
 /// remains readable for legacy packages, while every newly created/exported
 /// package receives this authoritative `widget.json` manifest.
@@ -108,6 +178,8 @@ struct WidgetPackageManifest: Codable, Equatable {
     var name: String
     var version: String
     var runtimeVersion: String
+    var minimumRuntimeVersion: String? = nil
+    var timeline: WidgetPackageTimeline? = nil
     var entry: String
     var supportedFamilies: [WidgetPackageFamily]
     var permissions: [WidgetPackagePermission]
@@ -180,6 +252,22 @@ struct WidgetPackageValidationReport: Codable, Equatable {
     var warnings: [WidgetPackageValidationIssue] { issues.filter { $0.severity == .warning } }
 }
 
+/// Public API minimum, distinct from Package 2.0's compiler ABI (runtimeVersion).
+enum WidgetRuntimeRequirement {
+    static func parse(_ text: String) -> (major: Int, minor: Int)? {
+        guard text.utf8.count <= 7,
+              text.range(of: #"^(0|[1-9][0-9]{0,2})\.(0|[1-9][0-9]{0,2})$"#, options: .regularExpression) != nil else { return nil }
+        let parts = text.split(separator: ".")
+        guard parts.count == 2, let major = Int(parts[0]), let minor = Int(parts[1]) else { return nil }
+        return (major, minor)
+    }
+
+    static func supports(_ minimum: String, current: String = ScriptWidgetBuildContract.nativeRuntimeAPIVersion) -> Bool {
+        guard let requested = parse(minimum), let supported = parse(current) else { return false }
+        return requested.major == supported.major && requested.minor <= supported.minor
+    }
+}
+
 enum WidgetPackageManifestValidator {
     static func validate(_ manifest: WidgetPackageManifest, package: ScriptWidgetPackage, checkEntryExists: Bool = true) -> WidgetPackageValidationReport {
         var issues: [WidgetPackageValidationIssue] = []
@@ -196,15 +284,24 @@ enum WidgetPackageManifestValidator {
         if manifest.id.range(of: "^[A-Za-z0-9][A-Za-z0-9.-]{2,127}$", options: .regularExpression) == nil {
             error("invalid_id", "id must contain 3–128 letters, numbers, dots, or hyphens.")
         }
-        let trimmedName = manifest.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedName.isEmpty || trimmedName.count > 80 {
-            error("invalid_name", "name must contain 1–80 characters.")
+        if !ScriptWidgetPackageName.isValid(manifest.name) {
+            error("invalid_name", "name must be a nonreserved package name, at most 80 characters/240 UTF-8 bytes, without path separators or control characters.")
         }
         if manifest.version.range(of: "^[0-9]+\\.[0-9]+\\.[0-9]+(?:-[0-9A-Za-z.-]+)?$", options: .regularExpression) == nil {
             error("invalid_version", "version must use semantic versioning, for example 1.0.0.")
         }
         if manifest.runtimeVersion != ScriptWidgetBuildContract.runtimeAPIVersion {
             error("unsupported_runtime", "Runtime \(manifest.runtimeVersion) is incompatible with \(ScriptWidgetBuildContract.runtimeAPIVersion).")
+        }
+        if let minimum = manifest.minimumRuntimeVersion {
+            if WidgetRuntimeRequirement.parse(minimum) == nil {
+                error("invalid_minimum_runtime", "minimumRuntimeVersion must be a canonical major.minor API version.")
+            } else if !WidgetRuntimeRequirement.supports(minimum) {
+                error("unsupported_minimum_runtime", "This package requires a newer or incompatible ScriptWidget Runtime. Update the app before running it.")
+            }
+        }
+        if let timeline = manifest.timeline, !timeline.isValid {
+            error("invalid_timeline", "timeline requires 1–4 sorted unique dailyTimes in HH:mm and a valid timeZone.")
         }
         if manifest.entry.hasPrefix("/") || manifest.entry.contains("\\") {
             error("invalid_entry", "entry must be a package-relative POSIX path.")

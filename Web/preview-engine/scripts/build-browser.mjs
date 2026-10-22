@@ -35,7 +35,7 @@ function moduleBody(file) {
 }
 
 export function buildSandboxSources() {
-  const prepareBundle = `const prepare = (function () {\n${["contract.js", "packageFiles.js", "compiler.js", "prepare.js"].map(moduleBody).join("\n")}\nreturn { createCompiler, preparePackage };\n})();\n`;
+  const prepareBundle = `const prepare = (function () {\n${["contract.js", "packageFiles.js", "timeZones.js", "timeline.js", "package/manifest.js", "compiler.js", "prepare.js"].map(moduleBody).join("\n")}\nreturn { createCompiler, preparePackage };\n})();\n`;
   const compilerWorkerSource = `${prepareBundle}(${compilerBootstrap.toString()})(prepare);\n`;
   const executorWorkerSource = `(${executorBootstrap.toString()})(${scriptWidgetKernel.toString()});\n`;
   const literal = (value) => JSON.stringify(value).replace(/<\//g, "<\\/").replace(/<!--/g, "<\\!--");

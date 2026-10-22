@@ -72,3 +72,5 @@ sync. Copying or renaming a package creates a different storage namespace. Edit
 habit display names and colors in `main.jsx`, keeping the `id` and action function
 names unchanged to preserve history and button routing. Invalid saved data or a
 failed write reports an error instead of claiming the check-in succeeded.
+
+Template creation preserves the full package, including its permissions, minimum runtime, actions, nested source and resources. Every created copy gets a fresh package identifier. Templates with an invalid manifest or unsafe resources are rejected before a library entry appears.

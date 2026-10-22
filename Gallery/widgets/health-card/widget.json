@@ -1,0 +1,34 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.health-card",
+  "name": "Health Steps Ring",
+  "version": "2.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.3",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait",
+    "accessoryCircular",
+    "accessoryRectangular",
+    "accessoryInline"
+  ],
+  "permissions": [
+    "health",
+    "storage"
+  ],
+  "networkDomains": [],
+  "description": "Read-only HealthKit steps, active energy or latest heart rate, with saved goals and clear unavailable states.",
+  "category": "health",
+  "tags": [
+    "health",
+    "steps",
+    "energy",
+    "heart"
+  ],
+  "icon": "heart.text.square.fill",
+  "preview": "preview.png"
+}

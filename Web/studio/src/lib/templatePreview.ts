@@ -3,7 +3,7 @@
 // grid of cards does not start dozens of executions at once.
 import { renderWidget } from "../../../preview-engine/src/render/renderer.js";
 import type { Appearance, WidgetSize } from "../../../preview-engine/src/types.js";
-import { packageReport, projectFromTemplate, resourceURLs, textFiles, type Template } from "@/project.ts";
+import { packageReport, projectFromTemplate, resourceURLs, executionFiles, type Template } from "@/project.ts";
 import { sampleFixtures } from "@/mockData.ts";
 import { sandbox } from "@/runtime.ts";
 
@@ -42,7 +42,7 @@ export function renderTemplate(template: Template, family: WidgetSize, options: 
     const files = templateFiles(template);
     const report = packageReport({ files });
     const result = await sandbox.execute({
-      files: textFiles(files),
+      files: executionFiles(files),
       entry: report.manifest?.entry ?? "main.jsx",
       manifest: report.manifest,
       environments: { "widget-size": family, "widget-param": "", "widget-rendering-mode": "fullColor" },

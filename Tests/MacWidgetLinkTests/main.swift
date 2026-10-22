@@ -9,7 +9,7 @@ let sharedScriptManager = StubScriptManager()
 
 let delegate = AppDelegate()
 var openedURLs: [URL] = []
-delegate.openWidgetURL = { openedURLs.append($0) }
+delegate.openWidgetURL = { openedURLs.append($0);return true }
 
 let externalURLs = [
     URL(string: "https://xnu.app/scriptwidget")!,
@@ -29,4 +29,11 @@ delegate.application(NSApplication.shared, open: internalURLs + externalURLs)
 precondition(openedURLs == externalURLs, "Forward external URLs in order and ignore internal/schemeless URLs")
 delegate.application(NSApplication.shared, open: [])
 precondition(openedURLs == externalURLs, "An empty URL batch should do nothing")
-print("✓ macOS widget URL routing passed")
+
+var failedReports=0
+delegate.reportUnavailableLink={failedReports+=1}
+delegate.openWidgetURL={_ in false}
+delegate.application(NSApplication.shared,open:[URL(string:"unknown-launcher-app://open")!])
+precondition(failedReports==1,"Unavailable external handlers must report a failure")
+
+print("✓ macOS widget URL routing and failure feedback passed")

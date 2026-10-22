@@ -1,7 +1,12 @@
 {
-  "description": "A clean hydration ring driven by a simple current/goal parameter.",
+  "description": "Log real water intake with a configurable glass size, seven-day history, reset and undo.",
   "category": "health",
-  "tags": ["water", "hydration", "ring", "goal"],
+  "tags": [
+    "water",
+    "hydration",
+    "ring",
+    "goal"
+  ],
   "difficulty": "beginner",
   "icon": "drop.fill",
   "featured": true

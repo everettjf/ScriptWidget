@@ -22,12 +22,13 @@ export function createPackageFileSystem(files) {
   const entries = new Map();
   for (const [name, content] of Object.entries(files ?? {})) {
     const normalized = normalizePackagePath(name);
-    if (normalized !== null && typeof content === "string") entries.set(normalized, content);
+    if (normalized !== null && (typeof content === "string" || content instanceof Uint8Array)) entries.set(normalized, content);
   }
   return {
     read(relativePath) {
       const normalized = normalizePackagePath(relativePath);
-      return normalized === null ? null : entries.get(normalized) ?? null;
+      const value = normalized === null ? null : entries.get(normalized);
+      return typeof value === "string" ? value : null;
     },
     paths() { return [...entries.keys()].sort(); },
   };

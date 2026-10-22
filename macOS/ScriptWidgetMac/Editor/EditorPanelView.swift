@@ -306,6 +306,7 @@ private struct WidgetConfigurationView: View {
                 TextField("Version", text: $manifest.version)
                 TextField("Entry point", text: $manifest.entry)
                 LabeledContent("Runtime", value: manifest.runtimeVersion)
+                LabeledContent("Minimum runtime", value: manifest.minimumRuntimeVersion ?? "1.0")
                 LabeledContent("Location", value: scriptModel.package.path.path)
                     .lineLimit(2)
                     .textSelection(.enabled)

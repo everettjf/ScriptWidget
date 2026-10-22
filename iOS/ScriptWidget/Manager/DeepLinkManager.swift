@@ -1,35 +1,18 @@
-//
-//  DeepLinkManager.swift
-//  ScriptWidget
-//
-//  Created by everettjf on 2021/4/12.
-//
-
 import Foundation
+import UIKit
 
-
+@MainActor
 class DeepLinkManager {
-    
-    static func openDeepLink(url: URL) {
-        if url.scheme == kDeepLinkDefaultScheme {
-            print("no need open url")
-            return
+    typealias Opener = @MainActor (URL, @escaping @MainActor @Sendable (Bool) -> Void) -> Void
+
+    static func openDeepLink(url: URL, open: Opener = { url, completion in
+        UIApplication.shared.open(url, options: [:]) { accepted in
+            Task { @MainActor in completion(accepted) }
         }
-        
-        print("try open url \(url)")
-        if UIApplication.shared.canOpenURL(url) {
-            print("can open url : \(url)")
-        } else {
-            print("can not open url : \(url)")
-        }
-        
-        
-        UIApplication.shared.open(url, options: [:]) { success in
-            if success {
-                print("succeed open url \(url)")
-            } else {
-                print("failed open url \(url)")
-            }
-        }
+    }, completion: @escaping @MainActor @Sendable (Bool) -> Void = { _ in }) {
+        guard let scheme=url.scheme?.lowercased(),scheme != kDeepLinkDefaultScheme,scheme != "scriptwidget" else { return }
+        // The system decides whether an installed app can handle this link.
+        // Do not log full URLs: shortcut input or app links may contain personal text.
+        open(url,completion)
     }
 }

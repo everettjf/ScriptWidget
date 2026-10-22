@@ -1,0 +1,11 @@
+{
+  "description": "MET Norway forecasts with a saved-city fallback, response-aware cache and Celsius/Fahrenheit. Configure a city in Records & Configuration.",
+  "category": "weather",
+  "tags": [
+    "weather",
+    "location",
+    "offline"
+  ],
+  "difficulty": "medium",
+  "icon": "cloud.sun.fill"
+}

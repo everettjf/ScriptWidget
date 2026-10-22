@@ -2,6 +2,8 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { deviceProfiles } from "../../../preview-engine/src/render/profiles.js";
 import type { Appearance, RenderingMode, WidgetSize } from "../../../preview-engine/src/types.js";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { timelinePreview, timelineInputValue } from "@/timelinePreview.ts";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -108,6 +110,7 @@ function PackageSummary({ report }: { report: PackageReport }) {
   if (!manifest) return <Messages id="package-issues" items={[{ severity: "error", text: report.issues[0]?.message ?? "widget.json is invalid." }]} empty="" />;
   const rows: Array<[string, string]> = [
     ["Identifier", manifest.id], ["Version", manifest.version], ["Entry", manifest.entry],
+    ["Minimum runtime", manifest.minimumRuntimeVersion ?? "1.0"],
     ["Sizes", manifest.supportedFamilies.join(", ")],
     ["Permissions", manifest.permissions.length ? manifest.permissions.join(", ") : "None"],
     ["Network hosts", manifest.networkDomains.length ? manifest.networkDomains.join(", ") : "None"],
@@ -129,6 +132,8 @@ function PackageSummary({ report }: { report: PackageReport }) {
 }
 
 export function PreviewPane({ settings, families, onSettings, preview, report, fixtures, onFixtures, tab, onTab, className }: PreviewPaneProps) {
+  let transitionDates: string[] = [];
+  try { transitionDates = timelinePreview(report.manifest, settings.timelineDate).plan.entries.slice(1).map((entry) => entry.date); } catch { /* Package problems explain invalid schedules. */ }
   const errors = preview.problems.filter((item) => item.severity === "error").length;
   return (
     <section className={cn("flex min-h-0 min-w-0 flex-col overflow-auto bg-sidebar", className)} aria-label="Preview">
@@ -148,6 +153,14 @@ export function PreviewPane({ settings, families, onSettings, preview, report, f
         <Field id="rendering-mode" label="Mode">
           <Choice<RenderingMode> id="rendering-mode" value={settings.renderingMode} onChange={(renderingMode) => onSettings({ renderingMode })}
             options={[["fullColor", "Full color"], ["accented", "Accented"], ["vibrant", "Vibrant"]]} />
+        </Field>
+        <Field id="timeline-date" label="Timeline date (your local time)" className="basis-full">
+          <div className="flex gap-2">
+            <Input id="timeline-date" type="datetime-local" className="h-8 min-w-0 flex-1 bg-card" value={timelineInputValue(settings.timelineDate)} onChange={(event) => onSettings({ timelineDate: event.target.value })} />
+            <Button size="sm" variant="outline" onClick={() => onSettings({ timelineDate: "" })}>Now</Button>
+          </div>
+          <p className="text-xs text-muted-foreground">{settings.timelineDate ? "Fixed time previews a scheduled state using saved data. Writes and live requests are disabled." : "Current state. Set a date to preview scheduled changes."}</p>
+          {transitionDates.length > 0 && <div className="flex flex-wrap gap-1">{transitionDates.map((date) => <Button key={date} size="xs" variant="outline" onClick={() => onSettings({ timelineDate: date })}>{new Date(date).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}</Button>)}</div>}
         </Field>
         <Field id="parameter" label="Parameter" className="basis-full">
           <Input id="parameter" className="h-8 bg-card" autoComplete="off" spellCheck={false} placeholder="widget-param"

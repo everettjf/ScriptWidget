@@ -25,9 +25,14 @@ final class ScriptWidgetExecutionSession {
     static let maximumConcurrentNetworkRequests = 8
     static let maximumTotalNetworkRequests = 32
 
+    static let maximumDataQueries = 8
+
     let id = UUID()
+    let callbackQueue = DispatchQueue(label: "ScriptWidget.ExecutionCallbacks", qos: .userInitiated)
     private let lock = NSLock()
     private var tasks: [ObjectIdentifier: URLSessionTask] = [:]
+    private var cancellationHandlers: [UUID: () -> Void] = [:]
+    private(set) var totalDataQueries = 0
     private(set) var totalNetworkRequests = 0
     private(set) var cancellation: ScriptWidgetExecutionCancellation?
 
@@ -35,6 +40,14 @@ final class ScriptWidgetExecutionSession {
         lock.lock()
         defer { lock.unlock() }
         return cancellation == nil
+    }
+
+    func registerDataQuery() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard cancellation == nil, totalDataQueries < Self.maximumDataQueries else { return false }
+        totalDataQueries += 1
+        return true
     }
 
     func register(_ task: URLSessionTask) -> Bool {
@@ -54,6 +67,20 @@ final class ScriptWidgetExecutionSession {
         lock.unlock()
     }
 
+    /// Native read queries share the execution's cancellation lifetime.
+    func registerCancellation(_ handler: @escaping () -> Void) -> UUID? {
+        lock.lock(); defer { lock.unlock() }
+        guard cancellation == nil, cancellationHandlers.count < Self.maximumDataQueries else { return nil }
+        let id = UUID()
+        cancellationHandlers[id] = handler
+        return id
+    }
+
+    func completeCancellation(_ id: UUID) {
+        lock.lock(); defer { lock.unlock() }
+        cancellationHandlers.removeValue(forKey: id)
+    }
+
     func cancel(_ reason: ScriptWidgetExecutionCancellation) {
         lock.lock()
         guard cancellation == nil else {
@@ -62,13 +89,49 @@ final class ScriptWidgetExecutionSession {
         }
         cancellation = reason
         let activeTasks = Array(tasks.values)
+        let handlers = Array(cancellationHandlers.values)
         tasks.removeAll()
+        cancellationHandlers.removeAll()
         lock.unlock()
         activeTasks.forEach { $0.cancel() }
+        handlers.forEach { $0() }
     }
 
     func finish() {
         cancel(.completed)
+    }
+}
+
+/// Handles a query completing while its cancellation registration is installed.
+final class ScriptWidgetQueryCancellation {
+    private let session: ScriptWidgetExecutionSession
+    private let lock = NSLock()
+    private var registration: UUID?
+    private var finished = false
+    private var installed = false
+
+    init(session: ScriptWidgetExecutionSession) { self.session = session }
+
+    func install(_ cancel: @escaping () -> Void) -> Bool {
+        lock.lock()
+        guard !finished, !installed else { lock.unlock(); return false }
+        installed = true
+        lock.unlock()
+        guard let id = session.registerCancellation(cancel) else { return false }
+        lock.lock()
+        if finished { lock.unlock(); session.completeCancellation(id); return false }
+        registration = id
+        lock.unlock()
+        return true
+    }
+
+    func complete() {
+        lock.lock()
+        finished = true
+        let id = registration
+        registration = nil
+        lock.unlock()
+        if let id { session.completeCancellation(id) }
     }
 }
 
@@ -142,18 +205,80 @@ class ScriptWidgetConsoleLogger {
 class ScriptWidgetRunningState {
 
     var logger: ScriptWidgetConsoleLogger
-    var package: ScriptWidgetPackage
+    private(set) var package: ScriptWidgetPackage
     let executionSession: ScriptWidgetExecutionSession
 
+    #if DEBUG
+    var storageContainerForTesting: URL?
+    var storageDefaultsForTesting: UserDefaults?
+    var fetchManagerForTesting: ScriptWidgetFetchManager?
+    var calendarProviderForTesting: ScriptWidgetCalendarProvider?
+    #endif
+
     let isDarkMode: Bool?
+    let isTimelineProjection: Bool
+    let isLiveActivityPresentation: Bool
+    private(set) var executionSnapshot: ScriptWidgetExecutionSnapshot?
+    let previewStorage: ScriptWidgetPreviewStorageBackend?
 
-    var storageNamespace: String { "script.\(package.name)." }
+    var storageNamespace: String { executionSnapshot?.storageNamespace ?? "script.\(package.name)." }
 
-    init(package: ScriptWidgetPackage, isDarkMode: Bool? = nil) {
+    var fetchManager: ScriptWidgetFetchManager {
+        #if DEBUG
+        if let fetchManagerForTesting { return fetchManagerForTesting }
+        #endif
+        return sharedFetchManager
+    }
+
+    init(package: ScriptWidgetPackage, isDarkMode: Bool? = nil, isTimelineProjection: Bool = false, isLiveActivityPresentation: Bool = false, executionSnapshot: ScriptWidgetExecutionSnapshot? = nil) {
         self.isDarkMode = isDarkMode
+        self.isTimelineProjection = isTimelineProjection
+        self.isLiveActivityPresentation = isLiveActivityPresentation
+        self.executionSnapshot = executionSnapshot
+        self.previewStorage = package.readonly && executionSnapshot == nil ? ScriptWidgetPreviewStorageBackend(namespace: "script.\(package.name).") : nil
         self.logger = ScriptWidgetConsoleLogger()
         self.package = package
         self.executionSession = ScriptWidgetExecutionSession()
+        #if DEBUG
+        if executionSnapshot == nil, package.managedScope == nil, ScriptManager.usesIsolatedUnitTestBuildCache {
+            storageContainerForTesting = ScriptManager.localFallbackDirectoryURL("__Build").deletingLastPathComponent()
+            try? FileManager.default.createDirectory(at: storageContainerForTesting!, withIntermediateDirectories: true)
+        }
+        #endif
+    }
+
+    /// Capture managed editor/renderer input before JavaScript starts while
+    /// retaining the same cancellation session installed in the JS guard.
+    func captureManagedEntry(_ source: String) throws {
+        guard executionSnapshot == nil, let scope = package.managedScope else { return }
+        try scope.validate(name: package.name)
+        guard previewStorage == nil, executionSession.isActive,
+              package.path.standardizedFileURL.resolvingSymlinksInPath() == scope.context.libraryRoot.appendingPathComponent(package.name) else {
+            throw ScriptWidgetStorageNamespaceError.conflict
+        }
+        let snapshot = try ScriptWidgetExecutionSnapshot(name: package.name, role: scope.role, context: scope.context, entryOverride: source)
+        package = snapshot.package
+        executionSnapshot = snapshot
+    }
+
+    func validateExecutionSnapshot() throws {
+        do {
+            if let executionSnapshot { try executionSnapshot.validateIdentity() }
+            else if previewStorage == nil {
+                #if DEBUG
+                let root = storageContainerForTesting ?? FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.everettjf.scriptwidget")
+                #else
+                let root = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.everettjf.scriptwidget")
+                #endif
+                try ScriptWidgetStorageProfiles.validateLegacyExecution(container: root)
+            }
+        } catch { executionSession.cancel(.superseded); throw error }
+    }
+
+    var isCurrentExecution: Bool {
+        guard executionSession.isActive else { return false }
+        do { try validateExecutionSnapshot(); return executionSession.isActive }
+        catch { return false }
     }
 }
 

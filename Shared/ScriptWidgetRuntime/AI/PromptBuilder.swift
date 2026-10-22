@@ -120,8 +120,10 @@ enum PromptBuilder {
            an async `$main` function.
         5. Date/time: the global `moment` library is available. Plain JS
            `Date` also works.
-        6. Persistent data: `$storage.set(key, value)` and
-           `$storage.get(key)`.
+        6. Persistent data: `$storage.setString(key, value)` and
+           `$storage.getString(key)` for strings; `$storage.setJSON(key, object)`
+           and `$storage.getJSON(key)` for objects. Check write success.
+           Do not invent `$storage.set` or `$storage.get`.
         7. Only use tags, props, and APIs that appear in the REFERENCE
            section below. Do not invent new ones.
         8. When calling `fetch`, always wrap it in try/catch so the
@@ -147,7 +149,29 @@ enum PromptBuilder {
             $device.isdarkmode().
         14. Preserve the requested labels and values. Do not invent
             meeting locations, extra events, or live data. For fixed
-            demo data do not call network, location or Health APIs.
+            demo data do not call network, location, Health or Calendar APIs.
+        15. Calendar needs the calendar package permission and system approval
+            in ScriptWidget Settings. Preview mocks do not grant access.
+            Native Settings source selection also limits calendar metadata,
+            events and cached snapshots. Obtain permitted IDs with calendars();
+            scripts cannot enlarge this selection. Show setup for no sources.
+            Health read permissions are private: authorizationStatus returns
+            notDisclosed, and completing consent review is not proof of access.
+            Empty Health results may mean no records or data not shared.
+        16. Location needs the location package permission and approval in the
+            main app. Widget access is separate: use isAuthorizedForWidgetUpdates
+            when explaining widget setup, never infer permission from cached data.
+            Catch current() failures and show a useful setup or unavailable state.
+            Show age/isStale when displaying a cached position; do not invent a fix.
+        17. Scheduled widgets use timeline-date/timeline-slot from $getenv, not
+            a replaced Date global. Future entries are read-only: do not save
+            records, prompt for access or fetch live data while projecting them.
+            Buttons run separate current actions. Use saved display snapshots
+            and label their age; do not imply future personal measurements exist.
+        18. $file.exists(path) checks regular files inside the current package,
+            including binary images. It cannot read outside the package or
+            download iCloud content, and does not validate image bytes.
+            Give a useful missing-resource state instead of inventing a photo.
         """
         let reference = reference.combined
         return rules + "\n\n" + reference

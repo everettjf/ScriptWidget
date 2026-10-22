@@ -10,7 +10,8 @@ const runtimeSwift = fs.readFileSync(path.join(root, "Shared/ScriptWidgetRuntime
 const packageSwift = fs.readFileSync(path.join(root, "Shared/ScriptWidgetRuntime/Common/ScriptWidgetPackage.swift"), "utf8");
 
 test("runtime limits and native API version match ScriptWidgetRuntimeContract", () => {
-  assert.match(runtimeSwift, new RegExp(`static let apiVersion = "${runtimeContract.nativeAPIVersion.replace(".", "\\.")}"`));
+  assert.match(runtimeSwift, /static let apiVersion = ScriptWidgetBuildContract.nativeRuntimeAPIVersion/);
+  assert.ok(packageSwift.includes(`static let nativeRuntimeAPIVersion = "${runtimeContract.nativeAPIVersion}"`));
   assert.match(runtimeSwift, /static let maximumSourceBytes = 512 \* 1_024/);
   assert.match(runtimeSwift, /static let maximumTranspiledBytes = 2 \* 1_024 \* 1_024/);
   assert.match(runtimeSwift, /static let executionTimeout: DispatchTimeInterval = \.seconds\(5\)/);

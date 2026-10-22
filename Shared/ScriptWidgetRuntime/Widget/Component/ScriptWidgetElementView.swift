@@ -12,6 +12,11 @@ class ScriptWidgetElementContext {
     let scriptName: String
     let scriptParameter: String
     let package: ScriptWidgetPackage
+    let executionSnapshot: ScriptWidgetExecutionSnapshot?
+    var canExecuteActions: Bool { executionSnapshot?.hasUnsavedEntry != true && (executionSnapshot != nil || !package.readonly) }
+    var actionCatalog: ScriptWidgetActionCatalog {
+        ScriptWidgetActionCatalog(packages: [package], executionSnapshots: executionSnapshot.map { [$0] } ?? [])
+    }
     private let containerBackgroundElementID: ObjectIdentifier?
     
     weak var runtime: ScriptWidgetRuntime?
@@ -21,7 +26,8 @@ class ScriptWidgetElementContext {
         self.debugMode = debugMode
         self.scriptName = scriptName
         self.scriptParameter = scriptParameter
-        self.package = package
+        self.executionSnapshot = runtime?.runningState?.executionSnapshot
+        self.package = executionSnapshot?.package ?? package
         self.containerBackgroundElementID = containerBackgroundElement.map(ObjectIdentifier.init)
     }
 
