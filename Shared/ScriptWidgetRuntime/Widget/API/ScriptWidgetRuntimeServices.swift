@@ -4,6 +4,7 @@ import JavaScriptCore
 @objc protocol ScriptWidgetRuntimeServicesExports: JSExport {
     static func status(_ service: String) -> ScriptWidgetRuntimePromise
     static func profile(_ service: String) -> ScriptWidgetRuntimePromise
+    static func playback(_ service: String) -> ScriptWidgetRuntimePromise
 }
 
 /// No auth prompts, token access, arbitrary URL/header arguments or writes.
@@ -11,8 +12,10 @@ import JavaScriptCore
 /// explicitly granted native account. No scripts can start login or refresh.
 @objc final class ScriptWidgetRuntimeServices: NSObject, ScriptWidgetRuntimeServicesExports {
     private static let queue = DispatchQueue(label: "ScriptWidget.Services", qos: .userInitiated)
-    static func status(_ service: String) -> ScriptWidgetRuntimePromise { query(service, profile: false) }
-    static func profile(_ service: String) -> ScriptWidgetRuntimePromise { query(service, profile: true) }
+    private enum Query { case status, profile, playback }
+    static func status(_ service: String) -> ScriptWidgetRuntimePromise { query(service, kind: .status) }
+    static func profile(_ service: String) -> ScriptWidgetRuntimePromise { query(service, kind: .profile) }
+    static func playback(_ service: String) -> ScriptWidgetRuntimePromise { query(service, kind: .playback) }
 
     static func validate(_ state: ScriptWidgetRunningState) throws -> UUID {
         guard state.isCurrentExecution, state.previewStorage == nil, let snapshot = state.executionSnapshot,
@@ -42,14 +45,14 @@ import JavaScriptCore
         #endif
         return ScriptWidgetServiceProviderConfiguration.spotifyClientID
     }
-    private static func query(_ name: String, profile: Bool) -> ScriptWidgetRuntimePromise {
+    private static func query(_ name: String, kind: Query) -> ScriptWidgetRuntimePromise {
         let state = JSContext.current()?.scriptWidgetRunningState
         return ScriptWidgetRuntimePromise { resolve, reject in
             guard let state else { reject.call(withArguments: [ScriptWidgetServiceError.permissionDenied.localizedDescription]); return }
             let owner: UUID
             do { owner = try validate(state) }
             catch { reject.call(withArguments: [ScriptWidgetServiceError.permissionDenied.localizedDescription]); return }
-            guard let service = ScriptWidgetService(rawValue: name) else {
+            guard let service = ScriptWidgetService(rawValue: name), kind != .playback || service == .spotify else {
                 reject.call(withArguments: [ScriptWidgetServiceError.unsupportedOperation.localizedDescription]); return
             }
             guard !state.isTimelineProjection && !state.isLiveActivityPresentation else {
@@ -58,7 +61,7 @@ import JavaScriptCore
             guard state.executionSession.registerDataQuery() else { reject.call(withArguments: ["[query_limit] Too many system data queries"]); return }
             let spotifyClient = service == .spotify ? spotifyClientID(state) : nil
             if service == .spotify && spotifyClient == nil {
-                if profile { reject.call(withArguments: [ScriptWidgetServiceError.unsupportedOperation.localizedDescription]) }
+                if kind != .status { reject.call(withArguments: [ScriptWidgetServiceError.unsupportedOperation.localizedDescription]) }
                 else { resolve.call(withArguments: ["unavailable"]) }
                 return
             }
@@ -68,7 +71,7 @@ import JavaScriptCore
                 do {
                     guard try validate(state) == owner else { throw ScriptWidgetServiceError.permissionDenied }
                     let store = try connections(state), connection = try store.connection(service)
-                    let operation: ScriptWidgetServiceOperation = service == .github ? .githubProfile : .spotifyProfile
+                    let operation: ScriptWidgetServiceOperation = kind == .playback ? .spotifyPlayback : service == .github ? .githubProfile : .spotifyProfile
                     if let connection, service == .spotify, connection.credential.oauthClientID != spotifyClient {
                         throw ScriptWidgetServiceError.invalidCredential
                     }
@@ -77,7 +80,7 @@ import JavaScriptCore
                         if let connection { try store.revalidate(connection) }
                         else if try store.connection(service) != nil { throw ScriptWidgetServiceError.conflict }
                     }
-                    if !profile {
+                    if kind == .status {
                         let status = connection == nil ? "notConnected" : connection!.policy.grants.contains(where: { $0.ownerID == owner && $0.operations.contains(operation) }) ? "connected" : "notGranted"
                         state.executionSession.callbackQueue.async {
                             pending.complete()
@@ -100,11 +103,22 @@ import JavaScriptCore
                             guard state.isCurrentExecution else { return }
                             do {
                                 try validateCurrent()
-                                guard case let .profile(value) = try result.get(), value.service == service, value.subject == connection.subject else { throw ScriptWidgetServiceError.invalidCredential }
-                                resolve.call(withArguments: [["service": value.service.rawValue, "subject": value.subject,
-                                    "username": value.username as Any? ?? NSNull(), "displayName": value.displayName as Any? ?? NSNull(),
-                                    "publicRepositories": value.publicRepositories as Any? ?? NSNull(), "privateRepositories": value.privateRepositories as Any? ?? NSNull(),
-                                    "followers": value.followers as Any? ?? NSNull(), "following": value.following as Any? ?? NSNull()]])
+                                let response = try result.get()
+                                if kind == .playback {
+                                    guard case let .playback(value) = response else { throw ScriptWidgetServiceError.unavailable }
+                                    guard let value else { resolve.call(withArguments: [NSNull()]); return }
+                                    resolve.call(withArguments: [["itemType": value.itemType, "itemID": value.itemID as Any? ?? NSNull(),
+                                        "title": value.title as Any? ?? NSNull(), "artists": value.artists, "album": value.album as Any? ?? NSNull(),
+                                        "isPlaying": value.isPlaying, "progressMilliseconds": value.progressMilliseconds as Any? ?? NSNull(),
+                                        "durationMilliseconds": value.durationMilliseconds as Any? ?? NSNull(), "hasActiveDevice": value.hasActiveDevice,
+                                        "isRestricted": value.isRestricted]])
+                                } else {
+                                    guard case let .profile(value) = response, value.service == service, value.subject == connection.subject else { throw ScriptWidgetServiceError.invalidCredential }
+                                    resolve.call(withArguments: [["service": value.service.rawValue, "subject": value.subject,
+                                        "username": value.username as Any? ?? NSNull(), "displayName": value.displayName as Any? ?? NSNull(),
+                                        "publicRepositories": value.publicRepositories as Any? ?? NSNull(), "privateRepositories": value.privateRepositories as Any? ?? NSNull(),
+                                        "followers": value.followers as Any? ?? NSNull(), "following": value.following as Any? ?? NSNull()]])
+                                }
                             } catch { reject.call(withArguments: [(error as? ScriptWidgetServiceError ?? .unavailable).localizedDescription]) }
                         }
                     }
@@ -113,7 +127,7 @@ import JavaScriptCore
                     pending.complete()
                     guard state.isCurrentExecution else { return }
                     let failure = error as? ScriptWidgetServiceError ?? .unavailable
-                    if failure == .invalidConfiguration && !profile { resolve.call(withArguments: ["unavailable"]) }
+                    if failure == .invalidConfiguration && kind == .status { resolve.call(withArguments: ["unavailable"]) }
                     else { reject.call(withArguments: [(failure == .invalidConfiguration ? ScriptWidgetServiceError.unavailable : failure).localizedDescription]) }
                 }
             }

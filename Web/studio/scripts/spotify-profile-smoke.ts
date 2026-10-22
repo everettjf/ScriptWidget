@@ -65,8 +65,30 @@ $render(<vstack frame="max" padding="18" spacing="7" alignment="leading" backgro
   await page.waitFor("document.getElementById('mock-data-panel').offsetParent!==null");
   await select("mock-group", "services"); await select("mock-api", "$services.profile"); await select("mock-service-provider", "spotify");
   await page.waitFor("document.getElementById('mock-result.displayName')?.value==='Sample listener'");
+  const playbackSource = `let title='No current playback';try{const p=await $services.playback('spotify');if(p)title=p.itemType==='unsupported'?'Unsupported item':(p.isPlaying?'Playing: ':'Paused: ')+p.title;}catch(e){const error=String(e);title=error.includes('service_permission')?'Allow playback':error.includes('service_not_connected')?'Connect Spotify':error.includes('service_expired')?'Refresh connection':error.includes('service_rate_limit')?'Rate limited':error.includes('service_operation')?'Spotify unavailable':'Service unavailable';}$render(<text>{title}</text>);`;
+  await edit(playbackSource);
+  await page.waitFor("document.querySelector('.sw-widget')?.textContent.includes('Playing: Morning Light')",20000);
+  await select("mock-api","$services.playback");
+  await page.waitFor("document.getElementById('mock-result.title')?.value==='Morning Light'");
+  await page.evaluate("(()=>{const input=document.getElementById('mock-result.title');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'Edited playback');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
+  await page.waitFor("document.querySelector('.sw-widget')?.textContent.includes('Edited playback')",20000);
+  for (const [label,expected] of [["Paused","Paused: Morning Light"],["No current playback","No current playback"],["Unsupported item","Unsupported item"],["No playback access","Allow playback"],["Disconnected","Connect Spotify"],["Token expired","Refresh connection"],["Rate limited","Rate limited"],["Offline","Service unavailable"],["Unavailable","Spotify unavailable"],["Playing","Playing: Morning Light"]]) {
+    await click(`[...document.querySelectorAll('#mock-data-panel button')].find(b=>b.textContent===${JSON.stringify(label)})`);
+    await page.waitFor(`document.querySelector('.sw-widget')?.textContent.includes(${JSON.stringify(expected)})`,20000);
+  }
+  if (process.env.SCRIPTWIDGET_SPOTIFY_PLAYBACK_WEB) {
+    await page.call("Emulation.setDeviceMetricsOverride", {width:1500,height:1800,deviceScaleFactor:1,mobile:false});
+    await page.evaluate("document.querySelector('section[aria-label=Preview]').scrollTop=0");
+    fs.writeFileSync(process.env.SCRIPTWIDGET_SPOTIFY_PLAYBACK_WEB,await page.screenshot());
+  }
+  await select("mock-service-provider","github");
+  await page.waitFor("document.getElementById('mock-api')?.value==='$services.profile'");
+  assert.equal(await page.evaluate("[...document.getElementById('mock-api').options].some(option=>option.value==='$services.playback')"),false);
+  await page.waitFor("document.getElementById('save-state').textContent==='Saved in this browser'");
+  await page.goto(`${server.origin}/index.html`);
+  await page.waitFor("document.querySelector('.sw-widget')?.textContent.includes('Playing: Morning Light')",20000);
   await page.call("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
   assert.equal(await page.evaluate("document.documentElement.scrollWidth<=innerWidth+1"), true);
   assert.deepEqual(page.consoleMessages.filter((line: string) => line.startsWith("exception") || line.startsWith("error")), []);
-  console.log("✓ Spotify profile: manifest/source editing, provider-isolated mocks, editable name, eight states, unchanged source, package excludes fixtures, reload and phone width passed");
+  console.log("✓ Spotify profile: manifest/source editing, provider-isolated mocks, editable name, eight states, unchanged source, package excludes fixtures, reload, separate playback access, editable track, ten playback states and phone width passed");
 } finally { await chrome.close(); server.close(); }

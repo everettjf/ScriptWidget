@@ -21,3 +21,6 @@ with a single `value` or `error` per response. Missing Spotify fixtures remain
 unavailable. Profiles contain only the public eight-field DTO; unsupported
 Spotify username/count fields must be null. Fixtures never contain credentials
 and do not bypass manifest permissions, declared hosts or execution budgets.
+Spotify playback uses `services.spotify.playback` and a separate boolean
+`playbackGranted`. Its ten-field snapshot or null never represents a live
+player; no device identifiers or arbitrary provider URLs are accepted.

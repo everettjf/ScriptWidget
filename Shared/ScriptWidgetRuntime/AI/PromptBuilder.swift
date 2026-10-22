@@ -171,7 +171,7 @@ enum PromptBuilder {
             zero data. Spotify profile reads require a configured native app/widget,
             api.spotify.com and accounts.spotify.com plus an owner profile grant.
             Its username/counts are null; never invent follower or repository counts.
-            Spotify sign-in/foreground refresh belong to native Settings, not scripts.
+            Spotify playback(service) needs its own native Playback access grant; profile status does not report that grant. It returns null for no current playback or a bounded ten-field track/episode/unsupported snapshot, with millisecond progress/duration, not a live timer. No device IDs, provider URLs or controls are exposed. Accompany displayed Spotify metadata with its required branding and attribution link. Spotify sign-in/foreground refresh belong to native Settings, not scripts.
             Unconfigured builds remain unavailable; playback control is not exposed. Service reads
             cannot run in future entries or Live Activity presentations.
             Music app playback uses $music.isAvailable(), authorizationStatus()

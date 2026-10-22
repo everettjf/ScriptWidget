@@ -3,7 +3,7 @@ import fs from "node:fs";
 import test from "node:test";
 import { executePackageInNode } from "../../preview-engine/src/node.js";
 import { newManifest } from "../../preview-engine/src/package/manifest.js";
-import { defaultFixtures, parseMocks, serviceScenario, setResponse } from "../src/mockData.ts";
+import { defaultFixtures, parseMocks, serviceScenario, setResponse, spotifyPlaybackScenario, spotifyPlaybackSample } from "../src/mockData.ts";
 const manifest = {...newManifest("GitHub"), minimumRuntimeVersion:"1.4", permissions:["services","network"],networkDomains:["api.github.com"]};
 const code = "const r=await $services.profile('github');$render(<text>{JSON.stringify(r)}</text>);";
 const run = (source=code, fixtures:any=parseMocks(defaultFixtures), selected:any=manifest, environments:any={}) => executePackageInNode({files:{"main.jsx":source},manifest:selected,fixtures,environments});
@@ -107,5 +107,45 @@ test("Spotify profile states match native JSC across eight families without affe
   const fixtures=parseMocks(serviceScenario(defaultFixtures,scenario==="withheld"?"empty":scenario,"spotify"));
   const result=await run(fixture.source,fixtures,spotifyManifest,{"widget-size":family});assert.equal(result.error,null);
   assert.equal(result.tree,fixture.trees[`${scenario}/${family}`],`${scenario}/${family}`);
+ }
+});
+
+const playbackCode="const p=await $services.playback('spotify');$render(<text>{JSON.stringify(p)}</text>);";
+test("Spotify playback has independent grants and null/no-current-playback snapshots",async()=>{
+ const fixtures=parseMocks(defaultFixtures), p=profile(await run(playbackCode,fixtures,spotifyManifest));
+ assert.equal(p.title,"Morning Light");assert.equal(p.progressMilliseconds,86000);assert.equal(Object.keys(p).length,10);
+ assert.equal(profile(await run(playbackCode,parseMocks(spotifyPlaybackScenario(defaultFixtures,"noPlayback")),spotifyManifest)),null);
+ const playbackOnly=parseMocks(defaultFixtures);(playbackOnly.services as any).spotify.status.value="notGranted";
+ assert.equal(profile(await run(playbackCode,playbackOnly,spotifyManifest)).title,"Morning Light");
+ assert.match((await run(spotifyCode,playbackOnly,spotifyManifest)).error!.message,/service_permission/);
+ const profileOnly=parseMocks(spotifyPlaybackScenario(defaultFixtures,"notGranted"));
+ assert.equal(profile(await run(spotifyCode,profileOnly,spotifyManifest)).displayName,"Sample listener");
+ assert.match((await run(playbackCode,profileOnly,spotifyManifest)).error!.message,/service_permission/);
+ const episode=parseMocks(defaultFixtures);(episode.services as any).spotify.playback.value={...spotifyPlaybackSample,itemType:"episode",artists:[],album:"Sample show"};
+ assert.equal(profile(await run(playbackCode,episode,spotifyManifest)).album,"Sample show");
+ const paused=profile(await run(playbackCode,parseMocks(spotifyPlaybackScenario(defaultFixtures,"paused")),spotifyManifest));assert.equal(paused.isPlaying,false);
+});
+test("Spotify playback cannot bypass scopes, hosts, read-only projections or shared budgets",async()=>{
+ for(const selected of [{...spotifyManifest,permissions:[]},{...spotifyManifest,networkDomains:["api.spotify.com"]},{...spotifyManifest,networkDomains:["accounts.spotify.com"]}]) assert.match((await run(playbackCode,undefined,selected)).error!.message,/(service_permission|package:undeclared_network)/);
+ assert.match((await run(playbackCode.replace("'spotify'","'github'"))).error!.message,/service_operation/);
+ for(const env of [{"timeline-is-projection":"true"},{"widget-size":"live-activity"},{"widget-size":"dynamic-island"}]) assert.match((await run(playbackCode,undefined,spotifyManifest,env)).error!.message,/timeline_read_only/);
+ assert.match((await run("for(let i=0;i<8;i++)await $services.playback('spotify');await $services.profile('spotify');$render(<text>bad</text>);",undefined,spotifyManifest)).error!.message,/query_limit/);
+ for(const [state,code] of [["expired","service_expired"],["rateLimited","service_rate_limit"],["offline","service_unavailable"]] as const) assert.match((await run(playbackCode,parseMocks(spotifyPlaybackScenario(defaultFixtures,state)),spotifyManifest)).error!.message,new RegExp(code));
+});
+test("Spotify playback mock projections reject provider payloads and invalid metadata",async()=>{
+ for(const patch of [{token:"secret"},{deviceID:"secret"},{url:"https://example.test"},{itemType:["track"]},{title:"bad\nname"},{isPlaying:1},{progressMilliseconds:-1},{durationMilliseconds:604800001},{artists:Array(9).fill("name")},{itemType:"unsupported"},{itemType:"episode",artists:["Invented artist"]}]) {
+  const fixtures=parseMocks(defaultFixtures);(fixtures.services as any).spotify.playback={value:{...spotifyPlaybackSample,...patch}};
+  assert.throws(()=>parseMocks(JSON.stringify(fixtures)),/playback/);
+  assert.match((await run(playbackCode,fixtures,spotifyManifest)).error!.message,/mock_invalid/);
+ }
+ const invalid=parseMocks(defaultFixtures);(invalid.services as any).spotify.playbackGranted="true";
+ assert.throws(()=>parseMocks(JSON.stringify(invalid)),/playbackGranted/);
+ assert.match((await run(playbackCode,invalid,spotifyManifest)).error!.message,/mock_invalid/);
+});
+test("Spotify playback ten states match actual native trees across all eight families",async()=>{
+ const expected=JSON.parse(fs.readFileSync(new URL("../../preview-engine/test/parity/spotify-playback-trees.json",import.meta.url),"utf8"));
+ for(const mode of ["playing","paused","noPlayback","unsupported","notGranted","notConnected","unavailable","expired","rateLimited","offline"] as const)for(const family of ["small","medium","large","extraLarge","extraLargePortrait","accessoryInline","accessoryCircular","accessoryRectangular"]) {
+  const result=await run(expected.source,parseMocks(spotifyPlaybackScenario(defaultFixtures,mode)),spotifyManifest,{"widget-size":family});
+  assert.equal(result.error,null);assert.equal(result.tree,expected.trees[mode+"/"+family],mode+"/"+family);
  }
 });

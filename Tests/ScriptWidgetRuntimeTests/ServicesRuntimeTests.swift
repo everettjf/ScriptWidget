@@ -76,14 +76,93 @@ final class ServicesRuntimeTests: XCTestCase {
     private var spotifyDomains: [String] { ["api.spotify.com", "accounts.spotify.com"] }
     private var spotifyProfileSource: String { profileSource.replacingOccurrences(of: "'github'", with: "'spotify'") }
     private var spotifyStatusSource: String { statusSource.replacingOccurrences(of: "'github'", with: "'spotify'") }
-    private func connectSpotify(granted: Bool = true, expired: Bool = false) throws {
+    private func connectSpotify(granted: Bool = true, expired: Bool = false, scopes: Set<String>? = nil) throws {
         let now = Date()
         let credential = ScriptWidgetServiceCredential(formatVersion: 1, accountID: UUID(), service: .spotify, revision: UUID(), accessToken: "private-spotify-fixture-access", refreshToken: "private-spotify-fixture-refresh", oauthClientID: spotifyClient,
-            issuedAt: now.addingTimeInterval(-3600), expiresAt: now.addingTimeInterval(expired ? -1 : 3600), scopes: ScriptWidgetSpotifyAuthorization.readScopes)
+            issuedAt: now.addingTimeInterval(-3600), expiresAt: now.addingTimeInterval(expired ? -1 : 3600), scopes: scopes ?? ScriptWidgetSpotifyAuthorization.readScopes)
         let profile = ScriptWidgetServiceProfile(service: .spotify, subject: "sample-listener", username: nil, displayName: "Sample listener", publicRepositories: nil, privateRepositories: nil, followers: nil, following: nil)
         let connection = try store.connect(credential, verifiedProfile: profile, expectedRevision: nil)
         if granted { _ = try store.setGrant(service: .spotify, ownerID: owner, operations: [.spotifyProfile], expectedRevision: connection.revision) }
         transport.result = .success(.init(status: 200, body: Data(#"{"id":"sample-listener","display_name":"Sample listener","email":"private@example.test","country":"US","product":"premium","followers":{"total":99}}"#.utf8)))
+    }
+
+    private var spotifyPlaybackSource: String { spotifyProfileSource.replacingOccurrences(of: ".profile(", with: ".playback(") }
+    private func playbackFixture(_ mode: String = "playing") throws {
+        if mode == "noPlayback" { transport.result = .success(.init(status: 204, body: Data())); return }
+        if mode == "rateLimited" { transport.result = .failure(.rateLimited); return }
+        if mode == "offline" { transport.result = .failure(.unavailable); return }
+        let body: [String: Any] = ["currently_playing_type": mode == "unsupported" ? "ad" : "track", "is_playing": mode != "paused", "progress_ms": 86000,
+            "device": ["id":"private-device-id", "name":"Private bedroom", "is_active":true, "is_restricted":false],
+            "item": ["id":"sample-track", "name":"Morning Light", "duration_ms":224000, "artists":[["name":"ScriptWidget Sessions"]], "album":["name":"Focus"], "external_urls":["spotify":"https://example.test/private"]]]
+        transport.result = .success(.init(status: 200, body: try JSONSerialization.data(withJSONObject: body)))
+    }
+    private func grantPlayback() throws {
+        let connection = try XCTUnwrap(store.connection(.spotify))
+        var operations = connection.policy.grants.first(where: { $0.ownerID == owner })?.operations ?? []
+        operations.insert(.spotifyPlayback)
+        _ = try store.setGrant(service: .spotify, ownerID: owner, operations: operations, expectedRevision: connection.revision)
+    }
+    func testSpotifyPlaybackUsesSeparateGrantAndProjectsBoundedSnapshot() throws {
+        try connectSpotify(); try playbackFixture()
+        XCTAssertTrue(try result(spotifyPlaybackSource, domains:spotifyDomains, spotifyClient:spotifyClient).contains("service_permission"))
+        XCTAssertEqual(transport.calls,0)
+        let connection = try XCTUnwrap(store.connection(.spotify))
+        _ = try store.setGrant(service:.spotify,ownerID:owner,operations:[.spotifyPlayback],expectedRevision:connection.revision)
+        XCTAssertEqual(try result(spotifyStatusSource,domains:spotifyDomains,spotifyClient:spotifyClient),"notGranted")
+        let output = try result(spotifyPlaybackSource,domains:spotifyDomains,spotifyClient:spotifyClient)
+        let value = try XCTUnwrap(JSONSerialization.jsonObject(with:Data(output.utf8)) as? [String:Any])
+        XCTAssertEqual(value.count,10); XCTAssertEqual(value["title"] as? String,"Morning Light")
+        XCTAssertEqual(value["progressMilliseconds"] as? Int,86000)
+        for secret in ["private-device-id","Private bedroom","external_urls","access-token","refresh"] { XCTAssertFalse(output.contains(secret)) }
+        try playbackFixture("noPlayback")
+        XCTAssertEqual(try result(spotifyPlaybackSource,domains:spotifyDomains,spotifyClient:spotifyClient),"null")
+    }
+    func testSpotifyPlaybackRetainsPermissionConfigurationAndIdentityBoundaries() throws {
+        try connectSpotify(); try grantPlayback(); try playbackFixture()
+        XCTAssertTrue(try result(spotifyPlaybackSource,domains:spotifyDomains).contains("service_operation"))
+        for domains in [["api.spotify.com"],["accounts.spotify.com"],["api.spotify.com.attacker.test"]] {
+            XCTAssertTrue(try result(spotifyPlaybackSource,domains:domains,spotifyClient:spotifyClient).contains("service_permission"))
+        }
+        XCTAssertTrue(try result(spotifyPlaybackSource,domains:spotifyDomains,projection:true,spotifyClient:spotifyClient).contains("timeline_read_only"))
+        XCTAssertTrue(try result(spotifyPlaybackSource,domains:spotifyDomains,installed:false,spotifyClient:spotifyClient).contains("service_permission"))
+        XCTAssertTrue(try result(spotifyPlaybackSource.replacingOccurrences(of:"'spotify'",with:"'github'"),spotifyClient:spotifyClient).contains("service_operation"))
+        XCTAssertEqual(transport.calls,0)
+        transport.beforeReply = { let connection = try XCTUnwrap(self.store.connection(.spotify)); _ = try self.store.setGrant(service:.spotify,ownerID:self.owner,operations:[],expectedRevision:connection.revision) }
+        XCTAssertTrue(try result(spotifyPlaybackSource,domains:spotifyDomains,spotifyClient:spotifyClient).contains("service_permission"))
+    }
+    func testSpotifyPlaybackRequiresProviderScopeAndSharesQueryBudget() throws {
+        try connectSpotify(scopes:["user-read-private"]); try grantPlayback(); try playbackFixture()
+        XCTAssertTrue(try result(spotifyPlaybackSource,domains:spotifyDomains,spotifyClient:spotifyClient).contains("service_permission"))
+        XCTAssertEqual(transport.calls,0)
+        memory.values.removeAll(); try connectSpotify(); try grantPlayback(); try playbackFixture()
+        let source = "try{for(let i=0;i<8;i++)await $services.playback('spotify');await $services.profile('spotify');$render(<text>bad</text>);}catch(e){$render(<text>{String(e)}</text>);}"
+        XCTAssertTrue(try result(source,domains:spotifyDomains,spotifyClient:spotifyClient).contains("query_limit"))
+        XCTAssertEqual(transport.calls,8)
+    }
+    func testSpotifyPlaybackStatesMatchNativeAcrossAllFamilies() throws {
+        try skipUnlessRepositoryCheckout(Self.repository)
+        let source = #"let detail='';try{const p=await $services.playback('spotify');detail=p===null?'none':[p.itemType,p.itemID,p.title,p.artists.join(','),p.album,p.isPlaying,p.progressMilliseconds,p.durationMilliseconds,p.hasActiveDevice,p.isRestricted].map(x=>x===null?'none':String(x)).join('|');}catch(e){detail=String(e).match(/\[service_[a-z_]+\]/)?.[0]||'error';}$render(<text>{detail}</text>);"#
+        var trees: [String:String] = [:]
+        for mode in ["playing","paused","noPlayback","unsupported","notGranted","notConnected","unavailable","expired","rateLimited","offline"] {
+            memory.values.removeAll(); transport.beforeReply = nil
+            if !["notConnected","unavailable"].contains(mode) { try connectSpotify(expired:mode == "expired"); if mode != "notGranted" { try grantPlayback() } }
+            try playbackFixture(mode)
+            for family in Self.families {
+                try autoreleasepool {
+                    let runtime = try self.runtime(source,domains:spotifyDomains,family:family,spotifyClient:mode == "unavailable" ? nil : spotifyClient)
+                    let result = runtime.executeJSXSyncForWidget(source); XCTAssertNil(result.1,result.1?.displayMessage ?? "")
+                    trees[mode+"/"+family] = ScriptWidgetElementTreeJSON.encode(try XCTUnwrap(result.0))
+                }
+            }
+        }
+        let path = Self.repository.appendingPathComponent("Web/preview-engine/test/parity/spotify-playback-trees.json")
+        if ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_SPOTIFY_PLAYBACK_TREES"] == "1" {
+            try JSONSerialization.data(withJSONObject:["formatVersion":1,"source":source,"trees":trees],options:[.prettyPrinted,.sortedKeys]).write(to:path)
+        } else {
+            let stored = try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:path)) as? [String:Any])
+            XCTAssertEqual(stored["source"] as? String,source); XCTAssertEqual(stored["trees"] as? [String:String],trees)
+        }
+        XCTAssertEqual(trees.count,80)
     }
 
     func testSpotifyProfileRequiresConfiguredMatchingClientAndProjectsOnlySupportedFields() throws {

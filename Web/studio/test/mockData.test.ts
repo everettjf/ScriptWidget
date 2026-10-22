@@ -8,7 +8,7 @@ import type { WidgetManifest } from "../../preview-engine/src/types.js";
 import { createProject } from "../src/project.ts";
 import { dataAPICatalog } from "../../../Editor/editorfe/src/dataAPICatalog.js";
 const execute = (source: string, fixtures = parseMocks(defaultFixtures)) => {
-  const manifest: WidgetManifest = { ...newManifest("API Mocks"), permissions: ["calendar", "reminders", "photos", "location", "health", "services", "music", "network"], networkDomains: ["api.github.com"] };
+  const manifest: WidgetManifest = { ...newManifest("API Mocks"), permissions: ["calendar", "reminders", "photos", "location", "health", "services", "music", "network"], networkDomains: ["api.github.com", "api.spotify.com", "accounts.spotify.com"] };
   return executePackageInNode({ files: { "main.jsx": source, "widget.json": JSON.stringify(manifest) }, fixtures, manifest });
 };
 
@@ -37,6 +37,7 @@ test("new projects can read healthy system samples and authorize without setup",
 });
 
 function mockCall(api: {id:string}, fixtures: ReturnType<typeof parseMocks>): string {
+  if(api.id === "$services.playback") return `${api.id}("spotify")`;
   if(api.id.startsWith("$services."))return `${api.id}("github")`;
   const value=(fixtures.api as any)[api.id]?.value;
   const options=api.id==="$health.sleepSummary"||api.id==="$health.workouts"?{start:value.start,end:value.end}:api.id==="$health.activitySummary"?{date:value.date}:null;
@@ -59,13 +60,13 @@ test("catalog Promise semantics hold before awaiting, including simulated failur
     const code=`const response=${mockCall(api,fixtures)};const asynchronous=response!==null&&typeof response==='object'&&typeof response.then==='function';if(asynchronous!==${api.asynchronous})throw new Error('Promise shape mismatch');${api.operation==="write"?"try{await response;throw new Error('unexpected write');}catch(e){if(!String(e).includes('permission_denied'))throw e;}":"await response;"}$render(<text>ok</text>);`;
     const result=await execute(code,fixtures);assert.equal(result.error,null,api.id);
   }
-  for (const id of ["$health.stepCountToday", "$location.current", "$system.locale", "$device.battery", "$services.profile"]) {
+  for (const id of ["$health.stepCountToday", "$location.current", "$system.locale", "$device.battery", "$services.profile", "$services.playback"]) {
     const api = dataAPICatalog.find((item) => item.id === id)!;
-    const fixtures = parseMocks(setResponse(defaultFixtures, id, { error: "Simulated failure" }));
+    const fixtures = parseMocks(setResponse(defaultFixtures, id, { error: "Simulated failure" }, id === "$services.playback" ? "spotify" : "github"));
     const failure = await execute(`
       let synchronous = false, asynchronous = false;
       try {
-        const response = ${id}(${id.startsWith("$services.") ? JSON.stringify("github") : ""});
+        const response = ${id}(${id.startsWith("$services.") ? JSON.stringify(id === "$services.playback" ? "spotify" : "github") : ""});
         try { await response; } catch { asynchronous = true; }
       } catch { synchronous = true; }
       $render(<text>{JSON.stringify({ synchronous, asynchronous })}</text>);

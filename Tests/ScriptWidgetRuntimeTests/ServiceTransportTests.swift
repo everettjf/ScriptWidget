@@ -643,6 +643,13 @@ final class SpotifyAccountsFlowTests: XCTestCase {
         model.setGranted(false, owner: owner)
         XCTAssertEqual(try store.connection(.spotify)?.policy.grants.first?.operations, [.spotifyPlayback])
         XCTAssertTrue(model.connection!.grantedOwners.isEmpty)
+        XCTAssertEqual(model.connection!.playbackOwners,[id])
+        model.setGranted(false, owner:owner, operation:.spotifyPlayback)
+        XCTAssertTrue(model.connection!.playbackOwners.isEmpty)
+        model.setGranted(true, owner:owner, operation:.spotifyPlayback)
+        XCTAssertEqual(try store.connection(.spotify)?.policy.grants.first?.operations,[.spotifyPlayback])
+        model.setGranted(true, owner:owner, operation:.spotifyPause)
+        XCTAssertEqual(try store.connection(.spotify)?.policy.grants.first?.operations,[.spotifyPlayback])
     }
 
     func testActualPresentationWindowBridgeUsesHostWindowAndSystemCallbackScheme() async throws {

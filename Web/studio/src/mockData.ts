@@ -9,17 +9,32 @@ export const mockAPIs: MockAPI[] = dataAPICatalog;
 export const isObject = (value: unknown): value is MockObject => value !== null && typeof value === "object" && !Array.isArray(value);
 export type ServiceProvider = "github" | "spotify";
 export const spotifyProfileSample: MockObject = { service: "spotify", subject: "sample-listener", username: null, displayName: "Sample listener", publicRepositories: null, privateRepositories: null, followers: null, following: null };
-const spotifySamples = (): MockObject => ({ status: { value: "connected" }, profile: { value: { ...spotifyProfileSample } } });
+export const spotifyPlaybackSample: MockObject = { itemType:"track", itemID:"sample-track", title:"Morning Light", artists:["ScriptWidget Sessions"], album:"Focus", isPlaying:true, progressMilliseconds:86000, durationMilliseconds:224000, hasActiveDevice:true, isRestricted:false };
+const spotifySamples = (): MockObject => ({ playbackGranted: true, playback: { value: { ...spotifyPlaybackSample, artists: [...spotifyPlaybackSample.artists as MockValue[]] } }, status: { value: "connected" }, profile: { value: { ...spotifyProfileSample } } });
 function validateSpotifyMocks(value: MockValue | undefined): void {
   if (value === undefined) return;
   if (!isObject(value) || Object.keys(value).some(key => key !== "spotify")) throw new Error("Services mock supports only the documented Spotify override.");
   if (value.spotify === undefined) return;
   const account = value.spotify;
-  if (!isObject(account) || Object.keys(account).some(key => !["status", "profile"].includes(key)) || !isObject(account.status)) throw new Error("Spotify mock needs a status response and optional profile response.");
-  for (const response of Object.values(account)) {
+  if (!isObject(account) || Object.keys(account).some(key => !["status", "profile", "playback", "playbackGranted"].includes(key)) || !isObject(account.status)) throw new Error("Spotify mock needs a status response and optional profile response.");
+  if (account.playbackGranted !== undefined && typeof account.playbackGranted !== "boolean") throw new Error("Spotify playbackGranted must be a boolean.");
+  for (const [key, response] of Object.entries(account)) {
+    if (key === "playbackGranted") continue;
     if (!isObject(response) || Object.keys(response).length !== 1 || (("value" in response) === ("error" in response)) || ("error" in response && typeof response.error !== "string")) throw new Error("Spotify responses need value or error only. Never put credentials in mock data.");
   }
-  if ("value" in account.status && !["connected", "notConnected", "notGranted", "unavailable"].includes(String(account.status.value))) throw new Error("Invalid Spotify service status.");
+  if ("value" in account.status && (typeof account.status.value !== "string" || !["connected", "notConnected", "notGranted", "unavailable"].includes(account.status.value))) throw new Error("Invalid Spotify service status.");
+  if (isObject(account.playback) && "value" in account.playback && account.playback.value !== null) {
+    const item = account.playback.value, keys = Object.keys(spotifyPlaybackSample);
+    const text = (raw: MockValue | undefined, max: number) => typeof raw === "string" && new TextEncoder().encode(raw).length <= max && !/[\p{Cc}\p{Cf}\p{Cs}]/u.test(raw);
+    const milliseconds = (raw: MockValue | undefined) => raw === null || (typeof raw === "number" && Number.isSafeInteger(raw) && raw >= 0 && raw <= 604800000);
+    if (!isObject(item) || Object.keys(item).length !== keys.length || Object.keys(item).some(key => !keys.includes(key)) || typeof item.itemType !== "string" || !["track", "episode", "unsupported"].includes(item.itemType)
+      || !(item.itemID === null || text(item.itemID, 128)) || !(item.title === null || text(item.title, 256)) || !(item.album === null || text(item.album, 256))
+      || !Array.isArray(item.artists) || item.artists.length > 8 || item.artists.some(name => !text(name, 256) || name === "")
+      || !milliseconds(item.progressMilliseconds) || !milliseconds(item.durationMilliseconds) || typeof item.isPlaying !== "boolean" || typeof item.hasActiveDevice !== "boolean" || typeof item.isRestricted !== "boolean"
+      || (item.itemType !== "unsupported" && (!item.title || item.durationMilliseconds === null))
+      || (item.itemType === "episode" && item.artists.length !== 0)
+      || (item.itemType === "unsupported" && (item.itemID !== null || item.title !== null || item.album !== null || item.artists.length !== 0 || item.durationMilliseconds !== null))) throw new Error("Invalid Spotify playback fields. No credentials, URLs or device identifiers.");
+  }
   if (isObject(account.profile) && "value" in account.profile) {
     const item = account.profile.value, keys = Object.keys(spotifyProfileSample);
     const text = (raw: MockValue | undefined, max: number) => typeof raw === "string" && new TextEncoder().encode(raw).length <= max && !/[\p{Cc}\p{Cf}\p{Cs}]/u.test(raw);
@@ -118,7 +133,7 @@ export function responseFor(data: MockObject, api: MockAPI, provider: ServicePro
   if (api.group === "services" && provider === "spotify") {
     const account = isObject(data.services) && isObject(data.services.spotify) ? data.services.spotify : {};
     const method = api.id.split(".")[1]!;
-    return isObject(account[method]) ? account[method] : { value: method === "status" ? "unavailable" : { ...spotifyProfileSample } };
+    return isObject(account[method]) ? account[method] : { value: method === "status" ? "unavailable" : method === "playback" ? null : { ...spotifyProfileSample } };
   }
   const override = isObject(data.api) ? data.api[api.id] : undefined;
   if (isObject(override)) return override;
@@ -133,10 +148,10 @@ export function responseFor(data: MockObject, api: MockAPI, provider: ServicePro
 }
 export function setResponse(text: string, id: string, response: MockObject, provider: ServiceProvider = "github"): string {
   const data = parseMocks(text);
-  if (provider === "spotify" && ["$services.status", "$services.profile"].includes(id)) {
+  if (provider === "spotify" && ["$services.status", "$services.profile", "$services.playback"].includes(id)) {
     const existing = isObject(data.services) && isObject(data.services.spotify) ? data.services.spotify : spotifySamples();
     data.services = { spotify: { ...existing, [id.split(".")[1]!]: response } };
-    return JSON.stringify(data, null, 2);
+    const result = JSON.stringify(data, null, 2); parseMocks(result); return result;
   }
   data.api = { ...(isObject(data.api) ? data.api : {}), [id]: response };
   if (id === "$reminders.items" && isObject(data.remindersState) && isObject(response.value) && Array.isArray(response.value.items)) {
@@ -218,4 +233,14 @@ export function musicScenario(text: string, scenario: MusicScenario): string {
   const missing = scenario === "withheld" || scenario === "stopped";
   return setResponse(result, "$music.current", {value: {...sample, state: scenario === "withheld" ? "playing" : ["paused", "stopped"].includes(scenario) ? scenario : "playing", capturedAt: new Date().toISOString(),
     ...(missing ? {hasItem:false,title:null,artist:null,album:null,duration:null,position:null} : {})}});
+}
+
+export type SpotifyPlaybackScenario = "playing" | "paused" | "noPlayback" | "unsupported" | "notGranted" | "notConnected" | "expired" | "rateLimited" | "offline" | "unavailable";
+export function spotifyPlaybackScenario(text: string, scenario: SpotifyPlaybackScenario): string {
+  const data = parseMocks(text);
+  const existing = isObject(data.services) && isObject(data.services.spotify) ? data.services.spotify : spotifySamples();
+  const errors: Record<string, string> = { expired:"[service_expired] Refresh Spotify in native Service Accounts.", rateLimited:"[service_rate_limit] Spotify is rate limited.", offline:"[service_unavailable] Service unavailable." };
+  const value = scenario === "noPlayback" ? null : scenario === "unsupported" ? {...spotifyPlaybackSample,itemType:"unsupported",itemID:null,title:null,artists:[],album:null,durationMilliseconds:null} : {...spotifyPlaybackSample,isPlaying:scenario !== "paused"};
+  data.services = { spotify: { ...existing, status: {value:["notConnected","unavailable"].includes(scenario) ? scenario : "connected"}, playbackGranted:scenario !== "notGranted", playback:errors[scenario] ? {error:errors[scenario]!} : {value} } };
+  const result=JSON.stringify(data,null,2); parseMocks(result); return result;
 }

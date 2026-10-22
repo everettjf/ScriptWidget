@@ -88,9 +88,11 @@ final class ScriptWidgetSpotifyAccountsModel: ObservableObject {
         let revision: UUID
         let expiresAt: Date?
         let grantedOwners: Set<UUID>
+        let playbackOwners: Set<UUID>
         init(_ connection: ScriptWidgetServiceConnection) {
             label = connection.label; revision = connection.revision; expiresAt = connection.credential.expiresAt
             grantedOwners = Set(connection.policy.grants.filter { $0.operations.contains(.spotifyProfile) }.map(\.ownerID))
+            playbackOwners = Set(connection.policy.grants.filter { $0.operations.contains(.spotifyPlayback) }.map(\.ownerID))
         }
     }
     @Published private(set) var connection: Summary?
@@ -211,7 +213,8 @@ final class ScriptWidgetSpotifyAccountsModel: ObservableObject {
         do { try resolvedStore().disconnect(.spotify, expectedRevision: connection.revision); self.connection = nil; message = nil; WidgetCenter.shared.reloadAllTimelines() }
         catch { message = (error as? ScriptWidgetServiceError ?? .unavailable).localizedDescription }
     }
-    func setGranted(_ granted: Bool, owner: ScriptWidgetServiceAccountsModel.Owner) {
+    func setGranted(_ granted: Bool, owner: ScriptWidgetServiceAccountsModel.Owner, operation: ScriptWidgetServiceOperation = .spotifyProfile) {
+        guard operation == .spotifyProfile || operation == .spotifyPlayback else { return }
         guard ready, !busy, let connection else { return }
         do {
             try owner.validate()
@@ -219,7 +222,7 @@ final class ScriptWidgetSpotifyAccountsModel: ObservableObject {
                 throw ScriptWidgetServiceError.invalidConfiguration
             }
             var operations = current.policy.grants.first(where: { $0.ownerID == owner.id })?.operations ?? []
-            if granted { operations.insert(.spotifyProfile) } else { operations.remove(.spotifyProfile) }
+            if granted { operations.insert(operation) } else { operations.remove(operation) }
             let saved = try resolvedStore().setGrant(service: .spotify, ownerID: owner.id, operations: operations, expectedRevision: connection.revision)
             self.connection = .init(saved); message = nil; WidgetCenter.shared.reloadAllTimelines()
         } catch { message = (error as? ScriptWidgetServiceError ?? .unavailable).localizedDescription }
@@ -238,6 +241,8 @@ struct ScriptWidgetSpotifyAccountSection: View {
                 Button("Disconnect Spotify from This Device", role: .destructive) { model.disconnect() }.disabled(model.busy || !model.ready)
                 ForEach(model.owners) { owner in
                     Toggle("Profile access: \(owner.name)", isOn: Binding(get: { connection.grantedOwners.contains(owner.id) }, set: { model.setGranted($0, owner: owner) }))
+                        .disabled(model.busy || !model.ready || model.clientID == nil)
+                    Toggle("Playback access: \(owner.name)", isOn: Binding(get: { connection.playbackOwners.contains(owner.id) }, set: { model.setGranted($0, owner: owner, operation: .spotifyPlayback) }))
                         .disabled(model.busy || !model.ready || model.clientID == nil)
                 }
                 if let message = model.ownerMessage { Text(message).font(.footnote).foregroundStyle(.secondary) }
