@@ -54,22 +54,114 @@ final class ServicesRuntimeTests: XCTestCase {
         let connection = try store.connect(credential, verifiedProfile: profile, expectedRevision: nil)
         if granted { _ = try store.setGrant(service: .github, ownerID: owner, operations: [.githubProfile], expectedRevision: connection.revision) }
     }
-    private func runtime(_ source: String, permissions: [WidgetPackagePermission] = [.services,.network], domains: [String] = ["api.github.com"], family: String = "medium", projection: Bool = false, installed: Bool = true) throws -> ScriptWidgetRuntime {
+    private func runtime(_ source: String, permissions: [WidgetPackagePermission] = [.services,.network], domains: [String] = ["api.github.com"], family: String = "medium", projection: Bool = false, installed: Bool = true, spotifyClient: String? = nil) throws -> ScriptWidgetRuntime {
         var manifest = WidgetPackageManifest.newProject(name: packageName); manifest.permissions = permissions; manifest.networkDomains = domains; manifest.minimumRuntimeVersion = "1.4"
         XCTAssertTrue(package.writeManifest(manifest).0); XCTAssertTrue(package.writeFile(relativePath: "main.jsx", content: source).0)
         let snapshot = installed ? try session.capture(name: packageName) : nil
         let runtime = ScriptWidgetRuntime(package: snapshot?.package ?? ScriptWidgetPackage(path: package.path, readonly: true), environments: ["widget-size":family,"timeline-is-projection":projection ? "true":"false"], executionSnapshot: snapshot, isDarkMode: false)
         runtime.runningState?.serviceConnectionsForTesting = store; runtime.runningState?.serviceReaderForTesting = .init(transport: transport)
+        runtime.runningState?.serviceProviderInfoForTesting = spotifyClient.map { ["ScriptWidgetSpotifyClientID": $0] } ?? [:]
         return runtime
     }
     private func text(_ element: ScriptWidgetRuntimeElement) -> String { (element.getChildren().compactMap { $0 as? String } + element.childrenAsElements().map(text)).joined() }
-    private func result(_ source: String, permissions: [WidgetPackagePermission] = [.services,.network], domains: [String] = ["api.github.com"], projection: Bool = false, installed: Bool = true, family: String = "medium") throws -> String {
-        let value = try runtime(source, permissions: permissions, domains: domains, family: family, projection: projection, installed: installed).executeJSXSyncForWidget(source)
+    private func result(_ source: String, permissions: [WidgetPackagePermission] = [.services,.network], domains: [String] = ["api.github.com"], projection: Bool = false, installed: Bool = true, family: String = "medium", spotifyClient: String? = nil) throws -> String {
+        let value = try runtime(source, permissions: permissions, domains: domains, family: family, projection: projection, installed: installed, spotifyClient: spotifyClient).executeJSXSyncForWidget(source)
         XCTAssertNil(value.1, value.1?.displayMessage ?? "")
         return text(try XCTUnwrap(value.0))
     }
     private let profileSource = "try{const p=await $services.profile('github');$render(<text>{JSON.stringify(p)}</text>);}catch(e){$render(<text>{String(e)}</text>);}"
     private let statusSource = "try{$render(<text>{await $services.status('github')}</text>);}catch(e){$render(<text>{String(e)}</text>);}"
+
+    private var spotifyClient: String { "0123456789abcdef0123456789abcdef" }
+    private var spotifyDomains: [String] { ["api.spotify.com", "accounts.spotify.com"] }
+    private var spotifyProfileSource: String { profileSource.replacingOccurrences(of: "'github'", with: "'spotify'") }
+    private var spotifyStatusSource: String { statusSource.replacingOccurrences(of: "'github'", with: "'spotify'") }
+    private func connectSpotify(granted: Bool = true, expired: Bool = false) throws {
+        let now = Date()
+        let credential = ScriptWidgetServiceCredential(formatVersion: 1, accountID: UUID(), service: .spotify, revision: UUID(), accessToken: "private-spotify-fixture-access", refreshToken: "private-spotify-fixture-refresh", oauthClientID: spotifyClient,
+            issuedAt: now.addingTimeInterval(-3600), expiresAt: now.addingTimeInterval(expired ? -1 : 3600), scopes: ScriptWidgetSpotifyAuthorization.readScopes)
+        let profile = ScriptWidgetServiceProfile(service: .spotify, subject: "sample-listener", username: nil, displayName: "Sample listener", publicRepositories: nil, privateRepositories: nil, followers: nil, following: nil)
+        let connection = try store.connect(credential, verifiedProfile: profile, expectedRevision: nil)
+        if granted { _ = try store.setGrant(service: .spotify, ownerID: owner, operations: [.spotifyProfile], expectedRevision: connection.revision) }
+        transport.result = .success(.init(status: 200, body: Data(#"{"id":"sample-listener","display_name":"Sample listener","email":"private@example.test","country":"US","product":"premium","followers":{"total":99}}"#.utf8)))
+    }
+
+    func testSpotifyProfileRequiresConfiguredMatchingClientAndProjectsOnlySupportedFields() throws {
+        try connectSpotify()
+        XCTAssertEqual(try result(spotifyStatusSource), "unavailable")
+        XCTAssertTrue(try result(spotifyProfileSource).contains("service_operation"))
+        XCTAssertEqual(transport.calls, 0)
+        let value = try result(spotifyProfileSource, domains: spotifyDomains, spotifyClient: spotifyClient)
+        let profile = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(value.utf8)) as? [String: Any])
+        XCTAssertEqual(profile["service"] as? String, "spotify"); XCTAssertEqual(profile["subject"] as? String, "sample-listener")
+        XCTAssertEqual(profile["displayName"] as? String, "Sample listener"); XCTAssertEqual(profile.count, 8)
+        for key in ["username", "publicRepositories", "privateRepositories", "followers", "following"] { XCTAssertTrue(profile[key] is NSNull) }
+        for privateValue in ["private-spotify-fixture", "private@example.test", "premium", "country"] { XCTAssertFalse(value.contains(privateValue)) }
+        let mismatch = try result(spotifyStatusSource, spotifyClient: "different-client-id")
+        XCTAssertTrue(mismatch.contains("service_credential"))
+        XCTAssertEqual(transport.calls, 1)
+    }
+
+    func testSpotifyOwnerGrantAndBothDeclaredHostsAreRequired() throws {
+        XCTAssertEqual(try result(spotifyStatusSource, spotifyClient: spotifyClient), "notConnected")
+        try connectSpotify(granted: false)
+        XCTAssertEqual(try result(spotifyStatusSource, spotifyClient: spotifyClient), "notGranted")
+        XCTAssertTrue(try result(spotifyProfileSource, domains: spotifyDomains, spotifyClient: spotifyClient).contains("service_permission"))
+        let saved = try XCTUnwrap(store.connection(.spotify))
+        _ = try store.setGrant(service: .spotify, ownerID: owner, operations: [.spotifyProfile], expectedRevision: saved.revision)
+        for domains in [["api.spotify.com"], ["accounts.spotify.com"], ["api.spotify.com.attacker.test", "accounts.spotify.com"]] {
+            XCTAssertTrue(try result(spotifyProfileSource, domains: domains, spotifyClient: spotifyClient).contains("service_permission"))
+        }
+        XCTAssertEqual(transport.calls, 0)
+        XCTAssertEqual(try result(spotifyStatusSource, permissions: [.services], domains: [], spotifyClient: spotifyClient), "connected")
+        XCTAssertTrue(try result(spotifyProfileSource, domains: spotifyDomains, installed: false, spotifyClient: spotifyClient).contains("service_permission"))
+        XCTAssertTrue(try result(spotifyProfileSource, domains: spotifyDomains, projection: true, spotifyClient: spotifyClient).contains("timeline_read_only"))
+    }
+
+    func testSpotifyExpiredOrChangedAccountAndMixedBudgetsFailWithoutCredentialDisclosure() throws {
+        try connectSpotify(expired: true)
+        XCTAssertTrue(try result(spotifyProfileSource, domains: spotifyDomains, spotifyClient: spotifyClient).contains("service_expired"))
+        XCTAssertEqual(transport.calls, 0)
+        let old = try XCTUnwrap(store.connection(.spotify)); try store.disconnect(.spotify, expectedRevision: old.revision)
+        try connectSpotify()
+        transport.result = .success(.init(status: 200, body: Data(#"{"id":"someone-else","display_name":"Another listener"}"#.utf8)))
+        XCTAssertTrue(try result(spotifyProfileSource, domains: spotifyDomains, spotifyClient: spotifyClient).contains("service_credential"))
+        transport.beforeReply = { let current = try XCTUnwrap(self.store.connection(.spotify)); try self.store.disconnect(.spotify, expectedRevision: current.revision) }
+        XCTAssertTrue(try result(spotifyProfileSource, domains: spotifyDomains, spotifyClient: spotifyClient).contains("service_not_connected"))
+        transport.beforeReply = nil
+        let source = "try{for(let i=0;i<8;i++)await $services.status('github');await $services.status('spotify');}catch(e){$render(<text>{String(e)}</text>);}"
+        XCTAssertTrue(try result(source, domains: spotifyDomains, spotifyClient: spotifyClient).contains("query_limit"))
+    }
+
+    func testSpotifyProfileCanonicalStatesMatchNativeAcrossAllFamilies() throws {
+        try skipUnlessRepositoryCheckout(Self.repository)
+        let source = #"let status='',detail='';try{status=await $services.status('spotify');if(status==='connected'){try{const p=await $services.profile('spotify');detail=[p.service,p.subject,p.username,p.displayName,p.publicRepositories,p.privateRepositories,p.followers,p.following].map(x=>x===null?'none':String(x)).join('|');}catch(e){detail=String(e).match(/\[service_[a-z_]+\]/)?.[0]||'error';}}}catch(e){status=String(e).match(/\[service_[a-z_]+\]/)?.[0]||'error';}$render(<vstack><text>{status}</text><text>{detail}</text></vstack>);"#
+        var trees: [String: String] = [:]
+        for mode in ["connected", "notConnected", "notGranted", "unavailable", "expired", "rateLimited", "offline", "withheld"] {
+            memory.values.removeAll(); transport.beforeReply = nil
+            if !["notConnected", "unavailable"].contains(mode) { try connectSpotify(granted: mode != "notGranted", expired: mode == "expired") }
+            if mode == "rateLimited" { transport.result = .failure(.rateLimited) }
+            if mode == "offline" { transport.result = .failure(.unavailable) }
+            if mode == "withheld" { transport.result = .success(.init(status: 200, body: Data(#"{"id":"sample-listener","display_name":null}"#.utf8))) }
+            for family in Self.families {
+                try autoreleasepool {
+                    let runtime = try self.runtime(source, domains: spotifyDomains, family: family, spotifyClient: mode == "unavailable" ? nil : spotifyClient)
+                    let result = runtime.executeJSXSyncForWidget(source)
+                    XCTAssertNil(result.1, result.1?.displayMessage ?? "")
+                    trees[mode + "/" + family] = ScriptWidgetElementTreeJSON.encode(try XCTUnwrap(result.0))
+                }
+            }
+        }
+        let path = Self.repository.appendingPathComponent("Web/preview-engine/test/parity/spotify-profile-trees.json")
+        if ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_SPOTIFY_PROFILE_TREES"] == "1" {
+            try JSONSerialization.data(withJSONObject: ["formatVersion": 1, "source": source, "trees": trees], options: [.prettyPrinted, .sortedKeys]).write(to: path)
+        } else {
+            let stored = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: path)) as? [String: Any])
+            XCTAssertEqual(stored["source"] as? String, source)
+            XCTAssertEqual(stored["trees"] as? [String: String], trees)
+        }
+        XCTAssertEqual(trees.count, 64)
+    }
 
     func testInstalledOwnerReadsOnlyTypedProfileFieldsAndUnsharedCountsRemainNull() throws {
         try connect()

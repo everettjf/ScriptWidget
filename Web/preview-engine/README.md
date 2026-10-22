@@ -14,3 +14,10 @@ npm run coverage  # regenerate docs/browser-preview-coverage.md
 
 No dependencies. The Babel bundle and support scripts are read from
 `Shared/ScriptWidgetRuntime/Widget/Resource/support.bundle`.
+
+Connected-service fixtures keep GitHub responses in the legacy `apis` entries;
+Spotify responses use `services.spotify.status` and `services.spotify.profile`
+with a single `value` or `error` per response. Missing Spotify fixtures remain
+unavailable. Profiles contain only the public eight-field DTO; unsupported
+Spotify username/count fields must be null. Fixtures never contain credentials
+and do not bypass manifest permissions, declared hosts or execution budgets.

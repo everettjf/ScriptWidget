@@ -18,7 +18,9 @@ struct ScriptWidgetServiceConnection: CustomStringConvertible, CustomDebugString
         self.credential = credential
         policy = .connected(accountID: credential.accountID, service: credential.service)
         subject = profile.subject
-        label = profile.username ?? profile.displayName ?? profile.subject
+        label = [profile.username, profile.displayName].compactMap { $0 }.first {
+            !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        } ?? profile.subject
         try validate()
     }
 

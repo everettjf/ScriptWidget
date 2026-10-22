@@ -2,6 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>ScriptWidgetSpotifyClientID</key>
+	<string></string>
 	<key>ScriptWidgetServiceKeychainGroup</key>
 	<string>$(AppIdentifierPrefix)com.everettjf.scriptwidget.services</string>
 	<key>NSAppTransportSecurity</key>

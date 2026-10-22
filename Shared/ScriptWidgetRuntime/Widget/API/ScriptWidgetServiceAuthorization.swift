@@ -14,6 +14,15 @@ enum ScriptWidgetService: String, Codable, CaseIterable, Sendable {
     }
 }
 
+enum ScriptWidgetServiceProviderConfiguration {
+    static func spotifyClientID(info: [String: Any]) -> String? {
+        guard let value = info["ScriptWidgetSpotifyClientID"] as? String,
+              ScriptWidgetSpotifyAuthorization.validClientID(value) else { return nil }
+        return value
+    }
+    static var spotifyClientID: String? { spotifyClientID(info: Bundle.main.infoDictionary ?? [:]) }
+}
+
 enum ScriptWidgetServiceError: LocalizedError, Equatable {
     case invalidConfiguration, invalidCallback, expiredAuthorization, consumedAuthorization
     case cancelled, authorizationFailed, invalidCredential, locked, storageUnavailable

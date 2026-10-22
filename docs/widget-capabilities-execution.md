@@ -24,7 +24,7 @@
 | --- | --- | --- |
 | M2 | M2-1 记录模板、M2-2 数据卡片、M2-3 动作目录、M2-4 本地 Live Activity、M2-5 主题/宠物/时段、M2-6 配置与 Gallery | 未完成；复用已有基础继续实现 |
 | M3 | M3-1 日历、M3-2 提醒事项、M3-3 自动照片、M3-4 更多健康类型、M3-5 跨平台/Mock/文档/验收 | 日历、提醒事项、相册和扩展健康已接入开发；真机授权/撤权及系统入口验收仍待完成 |
-| M4 | M4-1 原生凭据、M4-2 请求代理、M4-3 Apple Music、M4-4 其他服务核验、M4-5 授权面板与音乐模板 | GitHub 原生连接/受限请求和只读 Music 快照、模板/Web Mock 已接通；Spotify 系统授权/前台刷新已开发，注册配置、公开 Spotify API/播放动作及真实账户/签名设备验收仍待完成 |
+| M4 | M4-1 原生凭据、M4-2 请求代理、M4-3 Apple Music、M4-4 其他服务核验、M4-5 授权面板与音乐模板 | GitHub 原生连接/受限请求和只读 Music 快照、模板/Web Mock 已接通；Spotify 系统授权/前台刷新、条件资料读取/逐组件授权及独立 Web Mock 已开发；注册配置、播放动作及真实账户/签名设备验收仍待完成 |
 | M5 | M5-1 可视化 JSX 子集、M5-2 主题与原创资产、M5-3 材质/壁纸效果、M5-4 编辑流程与分发 | 三端布局/主题/素材、公开材质及原生/Web 壁纸工具已接通开发；旧动画兼容、最终流程和物理设备专项仍待完成 |
 
 每项沿用原计划的完整验收标准。服务和平台原型不通过时先记录实际证据及限制，不以静态模板替代真实功能。
@@ -922,3 +922,17 @@ Connection store 新增整项原子刷新保存，保留账户 subject/label、�
 最终完整 `./Scripts/release-readiness.sh` 退出 0：Mac **684 通过 / 0 失败 / 33 跳过**；iPhone 17 Simulator **694 通过 / 0 失败 / 32 跳过**，两端 xcresult runtimeWarnings 为空。Editor 52、预览引擎 163、Web Studio 96、Gallery 同步 2、独立服务 probe 44、91 模板/22 curated 包、全部 browser 流程、TypeScript/生产构建、两端 app build 和独立运行时/存储/路由探针通过。原有 SDK/link/Sendable/Xcode 版本解析诊断保留；新截图检查在普通 gate 中跳过，已在前述 opt-in 专项实际执行。证据在 `__Release/capabilities/spotify-native-flow/`，最后 gate 后仅更新文档/图片/验证记录和 PR。
 
 开发流程已接到原生 UI，但不等同真实 Spotify 验收完成：仍需 provider 注册信息、真实系统登录/刷新和签名 app/widget 接受测试，以及公开 Spotify runtime adapter/owner grants、后台刷新、播放写入和 M3/M5 设备专项。Web 合约仍明确 unavailable，不向浏览器交付真实凭据。未改旧动画默认行为，未部署、未上传、未送审；M4 和整体目标保持进行中。
+
+### 2026-10-22：Spotify 条件资料读取与独立 Web mock
+
+同一分支继续接通公开 `$services.status/profile("spotify")`：Client ID 只取签名原生配置，app/widget 每个平台配对，release validator 检查四个 plist。当前仍留空；无配置时保留 unavailable/unsupported 行为。已连接凭据必须匹配当前 Client ID；原生逐组件 Profile access 使用真实 library owner 和 revision 检查，仅增删 profile grant，保留其他 operation。运行时复用有界代理、取消、共享查询/网络预算、派发前及交付前的账户/执行身份复核。Spotify 资料只提供 subject/displayName，username 和统计字段为 null；未向脚本开放认证、刷新或任意鉴权请求。
+
+Web Connected services 新增 GitHub/Spotify 选择；Spotify mock 单独存放在 services.spotify，默认提供健康样例，可改姓名和 JSON、切换八种状态，拒绝凭据/未知字段/伪造统计。旧无 Spotify fixture 的草稿保留 unavailable。真实浏览器验证了两家数据互不覆盖、八状态、保存重载、源码不变、导出的普通包不含 mock 和手机宽度。初次浏览器断言误用 CodeMirror textContent 丢换行，已改为按真实行读取；导出文件仍另做完整源码相等验证。
+
+新增原生测试覆盖条件配置、Client ID 不匹配、owner grant、两个必需 host、过期/限流/离线、身份变化和混用预算。64 组实际 native/Web canonical tree 覆盖八状态及八尺寸。批量 native fixture 初次撞到既有 32 个 active snapshot 上限，参照 GitHub corpus 给每个 case 加 autoreleasepool；没有提高生产限制。独立服务 envelope 回归还覆盖 Spotify 没有姓名/空白姓名时用 subject 作账户标签。
+
+首次完整 gate 因 preview engine 升为 0.14.0 而生成 coverage 文档仍为旧版本而失败；已执行 coverage generator 并保留失败日志，随后从头重跑。最终完整检查结果在完成后记录。本增量仍没有真实 Spotify 登录、签名 Keychain/WidgetKit 验收或播放读写；整体 M3–M5 目标继续进行，未部署、上传或送审。
+
+第二次完整检查暴露既有 GitHub browser smoke 仍等待“仅 GitHub 样例”的旧文案。已改为等待真实 provider selector 的 GitHub 值，保留全部原有资料编辑、撤权、限流、离线和持久化验证；该失败日志亦保留。没有缩小检查范围或把失败计作通过。
+
+最终完整 `./Scripts/release-readiness.sh` 退出 0：Mac **690 通过 / 0 失败 / 32 跳过**，iPhone 17 Simulator **700 通过 / 0 失败 / 31 跳过**，两端 xcresult runtimeWarnings 均为空。本次通过 TEST_RUNNER 环境开启原生 Spotify 截图用例，因此它在完整 gate 实际执行，非跳过。Editor 52、预览引擎 163、Web Studio 100、Gallery 同步 2、服务独立 probe 44、91 内置模板/22 curated 包、全部浏览器流程及新增 Spotify 流程、TypeScript/生产构建、两端 app build、独立运行时/存储/路由检查均通过。原有 SDK/link/Sendable/Xcode 版本解析诊断仍保留，不称作无编译警告。最终日志、两端 summary、24 项 Mac 专项、源文件哈希及失败记录位于 `__Release/capabilities/spotify-profile/`；截图为隔离样例。最后 gate 后仅更新文档、图片、验证记录和 PR，不改实现源码。真实 provider/签名容器和物理设备未验收，M4 及整体目标不勾选完成。

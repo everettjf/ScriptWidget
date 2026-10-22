@@ -7,8 +7,8 @@ import JavaScriptCore
 }
 
 /// No auth prompts, token access, arbitrary URL/header arguments or writes.
-/// The first public provider is GitHub; Spotify remains unavailable until its
-/// native login, refresh and deployment eligibility have been integrated.
+/// Spotify requires matching signed app/widget client configuration and an
+/// explicitly granted native account. No scripts can start login or refresh.
 @objc final class ScriptWidgetRuntimeServices: NSObject, ScriptWidgetRuntimeServicesExports {
     private static let queue = DispatchQueue(label: "ScriptWidget.Services", qos: .userInitiated)
     static func status(_ service: String) -> ScriptWidgetRuntimePromise { query(service, profile: false) }
@@ -36,6 +36,12 @@ import JavaScriptCore
         #endif
         return .init()
     }
+    private static func spotifyClientID(_ state: ScriptWidgetRunningState) -> String? {
+        #if DEBUG
+        if let info = state.serviceProviderInfoForTesting { return ScriptWidgetServiceProviderConfiguration.spotifyClientID(info: info) }
+        #endif
+        return ScriptWidgetServiceProviderConfiguration.spotifyClientID
+    }
     private static func query(_ name: String, profile: Bool) -> ScriptWidgetRuntimePromise {
         let state = JSContext.current()?.scriptWidgetRunningState
         return ScriptWidgetRuntimePromise { resolve, reject in
@@ -50,7 +56,8 @@ import JavaScriptCore
                 reject.call(withArguments: ["[timeline_read_only] Read services in the current entry, then reuse a display snapshot"]); return
             }
             guard state.executionSession.registerDataQuery() else { reject.call(withArguments: ["[query_limit] Too many system data queries"]); return }
-            if service != .github {
+            let spotifyClient = service == .spotify ? spotifyClientID(state) : nil
+            if service == .spotify && spotifyClient == nil {
                 if profile { reject.call(withArguments: [ScriptWidgetServiceError.unsupportedOperation.localizedDescription]) }
                 else { resolve.call(withArguments: ["unavailable"]) }
                 return
@@ -61,13 +68,17 @@ import JavaScriptCore
                 do {
                     guard try validate(state) == owner else { throw ScriptWidgetServiceError.permissionDenied }
                     let store = try connections(state), connection = try store.connection(service)
+                    let operation: ScriptWidgetServiceOperation = service == .github ? .githubProfile : .spotifyProfile
+                    if let connection, service == .spotify, connection.credential.oauthClientID != spotifyClient {
+                        throw ScriptWidgetServiceError.invalidCredential
+                    }
                     func validateCurrent() throws {
                         guard try validate(state) == owner else { throw ScriptWidgetServiceError.permissionDenied }
                         if let connection { try store.revalidate(connection) }
                         else if try store.connection(service) != nil { throw ScriptWidgetServiceError.conflict }
                     }
                     if !profile {
-                        let status = connection == nil ? "notConnected" : connection!.policy.grants.contains(where: { $0.ownerID == owner && $0.operations.contains(.githubProfile) }) ? "connected" : "notGranted"
+                        let status = connection == nil ? "notConnected" : connection!.policy.grants.contains(where: { $0.ownerID == owner && $0.operations.contains(operation) }) ? "connected" : "notGranted"
                         state.executionSession.callbackQueue.async {
                             pending.complete()
                             guard state.isCurrentExecution else { return }
@@ -78,7 +89,7 @@ import JavaScriptCore
                     }
                     guard let connection else { throw ScriptWidgetServiceError.notConnected }
                     guard let manifest = state.package.readManifest() else { throw ScriptWidgetServiceError.permissionDenied }
-                    let plan = try ScriptWidgetServiceRequestPlan(operation: .githubProfile, credential: connection.credential, policy: connection.policy,
+                    let plan = try ScriptWidgetServiceRequestPlan(operation: operation, credential: connection.credential, policy: connection.policy,
                         ownerID: owner, expectedConnectionID: connection.policy.connectionID, isUserInitiatedAction: false,
                         hasNetworkPermission: manifest.permissions.contains(.network),
                         allowsHost: { ScriptWidgetNetworkPolicy.host($0, matchesAny: manifest.networkDomains) })

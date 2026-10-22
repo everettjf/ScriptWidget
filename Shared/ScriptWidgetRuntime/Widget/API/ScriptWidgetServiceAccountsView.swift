@@ -35,7 +35,7 @@ final class ScriptWidgetServiceAccountsModel: ObservableObject {
         self.store = store; self.reader = reader; self.loadOwners = loadOwners ?? Self.nativeOwners
     }
 
-    private static func nativeOwners() throws -> [Owner] {
+    static func nativeOwners() throws -> [Owner] {
         let manager = sharedScriptManager
         guard let context = manager.storageContext else { throw ScriptWidgetServiceError.unavailable }
         return manager.listScripts().prefix(256).compactMap { item -> Owner? in

@@ -175,6 +175,10 @@ final class ServiceTransportTests: XCTestCase {
     }
 
     @objc func testConnectionEnvelopeBindsCredentialPolicyAndRejectsMalformedRecords() throws {
+        for name: String? in [nil, "", "   "] {
+            let profile = ScriptWidgetServiceProfile(service: .spotify, subject: "sample-user", username: nil, displayName: name, publicRepositories: nil, privateRepositories: nil, followers: nil, following: nil)
+            XCTAssertEqual(try ScriptWidgetServiceConnection(credential: credential(.spotify), profile: profile).label, "sample-user")
+        }
         let connection = try ScriptWidgetServiceConnection(credential: credential(), profile: profile()), bytes = try connection.encoded()
         XCTAssertEqual(try ScriptWidgetServiceConnection.decode(bytes, service: .github).revision, connection.revision)
         let base = try JSONSerialization.jsonObject(with: bytes) as! [String: Any]
@@ -410,7 +414,7 @@ final class ServiceAccountsViewTests: XCTestCase {
             }
             memory.fail = state == "locked"
             let model = ScriptWidgetServiceAccountsModel(store: store, loadOwners: { [owner] }); model.reload()
-            let spotify = ScriptWidgetSpotifyAccountsModel(clientID: nil, store: store)
+            let spotify = ScriptWidgetSpotifyAccountsModel(clientID: nil, store: store, loadOwners: { [] })
             let content = NavigationStack { ScriptWidgetServiceAccountsView(model: model, spotifyModel: spotify) }.environment(\.colorScheme, .light)
             #if os(macOS)
             let host = NSHostingView(rootView: content.background(Color.white)); host.frame = NSRect(x: 0, y: 0, width: 620, height: 780)
@@ -492,7 +496,7 @@ final class SpotifyAccountsFlowTests: XCTestCase {
         .init(status: 200, body: try! JSONSerialization.data(withJSONObject: ["id": subject, "display_name": "Sample listener"]))
     }
     private func fixture(_ store: ScriptWidgetServiceConnections, _ tokens: HTTP, _ profiles: HTTP) -> ScriptWidgetSpotifyAccountsModel {
-        .init(clientID: clientID, store: store, tokens: .init(transport: tokens), reader: .init(transport: profiles))
+        .init(clientID: clientID, store: store, tokens: .init(transport: tokens), reader: .init(transport: profiles), loadOwners: { [] })
     }
     private func wait(_ model: ScriptWidgetSpotifyAccountsModel, _ phase: ScriptWidgetSpotifyAccountsModel.Phase,
                       file: StaticString = #filePath, line: UInt = #line) async throws {
@@ -624,6 +628,23 @@ final class SpotifyAccountsFlowTests: XCTestCase {
         XCTAssertEqual(third.message, ScriptWidgetServiceError.conflict.localizedDescription)
     }
 
+    func testSpotifyProfileGrantChecksOwnerAndPreservesOtherReadOperations() throws {
+        let memory = Memory(), store = store(memory), connection = try saved(store), id = UUID()
+        _ = try store.setGrant(service: .spotify, ownerID: id, operations: [.spotifyPlayback], expectedRevision: connection.revision)
+        var retired = true
+        let owner = ScriptWidgetServiceAccountsModel.Owner(id: id, name: "My Spotify widget", validate: { if retired { throw ScriptWidgetServiceError.conflict } })
+        let model = ScriptWidgetSpotifyAccountsModel(clientID: clientID, store: store, tokens: .init(transport: HTTP()), reader: .init(transport: HTTP()), loadOwners: { [owner] })
+        model.reload(); model.setGranted(true, owner: owner)
+        XCTAssertEqual(model.message, ScriptWidgetServiceError.conflict.localizedDescription)
+        XCTAssertFalse(model.connection!.grantedOwners.contains(id))
+        retired = false; model.setGranted(true, owner: owner)
+        XCTAssertEqual(try store.connection(.spotify)?.policy.grants.first?.operations, [.spotifyProfile, .spotifyPlayback])
+        XCTAssertEqual(model.connection?.grantedOwners, [id])
+        model.setGranted(false, owner: owner)
+        XCTAssertEqual(try store.connection(.spotify)?.policy.grants.first?.operations, [.spotifyPlayback])
+        XCTAssertTrue(model.connection!.grantedOwners.isEmpty)
+    }
+
     func testActualPresentationWindowBridgeUsesHostWindowAndSystemCallbackScheme() async throws {
         let reference = ScriptWidgetServiceWindowReference()
         let content = Text("Account presentation").background(ScriptWidgetServicePresentationWindow(reference: reference))
@@ -659,10 +680,13 @@ final class SpotifyAccountsFlowTests: XCTestCase {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         for state in ["unconfigured", "ready", "authorizing", "connected"] {
             let memory = Memory(), store = store(memory)
+            let screenshotOwner = ScriptWidgetServiceAccountsModel.Owner(id: UUID(), name: "My Spotify widget", validate: {})
             if state == "connected" { _ = try saved(store) }
             let spotify = ScriptWidgetSpotifyAccountsModel(clientID: state == "unconfigured" ? nil : clientID, store: store,
-                tokens: .init(transport: HTTP()), reader: .init(transport: HTTP()))
+                tokens: .init(transport: HTTP()), reader: .init(transport: HTTP()),
+                loadOwners: { state == "connected" ? [screenshotOwner] : [] })
             spotify.reload(); if state == "authorizing" { spotify.connect(using: Browser()) }
+            if state == "connected", let owner = spotify.owners.first { spotify.setGranted(true, owner: owner) }
             defer { spotify.cancel() }
             let github = ScriptWidgetServiceAccountsModel(store: store, loadOwners: { [] }); github.reload()
             let content = NavigationStack { ScriptWidgetServiceAccountsView(model: github, spotifyModel: spotify) }.environment(\.colorScheme, .light)

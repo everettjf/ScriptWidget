@@ -157,6 +157,7 @@ Apple 的 [EventKit 授权](https://developer.apple.com/documentation/eventkit/a
   - 后续原生 TokenClient 和原子 credential rotation 已接通：专用 callback scheme、取消/重复回调与 16 KiB 流式预算的独立 44 项回归及完整 gate Mac 675 / iPhone Simulator 685 均通过。系统登录窗口、刷新协调和真实 provider 配置/验收仍待完成，M4-1 不勾选。
   - 后续已接入系统授权 driver、条件启用的两端账户 UI、profile 核验和显式前台刷新/断开。Client ID 默认空，原生注册专用 scheme，普通路由不转发 callback；前台 lease 和各阶段 generation/authority 防止迟到或并发覆盖。9 项新增 flow 测试及 opt-in 原生截图通过，最终完整 gate Mac 684 / iPhone Simulator 694 均 0 失败。仍需真实 provider 配置/验收、公开 Spotify adapter/owner grants 和跨进程后台刷新，M4-1 不勾选。
 - [ ] M4-2 请求代理在原生侧注入凭据；脚本、包、插件、AI 提示、日志和导出文件均不能取得令牌。补恶意域名、跨账户、撤权和重定向测试。
+  - Spotify 资料读取与逐组件 Profile access 已接通条件启用路径：签名 app/widget Client ID 必须匹配，公开返回仅 subject/displayName，其余不支持字段为 null。Web 新增独立提供方选择、可编辑资料与八种状态，保留旧 fixture 的 unavailable 行为；64 组实际原生/Web 树对照通过。尚无真实账户、签名共享容器或播放操作验收，不据 mock 宣称生产服务可用。
 - [ ] M4-3 做 Apple Music 最小原型：授权、可读取曲目范围、允许的播放操作、订阅和后台限制。基于 [MusicKit](https://developer.apple.com/documentation/musickit) 的实际验证结果定公开 API。
   - iOS Music app 只读快照增量已接入 `$music`、原生系统授权入口、main-thread 读取及同步组件预捕获、内置/Gallery Music Playback 模板与可编辑 Web Mock。六状态 × 八尺寸的 48 组实际原生/Web 树对照已通过；公开 system player 不能代表所有播放器，macOS 明确不可用。播放操作、订阅能力、真实授权/组件与后台验收仍未完成，M4-3 保持未勾选。见 [Music API](music-api.md)。
 - [ ] M4-4 对 Spotify 等服务逐个核验官方接口、账户要求及接入资格；通过后实现适配器，未通过时提供明确的不可用状态或启动链接。

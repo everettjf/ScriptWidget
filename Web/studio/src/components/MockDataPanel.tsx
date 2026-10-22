@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { addSampleMocks, isObject, mockAPIs, musicScenario, parseMocks, permissionScenario, responseFor, sampleFixtures, serviceScenario, setResponse, type MockObject, type MockValue } from "@/mockData.ts";
+import { addSampleMocks, isObject, mockAPIs, musicScenario, parseMocks, permissionScenario, responseFor, sampleFixtures, serviceScenario, setResponse, type MockObject, type MockValue, type ServiceProvider } from "@/mockData.ts";
 
 const groups = ["services", "music", "calendar", "reminders", "photos", "health", "location", "device", "system", "network", "storage", "dataSource", "json"];
 const labels: Record<string, string> = { services: "Connected services", music: "Music playback", calendar: "Calendar", reminders: "Reminders", photos: "Photos", health: "Health", location: "Location", device: "Device", system: "System", network: "Network responses", storage: "Storage", dataSource: "Data Source Plugins", json: "Full JSON" };
@@ -25,6 +25,7 @@ function ValueFields({ value, onChange, path = "result" }: { value: MockValue; o
 
 export function MockDataPanel({ fixtures, onChange }: { fixtures: string; onChange(text: string): void }) {
   const [group, setGroup] = useState("health");
+  const [provider, setProvider] = useState<ServiceProvider>("github");
   const [selected, setSelected] = useState("$health.stepCountToday");
   const [draft, setDraft] = useState("");
   const [mode, setMode] = useState("value");
@@ -34,7 +35,7 @@ export function MockDataPanel({ fixtures, onChange }: { fixtures: string; onChan
   try { data = parseMocks(fixtures); } catch (reason) { parseError = (reason as Error).message; }
   const methods = mockAPIs.filter((api) => api.group === group);
   const api = mockAPIs.find((item) => item.id === selected)!;
-  const response = responseFor(data, api);
+  const response = responseFor(data, api, provider);
   const writeResponse = api.operation === "write";
   const special = group === "network" ? "fetch" : group;
   const structured = ["network", "storage", "dataSource"].includes(group);
@@ -43,7 +44,7 @@ export function MockDataPanel({ fixtures, onChange }: { fixtures: string; onChan
   useEffect(() => {
     try { setCalendarSelectionDraft(JSON.stringify(parseMocks(fixtures)[group === "reminders" ? "remindersSelection" : "calendarSelection"] ?? null, null, 2)); } catch { /* Preserve malformed Full JSON for repair. */ }
   }, [fixtures, group]);
-  useEffect(() => { setDraft(encoded ?? "null"); setMode("error" in response ? "error" : "value"); setError(""); }, [encoded, selected, group, fixtures]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setDraft(encoded ?? "null"); setMode("error" in response ? "error" : "value"); setError(""); }, [encoded, selected, group, fixtures, provider]); // eslint-disable-line react-hooks/exhaustive-deps
   const commit = (work: () => string) => { try { onChange(work()); setError(""); } catch (reason) { setError((reason as Error).message); } };
   const chooseGroup = (next: string) => { setGroup(next); const first = mockAPIs.find((item) => item.group === next); if (first) setSelected(first.id); };
   const apply = () => commit(() => {
@@ -53,7 +54,7 @@ export function MockDataPanel({ fixtures, onChange }: { fixtures: string; onChan
       const text = JSON.stringify(next, null, 2); parseMocks(text); return text;
     }
     if (mode === "error" && typeof value !== "string") throw new Error("An error response must be a JSON string.");
-    return setResponse(fixtures, selected, { [mode]: value });
+    return setResponse(fixtures, selected, { [mode]: value }, provider);
   });
   return <div className="flex flex-col gap-3" id="mock-data-panel">
     <p className="text-xs text-muted-foreground">Sample data for this preview. Changes stay in this browser project and are never exported. Scripts do not call real system services or the network here.</p>
@@ -66,16 +67,17 @@ export function MockDataPanel({ fixtures, onChange }: { fixtures: string; onChan
       {!structured && <>
         <div><Label htmlFor="mock-api" className="text-xs">API</Label><select id="mock-api" className="mt-1 h-8 w-full rounded-md border bg-background px-2 font-mono text-xs" value={selected} onChange={(event) => setSelected(event.target.value)}>{methods.map((item) => <option key={item.id} value={item.id}>{item.id}()</option>)}</select></div>
         {(group === "health" || group === "location" || group === "calendar" || group === "reminders" || group === "photos") && <div className="flex flex-wrap gap-1">{(group === "health" ? ["granted", "empty", "unavailable"] as const : ["granted", "empty", "denied", "unavailable"] as const).map((item) => <Button key={item} variant="outline" size="xs" onClick={() => commit(() => permissionScenario(fixtures, group, item))}>{item === "granted" ? "Sample success" : item === "empty" ? (group === "health" ? "No shared data" : "No data") : item === "denied" ? "Permission denied" : "Unavailable"}</Button>)}</div>}
-        <div className="flex items-center gap-2"><Label htmlFor="mock-mode" className="text-xs">Response</Label><select id="mock-mode" className="h-8 rounded-md border bg-background px-2 text-xs" value={mode} onChange={(event) => { setMode(event.target.value); setDraft(JSON.stringify(event.target.value === "error" ? "Simulated failure" : api.value, null, 2)); }}><option value="value">{writeResponse ? "Model-derived receipt" : "Return value"}</option><option value="error">Throw / reject error</option></select><Button size="xs" variant="ghost" className="ml-auto" onClick={() => commit(() => setResponse(fixtures, selected, responseFor(sampleFixtures(), api)))}>Reset this API</Button></div>
-        {!writeResponse && mode === "value" && "value" in response && <ValueFields value={response.value!} onChange={(value) => commit(() => setResponse(fixtures, selected, { value }))} />}
+        <div className="flex items-center gap-2"><Label htmlFor="mock-mode" className="text-xs">Response</Label><select id="mock-mode" className="h-8 rounded-md border bg-background px-2 text-xs" value={mode} onChange={(event) => { setMode(event.target.value); setDraft(JSON.stringify(event.target.value === "error" ? "Simulated failure" : responseFor(sampleFixtures(), api, provider).value, null, 2)); }}><option value="value">{writeResponse ? "Model-derived receipt" : "Return value"}</option><option value="error">Throw / reject error</option></select><Button size="xs" variant="ghost" className="ml-auto" onClick={() => commit(() => setResponse(fixtures, selected, responseFor(sampleFixtures(), api, provider), provider))}>Reset this API</Button></div>
+        {!writeResponse && mode === "value" && "value" in response && <ValueFields value={response.value!} onChange={(value) => commit(() => setResponse(fixtures, selected, { value }, provider))} />}
       </>}
       {group === "music" && <>
         <p className="text-xs text-muted-foreground">Editable Music app samples. Native iOS widgets require music in widget.json and Music access in Settings. macOS cannot read the system Music player. Playback controls and other audio apps are unavailable; missing track details can still mean music is playing.</p>
         <div className="flex flex-wrap gap-1">{(["playing", "paused", "stopped", "withheld", "denied", "unavailable"] as const).map(scenario => <Button key={scenario} variant="outline" size="xs" onClick={() => commit(() => musicScenario(fixtures, scenario))}>{{playing:"Playing",paused:"Paused",stopped:"Stopped",withheld:"Track details withheld",denied:"Permission denied",unavailable:"Unavailable"}[scenario]}</Button>)}</div>
       </>}
       {group === "services" && <>
-        <p className="text-xs text-muted-foreground">GitHub sample data only. Use $services.status("github") and $services.profile("github"). Native widgets need services access, network access to api.github.com, and approval in Service Accounts. This browser never authenticates; do not paste tokens here.</p>
-        <div className="flex flex-wrap gap-1">{(["connected", "notConnected", "notGranted", "empty", "publicOnly", "expired", "rateLimited", "offline"] as const).map(scenario => <Button key={scenario} variant="outline" size="xs" onClick={() => commit(() => serviceScenario(fixtures, scenario))}>{{connected:"Sample success",notConnected:"Disconnected",notGranted:"No widget access",empty:"Zero counts",publicOnly:"Private count not shared",expired:"Token expired",rateLimited:"Rate limited",offline:"Offline"}[scenario]}</Button>)}</div>
+        <div className="grid gap-1"><Label htmlFor="mock-service-provider" className="text-xs">Provider</Label><select id="mock-service-provider" className="h-8 rounded-md border bg-background px-2 text-xs" value={provider} onChange={(event) => setProvider(event.target.value as ServiceProvider)}><option value="github">GitHub</option><option value="spotify">Spotify</option></select></div>
+        <p className="text-xs text-muted-foreground">{provider === "github" ? 'GitHub samples: use $services.status("github") and profile("github"). Declare services, network and api.github.com.' : 'Spotify samples: use $services.status("spotify") and profile("spotify"). Declare services, network, api.spotify.com and accounts.spotify.com. Native builds also need a registered client configuration.'} Both providers need explicit widget approval in native Service Accounts. This browser never authenticates; do not paste tokens here.</p>
+        <div className="flex flex-wrap gap-1">{(["connected", "notConnected", "notGranted", "empty", "publicOnly", "expired", "rateLimited", "offline", "unavailable"] as const).filter(scenario => provider === "github" || scenario !== "publicOnly").map(scenario => <Button key={scenario} variant="outline" size="xs" onClick={() => commit(() => serviceScenario(fixtures, scenario, provider))}>{{connected:"Sample success",notConnected:"Disconnected",notGranted:"No widget access",empty:provider === "spotify" ? "Name not shared" : "Zero counts",publicOnly:"Private count not shared",expired:"Token expired",rateLimited:"Rate limited",offline:"Offline",unavailable:"Unavailable"}[scenario]}</Button>)}</div>
       </>}
       {group === "photos" && <>
         <p className="text-xs text-muted-foreground">Declare photos in widget.json. Native access defaults to no selection. The browser uses sample images; it cannot read your system photo library. In Full JSON, photosSelection lists allowed sample IDs and photosSnapshotPrepared controls future-entry cache availability. Edit authorizationStatus to limited for limited system access.</p>
