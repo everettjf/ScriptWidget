@@ -2,32 +2,12 @@ import Foundation
 
 enum ScriptWidgetServiceOperation: String, Codable, CaseIterable, Sendable {
     case githubProfile = "github.profile"
-    case spotifyProfile = "spotify.profile"
-    case spotifyPlayback = "spotify.playback"
-    case spotifyPause = "spotify.pause"
-    case spotifyResume = "spotify.resume"
-    case spotifyNext = "spotify.next"
-    case spotifyPrevious = "spotify.previous"
 
-    var service: ScriptWidgetService { self == .githubProfile ? .github : .spotify }
-    var isWrite: Bool { ![.githubProfile, .spotifyProfile, .spotifyPlayback].contains(self) }
-    var scope: String? {
-        if self == .githubProfile { return nil }
-        if self == .spotifyProfile { return "user-read-private" }
-        return isWrite ? "user-modify-playback-state" : "user-read-playback-state"
-    }
-    var method: String { !isWrite ? "GET" : [.spotifyPause, .spotifyResume].contains(self) ? "PUT" : "POST" }
-    var path: String {
-        switch self {
-        case .githubProfile: "/user"
-        case .spotifyProfile: "/v1/me"
-        case .spotifyPlayback: "/v1/me/player"
-        case .spotifyPause: "/v1/me/player/pause"
-        case .spotifyResume: "/v1/me/player/play"
-        case .spotifyNext: "/v1/me/player/next"
-        case .spotifyPrevious: "/v1/me/player/previous"
-        }
-    }
+    var service: ScriptWidgetService { .github }
+    var isWrite: Bool { false }
+    var scope: String? { nil }
+    var method: String { "GET" }
+    var path: String { "/user" }
 }
 
 struct ScriptWidgetServiceOwnerGrant: Codable, Sendable {
@@ -117,8 +97,7 @@ struct ScriptWidgetServiceRequestPlan: CustomStringConvertible, CustomDebugStrin
         guard policy.grants.contains(where: { $0.ownerID == ownerID && $0.operations.contains(operation) }),
               operation.scope.map({ credential.scopes.contains($0) }) ?? true else { throw ScriptWidgetServiceError.permissionDenied }
         guard !operation.isWrite || (isUserInitiatedAction && requestID != nil) else { throw ScriptWidgetServiceError.permissionDenied }
-        guard hasNetworkPermission, allowsHost(operation.service.apiHost),
-              operation.service != .spotify || allowsHost("accounts.spotify.com") else { throw ScriptWidgetServiceError.permissionDenied }
+        guard hasNetworkPermission, allowsHost(operation.service.apiHost) else { throw ScriptWidgetServiceError.permissionDenied }
         guard now.timeIntervalSince1970.isFinite, credential.issuedAt <= now.addingTimeInterval(60),
               credential.expiresAt.map({ $0 > now.addingTimeInterval(15) }) ?? true else { throw ScriptWidgetServiceError.expiredAuthorization }
         var request = URLRequest(url: URL(string: "https://" + operation.service.apiHost + operation.path)!)

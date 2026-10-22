@@ -5634,7 +5634,7 @@ final class ScriptWidgetLauncherDeepLinkTests: XCTestCase {
             DeepLinkManager.openDeepLink(url:try XCTUnwrap(URL(string:raw)),open:opener,completion:{accepted.append($0)})
         }
         XCTAssertEqual(opened.count,3);XCTAssertEqual(accepted,[false,false,false])
-        for raw in ["widget-deeplink://default","scriptwidget://import","SCRIPTWIDGET://open","scriptwidget-spotify-auth://oauth/spotify/callback?code=sample-code","SCRIPTWIDGET-SPOTIFY-AUTH://oauth/spotify/callback?code=sample-code"] {
+        for raw in ["widget-deeplink://default","scriptwidget://import","SCRIPTWIDGET://open"] {
             DeepLinkManager.openDeepLink(url:try XCTUnwrap(URL(string:raw)),open:opener,completion:{_ in XCTFail("Internal links must not be forwarded")})
         }
         XCTAssertEqual(opened.count,3)

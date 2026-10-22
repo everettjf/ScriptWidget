@@ -114,7 +114,6 @@ if (!widgetMusicInfo.includes("<key>NSAppleMusicUsageDescription</key>")) failur
 // Service credentials share a dedicated group; the first/default group must
 // remain app-specific so existing AI items never default into the shared group.
 const serviceGroup = "$(AppIdentifierPrefix)com.everettjf.scriptwidget.services";
-const spotifyClients = new Map();
 for (const [infoPath, entitlementPath] of [
   ["iOS/ScriptWidget/Info.plist", "iOS/ScriptWidget/ScriptWidget.entitlements"],
   ["iOS/ScriptWidgetWidget/Info.plist", "iOS/ScriptWidgetWidget/ScriptWidgetWidget.entitlements"],
@@ -123,16 +122,10 @@ for (const [infoPath, entitlementPath] of [
 ]) {
   const info = await readFile(join(root, infoPath), "utf8"), entitlements = await readFile(join(root, entitlementPath), "utf8");
   const declaredGroup = info.match(/<key>ScriptWidgetServiceKeychainGroup<\/key>\s*<string>([^<]+)<\/string>/)?.[1];
-  const client = info.match(/<key>ScriptWidgetSpotifyClientID<\/key>\s*<string>([^<]*)<\/string>/)?.[1];
-  if (client === undefined || (client !== "" && !/^[A-Za-z0-9_-]{8,128}$/.test(client)) || (info.match(/<key>ScriptWidgetSpotifyClientID<\/key>/g) ?? []).length !== 1) failures.push(`${infoPath}: declare one empty or valid public Spotify Client ID`);
-  spotifyClients.set(infoPath, client);
   const groupBlock = entitlements.match(/<key>keychain-access-groups<\/key>\s*<array>([\s\S]*?)<\/array>/)?.[1] ?? "";
   const groups = [...groupBlock.matchAll(/<string>([^<]+)<\/string>/g)].map(value => value[1]);
   if (declaredGroup !== serviceGroup || (info.match(/<key>ScriptWidgetServiceKeychainGroup<\/key>/g) ?? []).length !== 1) failures.push(`${infoPath}: service Keychain group must match the signed shared service group`);
   if (JSON.stringify(groups) !== JSON.stringify(["$(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)", serviceGroup]) || (entitlements.match(/<key>keychain-access-groups<\/key>/g) ?? []).length !== 1) failures.push(`${entitlementPath}: preserve the app-specific default group before the dedicated shared service group`);
-}
-for (const [app, widget] of [["iOS/ScriptWidget/Info.plist", "iOS/ScriptWidgetWidget/Info.plist"], ["macOS/ScriptWidgetMac/Info.plist", "macOS/ScriptWidgetMacWidget/Info.plist"]]) {
-  if (spotifyClients.get(app) !== spotifyClients.get(widget)) failures.push(`${app}: app/widget Spotify Client IDs must match`);
 }
 
 const aiSettings = await readFile(join(root, "Shared/ScriptWidgetRuntime/AI/AISettings.swift"), "utf8");

@@ -13,7 +13,6 @@ Existing data-method return formats are unchanged. Present manifests now undergo
 | `$music.current()` | 1.4 | ios | Promise | musicRead | read |
 | `$services.status(service)` | 1.4 | ios, macos | Promise | serviceAccount | read |
 | `$services.profile(service)` | 1.4 | ios, macos | Promise | serviceAccount | read |
-| `$services.playback(service)` | 1.4 | ios, macos | Promise | serviceAccount | read |
 | `$device.screen()` | 1.0 | ios, macos | Synchronous | none | read |
 | `$device.language()` | 1.0 | ios, macos | Synchronous | none | read |
 | `$device.model()` | 1.0 | ios, macos | Synchronous | none | read |
@@ -113,7 +112,7 @@ Default editable preview sample:
 
 ## services
 
-Runtime 1.4: status(service), profile(service) and Spotify-only playback(service) are asynchronous. status reports profile access; playback has its own explicit native grant. Providers: github and conditionally configured spotify. Requires an installed owner and services permission; profile also requires network and explicit native owner profile approval. GitHub uses api.github.com. Spotify requires matching signed app/widget Client IDs plus api.spotify.com and accounts.spotify.com in networkDomains; unconfigured builds report unavailable and profile stays unsupported. Native Settings handles credentials and foreground refresh; scripts cannot log in, refresh or obtain tokens. profile returns service, subject, username, displayName, publicRepositories, privateRepositories, followers and following. Spotify exposes subject/displayName only; username and all counts are null. GitHub missing private counts remain null. playback returns null for no current playback or a ten-field track/episode/unsupported snapshot with millisecond progress/duration and active/restricted device flags, never device IDs or provider URLs; it is not a live timer or playback control. No queries in future entries/Live Activities. Eight shared data queries and native fetch concurrency/total limits apply. Web uses provider-specific editable samples only, never real authentication.
+Runtime 1.4: status(service) and profile(service) are asynchronous. Only provider: github. Unknown providers reject with service_operation. Requires an installed owner and services permission. profile additionally requires network and api.github.com in networkDomains, a native connected GitHub account and explicit owner grant. Native Settings handles credentials; scripts cannot log in or obtain tokens. profile returns service, subject, username, displayName, publicRepositories, privateRepositories, followers and following (missing values are null). No live queries in future entries or Live Activities. Eight shared data queries; native requests also share the eight concurrent/32 total network budget, while Web uses its existing preview network budget. Web uses editable best-state samples only; it never authenticates or sends these requests.
 
 ### `$services.status`
 
@@ -137,27 +136,6 @@ Default editable preview sample:
   "privateRepositories": 8,
   "followers": 128,
   "following": 24
-}
-```
-
-### `$services.playback`
-
-Default editable preview sample:
-
-```json
-{
-  "itemType": "track",
-  "itemID": "sample-track",
-  "title": "Morning Light",
-  "artists": [
-    "ScriptWidget Sessions"
-  ],
-  "album": "Focus",
-  "isPlaying": true,
-  "progressMilliseconds": 86000,
-  "durationMilliseconds": 224000,
-  "hasActiveDevice": true,
-  "isRestricted": false
 }
 ```
 

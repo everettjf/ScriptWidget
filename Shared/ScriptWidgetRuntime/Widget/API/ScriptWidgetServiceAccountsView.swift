@@ -1,6 +1,5 @@
 import SwiftUI
 import WidgetKit
-import AuthenticationServices
 
 struct ScriptWidgetServiceConnectionSummary: Equatable {
     let label: String
@@ -35,7 +34,7 @@ final class ScriptWidgetServiceAccountsModel: ObservableObject {
         self.store = store; self.reader = reader; self.loadOwners = loadOwners ?? Self.nativeOwners
     }
 
-    static func nativeOwners() throws -> [Owner] {
+    private static func nativeOwners() throws -> [Owner] {
         let manager = sharedScriptManager
         guard let context = manager.storageContext else { throw ScriptWidgetServiceError.unavailable }
         return manager.listScripts().prefix(256).compactMap { item -> Owner? in
@@ -106,13 +105,10 @@ final class ScriptWidgetServiceAccountsModel: ObservableObject {
 struct ScriptWidgetServiceAccountsView: View {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var model: ScriptWidgetServiceAccountsModel
-    @StateObject private var spotify: ScriptWidgetSpotifyAccountsModel
-    @StateObject private var presentationWindow = ScriptWidgetServiceWindowReference()
     @State private var token = ""
     @State private var reconnecting = false
-    init(model: ScriptWidgetServiceAccountsModel? = nil, spotifyModel: ScriptWidgetSpotifyAccountsModel? = nil) {
+    init(model: ScriptWidgetServiceAccountsModel? = nil) {
         _model = StateObject(wrappedValue: model ?? ScriptWidgetServiceAccountsModel())
-        _spotify = StateObject(wrappedValue: spotifyModel ?? ScriptWidgetSpotifyAccountsModel())
     }
     var body: some View {
         Form {
@@ -151,7 +147,6 @@ struct ScriptWidgetServiceAccountsView: View {
                     Text("Only the widgets you select can read this account’s profile. New and reinstalled widgets start without access.")
                 }
             }
-            ScriptWidgetSpotifyAccountSection(model: spotify, window: presentationWindow)
             if let message = model.message {
                 Section {
                     Text(message.replacingOccurrences(of: #"^\[service_[a-z_]+\] "#, with: "", options: .regularExpression))
@@ -162,9 +157,8 @@ struct ScriptWidgetServiceAccountsView: View {
         }
         .formStyle(.grouped)
         .navigationTitle("Service Accounts")
-        .background(ScriptWidgetServicePresentationWindow(reference: presentationWindow))
-        .task(id: scenePhase) { if scenePhase == .active { model.reload(); spotify.reload() } }
-        .onDisappear { token = ""; model.cancel(); spotify.cancel() }
+        .task(id: scenePhase) { if scenePhase == .active { model.reload() } }
+        .onDisappear { token = ""; model.cancel() }
     }
 
     private var tokenEntry: some View {

@@ -10,5 +10,3 @@ import Foundation
 
 let kDeepLinkDefaultScheme : String = "widget-deeplink"
 let kDeepLinkDefaultURL : URL = URL(string: "widget-deeplink://default")!
-// Reserved for the system web-auth session, never ordinary link forwarding.
-let kSpotifyAuthorizationCallbackScheme = "scriptwidget-spotify-auth"

@@ -47,4 +47,4 @@ Editable Web Studio sample:
 
 ![Web Studio Music Mock Data panel](images/music-playback-web-studio.png)
 
-The [Music Playback template](../Shared/ScriptWidgetRuntime/Resource/Script.bundle/template/Music%20Playback/README.md) handles all eight widget families. Automated tests execute actual native JavaScriptCore with an injected provider and compare 48 native/Web trees. SDK compilation and fixture tests do not establish signed-device Music authorization or widget-extension behavior; those remain acceptance work. Playback controls, subscription capability and Spotify login/refresh remain separate M4 work.
+The [Music Playback template](../Shared/ScriptWidgetRuntime/Resource/Script.bundle/template/Music%20Playback/README.md) handles all eight widget families. Automated tests execute actual native JavaScriptCore with an injected provider and compare 48 native/Web trees. SDK compilation and fixture tests do not establish signed-device Music authorization or widget-extension behavior; those remain acceptance work. Playback controls and subscription extensions are outside the current A/B delivery scope.

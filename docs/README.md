@@ -30,8 +30,8 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 
 ## Build and ship
 
-- [Widget delivery plan](widget-capabilities-plan.md) — release the implemented scope first, then select separate authoring or service batches; long-term ideas remain deferred.
-- [Widget delivery status](widget-capabilities-status.md) and [TODO](widget-capabilities-todo.md) — implemented scope, release acceptance and deferred work; [original capability plan](widget-capabilities-plan-history.md) is historical reference.
+- [Widget delivery plan](widget-capabilities-plan.md) — complete authoring quality and release acceptance (A+B); service expansion and long-term tracks are canceled.
+- [Widget delivery status](widget-capabilities-status.md) and [TODO](widget-capabilities-todo.md) — implemented scope, authoring work and release acceptance; [original capability plan](widget-capabilities-plan-history.md) is historical reference.
 - [Runtime API contract](scriptwidget-runtime-api.md) — versioning and compatibility policy.
 - [Connected Services API](services-api.md) — authenticated GitHub profiles, per-widget access and editable Web mocks.
 - [Music playback API](music-api.md) — read-only iOS Music app snapshots and editable Web samples.
@@ -50,4 +50,4 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 
 ## Supported platforms
 
-ScriptWidget focuses on iOS, iPadOS, and macOS. A single `main.jsx` can adapt its layout with `$getenv("widget-size")`. Native watchOS support is a gated later track in the [capability expansion plan](widget-capabilities-plan.md); it is not currently supported. visionOS is outside this plan.
+ScriptWidget focuses on iOS, iPadOS, and macOS. A single `main.jsx` can adapt its layout with `$getenv("widget-size")`. Native watchOS is unsupported and outside the current [A/B scope](widget-capabilities-plan.md). visionOS is outside this plan.

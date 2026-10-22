@@ -153,8 +153,6 @@ struct ScriptWidgetApp: App {
                     Text("Check the link and make sure its target app is installed. You can test saved launcher links in Records & Configuration.")
                 }
                 .onOpenURL(perform: { url in
-                    // Only ASWebAuthenticationSession may redeem an auth callback.
-                    if url.scheme?.lowercased() == kSpotifyAuthorizationCallbackScheme { return }
                     if url.scheme?.lowercased()=="scriptwidget" {
                         guard let host=url.host() else { return }
                         dealWithSelfScheme(host:host,url:url)

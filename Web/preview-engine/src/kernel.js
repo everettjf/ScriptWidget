@@ -711,94 +711,37 @@ export function scriptWidgetKernel(global, host, configJSON) {
   });
   const serviceProfileKeys = ["service", "subject", "username", "displayName", "publicRepositories", "privateRepositories", "followers", "following"];
   const serviceError = (code, text) => `[service_${code}] ${text}`;
-  // Manifest authority is fixed before user code can mutate realm prototypes.
-  const servicesDeclared = !!(config.hasManifest && config.manifest?.permissions?.includes("services"));
-  const serviceHostsAllowed = { github: packageAllows("api.github.com"), spotify: packageAllows("api.spotify.com") && packageAllows("accounts.spotify.com") };
-  const validServiceStatus = value => value === "connected" || value === "notConnected" || value === "notGranted" || value === "unavailable";
-  const validEnvelope = value => value && typeof value === "object" && !ArrayIsArray(value) && ObjectKeys(value).length === 1 &&
-    ((value.error !== undefined && typeof value.error === "string") || (value.error === undefined && ObjectKeys(value)[0] === "value"));
-  const spotifyAccount = () => {
-    const root = fixtures.services;
-    if (root === undefined) return null;
-    if (!root || typeof root !== "object" || ArrayIsArray(root)) throw new Error("[mock_invalid] Invalid services override");
-    const keys = ObjectKeys(root);
-    if (keys.length > 1 || (keys.length === 1 && keys[0] !== "spotify")) throw new Error("[mock_invalid] Invalid services override");
-    const account = root.spotify;
-    if (account === undefined) return null;
-    if (!account || typeof account !== "object" || ArrayIsArray(account) || !validEnvelope(account.status)) throw new Error("[mock_invalid] Invalid Spotify account override");
-    for (const key of ObjectKeys(account)) if (key !== "status" && key !== "profile" && key !== "playback" && key !== "playbackGranted") throw new Error("[mock_invalid] Invalid Spotify account field");
-    if (account.playbackGranted !== undefined && typeof account.playbackGranted !== "boolean") throw new Error("[mock_invalid] Invalid Spotify playback grant");
-    if (account.playback !== undefined && !validEnvelope(account.playback)) throw new Error("[mock_invalid] Invalid Spotify playback response");
-    if (account.profile !== undefined && !validEnvelope(account.profile)) throw new Error("[mock_invalid] Invalid Spotify profile response");
-    return account;
-  };
-  const serviceStatus = (service, account) => {
-    const mock = service === "github" ? apiMocks["$services.status"] : account.status;
+  const serviceStatus = () => {
+    const mock = apiMocks["$services.status"];
     if (mock?.error !== undefined) throw new Error(nativeString(mock.error));
     const value = mock?.value ?? "notConnected";
-    if (!validServiceStatus(value)) throw new Error("[mock_invalid] Invalid service status");
+    if (!["connected", "notConnected", "notGranted", "unavailable"].includes(value)) throw new Error("[mock_invalid] Invalid service status");
     return value;
   };
-  for (const method of ["status", "profile", "playback"]) {
+  for (const method of ["status", "profile"]) {
     apis.$services[method] = (rawService) => nativePromise((resolve, reject) => {
       try {
-        if (!servicesDeclared) throw new Error(serviceError("permission", "Install this widget and declare services in widget.json"));
+        if (!config.hasManifest || !config.manifest?.permissions?.includes("services")) throw new Error(serviceError("permission", "Install this widget and declare services in widget.json"));
         const service = nativeString(rawService);
-        if ((service !== "github" && service !== "spotify") || (method === "playback" && service !== "spotify")) throw new Error(serviceError("operation", "This service operation is unsupported"));
+        if (service !== "github") throw new Error(serviceError("operation", "This service operation is unsupported"));
         if (timelineProjection || liveActivityPresentation) throw new Error("[timeline_read_only] Read services in the current entry, then reuse a display snapshot");
         if (++dataQueries > contract.maximumDataQueries) throw new Error("[query_limit] Too many system data queries");
-        const account = service === "spotify" ? spotifyAccount() : null;
-        if (service === "spotify" && account === null) {
-          if (method === "status") { resolve("unavailable"); return; }
-          throw new Error(serviceError("operation", "This service operation is unsupported"));
-        }
-        const status = serviceStatus(service, account);
+        const status = serviceStatus();
         if (method === "status") { resolve(status); return; }
-        if (status === "notConnected") throw new Error(serviceError("not_connected", "Connect the service in the app"));
-        if ((status === "notGranted" && method !== "playback") || (method === "playback" && account.playbackGranted !== true)) throw new Error(serviceError("permission", "Allow this widget in native Service Accounts"));
-        if (status === "unavailable") throw new Error(serviceError(method === "playback" ? "operation" : "unavailable", "The service is currently unavailable"));
-        if (!serviceHostsAllowed[service]) throw new Error(serviceError("permission", "Declare network and the service hosts in widget.json"));
+        if (status === "notConnected") throw new Error(serviceError("not_connected", "Connect GitHub in the app"));
+        if (status === "notGranted") throw new Error(serviceError("permission", "Allow this widget in native Service Accounts"));
+        if (status === "unavailable") throw new Error(serviceError("unavailable", "The service is currently unavailable"));
+        if (!packageAllows("api.github.com")) throw new Error(serviceError("permission", "Declare network and api.github.com in widget.json"));
         if (++networkRequests > 16) throw new Error("[network_limit] Network request budget exceeded");
-        const mock = service === "github" ? apiMocks["$services.profile"] : method === "playback" ? account.playback : account.profile;
-        if (method === "playback" && mock === undefined) throw new Error(serviceError("operation", "This service operation is unsupported"));
+        const mock = apiMocks["$services.profile"];
         if (mock?.error !== undefined) throw new Error(nativeString(mock.error));
         const value = mock?.value;
         const text = (input, max) => typeof input === "string" && utf8ByteLength(input) <= max && !/[\p{Cc}\p{Cf}\p{Cs}]/u.test(input);
-        if (method === "playback") {
-          if (value === null) { resolve(null); return; }
-          const keys = ["itemType","itemID","title","artists","album","isPlaying","progressMilliseconds","durationMilliseconds","hasActiveDevice","isRestricted"];
-          const milliseconds = input => input === null || (Number.isSafeInteger(input) && input >= 0 && input <= 604800000);
-          if (!value || typeof value !== "object" || ArrayIsArray(value) || ObjectKeys(value).length !== 10) throw new Error("[mock_invalid] Invalid playback object");
-          for (const key of ObjectKeys(value)) {
-            let allowed = false;
-            for (let index = 0; index < keys.length; index++) if (keys[index] === key) allowed = true;
-            if (!allowed) throw new Error("[mock_invalid] Invalid playback field");
-          }
-          if ((value.itemType !== "track" && value.itemType !== "episode" && value.itemType !== "unsupported") ||
-              !(value.itemID === null || text(value.itemID,128)) || !(value.title === null || text(value.title,256)) || !(value.album === null || text(value.album,256)) ||
-              !ArrayIsArray(value.artists) || value.artists.length > 8 || typeof value.isPlaying !== "boolean" || typeof value.hasActiveDevice !== "boolean" || typeof value.isRestricted !== "boolean" ||
-              !milliseconds(value.progressMilliseconds) || !milliseconds(value.durationMilliseconds)) throw new Error("[mock_invalid] Invalid playback fields");
-          for (let index = 0; index < value.artists.length; index++) if (!text(value.artists[index],256) || value.artists[index] === "") throw new Error("[mock_invalid] Invalid artist");
-          if (value.itemType !== "unsupported" && (!value.title || value.durationMilliseconds === null)) throw new Error("[mock_invalid] Missing playback item");
-          if (value.itemType === "episode" && value.artists.length !== 0) throw new Error("[mock_invalid] Invalid episode artists");
-          if (value.itemType === "unsupported" && (value.itemID !== null || value.title !== null || value.album !== null || value.artists.length !== 0 || value.durationMilliseconds !== null)) throw new Error("[mock_invalid] Unsupported playback metadata");
-          resolve(bridgeValue(value,0)); return;
-        }
         const count = (input, required = false) => (!required && input === null) || (Number.isSafeInteger(input) && input >= 0);
-        if (!value || typeof value !== "object" || ArrayIsArray(value) || ObjectKeys(value).length !== 8 || value.service !== service) throw new Error("[mock_invalid] Invalid service profile fields");
-        for (const key of ObjectKeys(value)) {
-          let allowed = false;
-          for (let index = 0; index < serviceProfileKeys.length; index++) if (serviceProfileKeys[index] === key) allowed = true;
-          if (!allowed) throw new Error("[mock_invalid] Invalid service profile field");
-        }
-        if (!(value.displayName === null || text(value.displayName, 256))) throw new Error("[mock_invalid] Invalid service name");
-        if (service === "github") {
-          if (!text(value.subject,16) || !/^[1-9][0-9]{0,15}$/.test(value.subject) || !Number.isSafeInteger(Number(value.subject)) ||
-              !text(value.username,39) || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,38}$/.test(value.username) || !count(value.publicRepositories,true) ||
-              !count(value.privateRepositories) || !count(value.followers) || !count(value.following)) throw new Error("[mock_invalid] Invalid GitHub profile fields");
-        } else if (!text(value.subject,128) || value.subject === "" || value.username !== null || value.publicRepositories !== null || value.privateRepositories !== null || value.followers !== null || value.following !== null) {
-          throw new Error("[mock_invalid] Invalid Spotify profile fields");
-        }
+        if (!value || typeof value !== "object" || ArrayIsArray(value) || ObjectKeys(value).length !== serviceProfileKeys.length || ObjectKeys(value).some(key => !serviceProfileKeys.includes(key)) ||
+            value.service !== "github" || typeof value.subject !== "string" || !/^[1-9][0-9]{0,15}$/.test(value.subject) || !Number.isSafeInteger(Number(value.subject)) ||
+            !text(value.username,39) || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,38}$/.test(value.username) || !(value.displayName === null || text(value.displayName,256)) ||
+            !count(value.publicRepositories,true) || !["privateRepositories","followers","following"].every(key=>count(value[key]))) throw new Error("[mock_invalid] Invalid service profile fields");
         resolve(bridgeValue(value, 0));
       } catch (error) { reject(nativeString(error)); }
     });

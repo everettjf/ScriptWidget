@@ -1,6 +1,6 @@
 # Widget 能力原始规划（历史存档）
 
-归档：2026-10-22。以下保存范围多次调整前后的原始规划，包含已被替代的发布安排、阶段状态和测试计数，**不作为当前任务、完成状态或发布顺序**。当前排期见 [现行规划](widget-capabilities-plan.md)，当前成果见 [阶段清单](widget-capabilities-status.md)，待办见 [TODO](widget-capabilities-todo.md)。历史编号 F01–F22、M0–M7 仅用于追溯。
+归档：2026-10-22。后续用户已取消 C/D 并要求移除 Spotify，以下仅为历史，不是待实施路线。以下保存范围多次调整前后的原始规划，包含已被替代的发布安排、阶段状态和测试计数，**不作为当前任务、完成状态或发布顺序**。当前排期见 [现行规划](widget-capabilities-plan.md)，当前成果见 [阶段清单](widget-capabilities-status.md)，待办见 [TODO](widget-capabilities-todo.md)。历史编号 F01–F22、M0–M7 仅用于追溯。
 
 # Widget 能力扩展计划
 

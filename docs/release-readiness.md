@@ -10,7 +10,7 @@ This document is the ship gate for iOS 16+ and macOS 26+. A release candidate is
 
 ## Current staged scope
 
-The 2026-10-22 scope freeze is recorded in the [staged delivery list](widget-capabilities-status.md), with deferred features and outstanding device/configuration acceptance in the [TODO](widget-capabilities-todo.md). Completing this development stage does not waive the ship gate above. No deployment, store upload or review submission is implied.
+The 2026-10-22 A+B delivery scope (Spotify removed; C/D canceled) is recorded in the [staged delivery list](widget-capabilities-status.md), with authoring work and outstanding device acceptance in the [TODO](widget-capabilities-todo.md). Completing this development stage does not waive the ship gate above. No deployment, store upload or review submission is implied.
 
 ## Automated gates
 

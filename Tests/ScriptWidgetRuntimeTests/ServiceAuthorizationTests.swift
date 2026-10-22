@@ -7,181 +7,33 @@ import XCTest
 
 final class ServiceAuthorizationTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_790_000_000)
-    private let clientID = "0123456789abcdef0123456789abcdef"
-
-    private func pending(control: Bool = false) throws -> ScriptWidgetSpotifyAuthorization {
-        try ScriptWidgetSpotifyAuthorization(clientID: clientID, playbackControl: control, now: now, random: { [UInt8](repeating: UInt8($0), count: $0) })
-    }
-    private func state(_ session: ScriptWidgetSpotifyAuthorization) -> String {
-        URLComponents(url: session.authorizationURL, resolvingAgainstBaseURL: false)!.queryItems!.first { $0.name == "state" }!.value!
-    }
-    private func callback(_ session: ScriptWidgetSpotifyAuthorization, code: String = "sample-code") -> URL {
-        var parts = URLComponents(string: ScriptWidgetSpotifyAuthorization.redirectURI)!
-        parts.queryItems = [URLQueryItem(name: "code", value: code), URLQueryItem(name: "state", value: state(session))]
-        return parts.url!
-    }
-    private func response(_ patch: [String: Any] = [:]) throws -> Data {
-        let base: [String: Any] = ["access_token": "sample-access-token", "refresh_token": "sample-refresh-token", "token_type": "Bearer", "expires_in": 3600, "scope": ScriptWidgetSpotifyAuthorization.readScopes.sorted().joined(separator: " ")]
-        return try JSONSerialization.data(withJSONObject: base.merging(patch, uniquingKeysWith: { _, new in new }))
-    }
-    private func credential(service: ScriptWidgetService = .spotify, accountID: UUID = UUID(), revision: UUID = UUID()) -> ScriptWidgetServiceCredential {
-        ScriptWidgetServiceCredential(formatVersion: 1, accountID: accountID, service: service, revision: revision,
-            accessToken: "sample-access-token", refreshToken: service == .spotify ? "sample-refresh-token" : nil,
-            oauthClientID: service == .spotify ? clientID : nil, issuedAt: now, expiresAt: service == .spotify ? now.addingTimeInterval(3600) : nil,
-            scopes: service == .spotify ? ScriptWidgetSpotifyAuthorization.readScopes : [])
+    private func credential(accountID: UUID = UUID()) -> ScriptWidgetServiceCredential {
+        .init(formatVersion: 1, accountID: accountID, service: .github, revision: UUID(),
+            accessToken: "sample-access-token", refreshToken: nil, oauthClientID: nil,
+            issuedAt: now, expiresAt: now.addingTimeInterval(3600), scopes: [])
     }
     private func fails(_ expected: ScriptWidgetServiceError, _ operation: () throws -> Void, file: StaticString = #filePath, line: UInt = #line) {
         XCTAssertThrowsError(try operation(), file: file, line: line) { XCTAssertEqual($0 as? ScriptWidgetServiceError, expected, file: file, line: line) }
     }
-
-    @objc func testPKCEUsesRFC7636S256AndSeparatesReadFromControlScopes() throws {
-        XCTAssertEqual(ScriptWidgetSpotifyAuthorization.challenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk"), "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM")
-        let read = try pending(), control = try pending(control: true)
-        let parts = URLComponents(url: read.authorizationURL, resolvingAgainstBaseURL: false)!
-        XCTAssertEqual(parts.scheme, "https"); XCTAssertEqual(parts.host, "accounts.spotify.com")
-        let items = Dictionary(uniqueKeysWithValues: parts.queryItems!.map { ($0.name, $0.value!) })
-        XCTAssertEqual(items["code_challenge_method"], "S256"); XCTAssertEqual(items["state"]?.count, 43)
-        XCTAssertEqual(items["code_challenge"]?.count, 43); XCTAssertNil(items["code_verifier"])
-        XCTAssertFalse(read.requestedScopes.contains("user-modify-playback-state"))
-        XCTAssertTrue(control.requestedScopes.contains("user-modify-playback-state"))
-        XCTAssertEqual(items["redirect_uri"], ScriptWidgetSpotifyAuthorization.redirectURI)
-    }
-
-    @objc func testInvalidConfigurationAndBrokenRandomnessCannotStartAuthorization() {
-        for value in ["", "short", "https://attacker.test", "client\nidentifier"] {
-            fails(.invalidConfiguration) { _ = try ScriptWidgetSpotifyAuthorization(clientID: value, playbackControl: false) }
-        }
-        fails(.authorizationFailed) { _ = try ScriptWidgetSpotifyAuthorization(clientID: clientID, playbackControl: false, random: { _ in [] }) }
-    }
-
-    @objc func testCallbackRejectsWrongOriginStateDuplicatesAndEncodedPathBeforeRedemption() throws {
-        for mutation in ["scheme", "legacyScheme", "host", "path", "encodedPath", "port", "user", "fragment", "state", "duplicateState", "duplicateCode", "mixed", "unknown"] {
-            let session = try pending(); var parts = URLComponents(url: callback(session), resolvingAgainstBaseURL: false)!
-            switch mutation {
-            case "scheme": parts.scheme = "https"
-            case "legacyScheme": parts.scheme = "scriptwidget"
-            case "host": parts.host = "oauth.attacker.test"
-            case "path": parts.path = "/other/callback"
-            case "encodedPath": parts.percentEncodedPath = "/spotify%2Fcallback"
-            case "port": parts.port = 443
-            case "user": parts.user = "user"
-            case "fragment": parts.fragment = "code=unexpected"
-            case "state": parts.queryItems = parts.queryItems!.map { $0.name == "state" ? .init(name: "state", value: "wrong") : $0 }
-            case "duplicateState": parts.queryItems!.append(.init(name: "state", value: state(session)))
-            case "duplicateCode": parts.queryItems!.append(.init(name: "code", value: "other"))
-            case "mixed": parts.queryItems!.append(.init(name: "error", value: "access_denied"))
-            default: parts.queryItems!.append(.init(name: "redirect_uri", value: "https://attacker.test"))
-            }
-            fails(.invalidCallback) { _ = try session.tokenRequest(callback: parts.url!, now: now) }
-            // An unrelated/malformed callback has not consumed the valid session.
-            XCTAssertEqual(try session.tokenRequest(callback: callback(session), now: now).url, ScriptWidgetSpotifyAuthorization.tokenURL)
-        }
-    }
-
-    @objc func testCallbackIsSingleUseAndDoesNotPutVerifierInURLOrAcceptCancelledSession() throws {
-        let session = try pending(), request = try session.tokenRequest(callback: callback(session, code: "code+/=&"), now: now)
-        XCTAssertEqual(request.httpMethod, "POST"); XCTAssertEqual(request.url?.scheme, "https")
-        XCTAssertNil(request.url?.query); XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
-        let body = String(data: try XCTUnwrap(request.httpBody), encoding: .utf8)!
-        XCTAssertTrue(body.contains("code=code%2B%2F%3D%26")); XCTAssertTrue(body.contains("code_verifier="))
-        XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/x-www-form-urlencoded")
-        fails(.consumedAuthorization) { _ = try session.tokenRequest(callback: callback(session), now: now) }
-        let cancelled = try pending()
-        var parts = URLComponents(string: ScriptWidgetSpotifyAuthorization.redirectURI)!
-        parts.queryItems = [.init(name: "state", value: state(cancelled)), .init(name: "error", value: "access_denied"), .init(name: "error_description", value: "provider-private-message")]
-        fails(.cancelled) { _ = try cancelled.tokenRequest(callback: parts.url!, now: now) }
-        XCTAssertFalse(ScriptWidgetServiceError.cancelled.localizedDescription.contains("provider-private-message"))
-        fails(.consumedAuthorization) { _ = try cancelled.tokenRequest(callback: callback(cancelled), now: now) }
-    }
-
-    @objc func testAuthorizationHasBoundedLifetimeAndStateIsNotCopyableForReplay() throws {
-        for date in [now.addingTimeInterval(-1), now.addingTimeInterval(301)] {
-            let session = try pending()
-            fails(.expiredAuthorization) { _ = try session.tokenRequest(callback: callback(session), now: date) }
-            fails(.consumedAuthorization) { _ = try session.tokenRequest(callback: callback(session), now: now) }
-        }
-        let session = try pending(), alias = session
-        _ = try session.tokenRequest(callback: callback(session), now: now)
-        fails(.consumedAuthorization) { _ = try alias.tokenRequest(callback: callback(alias), now: now) }
-    }
-
-    @objc func testSystemEntropyProducesDistinctAuthorizationStates() throws {
-        let a = try ScriptWidgetSpotifyAuthorization(clientID: clientID, playbackControl: false)
-        let b = try ScriptWidgetSpotifyAuthorization(clientID: clientID, playbackControl: false)
-        XCTAssertNotEqual(state(a), state(b))
-    }
-
-    @objc func testConcurrentCallbacksCannotRedeemTheSameAuthorizationTwice() throws {
-        final class Counts: @unchecked Sendable {
-            let lock = NSLock()
-            var success = 0, replay = 0, unexpected = 0
-        }
-        let session = try pending(), url = callback(session), date = now, group = DispatchGroup(), counts = Counts()
-        for _ in 0..<16 {
-            group.enter()
-            DispatchQueue.global().async {
-                defer { group.leave() }
-                let result: Int
-                do { _ = try session.tokenRequest(callback: url, now: date); result = 0 }
-                catch ScriptWidgetServiceError.consumedAuthorization { result = 1 }
-                catch { result = 2 }
-                counts.lock.lock(); defer { counts.lock.unlock() }
-                if result == 0 { counts.success += 1 } else if result == 1 { counts.replay += 1 } else { counts.unexpected += 1 }
-            }
-        }
-        XCTAssertEqual(group.wait(timeout: .now() + .seconds(2)), .success)
-        counts.lock.lock(); defer { counts.lock.unlock() }
-        XCTAssertEqual(counts.success, 1); XCTAssertEqual(counts.replay, 15); XCTAssertEqual(counts.unexpected, 0)
-    }
-
-    @objc func testTokenResponseBindsAccountScopesAndRedactsDescriptions() throws {
-        let id = UUID(), value = try ScriptWidgetSpotifyAuthorization.credential(response: response(), accountID: id, clientID: clientID, requestedScopes: ScriptWidgetSpotifyAuthorization.readScopes, now: now)
-        XCTAssertEqual(value.accountID, id); XCTAssertEqual(value.service, .spotify)
-        XCTAssertEqual(value.expiresAt, now.addingTimeInterval(3600))
-        XCTAssertEqual(value.scopes, ScriptWidgetSpotifyAuthorization.readScopes)
-        XCTAssertFalse(String(describing: value).contains("sample-access-token"))
-        XCTAssertFalse(String(reflecting: value).contains("sample-refresh-token"))
-        XCTAssertEqual(try ScriptWidgetServiceCredential.decode(value.encoded(), accountID: id, service: .spotify).revision, value.revision)
-    }
-
-    @objc func testTokenResponseRejectsHeaderInjectionInvalidExpiryAndMissingGrants() throws {
-        for patch: [String: Any] in [["access_token": "token\r\nInjected: value"], ["refresh_token": ""], ["token_type": "Basic"], ["expires_in": true], ["expires_in": 0], ["expires_in": 86401], ["expires_in": 1.5], ["scope": NSNull()], ["scope": "user-read-private"], ["unknown": "extra"]] {
-            XCTAssertThrowsError(try ScriptWidgetSpotifyAuthorization.credential(response: response(patch), accountID: UUID(), clientID: clientID, requestedScopes: ScriptWidgetSpotifyAuthorization.readScopes, now: now))
-        }
-        XCTAssertThrowsError(try ScriptWidgetSpotifyAuthorization.credential(response: Data(repeating: 32, count: 16385), accountID: UUID(), clientID: clientID, requestedScopes: ScriptWidgetSpotifyAuthorization.readScopes, now: now))
-    }
-
-    @objc func testCredentialExpiryIsBoundedByItsNativeIssueTime() throws {
+    @objc func testCredentialEnvelopeRejectsMalformedValuesAndUnknownFields() throws {
         let value = credential(), encoded = try value.encoded()
-        for patch: [String: Any] in [["issuedAt": -1], ["expiresAt": now.timeIntervalSince1970], ["expiresAt": now.addingTimeInterval(86401).timeIntervalSince1970], ["refreshToken": NSNull()]] {
-            let object = (try JSONSerialization.jsonObject(with: encoded) as! [String: Any]).merging(patch, uniquingKeysWith: { _, new in new })
-            XCTAssertThrowsError(try ScriptWidgetServiceCredential.decode(JSONSerialization.data(withJSONObject: object), accountID: value.accountID, service: value.service))
+        XCTAssertThrowsError(try ScriptWidgetServiceCredential.decode(encoded, accountID: UUID(), service: .github))
+        let original = try JSONSerialization.jsonObject(with: encoded) as! [String: Any]
+        for patch: [String: Any] in [["formatVersion": 2], ["unexpected": true], ["issuedAt": -1],
+            ["expiresAt": now.timeIntervalSince1970], ["accessToken": "header\ninjection"], ["scopes": ["unknown"]],
+            ["refreshToken": "unsupported-refresh"], ["oauthClientID": "unsupported-client"], ["service": "removed-provider"]] {
+            let changed = original.merging(patch, uniquingKeysWith: { _, new in new })
+            XCTAssertThrowsError(try ScriptWidgetServiceCredential.decode(JSONSerialization.data(withJSONObject: changed), accountID: value.accountID, service: .github))
         }
+        XCTAssertThrowsError(try ScriptWidgetServiceCredential.decode(Data(repeating: 32, count: 16385), accountID: value.accountID, service: .github))
     }
-
-    @objc func testRefreshPreservesOmittedScopeAndRotatesTokenWithoutUpgradingAccess() throws {
-        let previous = credential()
-        var object = try JSONSerialization.jsonObject(with: response()) as! [String: Any]
-        object.removeValue(forKey: "scope"); object["refresh_token"] = "rotated-refresh-token"
-        let next = try ScriptWidgetSpotifyAuthorization.credential(response: JSONSerialization.data(withJSONObject: object), accountID: previous.accountID, clientID: clientID, requestedScopes: previous.scopes, previous: previous, now: now)
-        XCTAssertEqual(next.refreshToken, "rotated-refresh-token"); XCTAssertEqual(next.scopes, previous.scopes); XCTAssertNotEqual(next.revision, previous.revision)
-        XCTAssertThrowsError(try ScriptWidgetSpotifyAuthorization.credential(response: response(), accountID: UUID(), clientID: clientID, requestedScopes: previous.scopes, previous: previous, now: now))
-        XCTAssertThrowsError(try ScriptWidgetSpotifyAuthorization.credential(response: response(), accountID: previous.accountID, clientID: clientID, requestedScopes: previous.scopes.union(["user-modify-playback-state"]), previous: previous, now: now))
-        let request = try ScriptWidgetSpotifyAuthorization.refreshRequest(clientID: clientID, credential: next)
-        XCTAssertNil(request.url?.query); XCTAssertEqual(request.url?.host, "accounts.spotify.com")
-        XCTAssertFalse(String(describing: request).contains("rotated-refresh-token"))
-        fails(.invalidCredential) { _ = try ScriptWidgetSpotifyAuthorization.refreshRequest(clientID: "different-native-client", credential: next) }
-    }
-
-    @objc func testCredentialEnvelopeRejectsWrongAccountServiceRevisionAndUnknownFields() throws {
-        let value = credential(), encoded = try value.encoded()
-        XCTAssertThrowsError(try ScriptWidgetServiceCredential.decode(encoded, accountID: UUID(), service: .spotify))
-        XCTAssertThrowsError(try ScriptWidgetServiceCredential.decode(encoded, accountID: value.accountID, service: .github))
-        var object = try JSONSerialization.jsonObject(with: encoded) as! [String: Any]
-        object["unexpected"] = true
-        XCTAssertThrowsError(try ScriptWidgetServiceCredential.decode(JSONSerialization.data(withJSONObject: object), accountID: value.accountID, service: .spotify))
-        object.removeValue(forKey: "unexpected"); object["formatVersion"] = 2
-        XCTAssertThrowsError(try ScriptWidgetServiceCredential.decode(JSONSerialization.data(withJSONObject: object), accountID: value.accountID, service: .spotify))
+    @objc func testCredentialsRemainRedactedAndOnlyGitHubIsSupported() throws {
+        let value = credential()
+        XCTAssertFalse(String(describing: value).contains(value.accessToken))
+        XCTAssertFalse(String(reflecting: value).contains(value.accessToken))
+        XCTAssertEqual(ScriptWidgetService.allCases, [.github])
+        XCTAssertNil(ScriptWidgetService(rawValue: "removed-provider"))
+        XCTAssertEqual(try ScriptWidgetServiceCredential.decode(value.encoded(), accountID: value.accountID, service: .github).revision, value.revision)
     }
 
     private final class MemoryKeychain: ScriptWidgetServiceKeychainAccess {
@@ -193,11 +45,11 @@ final class ServiceAuthorizationTests: XCTestCase {
     }
 
     @objc func testVaultSeparatesServiceAccountAndCredentialRevision() throws {
-        let memory = MemoryKeychain(), vault = ScriptWidgetServiceCredentialVault(keychain: memory), a = credential(), b = credential(service: .github)
+        let memory = MemoryKeychain(), vault = ScriptWidgetServiceCredentialVault(keychain: memory), a = credential(), b = credential()
         try vault.write(a); try vault.write(b)
         XCTAssertEqual(memory.values.count, 2)
         XCTAssertEqual(try vault.read(service: a.service, accountID: a.accountID, revision: a.revision)?.accessToken, a.accessToken)
-        XCTAssertNil(try vault.read(service: a.service, accountID: b.accountID, revision: b.revision))
+        XCTAssertNil(try vault.read(service: a.service, accountID: UUID(), revision: b.revision))
         fails(.invalidCredential) { _ = try vault.read(service: a.service, accountID: a.accountID, revision: UUID()) }
         try vault.remove(service: a.service, accountID: a.accountID)
         XCTAssertNotNil(try vault.read(service: b.service, accountID: b.accountID, revision: b.revision))
@@ -225,78 +77,5 @@ final class ServiceAuthorizationTests: XCTestCase {
         for status in [errSecInteractionNotAllowed, errSecAuthFailed] { fails(.locked) { try ScriptWidgetServiceSystemKeychain.check(status) } }
         for status in [errSecParam, errSecNotAvailable] { fails(.storageUnavailable) { try ScriptWidgetServiceSystemKeychain.check(status) } }
         XCTAssertNoThrow(try ScriptWidgetServiceSystemKeychain.check(errSecSuccess))
-    }
-}
-
-extension ServiceAuthorizationTests {
-    private final class TokenTransport: ScriptWidgetServiceHTTPTransport {
-        var request: URLRequest?
-        var sent = 0
-        var cancelled = false
-        var callback: ((Result<ScriptWidgetServiceHTTPResponse, ScriptWidgetServiceError>) -> Void)?
-        func send(_ request: URLRequest, completion: @escaping (Result<ScriptWidgetServiceHTTPResponse, ScriptWidgetServiceError>) -> Void) -> ScriptWidgetServiceRequestHandle {
-            self.request = request; sent += 1; callback = completion
-            return .init { self.cancelled = true }
-        }
-    }
-
-    @objc func testTokenClientExchangesOnlyVerifiedSingleUseCallbacksAndDeliversOnce() throws {
-        let transport = TokenTransport(), client = ScriptWidgetSpotifyTokenClient(transport: transport, now: { self.now })
-        let session = try pending(), accountID = UUID()
-        var results: [Result<ScriptWidgetServiceCredential, ScriptWidgetServiceError>] = []
-        let handle = client.exchange(session, callback: callback(session), accountID: accountID) { results.append($0) }
-        XCTAssertEqual(transport.sent, 1)
-        XCTAssertEqual(transport.request?.url, ScriptWidgetSpotifyAuthorization.tokenURL)
-        XCTAssertEqual(transport.request?.httpMethod, "POST")
-        XCTAssertNil(transport.request?.url?.query)
-        XCTAssertNil(transport.request?.value(forHTTPHeaderField: "Authorization"))
-        transport.callback?(.success(.init(status: 200, body: try response())))
-        transport.callback?(.failure(.unavailable)); handle.cancel()
-        XCTAssertEqual(results.count, 1)
-        let value = try XCTUnwrap(results.first).get()
-        XCTAssertEqual(value.accountID, accountID); XCTAssertEqual(value.scopes, session.requestedScopes)
-        XCTAssertEqual(value.issuedAt, now)
-        XCTAssertFalse(String(reflecting: value).contains(value.accessToken))
-        var replay: ScriptWidgetServiceError?
-        client.exchange(session, callback: callback(session), accountID: accountID) { if case .failure(let error) = $0 { replay = error } }
-        XCTAssertEqual(replay, .consumedAuthorization); XCTAssertEqual(transport.sent, 1)
-    }
-
-    @objc func testTokenClientCancellationRejectsLateSuccessAndInvokesCompletionOnlyOnce() throws {
-        let transport = TokenTransport(), client = ScriptWidgetSpotifyTokenClient(transport: transport, now: { self.now })
-        let session = try pending(); var results: [Result<ScriptWidgetServiceCredential, ScriptWidgetServiceError>] = []
-        let handle = client.exchange(session, callback: callback(session), accountID: UUID()) { results.append($0) }
-        handle.cancel(); handle.cancel()
-        transport.callback?(.success(.init(status: 200, body: try response())))
-        XCTAssertTrue(transport.cancelled); XCTAssertEqual(results.count, 1)
-        XCTAssertThrowsError(try results[0].get()) { XCTAssertEqual($0 as? ScriptWidgetServiceError, .cancelled) }
-    }
-
-    @objc func testTokenClientRefreshRetainsIdentityAndRejectsUnexpectedOrMalformedResponses() throws {
-        let old = credential(), transport = TokenTransport()
-        let client = ScriptWidgetSpotifyTokenClient(transport: transport, now: { self.now.addingTimeInterval(3000) })
-        var refreshed: ScriptWidgetServiceCredential?
-        client.refresh(old) { refreshed = try? $0.get() }
-        let data = Data(#"{"access_token":"rotated-access-token","token_type":"Bearer","expires_in":3600}"#.utf8)
-        transport.callback?(.success(.init(status: 200, body: data)))
-        let value = try XCTUnwrap(refreshed)
-        XCTAssertEqual(value.accountID, old.accountID); XCTAssertEqual(value.oauthClientID, old.oauthClientID)
-        XCTAssertEqual(value.refreshToken, old.refreshToken); XCTAssertEqual(value.scopes, old.scopes)
-        XCTAssertNotEqual(value.revision, old.revision); XCTAssertEqual(value.issuedAt, now.addingTimeInterval(3000))
-        for response in [ScriptWidgetServiceHTTPResponse(status: 204, body: Data()), .init(status: 200, body: Data("{}".utf8)), .init(status: 200, body: Data(repeating: 32, count: 16385))] {
-            var failure: ScriptWidgetServiceError?
-            client.refresh(old) { if case .failure(let error) = $0 { failure = error } }
-            transport.callback?(.success(response))
-            XCTAssertNotNil(failure); XCTAssertFalse(failure!.localizedDescription.contains(old.refreshToken!))
-        }
-    }
-
-    @objc func testInvalidCallbackNeverDispatchesTokenRequestAndValidCallbackStillWorks() throws {
-        let transport = TokenTransport(), client = ScriptWidgetSpotifyTokenClient(transport: transport, now: { self.now })
-        let session = try pending(); var failure: ScriptWidgetServiceError?
-        client.exchange(session, callback: URL(string: "https://example.invalid/callback")!, accountID: UUID()) { if case .failure(let error) = $0 { failure = error } }
-        XCTAssertEqual(failure, .invalidCallback); XCTAssertEqual(transport.sent, 0)
-        client.exchange(session, callback: callback(session), accountID: UUID()) { _ in }
-        XCTAssertEqual(transport.sent, 1)
     }
 }

@@ -168,11 +168,7 @@ enum PromptBuilder {
             api.github.com. The installed widget owner must be allowed in native
             Service Accounts. Tokens never belong in scripts, parameters, mocks
             or AI context. Preserve null private counts; do not turn errors into
-            zero data. Spotify profile reads require a configured native app/widget,
-            api.spotify.com and accounts.spotify.com plus an owner profile grant.
-            Its username/counts are null; never invent follower or repository counts.
-            Spotify playback(service) needs its own native Playback access grant; profile status does not report that grant. It returns null for no current playback or a bounded ten-field track/episode/unsupported snapshot, with millisecond progress/duration, not a live timer. No device IDs, provider URLs or controls are exposed. Accompany displayed Spotify metadata with its required branding and attribution link. Spotify sign-in/foreground refresh belong to native Settings, not scripts.
-            Unconfigured builds remain unavailable; playback control is not exposed. Service reads
+            zero data. Only GitHub connected-service profiles are supported. Service reads
             cannot run in future entries or Live Activity presentations.
             Music app playback uses $music.isAvailable(), authorizationStatus()
             and await $music.current(), with music permission and native Settings

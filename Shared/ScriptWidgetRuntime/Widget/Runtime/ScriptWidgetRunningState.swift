@@ -231,7 +231,6 @@ class ScriptWidgetRunningState {
     var musicProviderForTesting: (any ScriptWidgetMusicProviding)?
     var serviceConnectionsForTesting: ScriptWidgetServiceConnections?
     var serviceReaderForTesting: ScriptWidgetServiceReader?
-    var serviceProviderInfoForTesting: [String: Any]?
     var photosProviderForTesting: (any ScriptWidgetPhotosProviding)?
     var remindersProviderForTesting: (any ScriptWidgetRemindersProviding)?
     #endif

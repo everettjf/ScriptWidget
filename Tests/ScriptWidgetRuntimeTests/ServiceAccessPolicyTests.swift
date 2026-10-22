@@ -8,10 +8,7 @@ final class ServiceAccessPolicyTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_790_000_000)
     private func credential(_ service: ScriptWidgetService = .github, controls: Bool = false, accountID: UUID = UUID()) -> ScriptWidgetServiceCredential {
         .init(formatVersion: 1, accountID: accountID, service: service, revision: UUID(), accessToken: "private-sample-bearer",
-            refreshToken: service == .spotify ? "private-sample-refresh" : nil,
-            oauthClientID: service == .spotify ? "0123456789abcdef0123456789abcdef" : nil,
-            issuedAt: now, expiresAt: service == .spotify ? now.addingTimeInterval(3600) : nil,
-            scopes: service == .spotify ? ScriptWidgetSpotifyAuthorization.readScopes.union(controls ? ["user-modify-playback-state"] : []) : [])
+            refreshToken: nil, oauthClientID: nil, issuedAt: now, expiresAt: now.addingTimeInterval(3600), scopes: [])
     }
     private func grant(_ credential: ScriptWidgetServiceCredential, owner: UUID, operations: Set<ScriptWidgetServiceOperation>) throws -> ScriptWidgetServiceAccessPolicy {
         let empty = ScriptWidgetServiceAccessPolicy.connected(accountID: credential.accountID, service: credential.service)
@@ -19,7 +16,7 @@ final class ServiceAccessPolicyTests: XCTestCase {
     }
     private func plan(_ operation: ScriptWidgetServiceOperation, _ credential: ScriptWidgetServiceCredential, _ policy: ScriptWidgetServiceAccessPolicy,
                       owner: UUID, connection: UUID? = nil, action: Bool = false, requestID: UUID? = nil, network: Bool = true,
-                      hosts: Set<String> = ["api.github.com", "api.spotify.com", "accounts.spotify.com"], date: Date? = nil) throws -> ScriptWidgetServiceRequestPlan {
+                      hosts: Set<String> = ["api.github.com"], date: Date? = nil) throws -> ScriptWidgetServiceRequestPlan {
         try .init(operation: operation, credential: credential, policy: policy, ownerID: owner,
             expectedConnectionID: connection ?? policy.connectionID, isUserInitiatedAction: action, requestID: requestID,
             hasNetworkPermission: network, allowsHost: { hosts.contains($0) }, now: date ?? now)
@@ -37,40 +34,26 @@ final class ServiceAccessPolicyTests: XCTestCase {
     @objc func testAccountServiceAndConnectionCannotBeSubstitutedAcrossGrants() throws {
         let value = credential(), owner = UUID(), allowed = try grant(value, owner: owner, operations: [.githubProfile])
         XCTAssertThrowsError(try plan(.githubProfile, credential(), allowed, owner: owner))
-        XCTAssertThrowsError(try plan(.githubProfile, credential(.spotify, accountID: value.accountID), allowed, owner: owner))
-        XCTAssertThrowsError(try plan(.spotifyProfile, value, allowed, owner: owner))
         XCTAssertThrowsError(try plan(.githubProfile, value, allowed, owner: owner, connection: UUID()))
-        XCTAssertThrowsError(try allowed.updatingGrant(ownerID: owner, operations: [.spotifyPause], expectedRevision: allowed.revision))
-    }
-
-    @objc func testPlaybackWritesNeedBothNativeActionAndProviderScopeAndStableRequestID() throws {
-        let value = credential(.spotify, controls: true), owner = UUID(), allowed = try grant(value, owner: owner, operations: [.spotifyPause])
-        XCTAssertThrowsError(try plan(.spotifyPause, value, allowed, owner: owner, requestID: UUID()))
-        XCTAssertThrowsError(try plan(.spotifyPause, value, allowed, owner: owner, action: true))
-        XCTAssertThrowsError(try plan(.spotifyPause, credential(.spotify, accountID: value.accountID), allowed, owner: owner, action: true, requestID: UUID()))
-        let id = UUID(), request = try plan(.spotifyPause, value, allowed, owner: owner, action: true, requestID: id)
-        XCTAssertEqual(request.requestID, id); XCTAssertEqual(request.request.httpMethod, "PUT")
-        XCTAssertEqual(request.request.url?.absoluteString, "https://api.spotify.com/v1/me/player/pause")
-        XCTAssertNil(request.request.url?.query); XCTAssertNil(request.request.httpBody)
     }
 
     @objc func testAuthenticatedRequestsRequireNetworkAndEveryNativeServiceHost() throws {
-        let value = credential(.spotify), owner = UUID(), allowed = try grant(value, owner: owner, operations: [.spotifyProfile])
-        XCTAssertThrowsError(try plan(.spotifyProfile, value, allowed, owner: owner, network: false))
-        XCTAssertThrowsError(try plan(.spotifyProfile, value, allowed, owner: owner, hosts: ["api.spotify.com"]))
-        XCTAssertThrowsError(try plan(.spotifyProfile, value, allowed, owner: owner, hosts: ["api.spotify.com.attacker.test", "accounts.spotify.com"]))
-        XCTAssertNoThrow(try plan(.spotifyProfile, value, allowed, owner: owner))
+        let value = credential(), owner = UUID(), allowed = try grant(value, owner: owner, operations: [.githubProfile])
+        XCTAssertThrowsError(try plan(.githubProfile, value, allowed, owner: owner, network: false))
+        XCTAssertThrowsError(try plan(.githubProfile, value, allowed, owner: owner, hosts: []))
+        XCTAssertThrowsError(try plan(.githubProfile, value, allowed, owner: owner, hosts: ["api.github.com.attacker.test"]))
+        XCTAssertNoThrow(try plan(.githubProfile, value, allowed, owner: owner))
     }
 
     @objc func testRevocationExpiryAndStaleSettingsStopRequestsWithoutErasingCredentials() throws {
-        let value = credential(.spotify), owner = UUID(), allowed = try grant(value, owner: owner, operations: [.spotifyProfile])
-        XCTAssertThrowsError(try plan(.spotifyProfile, value, allowed.revoked(), owner: owner))
-        XCTAssertThrowsError(try plan(.spotifyProfile, value, allowed, owner: owner, date: now.addingTimeInterval(4000)))
-        XCTAssertThrowsError(try plan(.spotifyProfile, value, allowed, owner: owner, date: now.addingTimeInterval(-120)))
+        let value = credential(), owner = UUID(), allowed = try grant(value, owner: owner, operations: [.githubProfile])
+        XCTAssertThrowsError(try plan(.githubProfile, value, allowed.revoked(), owner: owner))
+        XCTAssertThrowsError(try plan(.githubProfile, value, allowed, owner: owner, date: now.addingTimeInterval(4000)))
+        XCTAssertThrowsError(try plan(.githubProfile, value, allowed, owner: owner, date: now.addingTimeInterval(-120)))
         let removed = try allowed.updatingGrant(ownerID: owner, operations: [], expectedRevision: allowed.revision)
         XCTAssertTrue(removed.grants.isEmpty); XCTAssertEqual(allowed.grants.count, 1)
-        XCTAssertThrowsError(try removed.updatingGrant(ownerID: owner, operations: [.spotifyProfile], expectedRevision: allowed.revision))
-        XCTAssertThrowsError(try plan(.spotifyProfile, value, removed, owner: owner))
+        XCTAssertThrowsError(try removed.updatingGrant(ownerID: owner, operations: [.githubProfile], expectedRevision: allowed.revision))
+        XCTAssertThrowsError(try plan(.githubProfile, value, removed, owner: owner))
         XCTAssertNoThrow(try value.validate())
     }
 
@@ -79,7 +62,7 @@ final class ServiceAccessPolicyTests: XCTestCase {
         let data = try allowed.encoded()
         XCTAssertEqual(try ScriptWidgetServiceAccessPolicy.decode(data, accountID: value.accountID, service: .github).revision, allowed.revision)
         var original = try JSONSerialization.jsonObject(with: data) as! [String: Any]
-        for patch: [String: Any] in [["formatVersion": 2], ["url": "https://attacker.test"], ["grants": [["ownerID": owner.uuidString, "operations": ["github.profile"]], ["ownerID": owner.uuidString, "operations": ["github.profile"]]]], ["grants": [["ownerID": owner.uuidString, "operations": ["spotify.pause"]]]], ["grants": [["ownerID": owner.uuidString, "operations": ["github.profile"], "extra": true]]]] {
+        for patch: [String: Any] in [["formatVersion": 2], ["url": "https://attacker.test"], ["grants": [["ownerID": owner.uuidString, "operations": ["github.profile"]], ["ownerID": owner.uuidString, "operations": ["github.profile"]]]], ["grants": [["ownerID": owner.uuidString, "operations": ["unsupported.write"]]]], ["grants": [["ownerID": owner.uuidString, "operations": ["github.profile"], "extra": true]]]] {
             let changed = original.merging(patch, uniquingKeysWith: { _, new in new })
             XCTAssertThrowsError(try ScriptWidgetServiceAccessPolicy.decode(JSONSerialization.data(withJSONObject: changed), accountID: value.accountID, service: .github))
         }
@@ -89,11 +72,7 @@ final class ServiceAccessPolicyTests: XCTestCase {
     }
 
     @objc func testPlansHaveOnlyFixedFirstPartyEndpointsAndRedactBearerDescriptions() throws {
-        let expected: [(ScriptWidgetServiceOperation, String, String)] = [
-            (.githubProfile, "GET", "https://api.github.com/user"), (.spotifyProfile, "GET", "https://api.spotify.com/v1/me"),
-            (.spotifyPlayback, "GET", "https://api.spotify.com/v1/me/player"), (.spotifyPause, "PUT", "https://api.spotify.com/v1/me/player/pause"),
-            (.spotifyResume, "PUT", "https://api.spotify.com/v1/me/player/play"), (.spotifyNext, "POST", "https://api.spotify.com/v1/me/player/next"),
-            (.spotifyPrevious, "POST", "https://api.spotify.com/v1/me/player/previous")]
+        let expected: [(ScriptWidgetServiceOperation, String, String)] = [(.githubProfile, "GET", "https://api.github.com/user")]
         for (operation, method, url) in expected {
             let value = credential(operation.service, controls: true), owner = UUID(), allowed = try grant(value, owner: owner, operations: [operation])
             let built = try plan(operation, value, allowed, owner: owner, action: true, requestID: UUID())
@@ -105,7 +84,7 @@ final class ServiceAccessPolicyTests: XCTestCase {
             XCTAssertFalse(String(describing: allowed).contains(owner.uuidString))
         }
         XCTAssertNil(ScriptWidgetServiceOperation(rawValue: "https://attacker.test/profile"))
-        XCTAssertNil(ScriptWidgetServiceOperation(rawValue: "spotify.arbitrary"))
+        XCTAssertNil(ScriptWidgetServiceOperation(rawValue: "unsupported.arbitrary"))
     }
 
     @objc func testPolicyAndCredentialOccupySeparateNativeKeychainItems() throws {

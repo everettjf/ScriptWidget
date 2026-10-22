@@ -14,22 +14,8 @@ struct ScriptWidgetServiceProfile: Codable, Equatable, Sendable {
     let following: Int?
 }
 
-struct ScriptWidgetServicePlayback: Codable, Equatable, Sendable {
-    let itemType: String
-    let itemID: String?
-    let title: String?
-    let artists: [String]
-    let album: String?
-    let isPlaying: Bool
-    let progressMilliseconds: Int?
-    let durationMilliseconds: Int?
-    let hasActiveDevice: Bool
-    let isRestricted: Bool
-}
-
 enum ScriptWidgetServiceResponse: Equatable, Sendable {
     case profile(ScriptWidgetServiceProfile)
-    case playback(ScriptWidgetServicePlayback?)
 }
 
 /// Injectable transport for native app/runtime tests. The cancellation handle
@@ -60,21 +46,14 @@ final class ScriptWidgetServiceRequestHandle: @unchecked Sendable, CustomStringC
 final class ScriptWidgetServiceURLTransport: ScriptWidgetServiceHTTPTransport {
     static let maximumResponseBytes = 128 * 1024
     private let protocolClasses: [AnyClass]?
-    private let responseByteLimit: Int
-    init(maximumResponseBytes: Int = ScriptWidgetServiceURLTransport.maximumResponseBytes) {
-        precondition((1...Self.maximumResponseBytes).contains(maximumResponseBytes))
-        protocolClasses = nil; responseByteLimit = maximumResponseBytes
-    }
+    init() { protocolClasses = nil }
     #if DEBUG || SCRIPTWIDGET_SERVICE_STANDALONE_TESTS
-    init(protocolClasses: [AnyClass], maximumResponseBytes: Int = ScriptWidgetServiceURLTransport.maximumResponseBytes) {
-        precondition((1...Self.maximumResponseBytes).contains(maximumResponseBytes))
-        self.protocolClasses = protocolClasses; responseByteLimit = maximumResponseBytes
-    }
+    init(protocolClasses: [AnyClass]) { self.protocolClasses = protocolClasses }
     #endif
 
     @discardableResult func send(_ request: URLRequest,
         completion: @escaping (Result<ScriptWidgetServiceHTTPResponse, ScriptWidgetServiceError>) -> Void) -> ScriptWidgetServiceRequestHandle {
-        let worker = Worker(request: request, maximumBytes: responseByteLimit, completion: completion)
+        let worker = Worker(request: request, completion: completion)
         let configuration = URLSessionConfiguration.ephemeral
         configuration.urlCache = nil; configuration.urlCredentialStorage = nil; configuration.httpCookieStorage = nil
         configuration.httpShouldSetCookies = false; configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
@@ -91,14 +70,13 @@ final class ScriptWidgetServiceURLTransport: ScriptWidgetServiceHTTPTransport {
 
     private final class Worker: NSObject, URLSessionDataDelegate, @unchecked Sendable {
         let request: URLRequest
-        let maximumBytes: Int
         let completion: (Result<ScriptWidgetServiceHTTPResponse, ScriptWidgetServiceError>) -> Void
         var session: URLSession?
         var body = Data()
         var completed = false
         var status: Int?
-        init(request: URLRequest, maximumBytes: Int, completion: @escaping (Result<ScriptWidgetServiceHTTPResponse, ScriptWidgetServiceError>) -> Void) {
-            self.request = request; self.maximumBytes = maximumBytes; self.completion = completion
+        init(request: URLRequest, completion: @escaping (Result<ScriptWidgetServiceHTTPResponse, ScriptWidgetServiceError>) -> Void) {
+            self.request = request; self.completion = completion
         }
         func finish(_ result: Result<ScriptWidgetServiceHTTPResponse, ScriptWidgetServiceError>) {
             guard !completed else { return }; completed = true
@@ -118,8 +96,7 @@ final class ScriptWidgetServiceURLTransport: ScriptWidgetServiceHTTPTransport {
         }
         func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
                         completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
-            guard let response = response as? HTTPURLResponse, response.url == request.url,
-                  response.expectedContentLength <= maximumBytes else {
+            guard let response = response as? HTTPURLResponse, response.url == request.url else {
                 completionHandler(.cancel); finish(.failure(.unavailable)); return
             }
             do {
@@ -134,7 +111,7 @@ final class ScriptWidgetServiceURLTransport: ScriptWidgetServiceHTTPTransport {
         }
         func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
             guard !completed else { return }
-            guard data.count <= maximumBytes - body.count else {
+            guard data.count <= ScriptWidgetServiceURLTransport.maximumResponseBytes - body.count else {
                 finish(.failure(.unavailable)); return
             }
             body.append(data)
@@ -202,7 +179,6 @@ enum ScriptWidgetServiceResponseDecoder {
         try credential.validate()
         let data = response.body
         guard data.count <= ScriptWidgetServiceURLTransport.maximumResponseBytes else { throw ScriptWidgetServiceError.unavailable }
-        if response.status == 204 && data.isEmpty && operation == .spotifyPlayback { return .playback(nil) }
         guard response.status == 200 else { throw ScriptWidgetServiceError.unavailable }
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw ScriptWidgetServiceError.unavailable }
         let fields = Fields(object, secrets: [credential.accessToken, credential.refreshToken].compactMap { $0 })
@@ -214,35 +190,12 @@ enum ScriptWidgetServiceResponseDecoder {
             return .profile(.init(service: .github, subject: String(id), username: username, displayName: try fields.text("name"),
                 publicRepositories: try fields.integer("public_repos", required: true), privateRepositories: try fields.integer("total_private_repos"),
                 followers: try fields.integer("followers"), following: try fields.integer("following")))
-        case .spotifyProfile:
-            guard let id = try fields.text("id", required: true, maximum: 128) else { throw ScriptWidgetServiceError.unavailable }
-            return .profile(.init(service: .spotify, subject: id, username: nil, displayName: try fields.text("display_name"),
-                publicRepositories: nil, privateRepositories: nil, followers: nil, following: nil))
-        case .spotifyPlayback:
-            let type = try fields.text("currently_playing_type", required: true, maximum: 32)!
-            let playing = try fields.boolean("is_playing"), progress = try fields.integer("progress_ms", maximum: 7 * 86_400_000)
-            let device = try fields.fields("device")
-            let active = try device?.boolean("is_active", fallback: false) ?? false
-            let restricted = try device?.boolean("is_restricted", fallback: true) ?? true
-            guard ["track", "episode"].contains(type), let item = try fields.fields("item") else {
-                return .playback(.init(itemType: "unsupported", itemID: nil, title: nil, artists: [], album: nil, isPlaying: playing,
-                    progressMilliseconds: progress, durationMilliseconds: nil, hasActiveDevice: active, isRestricted: restricted))
-            }
-            let id = try item.text("id", maximum: 128), duration = try item.integer("duration_ms", required: true, maximum: 7 * 86_400_000)
-            var artists: [String] = []
-            if type == "track", let raw = item.object["artists"] {
-                guard let values = raw as? [[String: Any]], values.count <= 32 else { throw ScriptWidgetServiceError.unavailable }
-                artists = try values.prefix(8).map { try Fields($0, secrets: fields.secrets).text("name", required: true)! }
-            }
-            let album = try type == "track" ? item.fields("album")?.text("name") : item.fields("show")?.text("name")
-            return .playback(.init(itemType: type, itemID: id, title: try item.text("name", required: true), artists: artists, album: album,
-                isPlaying: playing, progressMilliseconds: progress, durationMilliseconds: duration, hasActiveDevice: active, isRestricted: restricted))
-        default: throw ScriptWidgetServiceError.unsupportedOperation
+
         }
     }
 }
 
-/// Read-only broker. Writes stay disabled until durable action receipts exist.
+/// Read-only broker for the supported fixed profile endpoint.
 /// Revalidation runs before dispatch AND before delivery, even after a failure.
 final class ScriptWidgetServiceReader {
     private let transport: any ScriptWidgetServiceHTTPTransport
@@ -270,7 +223,7 @@ final class ScriptWidgetServiceReader {
     @discardableResult func verifyConnection(_ credential: ScriptWidgetServiceCredential,
         completion: @escaping (Result<ScriptWidgetServiceProfile, ScriptWidgetServiceError>) -> Void) -> ScriptWidgetServiceRequestHandle {
         do {
-            let operation: ScriptWidgetServiceOperation = credential.service == .github ? .githubProfile : .spotifyProfile
+            let operation: ScriptWidgetServiceOperation = .githubProfile
             let owner = UUID(), empty = ScriptWidgetServiceAccessPolicy.connected(accountID: credential.accountID, service: credential.service)
             let policy = try empty.updatingGrant(ownerID: owner, operations: [operation], expectedRevision: empty.revision)
             let plan = try ScriptWidgetServiceRequestPlan(operation: operation, credential: credential, policy: policy, ownerID: owner,

@@ -1,6 +1,6 @@
 # Widget 能力实施与验收记录
 
-最新范围确认（2026-10-22）：用户要求本轮阶段收尾，完成已开始的内容，未开始的记入 TODO 后暂不开发。仍统一在 `codex/release-m1-m2` / PR #62 提交；不以全部 M3–M5 实现作为本轮收尾条件。当前成果见 [阶段交付清单](widget-capabilities-status.md)，延期项见 [TODO](widget-capabilities-todo.md)。最终 App Review 由用户提交。
+最新范围确认（2026-10-22）：用户要求取消 C/D、移除已做的 Spotify，实际完成 A+B 并充分测试。原先暂停状态已被本次要求取代。仍在 `codex/release-m1-m2` / PR #62 提交，当前 [规划](widget-capabilities-plan.md) / [TODO](widget-capabilities-todo.md) 为范围依据；历史 Spotify 记录仅作追溯。App Review 由用户提交。
 
 下方任务表和逐次验证是实施过程快照，保留原始状态和证据；当前范围以上述清单为准，最后一轮验证见文末。已有模板、Web Mock 和绿色测试不能替代真实账户、物理设备或签名容器验收。
 
@@ -981,3 +981,18 @@ Web 只对使用到的 GIF 顺序预检，有界流读取或直接解码 data UR
 用户要求重新整理规划。现行规划改为 A 当前版本验收发布、B 创作体验候选、C 音乐与服务候选、D 长期方向。原规划保存在 `widget-capabilities-plan-history.md`，避免历史 M1/M2 单独发布和全量 M3–M5 安排混入当前排期。TODO 使用 R/N/S/L 稳定编号，分开已实现内容待验收、未开发功能与外部配置前提。
 
 当前功能开发仍暂停；没有执行设备验收、部署、上传或新增运行时代码。现有测试计数仅引用前一实现版本的证据，不作为本次新执行。此次按纯文档范围运行链接与 release metadata 校验。
+
+### 2026-10-22：移除 Spotify，转入 A+B 完整交付
+
+按用户新范围取消 C/D，不保留为后续候选。移除原生 Spotify 授权/PKCE/系统窗口、token exchange/refresh、连接配置及回调、资料/播放适配器、操作枚举与内部写历史、owner 授权 UI、测试 hook 和工程引用；移除 Web 提供方/fixtures/播放方法及对应补全/AI 指引，重新生成文档与两端 editor bundle。GitHub 连接/资料、Music 只读、GIF 和其他创作能力保留。preview engine 为 0.17.0。Runtime 1.4 / Package 编译契约 1.0 保持；未发布 Spotify 草稿明确报不支持，不静默替换提供方。
+
+将原先 Spotify 专项删除，同时保留并改用 GitHub fixture 覆盖 credential 校验/脱敏、owner/connection 隔离、网络与 host、撤权/过期/旧 revision、失败存储和并发连接。新增原生/Web 回归验证未知（含已移除）provider 的 status/profile 均拒绝，不发请求，playback 方法缺失。首次独立 probe 暴露测试仍把两个不同 provider 账户当作前提；改为同 provider 的独立账户测试，并恢复网络/过期等通用拒绝断言；没有放宽生产边界。
+
+最终完整 `./Scripts/release-readiness.sh` 退出 0：Mac **661 通过 / 0 失败 / 32 跳过**，iPhone 17 Simulator **671 通过 / 0 失败 / 31 跳过**，runtimeWarnings 均为空。Editor 52、预览引擎 168、Web Studio 96、Gallery 同步 2、独立服务 probe 24、91 内置模板/22 curated 包、所有保留的实际浏览器流程、TypeScript/生产构建、两端 app scheme build 及独立运行时/存储/路由探针通过。SDK/link/Sendable/Xcode 诊断保留；计数降低对应删除的 Spotify 功能。Mac/iPhone Simulator 账户设置截图专项另外实际执行，均通过并检查三种隔离样例状态，页面只显示 GitHub。最终 gate 后只更新文档、截图和验证记录。
+
+本地证据：`__Release/capabilities/ab-only/`。实际完整 xcresult：
+
+- Mac：`/tmp/scriptwidget-runtime-delivery/macos-tests/Logs/Test/Test-ScriptWidgetRuntimeTests-2026.10.22_13-30-46--0700.xcresult`
+- iOS：`/tmp/scriptwidget-runtime-delivery/ios-tests/Logs/Test/Test-ScriptWidgetRuntimeTests-2026.10.22_13-33-39--0700.xcresult`
+
+N01–N03 和 R01–R07 继续进行；已定位同文档并发资源刷新顺序待验证点，下一增量先以实际 WKWebView 重现再修复。设备清单确认 iPhone/iPad 已连接，iPad 已配对且 developer mode 启用，但尚未执行签名设备或真实权限验收。没有部署、上传或送审；A/B 整体尚未完成。

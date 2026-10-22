@@ -212,7 +212,7 @@ async function connectedServices(): Promise<void> {
     await openMocks();
     await page.waitFor("!!document.getElementById('mock-group')");
     await page.evaluate("(() => {const input=document.getElementById('mock-group');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,'services');input.dispatchEvent(new Event('change',{bubbles:true}));})()");
-    await page.waitFor("document.getElementById('mock-service-provider')?.value==='github'");
+    await page.waitFor("document.getElementById('mock-data-panel').textContent.includes('GitHub sample data only')");
     await page.evaluate("(() => {const input=document.getElementById('mock-api');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,'$services.profile');input.dispatchEvent(new Event('change',{bubbles:true}));})()");
     await page.waitFor("!!document.getElementById('mock-result.publicRepositories')");
     await page.evaluate("(() => {const input=document.getElementById('mock-result.publicRepositories');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'47');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
