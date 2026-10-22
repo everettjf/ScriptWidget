@@ -9,10 +9,18 @@
 
 X01/X02 证据：最终完整 gate 退出 0，Mac 661 / iPhone Simulator 671 均 0 失败；服务 probe 24、Web Studio 96 及所有保留的浏览器流程通过。确切结果见 [实施记录](widget-capabilities-execution.md)。其余 A/B 项尚未据此勾选。
 
+## 下一批优先事项（按顺序）
+
+- [ ] **R05 / CI** 定位并修复 `03fe86d` 发布 CI 的探针运行依赖：`XCTestCore.framework` 加载失败；验证实际远端结果，不能以本地通过替代。
+- [ ] **N03 / 文档边界** 复现相同源码切换文件后旧控件的行为，确认表单、按钮、Undo 和迟到回调不能修改新文件。
+- [ ] **N01 / 模板排版** 修复小号水族箱空格拼接 emoji，复核原生/Web 截图与其他尺寸。
+
+完成上述聚焦修复，再按规划进入三端流程、真机验收和最终发布。详细批次和出口见 [规划](widget-capabilities-plan.md)。
+
 ## B：创作能力完善
 
 - [ ] **N01（进行中）** 已修复原生图片列表并发刷新乱序覆盖及陈旧错误提示，回归在两端实际 WKWebView 通过。整模板对照发现小号 Animation Aquarium 差异 14.35%，需修复空格拼接 emoji 导致的排版。继续完整走查三端 Layout/Theme/Assets/壁纸流程；修复诊断、键盘/无障碍、文件/资源和异步操作实际缺陷，补回归与截图。
-- [ ] **N02（实现及自动化已完成，系统实机表现待 R04）** 已移除私有桥接，改用 Foundation/SwiftUI/ImageIO；对齐负周期、时区/锚点、固定日期、摆动及 GIF 帧时序。Mac/减少动态效果的标准钟针显示正确静态时间。最终两端完整 gate、iPad 状态测试、构建矩阵和 Chromium/WebKit 实际渲染检查通过；Firefox 本地启动失败，待 Linux/Windows CI；真实 WidgetKit/AOD/扩展内存不计作已验收。
+- [ ] **N02（实现及自动化已完成，系统实机表现待 R04）** 已移除私有桥接，改用 Foundation/SwiftUI/ImageIO；对齐负周期、时区/锚点、固定日期、摆动及 GIF 帧时序。Mac/减少动态效果的标准钟针显示正确静态时间。最终两端完整 gate、iPad 状态测试、构建矩阵和 Chromium/WebKit 实际渲染检查通过；Firefox 本地启动失败；Linux/Windows 跨浏览器 CI 已通过（见规划中的确切运行链接）；真实 WidgetKit/AOD/扩展内存不计作已验收。
 - [ ] **N03** 彻底验证支持的 JSX 子集：源码保留、动态属性、未知结构、scope、陈旧命令、撤销、保存重开和 package 往返；复杂表达式继续可用 Code 编辑。重点核对相同源码切换文件后，旧表单/按钮/Undo 控件是否全部失效。
 
 ## A：当前版本验收与发布

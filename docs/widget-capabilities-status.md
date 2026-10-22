@@ -19,6 +19,10 @@ Spotify 条件接入、授权/刷新、播放读取及内部写操作记录已�
 
 ## 验证与交付状态
 
-公开动画最终实现的 `./Scripts/release-readiness.sh` 通过：Mac **671 / 0 失败 / 32 跳过**，iPhone 17 Simulator **681 / 0 失败 / 31 跳过**。iPad Pro 13-inch (M5) Simulator **681 / 0 失败 / 31 跳过**，三端 runtimeWarnings 均为空。Editor 52、预览引擎 172、Web Studio 96、服务 probe 24、91 模板/22 curated 包、保留的浏览器流程及两端 app build 通过；构建矩阵通过。实际跨浏览器动画、127 树及隔离检查在 Chromium/WebKit 通过，本机 Firefox 启动失败，不计通过；Linux/Windows CI 待核对。整模板比较 9 张，中位差异 0.48%，小号水族箱 14.35% 仍为 N01 待修。SDK/link/Sendable/Xcode 诊断保留。证据见 [实施记录](widget-capabilities-execution.md)。A/B 仍未全部完成。
+公开动画最终实现的 `./Scripts/release-readiness.sh` 通过：Mac **671 / 0 失败 / 32 跳过**，iPhone 17 Simulator **681 / 0 失败 / 31 跳过**。iPad Pro 13-inch (M5) Simulator **681 / 0 失败 / 31 跳过**，三端 runtimeWarnings 均为空。Editor 52、预览引擎 172、Web Studio 96、服务 probe 24、91 模板/22 curated 包、保留的浏览器流程及两端 app build 通过；构建矩阵通过。实际跨浏览器动画、127 树及隔离检查在 Chromium/WebKit 通过，本机 Firefox 启动失败，不计通过；[Linux/Windows 跨浏览器 CI](https://github.com/everettjf/scriptwidget/actions/runs/39859999773) 已在 `03fe86d` 通过。整模板比较 9 张，中位差异 0.48%，小号水族箱 14.35% 仍为 N01 待修。SDK/link/Sendable/Xcode 诊断保留。证据见 [实施记录](widget-capabilities-execution.md)。A/B 仍未全部完成。
 
 当前是本地开发与验证成果：没有执行本轮 Web 部署、原生商店构建上传或 App Review 提交。App Review 仍由用户操作。真机、签名 Keychain/iCloud、WidgetKit 调度、Always On 和扩展内存验收未完成，不能称作已满足全部发版门槛。完整门槛见 [发布检查](release-readiness.md)。
+
+## 当前收尾顺序
+
+按 [新版规划](widget-capabilities-plan.md) 分四批：剩余缺陷 → B 三端验收 → A 真机验收 → 最终回归与发布。当前新增确认的阻塞为 [Release Readiness CI](https://github.com/everettjf/scriptwidget/actions/runs/39860010673) 探针加载 `XCTestCore.framework` 失败；与本地 gate 通过分别记录。相同源码切换文件后的旧控件行为仍为待验证风险，尚未称作已确认缺陷。规划整理未修改产品代码，未新增测试或发布证据。
