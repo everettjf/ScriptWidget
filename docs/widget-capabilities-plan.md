@@ -169,6 +169,7 @@ Apple 的 [EventKit 授权](https://developer.apple.com/documentation/eventkit/a
 - [x] M5-1 定义布局中间模型及支持子集，先实现选择、属性、拖拽、对齐、图层和撤销重做；通过导入导出与源码往返测试。
   - 首个子集已完成开发验证：两端共用 source-range model 与 CodeMirror Layout 面板；支持字面量 native JSX 的选择、属性/文字、同 scope 图层拖拽/移动、添加删除和独立撤销事务。动态代码、展开属性和不支持结构保留在 Code。Package 2.0 往返、实际 WKWebView 保存/只读/文件边界、原生 JSC/Web 树对照、真实 Chrome 指针拖拽与手机无横向溢出均通过。Layout Starter 内置/Gallery 种子同步；完整 gate Mac 656 / iPhone Simulator 666 通过，均 0 失败。详见 [Layout 编辑](visual-layout.md)。这只勾选本项支持子集，不代表 M5 全部完成；M5-2/3/4 与物理设备验收继续。
 - [ ] M5-2 提供主题 token、配色、字体、照片与原创图标/宠物资源，允许模板换肤，保留资源来源及使用权记录。
+  - 主题增量已接入三个端共用的 Theme 面板：十一种配色/字体/间距 token、四套原创配色、显式连接字面量布局、逐项编辑与版本化 JSON 复用，保存为普通 JavaScript。动态源码保留，字体设计连接到原生实际支持的文字层。照片资源选择与原创素材插入尚未完成，本项保持未勾选；范围与源码约定见 [Widget themes](widget-themes.md)，本轮验收见执行记录。
 - [ ] M5-3 研究玻璃材质、空间效果和动态壁纸，分别验证公开 API、系统版本、内存和静态回退。壁纸编辑/导出作为独立工具流程，不假设组件能够修改系统壁纸。
 - [ ] M5-4 同步 Mac/Web 编辑流程和原生渲染能力表，发布生成 bundle、文档和代表性模板；通过现有 Gallery 安装分发。
 

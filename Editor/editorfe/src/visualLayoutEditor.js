@@ -1,6 +1,7 @@
 import { EditorView, showPanel } from "@codemirror/view";
 import { undo, redo, undoDepth, redoDepth, isolateHistory } from "@codemirror/commands";
 import { parseVisualLayout, editVisualLayout, visualPropertyDefinitions } from "./visualLayout.js";
+import { parseWidgetTheme, initializeWidgetTheme, editWidgetTheme, widgetThemeFields, widgetThemePresets, importWidgetTheme, exportWidgetTheme } from "./widgetTheme.js";
 
 const supportedProperty = definition => ["string", "number", "number|string", "date|number", "boolean", "enum", "color", "url", "action-id", "storage-key"].includes(definition.type);
 function element(tag, className, text) {
@@ -9,18 +10,59 @@ function element(tag, className, text) {
 function layoutPanel(view) {
   const dom = element("section", "sw-layout"), header = element("div", "sw-layout-header"), body = element("div", "sw-layout-body");
   dom.setAttribute("aria-label", "Visual layout editor");
-  let open = false, model = null, selectedID = null, propertyName = "", dragging = null;
+  let open = false, mode = "layout", model = null, selectedID = null, propertyName = "", dragging = null;
   const token = String(Math.random());
   const button = (label, action, disabled = false) => {
     const value = element("button", "sw-layout-button", label); value.type = "button"; value.disabled = disabled;
     value.addEventListener("click", action); return value;
   };
-  const toggle = button("Layout", () => { open = !open; toggle.setAttribute("aria-expanded", String(open)); render(); view.requestMeasure(); });
+  const toggle = button("Layout", () => { open = mode === "layout" ? !open : true; mode = "layout"; render(); view.requestMeasure(); });
   toggle.classList.add("sw-layout-toggle"); toggle.setAttribute("aria-expanded", "false");
   const hint = element("span", "sw-layout-hint", "Select layers and edit literal JSX"), undoButton = button("Undo", () => undo(view)), redoButton = button("Redo", () => redo(view));
-  header.append(toggle, hint, undoButton, redoButton); dom.append(header, body);
+  const themeToggle = button("Theme", () => { open = mode === "theme" ? !open : true; mode = "theme"; render(); view.requestMeasure(); });
+  themeToggle.setAttribute("aria-expanded", "false");
+  header.append(toggle, themeToggle, hint, undoButton, redoButton); dom.append(header, body);
   body.hidden = undoButton.hidden = redoButton.hidden = true;
   const error = element("p", "sw-layout-error"); error.setAttribute("role", "alert"); error.hidden = true; dom.append(error);
+  function themeEdit(action, expected) {
+    try {
+      if (view.state.readOnly) throw new Error("This document is read only.");
+      const source = view.state.doc.toString();
+      if (source !== expected) throw new Error("Source changed. Reopen Theme before editing.");
+      const edit = action(source); error.hidden = true;
+      if (edit.changes.length) view.dispatch({ changes: edit.changes, annotations: isolateHistory.of("full"), userEvent: "input.theme" });
+    } catch (reason) { error.textContent = reason.message; error.hidden = false; }
+  }
+  function renderTheme() {
+    const source = view.state.doc.toString(), theme = parseWidgetTheme(source), locked = view.state.readOnly;
+    const panel = element("div", "sw-layout-inspector sw-theme-inspector"); body.replaceChildren(panel);
+    panel.append(element("div", "sw-layout-title", "Widget theme"));
+    panel.append(element("p", "sw-layout-notice", "Saved as ordinary JavaScript with your widget. Dynamic values stay in Code. Applying a theme changes the connected colors, fonts and spacing."));
+    if (theme.issue) { panel.append(element("p", "sw-layout-notice", theme.issue)); return; }
+    if (!theme.tokens) {
+      panel.append(button("Connect layout to Meadow theme", () => themeEdit(value => initializeWidgetTheme(value), source), locked || !theme.canInitialize));
+      if (!theme.canInitialize) panel.append(element("p", "sw-layout-notice", "Use a literal top-level $render layout, or define the documented widgetTheme object in Code."));
+      return;
+    }
+    const presets = element("div", "sw-layout-actions");
+    for (const [name, tokens] of Object.entries(widgetThemePresets)) presets.append(button(name, () => themeEdit(value => editWidgetTheme(theme, value, tokens), source), locked));
+    panel.append(presets);
+    for (const [name, field] of Object.entries(widgetThemeFields)) {
+      const form = element("form", "sw-layout-form"), label = element("label", "", name), input = element(field.values ? "select" : "input");
+      if (field.values) for (const value of field.values) { const option = element("option", "", value); option.value = value; input.append(option); }
+      if (field.type === "number") { input.type = "number"; input.min = "0"; input.max = String(field.maximum); input.step = "any"; }
+      input.value = String(theme.tokens[name]); input.setAttribute("aria-label", `Theme ${name}`); input.disabled = locked;
+      const submit = button(`Apply ${name}`, () => {}, locked); submit.type = "submit";
+      form.append(label, input, submit); form.addEventListener("submit", event => {
+        event.preventDefault();
+        const token = field.type === "number" ? (input.value.trim() ? Number(input.value) : NaN) : input.value;
+        themeEdit(value => editWidgetTheme(theme, value, { ...theme.tokens, [name]: token }), source);
+      }); panel.append(form);
+    }
+    const json = element("textarea"); json.rows = 5; json.setAttribute("aria-label", "Reusable theme JSON"); json.value = exportWidgetTheme(theme.tokens);
+    panel.append(element("label", "", "Copy this JSON to reuse a theme, or paste a version 1 theme and import it."), json,
+      button("Import theme JSON", () => themeEdit(value => editWidgetTheme(theme, value, importWidgetTheme(json.value).tokens), source), locked));
+  }
   function apply(operation, expected = model?.source) {
     try {
       if (view.state.readOnly) throw new Error("This document is read only.");
@@ -37,9 +79,11 @@ function layoutPanel(view) {
     render();
   }
   function render() {
+    toggle.setAttribute("aria-expanded", String(open && mode === "layout")); themeToggle.setAttribute("aria-expanded", String(open && mode === "theme"));
     body.hidden = !open; undoButton.hidden = redoButton.hidden = !open; hint.hidden = open;
     undoButton.disabled = view.state.readOnly || undoDepth(view.state) === 0; redoButton.disabled = view.state.readOnly || redoDepth(view.state) === 0;
     if (!open) return;
+    if (mode === "theme") { renderTheme(); return; }
     model = parseVisualLayout(view.state.doc.toString()); body.replaceChildren();
     if (model.issue) { body.append(element("p", "sw-layout-notice", model.issue)); return; }
     const position = view.state.selection.main.from;
@@ -100,7 +144,7 @@ function layoutPanel(view) {
         const definition = visualPropertyDefinitions(selected)[propertyName], existing = selected.properties.find(value => value.name === propertyName);
         controls.replaceChildren();
         propertyForm.onsubmit = event => event.preventDefault();
-        if (existing && !existing.editable) { controls.append(element("span", "sw-layout-notice", "Dynamic value: edit it in Code.")); return; }
+        if (existing && !existing.editable) { controls.append(element("span", "sw-layout-notice", "Dynamic value: edit it in Code. Connected widgetTheme tokens can be changed in Theme.")); return; }
         const input = element(definition.values || definition.type === "boolean" ? "select" : "input"); input.setAttribute("aria-label", "Layout property value");
         for (const value of definition.values ?? (definition.type === "boolean" ? [true, false] : [])) { const option = element("option", "", String(value)); option.value = String(value); input.append(option); }
         input.value = existing ? String(existing.value) : definition.values?.[0] ?? (definition.type === "boolean" ? "true" : "");
@@ -158,6 +202,8 @@ const theme = EditorView.baseTheme({
   ".sw-layout-layer": {display:"block",border:0,borderRadius:"4px",width:"100%",textAlign:"left",overflow:"hidden",textOverflow:"ellipsis",margin:"1px 0",paddingBlock:"6px"},
   '.sw-layout-layer[aria-selected="true"]': {backgroundColor:"#4085f52b",color:"inherit"},
   ".sw-layout-inspector": {padding:"8px 10px",display:"flex",alignItems:"start",flexDirection:"column",gap:"8px",minWidth:0},
+  ".sw-theme-inspector": {gridColumn:"1 / -1"},
+  ".sw-theme-inspector textarea": {boxSizing:"border-box",width:"100%",fontFamily:"monospace",backgroundColor:"transparent",color:"inherit",border:"1px solid #a0a5b666",borderRadius:"5px"},
   ".sw-layout-title": {fontWeight:"600"},
   ".sw-layout-form": {display:"flex",flexWrap:"wrap",alignItems:"center",gap:"5px",width:"100%"},
   ".sw-layout-property,.sw-layout-actions": {display:"flex",flexWrap:"wrap",gap:"5px",alignItems:"center"},

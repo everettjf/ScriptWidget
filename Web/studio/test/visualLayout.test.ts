@@ -5,6 +5,7 @@ import { EditorState } from "@codemirror/state";
 import { exportPackage, importPackage, newManifest } from "../../preview-engine/src/package/index.js";
 import { executePackageInNode } from "../../preview-engine/src/node.js";
 import { parseVisualLayout, editVisualLayout } from "../../../Editor/editorfe/src/visualLayout.js";
+import { parseWidgetTheme, editWidgetTheme, widgetThemePresets } from "../../../Editor/editorfe/src/widgetTheme.js";
 
 test("visual edits survive Package 2.0 export/import with all unrelated source and binary files intact", async () => {
   const source = '// Keep comments\nconst day="Monday";\n$render(<vstack spacing="8"><text>Hello</text><text>{day}</text></vstack>);\n';
@@ -45,5 +46,25 @@ test("Layout Starter changes match the real native editor and JavaScriptCore ren
   for (const phase of ["before","after"]) {
     const result = await executePackageInNode({files:{"main.jsx":fixture.examples[phase].source,"widget.json":fs.readFileSync(new URL("widget.json",root),"utf8")},environments:{"widget-size":"medium"}});
     assert.equal(result.error,null); assert.equal(result.tree,fixture.examples[phase].tree,phase);
+  }
+});
+
+test("themes edited in real native WKWebView render identically on Web and survive package export", async () => {
+  const fixture = JSON.parse(fs.readFileSync(new URL("../../preview-engine/test/parity/theme-edit-trees.json",import.meta.url),"utf8"));
+  assert.equal(fixture.formatVersion,1);
+  assert.deepEqual(Object.keys(fixture.examples).sort(), Object.keys(widgetThemePresets).sort());
+  const original = fixture.examples.Meadow.source as string;
+  for (const [name, tokens] of Object.entries(widgetThemePresets)) {
+    const model = parseWidgetTheme(original);
+    assert.equal(model.issue, "");
+    const edit = editWidgetTheme(model, original, tokens);
+    const changed = EditorState.create({doc:original}).update(edit).state.doc.toString();
+    assert.equal(changed, fixture.examples[name].source, name);
+    const files = {"main.jsx":changed,"widget.json":JSON.stringify(newManifest("Theme parity")),"images/keep.bin":new Uint8Array([4,5,6])};
+    const archive = exportPackage(files); assert.equal(archive.error, undefined);
+    const imported = await importPackage(archive.bytes!); assert.equal(imported.error, undefined);
+    assert.equal(imported.files["main.jsx"], changed); assert.deepEqual(imported.files["images/keep.bin"], files["images/keep.bin"]);
+    const result = await executePackageInNode({files: imported.files, environments:{"widget-size":"medium"}});
+    assert.equal(result.error,null); assert.equal(result.tree,fixture.examples[name].tree,name);
   }
 });

@@ -818,3 +818,17 @@ Web Studio 新增 Connected services 面板、健康默认资料、字段/JSON �
 首轮完整 gate 在 Gallery 基础模板的可选版本读取上失败：Mac 655 通过、1 失败、32 跳过。修正默认版本处理后完整重跑退出 0：Mac **656 通过 / 0 失败 / 32 跳过**，iPhone 17 Simulator **666 通过 / 0 失败 / 31 跳过**，两个结果包 runtimeWarnings 均为空。Editor 44、预览引擎 158、Web Studio 86 项，以及 Gallery 同步 2 项、90 模板/21 curated Gallery、TypeScript 构建、两端 app build、原有 browser smoke、新 layout smoke、独立服务/存储/运行时探针均通过。SDK/link、并发和版本解析诊断仍保留。成功记录为 `__Release/capabilities/layout/release-readiness.log`、`macos-summary.json`、`ios-summary.json`；首轮失败、专项汇总和浏览器证据也保留在该目录。完整 gate 后只补文档/证据，不改产品代码。
 
 M5-1 首个支持子集据此勾选；M5-2 主题/资产、M5-3 效果与 M5-4 完整创作流程/分发验收仍继续。M4 OAuth/刷新/播放操作与 M3/M4/M5 的真实设备、账户和签名容器验收仍未完成。没有部署、上传构建或送审；App Review 由用户提交。截图和源码边界见 [Layout 编辑](visual-layout.md)。
+
+### 2026-10-22：M5-2 可复用主题增量
+
+在同一工作树和分支继续。iOS/macOS/Web 共用 Theme 面板和有界 source-range parser，识别一个顶层字面量 `const widgetTheme`，不执行脚本推断主题，不增加 runtime global、包字段或权限。十一种 token 包括五个颜色、标题/正文字体、字体设计、圆角、边距和间距。Meadow/Paper/Peach/Midnight 提供默认配色；每个值可以编辑，JSON version 1 可以复制到其他组件复用。操作经过既有保存/版本/预览路径，以独立 Undo 事务修改声明值；导出仍是普通源码和包资源。
+
+显式初始化只连接一个直接顶层 JSX render 中支持的字面量样式，保留动态属性与原有文本/逻辑。指令 prologue（包括 use strict）保留。Computed/spread/getter、重复/缺失/未知 token、mutable/aliased references、shadowing、escaped identifiers 和不支持结构保留 Code。输入限制 512 KiB；JSON 限制 4 KiB、闭合字段和 token 类型/范围。只读与过期源码在命令执行时再次拒绝。
+
+编辑器 48 项测试覆盖声明/源码保护、范围修改、JSON 值/版本/大小边界和 Undo/Redo。实际 Chrome 操作覆盖初始化、preset、逐项编辑、JSON 导入/拒绝、保存重开和 390px 手机无溢出；截图见 [Widget themes](widget-themes.md)。实际 WKWebView 测试使用当前 bundle 和固定测试保存桥接，执行连接、保存、Undo/Redo、只读；四套主题在实际 JSC 执行后生成的 source/tree fixture 与 Web 渲染逐一比较，并验证 Package 导入导出和原有二进制资源保持。
+
+首次原生 fixture 导出运行因普通 shell 环境变量未转发给测试 host 而没有生成 fixture，失败已确认；改用 TEST_RUNNER_ 环境转发后专项通过。首轮完整 gate 在截图检查发现 fontDesign 错连容器后主动中止（不算通过），修正为逐文字层连接并重导实际原生 fixture 后重新完整执行。此前的原生渲染树对照只证明 props 对齐，不能证明容器会实际应用字体；本次同时核对原生 modifier 使用位置与浏览器诊断，最终截图没有新增该属性被忽略的提示。
+
+最终完整 `./Scripts/release-readiness.sh` 退出 0：Mac **657 通过 / 0 失败 / 32 跳过**，iPhone 17 Simulator **667 通过 / 0 失败 / 31 跳过**，两个 xcresult 的 runtimeWarnings 均为空。Editor 48、预览引擎 158、Web Studio 87、Gallery 同步 2 项、90 个内置模板/21 个 curated 包、TypeScript/生产构建、两个 app scheme build、既有浏览器 smoke 和 Layout/Theme 操作脚本，以及独立运行时/存储/服务探针通过。SDK/link、并发和 Xcode 版本解析诊断保留，不称作无编译警告。证据目录 `__Release/capabilities/themes/` 包含完整日志、两端 summary 与 verification；主动中止日志单独保存。完整 gate 后仅更新文档/证据和 PR，不改产品源码。
+
+本增量没有完成照片资源选择、原创素材插入、效果与 M4 的剩余工作；M5-2 保持未勾选。没有 Web 部署、原生上传或送审，也没有新增物理设备/签名容器/扩展内存验收证据。

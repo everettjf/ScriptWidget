@@ -46,4 +46,4 @@ Actual native rendering before/after the same text and alignment changes:
 | --- | --- |
 | ![Original native widget](images/layout-widget-before.png) | ![Edited native widget](images/layout-widget-after.png) |
 
-This completes the first supported layout subset, not arbitrary JavaScript-to-canvas conversion. Theme tokens/assets, additional visual effects and the remaining M4 work are tracked separately in the [capabilities plan](widget-capabilities-plan.md).
+The shared **Theme** panel supports reusable color, font and spacing tokens saved in JavaScript. See [Widget themes](widget-themes.md) for connection, presets and JSON reuse. Photo/original asset insertion, additional visual effects and the remaining M4 work are tracked separately in the [capabilities plan](widget-capabilities-plan.md).

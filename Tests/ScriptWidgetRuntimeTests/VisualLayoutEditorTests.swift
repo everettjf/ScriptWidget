@@ -145,6 +145,44 @@ final class VisualLayoutEditorTests: XCTestCase {
             XCTAssertEqual(stored["examples"] as? [String:[String:String]],examples)
         }
     }
+    @MainActor func testNativeThemeEditsSaveUndoAndRenderEveryPreset() async throws {
+        let web = try await editor(); try await open(web, source: source)
+        let directory = try XCTUnwrap(Bundle.main.url(forResource: "template", withExtension: nil, subdirectory: "Script.bundle")).appendingPathComponent("Layout Starter")
+        let button = "[...document.querySelectorAll('.sw-layout button')].find(button=>button.textContent==="
+        _ = try await evaluate(web, button + "'Theme').click();" + button + "'Connect layout to Meadow theme').click();")
+        let connected = try await content(web)
+        XCTAssertTrue(connected.contains("const widgetTheme"))
+        XCTAssertTrue(connected.contains("{day}"))
+        try await wait(web, "window.__nativeCalls.some(call=>call.name==='document.save' && call.data.payload.content.includes('const widgetTheme'))")
+        _ = try await evaluate(web, button + "'Undo').click()")
+        let undone = try await content(web); XCTAssertEqual(undone, source)
+        _ = try await evaluate(web, button + "'Redo').click()")
+        let redone = try await content(web); XCTAssertEqual(redone, connected)
+        var examples: [String:[String:String]] = [:]
+        for preset in ["Meadow", "Paper", "Peach", "Midnight"] {
+            _ = try await evaluate(web, button + "'\(preset)').click()")
+            let code = try await content(web)
+            let engine = ScriptWidgetRuntime(package: ScriptWidgetPackage(path: directory, readonly: true), environments: ["widget-size":"medium"], isDarkMode: false)
+            let result = engine.executeJSXSyncForWidget(code)
+            XCTAssertNil(result.1, result.1?.displayMessage ?? "")
+            let root = try XCTUnwrap(result.0)
+            examples[preset] = ["source":code,"tree":ScriptWidgetElementTreeJSON.encode(root)]
+        }
+        let repository = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        let fixture = repository.appendingPathComponent("Web/preview-engine/test/parity/theme-edit-trees.json")
+        if ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_THEME_TREES"] == "1" {
+            try JSONSerialization.data(withJSONObject:["formatVersion":1,"examples":examples],options:[.prettyPrinted,.sortedKeys]).write(to:fixture)
+        } else {
+            let stored = try XCTUnwrap(JSONSerialization.jsonObject(with:Data(contentsOf:fixture)) as? [String:Any])
+            XCTAssertEqual(stored["examples"] as? [String:[String:String]],examples)
+        }
+        try await open(web, source: redone, id: "fixture/readonly.jsx", readOnly: true)
+        _ = try await evaluate(web, button + "'Theme').click()")
+        let disabled = try await evaluate(web, "document.querySelector('input[aria-label=\"Theme background\"]').disabled") as? Bool
+        XCTAssertEqual(disabled, true)
+        _ = try await evaluate(web, button + "'Midnight').click()")
+        let unchanged = try await content(web); XCTAssertEqual(unchanged, redone)
+    }
     @MainActor func testNativeLayoutScreenshot() async throws {
         guard let path = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_LAYOUT_EDITOR"] else { throw XCTSkip("Opt in to native bundled editor screenshot") }
         let web = try await editor(); try await open(web, source: source)
