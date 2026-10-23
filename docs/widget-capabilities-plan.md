@@ -1,6 +1,6 @@
 # Widget 当前版本收尾规划
 
-更新：2026-10-22。目标是把已经开发的能力稳定交付，完成 A（验收与发布）和 B（创作工具收尾）。本轮不再按 M1–M5 扩展功能。统一使用 `codex/release-m1-m2` / [PR #62](https://github.com/everettjf/scriptwidget/pull/62)，审核由用户自己提交。
+更新：2026-10-22。用户要求阶段性收尾：冻结已有实现，未完成验收和发布工作转入 TODO，本阶段不继续开发。A（验收与发布）和 B（创作工具收尾）尚未整体完成。本轮不再按 M1–M5 扩展功能。统一使用 `codex/release-m1-m2` / [PR #62](https://github.com/everettjf/scriptwidget/pull/62)，审核由用户自己提交。
 
 ## 发布范围冻结
 
@@ -15,6 +15,8 @@
 Spotify 已移除。C 音乐控制扩展和 D 远端/社交/Watch/系统监控已取消，不作为后续候选任务。复杂 JavaScript 继续通过 Code 编辑，不扩大可视化 JSX 支持范围。历史 M/F 编号仅用于追溯，见 [历史存档](widget-capabilities-plan-history.md)。
 
 ## 当前真实状态
+
+2026-10-22 阶段冻结：产品代码停在 `2c9b89d` 对应的当前实现；剩余 N01–N03、R01–R07 见 TODO，后续按需继续，不作为本阶段继续开发的任务。最新 [Linux/Windows 浏览器 CI](https://github.com/everettjf/scriptwidget/actions/runs/39885727555) 已通过；[Apple CI](https://github.com/everettjf/scriptwidget/actions/runs/39885727563) 在本次收尾核对时仍运行中。未部署、未归档上传、未提交审核。
 
 - 最新 `e311129` 浏览器 CI 均通过；Apple 在 XCTest 前文件探针退出 3。已补受控锁竞争复现、明确诊断、有界锁外重试、锁内损坏零重试和完整子进程清理；这批仅改测试工具/文档。更新后的完整本地 gate 通过（Mac 701、iPhone 707），新远端 CI 仍待验证；不会把这个旧失败改称已通过。
 
@@ -41,7 +43,7 @@ Spotify 已移除。C 音乐控制扩展和 D 远端/社交/Watch/系统监控�
 
 | 依赖 | 当前情况 | 处理方式 |
 | --- | --- | --- |
-| 兼容范围 | App/Share 最低 iOS 16，Widget 扩展最低 iOS 18；与主分支一致，但旧发布检查混写为 iOS 16 组件 | 用户尚未决定维持现状还是恢复旧系统组件；不擅自修改部署目标。恢复旧版需另评旧配置流程和设备验收成本 |
+| 兼容范围 | App/Share 最低 iOS 16，Widget 扩展最低 iOS 18；与主分支一致，但旧发布检查混写为 iOS 16 组件 | 用户已确认维持现状；仅修正文档，不修改部署目标，不恢复 iOS 16/17 组件 |
 | 真机和账号 | 真实 Health/Calendar/Reminders/Photos、GitHub、app/widget Keychain 与真实 iCloud 尚未验收 | 先完成可独立验证部分；需要用户操作时列出具体设备、授权或账号步骤 |
 | 商店登录 | 之前登录过期，用户要求先完成构建 | 构建和材料准备继续；上传需要时再登录，审核手动提交 |
 

@@ -1,6 +1,6 @@
 # ScriptWidget release readiness
 
-This document is the ship gate for iOS 16+ and macOS 26+. A release candidate is ready only when the automated command below passes and every applicable device row has evidence attached to the release issue.
+This document is the ship gate for the iOS App/Share on iOS 16+, the iOS Widget extension on iOS 18+, and the macOS App/Widget on macOS 26+. The user confirmed retaining these existing deployment targets on 2026-10-22. A release candidate is ready only when the automated command below passes and every applicable device row has evidence attached to the release issue.
 
 ```sh
 ./Scripts/release-readiness.sh
@@ -27,7 +27,8 @@ The 2026-10-22 A+B delivery scope (Spotify removed; C/D canceled) is recorded in
 
 | Platform | Required coverage | Checks |
 | --- | --- | --- |
-| iPhone, iOS 16 | oldest supported physical device | create/edit/save, Small/Medium/Large widget, offline relaunch |
+| iPhone, iOS 16 | oldest supported App OS | App create/edit/save and offline relaunch; Widget extension is unavailable below iOS 18 |
+| iPhone, iOS 18 | oldest supported Widget OS | Small/Medium/Large widget, declared actions, offline timeline fallback |
 | iPhone, current iOS | current physical device | all families, interactive controls, animation, background refresh |
 | iPad, current iPadOS | current physical device | split view, keyboard editing, Extra Large widget |
 | Apple silicon Mac, macOS 26 | oldest supported Mac | large-file editing, resize, widget gallery, sleep/wake |

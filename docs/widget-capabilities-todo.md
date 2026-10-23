@@ -9,15 +9,18 @@
 
 X01/X02 证据：最终完整 gate 退出 0，Mac 661 / iPhone Simulator 671 均 0 失败；服务 probe 24、Web Studio 96 及所有保留的浏览器流程通过。确切结果见 [实施记录](widget-capabilities-execution.md)。其余 A/B 项尚未据此勾选。
 
-## 当前执行顺序
+## 阶段性收尾（2026-10-22）
 
-1. **N03 / 保存与生命周期验收**：会话隔离、Copilot 定向和回执、iPhone 切换前保存、Web 删除失败保留草稿、关闭交接与落盘均已修复；又修复了新实例先创建、旧实例后销毁时的交接遗漏。最新 Mac/iPhone/iPad 全量分别 701/707/707 通过，7 项 IndexedDB 场景通过。工作区连续布局替换有真实视图/文件回归；App 场景工具栏、完整键盘/无障碍与三端流程仍待验收，N03 整体保持未完成。
-2. **R05 / 最终候选 CI**：`e311129` 的 Linux/Windows 浏览器均通过；Apple 在 XCTest 前的文件存储探针退出 3，原输出无细分原因。受控持锁已复现同类拒绝；探针现区分锁内/锁外失败，增加有界重试、损坏零重试检查及等待所有进程后清理。新完整本地 gate 通过（Mac 701、iPhone 707）；需要新提交远端 CI 继续验证编辑器交接，不能沿用旧 head 或本地结果冒充远端通过。
-3. **N01–N03 / 三端流程**：完成已有创作工具的保存重开、包往返、资源、动态表达式与只读边界验收。
-4. **R01–R04 / 文档和真机**：收口系统兼容范围，完成授权、共享存储、组件表现及性能验收。
-5. **R05–R07 / 发布**：最终代码全量回归，整理材料，部署 Web、归档上传原生；审核由用户提交。
+用户要求停止继续展开开发，已有改动提交到同一分支，未完成项保留在本文件。下列清单是后续任务，不表示本次已验收或必须继续实施。
 
-已完成的旧控件隔离与水族箱排版保留在实施记录，不重复开发。三阶段出口见 [规划](widget-capabilities-plan.md)。
+- **已实现**：真实记录与模板、个人数据 API、GitHub 和 iOS Music 只读、三端创作工具、公开动画/GIF、Web 可编辑 mock；Spotify 已移除，C/D 已取消。
+- **已修复**：编辑器会话/窗口隔离、保存回执、关闭和切文件丢输入、布局替换交接、Web 删除失败丢草稿、预览窄面板及测试探针竞争诊断。
+- **本地验证**：最新完整 gate Mac 701/0/32、iPhone 模拟器 707/0/31；此前独立 iPad 707/0/31、构建矩阵和签名 Debug 校验通过。跳过项与真机限制不计为通过。
+- **远端验证**：`2c9b89d` 的 [Linux/Windows 浏览器 CI](https://github.com/everettjf/scriptwidget/actions/runs/39885727555) 通过；[Apple CI](https://github.com/everettjf/scriptwidget/actions/runs/39885727563) 收尾核对时仍运行中，后续核对终态；如失败另列缺陷。
+- **兼容范围已确认**：App/Share iOS 16+，Widget iOS 18+，Mac 26+；修正文档，不恢复旧版 Widget。
+- **交付边界**：已准备 27.1.3 (27013) 签名 Debug，未安装；未完成分发归档、Web 部署、商店上传或审核提交。App Review 由用户提交。
+
+后续优先核对 CI，再处理下列验收和发布任务；不再追加功能。完整历史与确切证据见 [实施记录](widget-capabilities-execution.md)。
 
 ## B：创作能力完善
 
@@ -33,7 +36,7 @@ N03 当前检查点：本批已确认缺陷均有实际桥接/文件或 IndexedD
 
 | ID | 待办 | 完成标准 |
 | --- | --- | --- |
-| R01 | [ ] 支持矩阵和说明 | iOS/macOS/Web、系统版本、权限和支持子集准确；无 Spotify 入口/功能承诺；Music iOS 只读 |
+| R01 | [ ] 支持矩阵和说明 | 兼容范围已确认并修正文档；继续核对 iOS/macOS/Web 权限和支持子集说明；无 Spotify 功能承诺；Music iOS 只读 |
 | R02 | [ ] 真实个人数据 | Calendar/Reminders/Health 授权与撤权、有限 Photos、空数据/离线及提醒事项动作有证据 |
 | R03 | [ ] 账户和存储边界 | GitHub 连接/逐组件授权；签名 app/widget Keychain、app-group/iCloud、锁定、断开重连、owner 隔离 |
 | R04 | [ ] 系统组件和视觉性能 | 实际时间线/点击/锁屏、适用 Control/Live Activity、Clear/Tinted/Always On、扩展内存；动画替代方案与实际回退验收 |

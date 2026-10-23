@@ -1,6 +1,6 @@
 # Widget 能力阶段交付清单
 
-更新：2026-10-22。用户最新要求移除 Spotify、取消 C/D，实际完成 [A+B](widget-capabilities-plan.md) 并充分测试。当前开发进行中；此表保留其他已有成果，移除后的验证另记，不沿用旧测试计数。代码仍统一在 `codex/release-m1-m2` / PR #62。
+更新：2026-10-22。用户最新要求移除 Spotify、取消 C/D，实际完成 [A+B](widget-capabilities-plan.md) 并充分测试。当前阶段冻结，剩余工作转入 TODO；此表保留其他已有成果，移除后的验证另记，不沿用旧测试计数。代码仍统一在 `codex/release-m1-m2` / PR #62。
 
 ## 已实现并纳入本轮
 
@@ -15,7 +15,7 @@
 
 ## 当前实现的支持矩阵（R01 核对）
 
-此表描述候选源码，不代表已上传版本或真机验收。项目实际最低部署目标是 iOS App/Share **16.0**、iOS Widget 扩展 **18.0**，macOS App/Widget **26.0**。`release-readiness.md` 的旧 iOS 16 Widget 行与现有主分支配置矛盾；已单独向用户确认本次是否恢复旧系统组件，在决定前不更改部署目标、不把该行判为通过。Live Activity 的 App 代码虽从 16.2 可调用，完整系统展示仍受扩展部署目标约束。
+此表描述候选源码，不代表已上传版本或真机验收。项目实际最低部署目标是 iOS App/Share **16.0**、iOS Widget 扩展 **18.0**，macOS App/Widget **26.0**。用户已确认维持当前兼容范围，发布检查已分开 App 与 Widget 的系统要求；不恢复 iOS 16/17 Widget，不更改部署目标。Live Activity 的 App 代码虽从 16.2 可调用，完整系统展示仍受扩展部署目标约束。
 
 | 能力 | iOS / iPadOS 原生 | macOS 原生 | Web Studio | 权限与边界 |
 | --- | --- | --- | --- | --- |
@@ -33,13 +33,15 @@
 | 时钟 / 摆动 / GIF | 公共调度与固定/减少动态效果回退 | 静态回退，标准钟针保留正确时相 | 公共预览与固定截图 | 无永久系统播放承诺；GIF 有解码预算；[公开动画](public-animations.md) |
 | 组件 / Control / Live Activity | 系统集成已实现；当前 Widget 扩展部署目标 18.0 | Mac Widget；无 iOS 系统入口承诺 | 预览与模拟，不能验证系统行为 | 普通组件动作和 Control 使用声明的动作；Activity 仅本地管理，非远端/交互 Island 控制；[系统边界](widgetkit-modern-features.md) |
 
-数据 API 的精确方法、最低 Runtime API、同步/Promise 和授权类型见自动生成的 [能力目录](data-api-catalog.md)。Package/compiler ABI 1.0 与 public Runtime API 1.4 不等于操作系统版本。安装包需要的权限、host 和版本均须声明；mock 不授予真实权限，也不随组件包导出为私人系统数据。iOS 最低版本决定尚未收口，因此 R01 保留未完成。
+数据 API 的精确方法、最低 Runtime API、同步/Promise 和授权类型见自动生成的 [能力目录](data-api-catalog.md)。Package/compiler ABI 1.0 与 public Runtime API 1.4 不等于操作系统版本。安装包需要的权限、host 和版本均须声明；mock 不授予真实权限，也不随组件包导出为私人系统数据。系统版本范围已由用户确认；R01 的其余支持说明核对转入 TODO，不据此宣称完整验收。
 
 ## 本轮移除
 
 Spotify 条件接入、授权/刷新、播放读取及内部写操作记录已移除；不是保留未配置提示，也不再列为后续 TODO。GitHub 与 iOS Music 只读能力保留。历史记录不代表当前支持状态。
 
 ## 验证与交付状态
+
+阶段收尾核对：`2c9b89d` 的 [Linux/Windows 浏览器 CI](https://github.com/everettjf/scriptwidget/actions/runs/39885727555) 已通过；[Apple CI](https://github.com/everettjf/scriptwidget/actions/runs/39885727563) 尚在运行，不计为通过。下文保留各批次实际验证历史。
 
 最新测试工具收尾：`e311129` 浏览器 CI 两端通过，但 Apple 在存储文件探针退出 3，未进入 XCTest。新探针已用实际持锁复现同类拒绝；仅对未进入锁内的尝试做有界重试，数据/文件损坏均零重试，等待所有进程完成后清理。更新后的完整本地 gate 通过：Mac 701/0/32、iPhone 模拟器 707/0/31，9 项文件探针检查通过。产品代码、200 ms 运行时锁上限和签名输入未变；此前 iPad 707 与构建矩阵保持为独立证据，新提交远端 CI 仍待验证。具体原因不能由原先无诊断的退出码唯一确定。
 
@@ -55,6 +57,6 @@ Editor 52, engine 172, Studio 96, Gallery sync 2, 91 templates/22 curated packag
 
 [Readiness at 99d6f7a](https://github.com/everettjf/scriptwidget/actions/runs/39869682111) failed at negative-clock movement 0 before standalone XCTest probes. Frame/readiness synchronization now passes a controlled delayed-start negative control, while intentionally forward playback still fails. This does not establish the sole cause of the old failure. The complete Apple Readiness step at [56eec76](https://github.com/everettjf/scriptwidget/actions/runs/39874795541) has now passed, including standalone XCTest probes; its iPad step was still running when checked. [Linux/Windows browsers at that head](https://github.com/everettjf/scriptwidget/actions/runs/39874795518) both passed. The later closing fixes still require final-head CI. [Linux/Windows browser CI at a04e3f0](https://github.com/everettjf/scriptwidget/actions/runs/39863618548) passed. Local Firefox startup failure is not a local pass.
 
-The refreshed signed Debug build is **27.1.3 (27013)**, uninstalled and not an App Store archive. App/Share minimum iOS 16, Widget 18, Mac 26. No deployment targets changed; the user's compatibility decision remains pending. Signing metadata does not prove real app/widget Keychain or iCloud access.
+The refreshed signed Debug build is **27.1.3 (27013)**, uninstalled and not an App Store archive. App/Share minimum iOS 16, Widget 18, Mac 26. The user confirmed retaining these deployment targets; documentation now distinguishes App and Widget requirements. Signing metadata does not prove real app/widget Keychain or iCloud access.
 
-A/B remains in progress. Remaining authoring checks include actual window-layout transitions, full keyboard/accessibility and end-to-end workflows; the component-level closing/pending-edit cases above are verified. Real permission/revocation, signed shared containers, WidgetKit/Always On/memory, release materials, Web deployment and native archive/upload remain. No deployment/upload/review submission has occurred. App Review stays manual. See [TODO](widget-capabilities-todo.md) and [plan](widget-capabilities-plan.md).
+This development stage is frozen at the user’s request; A/B acceptance remains incomplete and is tracked in TODO. Remaining authoring checks include actual window-layout transitions, full keyboard/accessibility and end-to-end workflows; the component-level closing/pending-edit cases above are verified. Real permission/revocation, signed shared containers, WidgetKit/Always On/memory, release materials, Web deployment and native archive/upload remain. No deployment/upload/review submission has occurred. App Review stays manual. See [TODO](widget-capabilities-todo.md) and [plan](widget-capabilities-plan.md).
