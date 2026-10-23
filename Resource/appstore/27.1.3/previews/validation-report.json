@@ -1,0 +1,75 @@
+{
+  "sourceAppVersion": "27.1.3 (27013)",
+  "durationRange": [
+    15,
+    30
+  ],
+  "configuredVideoTargetBitRate": 11000000,
+  "files": [
+    {
+      "file": "ios-preview-en.mp4",
+      "bytes": 972823,
+      "sha256": "7ee118ef9235e09f244905cbb1b4eb8dd80360a3f4ef7cee88b2fa5acf81b93e",
+      "durationSeconds": 24.0,
+      "videoDurationSeconds": 24.0,
+      "video": {
+        "codec": "h264",
+        "profile": "High",
+        "avcLevel": 4.0,
+        "width": 886,
+        "height": 1920,
+        "fps": "30/1",
+        "pixelFormat": "yuv420p",
+        "averageBitRate": 312700,
+        "interlaced": false
+      },
+      "audio": {
+        "codec": "aac",
+        "sampleRate": 48000,
+        "channels": 2
+      },
+      "decodedVideoFrames": 720,
+      "technicalPass": true
+    },
+    {
+      "file": "macos-preview-en.mp4",
+      "bytes": 1054823,
+      "sha256": "d1280e0012f074578d913aca4563bbdcf96e014ba4cb23e6ce8bace65aeadb2e",
+      "durationSeconds": 24.0,
+      "videoDurationSeconds": 23.966666666666665,
+      "video": {
+        "codec": "h264",
+        "profile": "High",
+        "avcLevel": 4.0,
+        "width": 1920,
+        "height": 1080,
+        "fps": "30/1",
+        "pixelFormat": "yuv420p",
+        "averageBitRate": 340514,
+        "interlaced": false
+      },
+      "audio": {
+        "codec": "aac",
+        "sampleRate": 48000,
+        "channels": 2
+      },
+      "decodedVideoFrames": 719,
+      "technicalPass": true
+    }
+  ],
+  "visualInspection": {
+    "result": "sampled frames inspected",
+    "seconds": [
+      3,
+      20
+    ],
+    "checks": [
+      "real native app footage",
+      "only bundled sample data and our Activity Rings fixture",
+      "readable captions and correct aspect ratios",
+      "no system Calendar/Weather widget substitutes",
+      "no personal credentials or Health/event/photo records"
+    ],
+    "limitation": "App Store processing and acceptance not yet performed"
+  }
+}
