@@ -31,6 +31,9 @@ jobs:
           node-version: 24
           cache: npm
           cache-dependency-path: Web/studio/package-lock.json
+      - name: Install shared editor dependencies
+        working-directory: Editor/editorfe
+        run: npm ci
       - name: Build Web Studio
         working-directory: Web/studio
         run: npm ci && npm test && npm run build
