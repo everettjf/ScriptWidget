@@ -41,3 +41,7 @@ The attempt count must match the saved baseline. Missing input files fail explic
 Generated widgets are untrusted scripts and continue to run under the existing runtime limits. The suite uses fixed data to avoid confounding model quality with external service availability. It does not certify real WidgetKit lock-screen rendering, HealthKit/location access, PCC entitlements, live data accuracy or all possible prompts.
 
 If the run fails, inspect the saved report before retrying. The shell command preserves the XCTest failure exit status even when producing a review page. Do not loosen runtime limits or remove failing expectations to improve a reported pass rate.
+
+## Local model research
+
+The [local widget model and fine-tuning proposal](local-widget-model-plan.md) defines candidate Hugging Face models, offline deployment paths, dataset separation and proposed release gates. It is a research plan; no local-model quality or performance results have been measured yet.
