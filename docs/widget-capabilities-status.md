@@ -41,6 +41,8 @@ Spotify 条件接入、授权/刷新、播放读取及内部写操作记录已�
 
 ## 验证与交付状态
 
+最新测试工具收尾：`e311129` 浏览器 CI 两端通过，但 Apple 在存储文件探针退出 3，未进入 XCTest。新探针已用实际持锁复现同类拒绝；仅对未进入锁内的尝试做有界重试，数据/文件损坏均零重试，等待所有进程完成后清理。更新后的完整本地 gate 通过：Mac 701/0/32、iPhone 模拟器 707/0/31，9 项文件探针检查通过。产品代码、200 ms 运行时锁上限和签名输入未变；此前 iPad 707 与构建矩阵保持为独立证据，新提交远端 CI 仍待验证。具体原因不能由原先无诊断的退出码唯一确定。
+
 最新完整 gate 通过：Mac **701 / 0 失败 / 32 跳过**，iPhone 模拟器 **707 / 0 / 31**，iPad 确定性全量 **707 / 0 / 31**，引擎 **174**。构建矩阵和刷新后的签名 Debug 构建/校验通过。工作区连续布局替换、规范路径文件树、观察者释放及新实例先于旧实例销毁的交接已覆盖。预览菜单现可容纳 300 点面板，实际 CUA 窗口显示正常；宿主负宽度警告仍保留。Web 面板键盘导航/编辑区焦点已实测。`4f5cde0` 的 Linux/Windows 浏览器已通过；其 Apple CI 的布局替换失败已有本地复现、修复与回归，须新提交 CI 验证。下方 696/706/706 是历史记录，不能替代本轮结果。完整 App 场景和真机验收仍未完成，具体证据见实施记录末节。
 
 Final local verification: complete `release-readiness.sh` exited 0; the supplementary final Mac full run includes the latest closing-write tests and passed **696 / 0 failed / 32 skipped**. iPhone Simulator and final iPad deterministic full coverage each passed **706 / 0 / 31**. All corresponding runtimeWarnings arrays are empty. SDK/link/Sendable/Xcode diagnostics remain. Final device build matrix and refreshed signed Debug iOS build/deep-strict signature verification passed. These replace the earlier intermediate 694/704 native results; separate runs are not combined into one count. Final Web behavior still includes seven real IndexedDB cases.

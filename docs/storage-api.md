@@ -43,6 +43,8 @@ Mock Data → Storage sets initial values for each preview run. Reads, writes an
 
 Unit and runtime tests cover stale comparisons, type conflicts, UTF-8 budgets, canonical JSON equality, namespace isolation, hostile lock paths, bounded lock contention and heatmap retries. Unsigned bridge tests inject an isolated directory and preference domain; they do not establish real signed App Group acceptance. Device/extension acceptance remains a separate release gate.
 
+The native file probe deliberately holds an owner lock until an actual rejection is observed. It confirms the bounded denial, then requires four independent workers to commit exactly 400 increments with matching mirror values. Only attempts that never entered the lock may retry, within a probe-only deadline; locked transaction failures are fatal. Both a mismatched pair and a malformed record file must fail immediately without retries or changes. Crash-before/after and all 32 capacity values remain checked. The driver waits for every child before deleting its disposable root. These checks do not change the runtime's 200 ms lock limit or establish signed app/widget access.
+
 ## Interactive record templates
 
 **Hydration Goal**, **Mood Check-in**, **Packing Checklist**, and **Habit Streak Tracker** now save real local records through package storage (Runtime 1.3). A normal render never creates a record. On iOS 17+/macOS 14+, use their Home Screen buttons; accessory widgets show a summary. Older systems can display records but cannot execute these widget buttons.
