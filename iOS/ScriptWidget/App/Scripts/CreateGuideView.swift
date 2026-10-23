@@ -164,7 +164,7 @@ struct CreateGuideView: View {
             title: "Generate with AI",
             detail: "Describe an idea",
             systemImage: "sparkles",
-            color: .purple
+            color: StudioDesign.coral
         ) {
             if AISettingsStore.shared.load().isConfigured {
                 showingAIGenerate = true
@@ -177,7 +177,7 @@ struct CreateGuideView: View {
             title: "Blank Widget",
             detail: "Start from code",
             systemImage: "doc.badge.plus",
-            color: .blue,
+            color: StudioDesign.blue,
             action: createBlankWidget
         )
 
@@ -185,7 +185,7 @@ struct CreateGuideView: View {
             title: "Gallery",
             detail: "Browse community picks",
             systemImage: "square.grid.2x2",
-            color: .indigo
+            color: StudioDesign.gold
         ) {
             showingGallery = true
         }

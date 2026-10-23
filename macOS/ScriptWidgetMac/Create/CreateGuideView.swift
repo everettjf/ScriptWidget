@@ -187,9 +187,9 @@ struct CreateGuideView: View {
             HStack(spacing: 12) {
                 Image(systemName: "square.grid.2x2")
                     .font(.title2)
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(Color.accentColor)
                     .frame(width: 44, height: 44)
-                    .background(Color.indigo.opacity(0.12), in: .rect(cornerRadius: StudioDesign.controlCornerRadius))
+                    .background(Color.accentColor.opacity(0.12), in: .rect(cornerRadius: StudioDesign.controlCornerRadius))
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Gallery").font(.headline)
                     Text("Install verified community widgets.")

@@ -85,7 +85,7 @@ struct FileDetailView: View {
                     } label: {
                         Label("Edit", systemImage: "pencil.circle")
                     }
-                    .tint(Color(uiColor: .systemIndigo))
+                    .tint(StudioDesign.accent)
                 }
             }
         )

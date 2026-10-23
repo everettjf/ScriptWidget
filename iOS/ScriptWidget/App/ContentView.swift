@@ -15,6 +15,12 @@ enum StudioDesign {
     static let cardCornerRadius: CGFloat = 14
     static let prominentCornerRadius: CGFloat = 18
 
+    // Teal, coral, gold and blue echo the app icon on neutral system surfaces.
+    static let accent = Color.accentColor
+    static let coral = Color("BrandCoral")
+    static let gold = Color("BrandGold")
+    static let blue = Color("BrandBlue")
+
     static let groupedBackground = Color(uiColor: .systemGroupedBackground)
     static let cardBackground = Color(uiColor: .secondarySystemGroupedBackground)
     static let separator = Color(uiColor: .separator).opacity(0.32)
@@ -67,7 +73,7 @@ struct ContentView: View {
                     Label("Library", systemImage: "books.vertical.fill")
                 }
         }
-        .tint(.indigo)
+        .tint(StudioDesign.accent)
     }
 }
 
@@ -80,7 +86,7 @@ private struct StudioLibraryView: View {
                         title: "Components",
                         detail: "Reusable JSX building blocks",
                         systemImage: "cube.fill",
-                        tint: .indigo,
+                        tint: StudioDesign.accent,
                         destination: BundleScriptListView(
                             navigationTitle: "Components",
                             inlineTitle: false,
@@ -94,7 +100,7 @@ private struct StudioLibraryView: View {
                         title: "APIs",
                         detail: "Runtime globals and native capabilities",
                         systemImage: "curlybraces.square.fill",
-                        tint: .blue,
+                        tint: StudioDesign.blue,
                         destination: BundleScriptListView(
                             navigationTitle: "APIs",
                             inlineTitle: false,
@@ -108,7 +114,7 @@ private struct StudioLibraryView: View {
                         title: "Templates",
                         detail: "Explore complete, working widget examples",
                         systemImage: "rectangle.stack.fill",
-                        tint: .purple,
+                        tint: StudioDesign.coral,
                         destination: SettingTemplatesView()
                     )
                 } header: {

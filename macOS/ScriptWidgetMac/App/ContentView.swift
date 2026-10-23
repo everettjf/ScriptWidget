@@ -47,7 +47,7 @@ struct ContentView: View {
                 }
         }
         .navigationSplitViewStyle(.balanced)
-        .tint(.indigo)
+        .tint(.accentColor)
         .onReceive(NotificationCenter.default.publisher(for: SkillManagerOpenRequest.notification)) { _ in
             showingSkills = true
         }

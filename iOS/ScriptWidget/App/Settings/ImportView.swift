@@ -29,7 +29,7 @@ struct ImportView: View {
                 .disabled(isImporting || importSucceeded)
 
                 ProgressView(value: progress)
-                    .tint(.indigo)
+                    .tint(StudioDesign.accent)
 
                 Text(statusMessage)
                     .font(.caption)

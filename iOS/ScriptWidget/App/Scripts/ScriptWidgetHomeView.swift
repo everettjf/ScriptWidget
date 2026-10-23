@@ -248,7 +248,7 @@ struct ScriptWidgetHomeView: View {
                             } label: {
                                 Label("Edit", systemImage: "pencil.circle")
                             }
-                            .tint(Color(uiColor: .systemIndigo))
+                            .tint(StudioDesign.gold)
 
                             Button {
                                 let result = sharedScriptManager.duplicateScript(sourcePackageName: item.name)
@@ -258,7 +258,7 @@ struct ScriptWidgetHomeView: View {
                             } label: {
                                 Label("Remix", systemImage: "square.on.square")
                             }
-                            .tint(.purple)
+                            .tint(StudioDesign.coral)
 
                             Button(role: .destructive) {
                                 self.selectedDeleteItem = item

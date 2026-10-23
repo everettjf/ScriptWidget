@@ -357,6 +357,8 @@ final class VisualLayoutEditorTests: XCTestCase {
             let marker = "Pending edit across workspace layout \(index)"
             let manual = "$render(<text>\(marker)</text>);"
             _ = try await evaluate(current, "document.querySelector('.cm-content').focus();document.execCommand('selectAll');document.execCommand('insertText',false,\(try json(manual)));void 0;")
+            // Confirm real input was accepted before testing the layout handoff.
+            try await wait(current, "document.querySelector('.cm-content')?.textContent.includes(\(try json(marker)))===true")
             layout.vertical.toggle()
             let switchDeadline = Date().addingTimeInterval(15)
             while (editor() == nil || editor() === current) && Date() < switchDeadline {
