@@ -275,6 +275,92 @@ final class VisualLayoutEditorTests: XCTestCase {
         }
         return try XCTUnwrap(snapshot)
     }
+    #if os(macOS)
+    @MainActor func testWorkspaceFileListIncludesFilesUnderACanonicalRoot() throws {
+        let (root, model, _) = try nativeModels()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let folder = model.package.path.appendingPathComponent("Sources")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        try "export const title='Nested';".write(to: folder.appendingPathComponent("helper.js"), atomically: true, encoding: .utf8)
+        let data = FileListDataObject(scriptModel: model)
+        XCTAssertEqual(Set(data.nodes.map(\.relativePath)), ["main.jsx", "Sources"])
+        XCTAssertEqual(data.nodes.first { $0.name == "Sources" }?.children?.map(\.relativePath), ["Sources/helper.js"])
+    }
+    @MainActor func testWorkspaceFileListRejectsLinksAndReleasesItsObserver() throws {
+        let (root, model, other) = try nativeModels()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createSymbolicLink(at: model.package.path.appendingPathComponent("Loop"), withDestinationURL: model.package.path)
+        try FileManager.default.createSymbolicLink(at: model.package.path.appendingPathComponent("Outside"), withDestinationURL: other.package.path)
+        try FileManager.default.createSymbolicLink(at: model.package.path.appendingPathComponent("linked.jsx"), withDestinationURL: other.package.path.appendingPathComponent("main.jsx"))
+        var data: FileListDataObject? = FileListDataObject(scriptModel: model)
+        XCTAssertEqual(data?.nodes.map(\.relativePath), ["main.jsx"])
+        weak var released = data
+        data = nil
+        XCTAssertNil(released, "Closing/replacing the workspace must release its file-list observer")
+    }
+    @MainActor private final class WorkspaceLayoutState: ObservableObject {
+        @Published var vertical = true
+    }
+    private struct WorkspaceLayoutFixture: View {
+        let model: ScriptModel
+        let editorID = UUID()
+        @ObservedObject var layout: WorkspaceLayoutState
+        @State private var selectedPath = "main.jsx"
+        @State private var configuration = StudioWidgetConfiguration()
+        var body: some View {
+            EditorWorkspaceContent(scriptModel: model, selectedFilePath: $selectedPath,
+                                   widgetConfiguration: configuration, editorID: editorID,
+                                   panelLayoutModeVertical: layout.vertical)
+        }
+    }
+    @MainActor func testWorkspaceLayoutSwitchPreservesPendingEdits() async throws {
+        let (root, model, _) = try nativeModels()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let layout = WorkspaceLayoutState()
+        let host = NSHostingController(rootView: WorkspaceLayoutFixture(model: model, layout: layout))
+        let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 1280, height: 850),
+                              styleMask: [.titled, .resizable], backing: .buffered, defer: false)
+        host.view.frame = window.contentView!.bounds
+        window.contentViewController = host
+        window.makeKeyAndOrderFront(nil)
+        defer { window.orderOut(nil); window.contentViewController = nil }
+        func descendants(_ view: NSView) -> [NSView] {
+            [view] + view.subviews.flatMap { descendants($0) }
+        }
+        func editor() -> EditorInternalWebView? {
+            window.contentView.flatMap { descendants($0).compactMap { $0 as? EditorInternalWebView }.first }
+        }
+        let deadline = Date().addingTimeInterval(15)
+        while editor() == nil && Date() < deadline { try await Task.sleep(nanoseconds: 50_000_000) }
+        let original = try XCTUnwrap(editor())
+        try await wait(original, "document.querySelector('.cm-content')?.textContent.includes('Calm morning')===true")
+        var current = original
+        for index in 0..<4 {
+            let marker = "Pending edit across workspace layout \(index)"
+            let manual = "$render(<text>\(marker)</text>);"
+            _ = try await evaluate(current, "document.querySelector('.cm-content').focus();document.execCommand('selectAll');document.execCommand('insertText',false,\(try json(manual)));void 0;")
+            layout.vertical.toggle()
+            let switchDeadline = Date().addingTimeInterval(15)
+            while (editor() == nil || editor() === current) && Date() < switchDeadline {
+                try await Task.sleep(nanoseconds: 50_000_000)
+            }
+            let replacement = try XCTUnwrap(editor())
+            XCTAssertFalse(replacement === current, "Exercise the actual SwiftUI split-layout replacement")
+            try await wait(replacement, "document.querySelector('.cm-content')?.textContent.includes(\(try json(marker)))===true")
+            try await waitForFile(model.package.path.appendingPathComponent("main.jsx"), manual)
+            if index < 2, let output = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_WORKSPACE_LAYOUT"] {
+                let view = try XCTUnwrap(window.contentView)
+                view.layoutSubtreeIfNeeded()
+                let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+                view.cacheDisplay(in: view.bounds, to: bitmap)
+                let image = try XCTUnwrap(bitmap.representation(using: .png, properties: [:]))
+                try FileManager.default.createDirectory(atPath: output, withIntermediateDirectories: true)
+                try image.write(to: URL(fileURLWithPath: output).appendingPathComponent("workspace-\(layout.vertical ? "beside" : "below").png"))
+            }
+            current = replacement
+        }
+    }
+    #endif
     @MainActor private func applyNative(_ code: String, snapshot: StudioDocumentSnapshot) async -> StudioDocumentApplyResult {
         await withCheckedContinuation { continuation in
             NativeService.replaceDocument(with: code, snapshot: snapshot) { continuation.resume(returning: $0) }

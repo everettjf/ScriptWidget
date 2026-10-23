@@ -49,6 +49,24 @@ struct EditorMainView: View {
     }
     
     var content: some View {
+        EditorWorkspaceContent(scriptModel: scriptModel, selectedFilePath: $selectedFilePath,
+                               widgetConfiguration: widgetConfiguration, editorID: editorID,
+                               panelLayoutModeVertical: panelLayoutModeVertical)
+    }
+}
+
+struct EditorWorkspaceContent: View {
+    let scriptModel: ScriptModel
+    @Binding var selectedFilePath: String
+    let widgetConfiguration: StudioWidgetConfiguration
+    let editorID: UUID
+    let panelLayoutModeVertical: Bool
+
+    private var documentID: String? {
+        scriptModel.package.resolvedPackageURL(relativePath: selectedFilePath)?.standardizedFileURL.path
+    }
+
+    var body: some View {
         VStack(spacing: 0) {
             EditorWorkspaceHeader(scriptModel: scriptModel)
             Divider()
@@ -125,7 +143,7 @@ private struct EditorWorkspaceHeader: View {
             }
             .font(.caption)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Saved automatically. Command R runs the preview.")
+            .accessibilityLabel("Studio. Command R runs the preview.")
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 9)

@@ -45,16 +45,26 @@ function killTree(chrome, signal = "SIGKILL") {
   chrome.kill(signal);
 }
 
-function startChrome(chromePath, args, timeoutMilliseconds) {
+export function startChrome(chromePath, args, timeoutMilliseconds) {
   const profile = fs.mkdtempSync(path.join(os.tmpdir(), "sw-chrome-"));
   const chrome = spawn(chromePath, [...args, `--user-data-dir=${profile}`, "about:blank"], { stdio: ["ignore", "ignore", "pipe"], detached: process.platform !== "win32" });
   return new Promise((resolve, reject) => {
     let buffer = "";
     let settled = false;
+    let timer;
+    let endpointPoll;
+    const ready = (wsURL) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      clearInterval(endpointPoll);
+      resolve({ chrome, profile, wsURL });
+    };
     const fail = (message) => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
+      clearInterval(endpointPoll);
       killTree(chrome);
       chrome.stderr.destroy();
       fs.rmSync(profile, { recursive: true, force: true });
@@ -62,11 +72,24 @@ function startChrome(chromePath, args, timeoutMilliseconds) {
     };
     // Never wait forever: a Chrome that cannot start its sandbox may neither
     // exit nor print the DevTools endpoint.
-    const timer = setTimeout(() => fail(`Chrome did not start within ${timeoutMilliseconds} ms`), timeoutMilliseconds);
+    timer = setTimeout(() => fail(`Chrome did not start within ${timeoutMilliseconds} ms`), timeoutMilliseconds);
+    // GUI Chrome builds can omit stderr even though DevTools is ready. With
+    // port=0 Chrome also publishes the endpoint inside this unique profile.
+    // Do not extend the deadline or start another browser on an observation timeout.
+    endpointPoll = setInterval(() => {
+      try {
+        const text = fs.readFileSync(path.join(profile, "DevToolsActivePort"), "utf8");
+        if (text.length > 1024) return;
+        const [port, endpoint] = text.trim().split(/\r?\n/);
+        if (/^[1-9]\d{0,4}$/.test(port) && Number(port) <= 65535 && /^\/devtools\/browser\/[A-Za-z0-9_-]+$/.test(endpoint)) {
+          ready(`ws://127.0.0.1:${port}${endpoint}`);
+        }
+      } catch { /* The browser has not published a complete endpoint yet. */ }
+    }, 50);
     chrome.stderr.on("data", (chunk) => {
       buffer = (buffer + chunk).slice(-8000);
       const match = /DevTools listening on (ws:\S+)/.exec(buffer);
-      if (match && !settled) { settled = true; clearTimeout(timer); resolve({ chrome, profile, wsURL: match[1] }); }
+      if (match) ready(match[1]);
     });
     chrome.on("exit", (code) => fail(`Chrome exited (${code}) before DevTools was ready`));
     chrome.on("error", (error) => fail(`Chrome could not be launched: ${error.message}`));
