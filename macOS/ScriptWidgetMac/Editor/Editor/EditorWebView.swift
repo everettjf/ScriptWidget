@@ -101,6 +101,9 @@ final class EditorInternalWebView: WKWebView {
                 self.replaceDocument(request)
             }
             .store(in: &cancellables)
+        StudioEditorHostRegistry.register(editorID: editorID, host: self) { [weak self] in
+            self?.invalidate()
+        }
     }
 
     func invalidate() {

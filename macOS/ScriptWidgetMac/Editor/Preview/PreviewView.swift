@@ -339,32 +339,35 @@ struct PreviewView: View {
                         Text(mode.title).tag(mode)
                     }
                 }
-                .pickerStyle(.segmented)
-
-                if configuration.canvasMode == .single {
-                    Picker("Family", selection: $configuration.family) {
-                        ForEach(StudioPreviewFamily.allCases) { family in
-                            Text(family.title).tag(family)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .onChange(of: configuration.family) { _, value in
-                        data.changeWidgetSizeType(value.rawValue)
-                    }
-                }
+                .pickerStyle(.menu)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 Toggle("Debug", isOn: $configuration.debugMode)
                     .toggleStyle(.switch)
                     .controlSize(.small)
             }
 
+            if configuration.canvasMode == .single {
+                Picker("Family", selection: $configuration.family) {
+                    ForEach(StudioPreviewFamily.allCases) { family in
+                        Text(family.title).tag(family)
+                    }
+                }
+                .pickerStyle(.menu)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .onChange(of: configuration.family) { _, value in
+                    data.changeWidgetSizeType(value.rawValue)
+                }
+            }
 
-            Picker("Rendering Environment", selection: $configuration.renderingMode) {
+            Picker("Rendering", selection: $configuration.renderingMode) {
                 ForEach(StudioPreviewRenderingMode.allCases) { mode in
                     Text(mode.title).tag(mode)
                 }
             }
-            .pickerStyle(.segmented)
+            .pickerStyle(.menu)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityLabel("Rendering Environment")
             .onChange(of: configuration.renderingMode) { _, value in
                 data.changeRenderingMode(value)
             }
@@ -378,6 +381,9 @@ struct PreviewView: View {
                     .disabled(configuration.parameter == scriptParameterApplied)
                 Spacer()
                 Button("Snapshot", systemImage: "photo") { saveSnapshot() }
+                    .labelStyle(.iconOnly)
+                    .accessibilityLabel("Save preview snapshot")
+                    .help("Save preview snapshot")
                     .disabled(configuration.canvasMode == .all)
             }
         }

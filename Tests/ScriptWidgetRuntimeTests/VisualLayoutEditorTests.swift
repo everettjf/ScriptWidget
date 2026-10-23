@@ -276,6 +276,22 @@ final class VisualLayoutEditorTests: XCTestCase {
         return try XCTUnwrap(snapshot)
     }
     #if os(macOS)
+    @MainActor func testPreviewControlsFitTheMinimumPanelWidth() async throws {
+        let (root, model, _) = try nativeModels()
+        defer { try? FileManager.default.removeItem(at: root) }
+        for width: CGFloat in [300, 360, 900] {
+            for mode in StudioPreviewCanvasMode.allCases {
+                let configuration = StudioWidgetConfiguration()
+                configuration.family = .extraLargePortrait
+                configuration.canvasMode = mode
+                let host = NSHostingController(rootView: PreviewView(scriptModel: model, configuration: configuration))
+                let proposed = NSSize(width: width, height: 650)
+                let fitting = host.sizeThatFits(in: proposed)
+                XCTAssertTrue(fitting.width.isFinite && fitting.width > 0 && fitting.width <= width + 1,
+                              "\(mode) preview requires \(fitting.width) points for a \(width)-point panel")
+            }
+        }
+    }
     @MainActor func testWorkspaceFileListIncludesFilesUnderACanonicalRoot() throws {
         let (root, model, _) = try nativeModels()
         defer { try? FileManager.default.removeItem(at: root) }
@@ -317,9 +333,11 @@ final class VisualLayoutEditorTests: XCTestCase {
         let (root, model, _) = try nativeModels()
         defer { try? FileManager.default.removeItem(at: root) }
         let layout = WorkspaceLayoutState()
-        let host = NSHostingController(rootView: WorkspaceLayoutFixture(model: model, layout: layout))
+        let host = NSHostingController(rootView: WorkspaceLayoutFixture(model: model, layout: layout)
+            .frame(width: 1280, height: 850))
         let window = NSWindow(contentRect: CGRect(x: 0, y: 0, width: 1280, height: 850),
                               styleMask: [.titled, .resizable], backing: .buffered, defer: false)
+        window.title = "Workspace acceptance fixture"
         host.view.frame = window.contentView!.bounds
         window.contentViewController = host
         window.makeKeyAndOrderFront(nil)
@@ -359,6 +377,15 @@ final class VisualLayoutEditorTests: XCTestCase {
             }
             current = replacement
         }
+        if let directory = ProcessInfo.processInfo.environment["SCRIPTWIDGET_INSPECT_WORKSPACE"] {
+            let output = URL(fileURLWithPath: directory)
+            try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+            try String(ProcessInfo.processInfo.processIdentifier).write(to: output.appendingPathComponent("ready"), atomically: true, encoding: .utf8)
+            let deadline = Date().addingTimeInterval(45)
+            while !FileManager.default.fileExists(atPath: output.appendingPathComponent("resume").path) && Date() < deadline {
+                try await Task.sleep(nanoseconds: 100_000_000)
+            }
+        }
     }
     #endif
     @MainActor private func applyNative(_ code: String, snapshot: StudioDocumentSnapshot) async -> StudioDocumentApplyResult {
@@ -382,6 +409,37 @@ final class VisualLayoutEditorTests: XCTestCase {
         #else
         web.updateDocument(action: MirrorEditorScriptView(model: model, filePath: model.package.path.appendingPathComponent("main.jsx")).createActionProvider())
         #endif
+    }
+    @MainActor func testReplacementHostStartsBeforeTheOldHostIsDismantled() async throws {
+        let (root, model, _) = try nativeModels()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let editorID = UUID()
+        let old = NativeEditor(editorID: editorID)
+        old.frame = CGRect(x: 0, y: 0, width: 850, height: 650)
+        #if os(macOS)
+        old.loadEditorIfNeeded()
+        #endif
+        openNative(old, model)
+        try await wait(old, "document.querySelector('.cm-content')?.textContent.includes('Calm morning')===true")
+        // Hold ordinary edit/autosave delivery so this ordering does not
+        // depend on the draft debounce; final snapshot replies still pass.
+        _ = try await evaluate(old, "const bridge=window.WKWebViewJavascriptBridge,fetch=bridge._fetchQueue.bind(bridge);bridge._fetchQueue=()=>JSON.stringify(JSON.parse(fetch()).filter(message=>!['document.changed','document.save'].includes(message.handlerName)));void 0;")
+        let manual = "$render(<text>Input before the replacement host exists</text>);"
+        _ = try await evaluate(old, "document.querySelector('.cm-content').focus();document.execCommand('selectAll');document.execCommand('insertText',false,\(try json(manual)));void 0;")
+        // SwiftUI is permitted to create the new representable before calling
+        // dismantle on the old one. Keep that ordering deterministic here.
+        let replacement = NativeEditor(editorID: editorID)
+        replacement.frame = old.frame
+        #if os(macOS)
+        replacement.loadEditorIfNeeded()
+        #endif
+        openNative(replacement, model)
+        defer { replacement.invalidate(); old.invalidate() }
+        try await wait(replacement, "document.querySelector('.cm-content')?.textContent.includes('$render')===true")
+        old.invalidate()
+        let snapshot = try await nativeSnapshot(replacement, documentID: model.package.path.appendingPathComponent("main.jsx").standardizedFileURL.path)
+        XCTAssertEqual(snapshot.content, manual, "The replacement must join the handoff even when it is created first")
+        try await waitForFile(model.package.path.appendingPathComponent("main.jsx"), manual)
     }
     @MainActor private func waitForFile(_ url: URL, _ text: String) async throws {
         let deadline = Date().addingTimeInterval(15)

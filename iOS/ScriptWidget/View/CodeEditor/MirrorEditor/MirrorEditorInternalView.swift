@@ -181,6 +181,9 @@ class MirrorEditorInternalView: WKWebView {
                 self.replaceDocument(request)
             }
         self.cancellables.append(replaceNotification)
+        StudioEditorHostRegistry.register(editorID: editorID, host: self) { [weak self] in
+            self?.invalidate()
+        }
     }
     
     func invalidate() {

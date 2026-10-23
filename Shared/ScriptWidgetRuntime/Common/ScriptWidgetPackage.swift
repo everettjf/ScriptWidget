@@ -154,6 +154,31 @@ enum StudioDocumentApplyResult: Equatable {
     }
 }
 
+// SwiftUI may create a replacement before dismantling the previous host.
+// Retire the old instance as soon as the same logical editor is recreated,
+// so its document handoff starts before the new host can read from disk.
+@MainActor enum StudioEditorHostRegistry {
+    private final class Entry {
+        weak var host: AnyObject?
+        let retire: () -> Void
+
+        init(host: AnyObject, retire: @escaping () -> Void) {
+            self.host = host
+            self.retire = retire
+        }
+    }
+
+    private static var entries: [UUID: Entry] = [:]
+
+    static func register(editorID: UUID, host: AnyObject, retire: @escaping () -> Void) {
+        entries = entries.filter { $0.value.host != nil }
+        if let previous = entries[editorID], previous.host !== host {
+            previous.retire()
+        }
+        entries[editorID] = Entry(host: host, retire: retire)
+    }
+}
+
 // Keep a reopening behind a closing editor's final JS snapshot. A new view
 // must not read the old file before the outgoing recovery draft is committed.
 @MainActor enum StudioDocumentHandoff {
