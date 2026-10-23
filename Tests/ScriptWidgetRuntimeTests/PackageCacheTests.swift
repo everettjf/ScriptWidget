@@ -21,6 +21,15 @@ import Darwin
 
 final class PackageCacheTests: XCTestCase {
 
+    func testInitialHostPackageDoesNotRequireBundledTemplates() {
+        let package = globalScriptWidgetPackage
+        XCTAssertTrue(package.readonly)
+        XCTAssertNotNil(package.accessError)
+        XCTAssertNil(package.readMainFile().0)
+        XCTAssertNil(package.readMetadata())
+        XCTAssertFalse(FileManager.default.fileExists(atPath: package.path.path))
+    }
+
     private var createdPackageNames: [String] = []
     private var sourceRoot: URL!
     private var sourceManager: ScriptManager!

@@ -1944,4 +1944,7 @@ struct ScriptWidgetPackage: Sendable {
 }
 
 
-let globalScriptWidgetPackage = ScriptWidgetPackage(bundle: "Script", relativePath: "template/Is Friday Today")
+// Widget and Live Activity hosts replace this descriptor with the selected
+// execution package before evaluating JavaScript. Extensions do not embed the
+// app's template bundle, so their initial state must not depend on that resource.
+let globalScriptWidgetPackage = ScriptWidgetPackage.unavailable()
