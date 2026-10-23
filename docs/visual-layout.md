@@ -8,7 +8,9 @@ Drag a layer before another layer, use Move up/down, or choose a destination and
 
 Undo/Redo use the existing CodeMirror document history. Each visual operation is isolated as a single undo step, and changes go through the same save, recovery, version and preview callbacks as typing. Web files retain their existing per-file histories. Native document.open starts a fresh history when the document ID changes, preventing Undo from restoring another file's content. Read-only documents disable mutation controls and are checked again when a command runs.
 
-Native file sessions also carry a per-open generation. A delayed replacement acknowledgement or save snapshot cannot write into another file or a later reopening of the same path. Replacement acknowledgement flushes the current editor text, preserving manual edits made while the reply was pending. The regression tests use the production native bridge and actual temporary package files, not only a stub save handler. Copilot multi-window targeting and apply-result feedback remain separate acceptance work.
+Native file sessions carry a per-open identity and revision. Delayed saves cannot overwrite another file, a reopened path or newer edits in the same opening. Copilot targets the intended window and source snapshot, rejects conflicting edits and confirms real writes before reporting saved. Replacement acknowledgement flushes current text rather than its captured proposal. Regression tests use the production native bridge and actual package files.
+
+Native hosts buffer validated UTF-16 edits for recovery. When a view is dismantled, a bounded final snapshot saves the closing file before a reopening reads it. A failed write retains the recovery draft; a detected external baseline change is preserved. Recovered unsaved text is retried through the normal save path. This component coverage does not replace full window-layout, keyboard/accessibility or physical-device acceptance.
 
 ## Supported source and preservation
 

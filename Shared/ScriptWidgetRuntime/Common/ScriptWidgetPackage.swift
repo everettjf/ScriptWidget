@@ -154,11 +154,49 @@ enum StudioDocumentApplyResult: Equatable {
     }
 }
 
+// Keep a reopening behind a closing editor's final JS snapshot. A new view
+// must not read the old file before the outgoing recovery draft is committed.
+@MainActor enum StudioDocumentHandoff {
+    private static var closing: [String: Set<UUID>] = [:]
+    private static var waiting: [String: [() -> Void]] = [:]
+
+    static func begin(_ documentID: String) -> UUID {
+        let token = UUID()
+        closing[documentID, default: []].insert(token)
+        return token
+    }
+
+    static func finish(_ documentID: String, token: UUID) {
+        guard closing[documentID]?.remove(token) != nil else { return }
+        guard closing[documentID]?.isEmpty == true else { return }
+        closing.removeValue(forKey: documentID)
+        let actions = waiting.removeValue(forKey: documentID) ?? []
+        actions.forEach { $0() }
+    }
+
+    static func afterClosing(_ documentID: String, action: @escaping () -> Void) {
+        if closing[documentID] == nil { action() }
+        else { waiting[documentID, default: []].append(action) }
+    }
+}
+
+@MainActor final class StudioEditorCloseRequest {
+    private var completion: ((Any?) -> Void)?
+    init(completion: @escaping (Any?) -> Void) { self.completion = completion }
+    func finish(_ response: Any?) {
+        let callback = completion
+        completion = nil
+        callback?(response)
+    }
+}
+
 /// Owns document identity and the persisted-draft baseline for native Studio
 /// hosts. Web views remain responsible only for transport and presentation.
 final class StudioDocumentSession {
     private(set) var documentID: String?
     private(set) var savedContent = ""
+    private(set) var bufferedContent = ""
+    private(set) var bufferedVersion = 0
     private let drafts: StudioDraftStore
 
     init(drafts: StudioDraftStore = .shared) {
@@ -168,7 +206,48 @@ final class StudioDocumentSession {
     func open(documentID: String, content: String) -> String {
         self.documentID = documentID
         savedContent = content
-        return drafts.recover(documentID: documentID, currentContent: content)?.content ?? content
+        bufferedContent = drafts.recover(documentID: documentID, currentContent: content)?.content ?? content
+        bufferedVersion = 0
+        return bufferedContent
+    }
+
+    // CodeMirror offsets are UTF-16 and refer to the same original document.
+    // Apply validated changes right-to-left, retaining an in-memory recovery
+    // snapshot without sending/writing the whole source on every keystroke.
+    func bufferChange(_ payload: [String: Any]) -> Bool {
+        guard documentID != nil, let version = payload["version"] as? Int, version >= 0 else { return false }
+        if let content = payload["content"] as? String {
+            return bufferSnapshot(content, version: version)
+        }
+        guard bufferedVersion < Int.max, version == bufferedVersion + 1,
+              let changes = payload["changes"] as? [[String: Any]] else { return false }
+        var content = bufferedContent
+        var boundary = content.utf16.count
+        for change in changes.reversed() {
+            guard let from = change["from"] as? Int, let to = change["to"] as? Int,
+                  let inserted = change["insert"] as? String,
+                  from >= 0, to >= from, to <= boundary else { return false }
+            let units = content.utf16
+            guard let lower = String.Index(units.index(units.startIndex, offsetBy: from), within: content.unicodeScalars),
+                  let upper = String.Index(units.index(units.startIndex, offsetBy: to), within: content.unicodeScalars) else { return false }
+            content.replaceSubrange(lower..<upper, with: inserted)
+            boundary = from
+        }
+        bufferedContent = content
+        bufferedVersion = version
+        return true
+    }
+
+    @discardableResult
+    func bufferSnapshot(_ content: String, version: Int) -> Bool {
+        guard documentID != nil, version >= bufferedVersion else { return false }
+        bufferedContent = content
+        bufferedVersion = version
+        return true
+    }
+
+    func persistBufferedDraft() {
+        recordDraft(bufferedContent)
     }
 
     func recordDraft(_ content: String) {

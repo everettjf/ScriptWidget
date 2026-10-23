@@ -104,6 +104,38 @@ final class EditorInternalWebView: WKWebView {
     }
 
     func invalidate() {
+        guard !isTearingDown else { return }
+        if let documentID = currentDocumentID, isEditorReady {
+            let sessionID = documentGeneration.uuidString
+            let handoff = StudioDocumentHandoff.begin(documentID)
+            let closingModel = scriptModel, relativePath = currentRelativePath
+            let request = StudioEditorCloseRequest { [self] response in
+                if let snapshot = StudioDocumentSnapshot(state: response),
+                   snapshot.documentID == documentID, snapshot.sessionID == sessionID {
+                    documentSession.bufferSnapshot(snapshot.content, version: snapshot.version)
+                }
+                if let model = closingModel, !model.package.readonly {
+                    // A different window/iCloud edit wins over this closing
+                    // view's old baseline. Keep its recovery draft instead.
+                    if model.package.readFile(relativePath: relativePath).0 == documentSession.savedContent {
+                        let saved = documentSession.save(documentSession.bufferedContent, documentID: documentID) { content in
+                            let entry = model.package.readManifest()?.entry ?? "main.jsx"
+                            return relativePath == entry
+                                ? model.package.writeMainFile(content: content).0
+                                : model.package.writeFile(relativePath: relativePath, content: content).0
+                        }
+                        if saved { NotificationCenter.default.post(name: PreviewService.updateNotification, object: model.package) }
+                    } else {
+                        documentSession.persistBufferedDraft()
+                    }
+                }
+                StudioDocumentHandoff.finish(documentID, token: handoff)
+            }
+            // Retain the host through a bounded final snapshot even when
+            // SwiftUI has already detached its representable.
+            callStudio(handlerName: StudioProtocol.editorGetState, callback: request.finish)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) { request.finish(nil) }
+        }
         isTearingDown = true
         documentGeneration = UUID()
         pendingActions.removeAll()
@@ -128,6 +160,7 @@ final class EditorInternalWebView: WKWebView {
     }
 
     func updateDocument(_ model: ScriptModel, relativePath: String) {
+        guard !isTearingDown else { return }
         let resolvedRelativePath = relativePath.isEmpty ? "main.jsx" : relativePath
         guard let documentURL = model.package.resolvedPackageURL(relativePath: resolvedRelativePath) else { return }
         let documentID = documentURL.standardizedFileURL.path
@@ -142,13 +175,14 @@ final class EditorInternalWebView: WKWebView {
         }
 
         let activateDocument = { [weak self] in
-            guard let self else { return }
-            guard self.requestedDocumentID == documentID else { return }
-            self.scriptModel = model
-            self.currentRelativePath = resolvedRelativePath
-            self.currentDocumentID = documentID
-            self.documentGeneration = UUID()
-            self.openCurrentDocument()
+            StudioDocumentHandoff.afterClosing(documentID) { [weak self] in
+                guard let self, !self.isTearingDown, self.requestedDocumentID == documentID else { return }
+                self.scriptModel = model
+                self.currentRelativePath = resolvedRelativePath
+                self.currentDocumentID = documentID
+                self.documentGeneration = UUID()
+                self.openCurrentDocument()
+            }
         }
 
         runWhenReady { [weak self] in
@@ -185,6 +219,10 @@ final class EditorInternalWebView: WKWebView {
                 return
             }
 
+            guard let version = payload["version"] as? Int,
+                  self.documentSession.bufferSnapshot(content, version: version) else {
+                callback?(["result": "failed"]); return
+            }
             let saved = save(content: content)
             callback?(saved ? ["result": "ok"] : ["result": "failed"])
         }
@@ -192,6 +230,10 @@ final class EditorInternalWebView: WKWebView {
         bridge?.register(handlerName: StudioProtocol.documentChanged) { [weak self] parameters, callback in
             guard let self, parameters?["documentID"] as? String == self.currentDocumentID,
                   parameters?["sessionID"] as? String == self.documentGeneration.uuidString else {
+                callback?(["result": "failed"]); return
+            }
+            guard let payload = parameters?["payload"] as? [String: Any],
+                  self.documentSession.bufferChange(payload) else {
                 callback?(["result": "failed"]); return
             }
             self.scheduleDraftSnapshot()
@@ -220,6 +262,7 @@ final class EditorInternalWebView: WKWebView {
             handlerName: StudioProtocol.documentOpen,
             payload: [
                 "content": recovered,
+                "dirty": recovered != content,
                 "version": 0,
                 "readOnly": model.package.readonly,
                 "resources": model.package.editorImageResources(),
@@ -230,12 +273,8 @@ final class EditorInternalWebView: WKWebView {
     private func scheduleDraftSnapshot() {
         draftWorkItem?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
-            guard let self, let documentID = self.currentDocumentID else { return }
-            self.readSnapshot { [weak self] snapshot in
-                guard let self, let snapshot else { return }
-                guard self.currentDocumentID == documentID else { return }
-                self.documentSession.recordDraft(snapshot.content)
-            }
+            guard let self, !self.isTearingDown else { return }
+            self.documentSession.persistBufferedDraft()
         }
         draftWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: workItem)
@@ -259,7 +298,9 @@ final class EditorInternalWebView: WKWebView {
                 let content = state["content"] as? String,
                 self.currentDocumentID == documentID,
                 state["documentID"] as? String == documentID,
-                state["sessionID"] as? String == generation.uuidString
+                state["sessionID"] as? String == generation.uuidString,
+                let version = state["version"] as? Int,
+                self.documentSession.bufferSnapshot(content, version: version)
             else {
                 completion(false)
                 return
@@ -280,7 +321,8 @@ final class EditorInternalWebView: WKWebView {
             guard let self, !self.isTearingDown, self.currentDocumentID == documentID,
                   self.documentGeneration == generation,
                   let snapshot = StudioDocumentSnapshot(state: response, editorID: self.editorID),
-                  snapshot.documentID == documentID, snapshot.sessionID == generation.uuidString else {
+                  snapshot.documentID == documentID, snapshot.sessionID == generation.uuidString,
+                  self.documentSession.bufferSnapshot(snapshot.content, version: snapshot.version) else {
                 completion(nil); return
             }
             completion(snapshot)

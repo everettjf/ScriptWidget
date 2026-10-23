@@ -7,7 +7,7 @@ ScriptWidget Studio is the macOS development environment for ScriptWidget. It is
 The macOS editor uses a persistent three-pane workspace:
 
 - **Project** shows the complete package as a hierarchical file tree. Select JSX, JavaScript, JSON, text, Markdown, or CSS files to edit them without reloading Studio. The current document is saved before another file opens.
-- **Editor** keeps one CodeMirror session and crash-recovery draft per document.
+- **Editor** keeps document identity and a recovery draft per file. Opening another native file starts fresh Undo history so Undo cannot restore another file's source.
 - **Preview / Assets / Config / Copilot** provides runtime output and project tools alongside the editor.
 
 Use the Project `+` menu to create a text file or import multiple files. Imported project names are de-duplicated instead of overwriting an existing file. Images selected from Finder are placed in the runtime `image/` directory automatically.
@@ -15,6 +15,8 @@ Use the Project `+` menu to create a text file or import multiple files. Importe
 The Assets panel accepts multiple images from the file picker or by dragging them from Finder. PNG, JPEG, GIF, WebP, and HEIC resources up to 25 MiB are supported. The Config panel controls preview family, single/all-size canvas, runtime debug mode, and the widget parameter for the current Studio session. Package-level persisted metadata is defined by `widget.json` in Package 2.0.
 
 The same Studio editor, AI Copilot, Skills, diagnostics, and preview semantics are available on iPhone and iPad. iPad uses a side-by-side editor and Studio panel in regular-width layouts; iPhone presents Preview and Copilot as focused sheets.
+
+Closing an editor takes a final snapshot and saves before a reopening reads the file. If writing fails, its recovery draft remains available while the file still matches the draft's original baseline. A detected external change to that baseline is preserved. Recovered unsaved text is saved again; it is not immediately labeled Saved. Readonly files remain readonly.
 
 ## Create a widget
 
@@ -28,7 +30,7 @@ The same Studio editor, AI Copilot, Skills, diagnostics, and preview semantics a
 
 Open the **Copilot** tab beside the editor, describe a focused change, and choose **Propose Change**. Studio sends the current document and the latest local runtime diagnostic as context, then shows the original and proposed JSX before anything is changed.
 
-- **Apply** replaces the editor document, saves it, and refreshes preview. The CodeMirror transaction remains available to Undo.
+- **Apply** targets the original window, file and source snapshot. If the file changed while the proposal was generated, applying is rejected for review. Saved is reported only after an actual write; a failure keeps the proposal. The CodeMirror transaction remains available to Undo.
 - **Reject** discards the proposal without touching the document.
 - **Fix Runtime Error** asks Copilot to repair the latest error shown by the preview.
 - Review generated code before applying it, especially networking, imported packages, and data handling.

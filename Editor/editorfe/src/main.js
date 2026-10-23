@@ -153,7 +153,7 @@ const view = new EditorView({
   parent: editorParent,
 });
 
-function replaceDocument(content, nextDocumentID = documentID, version = 0) {
+function replaceDocument(content, nextDocumentID = documentID, version = 0, notifyNative = false) {
   window.clearTimeout(saveTimer);
   documentGeneration += 1;
   const previousSelection = view.state.selection.main;
@@ -176,6 +176,7 @@ function replaceDocument(content, nextDocumentID = documentID, version = 0) {
   }
   if (restored) window.requestAnimationFrame(() => { view.scrollDOM.scrollTop = restored.scrollTop; });
   suppressChanges = false;
+  if (notifyNative) callNative(bridge, StudioMessage.documentChanged, { content: view.state.doc.toString(), version: documentVersion }, documentID, undefined, documentSessionID);
   setSaveStatus("Saved", "saved");
 }
 
@@ -209,7 +210,7 @@ async function formatDocument() {
       trailingComma: "es5",
     });
     if (!current()) return false;
-    replaceDocument(formatted, documentID, documentVersion + 1);
+    replaceDocument(formatted, documentID, documentVersion + 1, true);
     scheduleSave();
     return true;
   } catch (error) {
@@ -258,11 +259,15 @@ connectNativeBridge((nativeBridge) => {
     replaceDocument(payload.content, id, payload.version ?? 0);
     setVisualLayoutResources(view, payload.resources ?? []);
     setReadOnly(payload.readOnly);
+    if (payload.dirty) {
+      setSaveStatus("Restored unsaved edits", "editing");
+      if (!payload.readOnly) scheduleSave();
+    }
     return { protocolVersion: STUDIO_PROTOCOL_VERSION };
   });
   register(StudioMessage.documentReplace, ({ payload = {}, documentID: id }) => {
     if (view.state.readOnly || (payload.expectedContent !== undefined && payload.expectedContent !== view.state.doc.toString())) throw new Error("The file changed or is read only.");
-    replaceDocument(payload.content, id, payload.version ?? documentVersion);
+    replaceDocument(payload.content, id, payload.version ?? documentVersion, true);
     return {};
   });
   register(StudioMessage.documentSetReadOnly, ({ payload = {} }) => {

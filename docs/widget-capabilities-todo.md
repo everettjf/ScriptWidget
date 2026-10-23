@@ -11,8 +11,8 @@ X01/X02 证据：最终完整 gate 退出 0，Mac 661 / iPhone Simulator 671 均
 
 ## 当前执行顺序
 
-1. **N03 / 保存与生命周期验收**：会话隔离、Copilot 定向和保存回执、iPhone 切换前保存、Web 删除失败保留草稿均已修复并通过回归；Mac/iPhone 最终全量 688/698 通过，iPad 697 通过及两项补充检查通过，7 项 IndexedDB 场景通过。继续核查布局切换、离开编辑器和完整三端流程，N03 整体验收保持未完成。
-2. **R05 / 远端 CI（阻塞发布）**：`99d6f7a` 的 [运行 39869682111](https://github.com/everettjf/scriptwidget/actions/runs/39869682111) 在动画反向时钟检查失败；独立 XCTest 探针尚未执行到，运行路径修复仍待远端验证。
+1. **N03 / 保存与生命周期验收**：会话隔离、Copilot 定向和回执、iPhone 切换前保存、Web 删除失败保留草稿、关闭交接与落盘均已修复；Mac/iPhone/iPad 最终全量分别 696/706/706 通过，7 项 IndexedDB 场景通过。关闭时外部改动保护、恢复和同会话旧保存有回归。继续实际窗口布局、键盘/无障碍与完整三端流程，N03 整体验收保持未完成。
+2. **R05 / 最终候选 CI**：`56eec76` 的 [Apple 完整 Readiness 步骤](https://github.com/everettjf/scriptwidget/actions/runs/39874795541) 已通过，包含独立 XCTest 探针，旧运行路径问题已取得远端验证；iPad 阶段仍在运行。[Linux/Windows 跨浏览器](https://github.com/everettjf/scriptwidget/actions/runs/39874795518) 已全部通过。后续关闭修复仍需对应新提交的最终 CI，不能沿用旧 head 整体结论。
 3. **N01–N03 / 三端流程**：完成已有创作工具的保存重开、包往返、资源、动态表达式与只读边界验收。
 4. **R01–R04 / 文档和真机**：收口系统兼容范围，完成授权、共享存储、组件表现及性能验收。
 5. **R05–R07 / 发布**：最终代码全量回归，整理材料，部署 Web、归档上传原生；审核由用户提交。

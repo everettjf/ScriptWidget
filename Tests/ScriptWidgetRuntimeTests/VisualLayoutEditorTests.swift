@@ -328,6 +328,61 @@ final class VisualLayoutEditorTests: XCTestCase {
         XCTAssertFalse(other?.contains("Only the first editor") == true)
         XCTAssertEqual(try String(contentsOf: second.package.path.appendingPathComponent("main.jsx"), encoding: .utf8), source)
     }
+    @MainActor func testDismantlingNativeEditorPreservesTheLatestPendingEdit() async throws {
+        let (root, first, _) = try nativeModels()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let web = try await nativeEditor(first)
+        defer { web.stopLoading() }
+        let url = first.package.path.appendingPathComponent("main.jsx")
+        let manual = "$render(<text>Latest edit before leaving the editor</text>);"
+        _ = try await evaluate(web, "document.querySelector('.cm-content').focus();document.execCommand('selectAll');document.execCommand('insertText',false,\(try json(manual)));void 0;")
+        // SwiftUI may dismantle the representable before the asynchronous
+        // onDisappear save reply arrives. Use the production teardown path.
+        NativeService.save(target: StudioEditorTarget(editorID: web.editorID, documentID: url.standardizedFileURL.path)) { _ in }
+        #if os(macOS)
+        EditorWebView.dismantleNSView(web, coordinator: ())
+        #else
+        MirrorEditorScriptView.dismantleUIView(web, coordinator: ())
+        #endif
+        let reopened = NativeEditor()
+        defer { reopened.stopLoading() }
+        reopened.frame = CGRect(x: 0, y: 0, width: 850, height: 650)
+        #if os(macOS)
+        reopened.loadEditorIfNeeded()
+        #endif
+        openNative(reopened, first)
+        try await wait(reopened, "(document.querySelector('.cm-content')?.textContent.length??0)>0")
+        let snapshot = try await nativeSnapshot(reopened, documentID: url.standardizedFileURL.path)
+        XCTAssertEqual(snapshot.content, manual)
+        try await waitForFile(url, manual)
+        try await wait(reopened, "document.querySelector('#save-status').textContent==='Saved'")
+    }
+    @MainActor func testClosingNativeEditorWritesBeforeAnyReopening() async throws {
+        let (root, first, _) = try nativeModels()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let web = try await nativeEditor(first)
+        defer { web.stopLoading() }
+        let manual = "$render(<text>Saved when the editor closes</text>);"
+        _ = try await evaluate(web, "document.querySelector('.cm-content').focus();document.execCommand('selectAll');document.execCommand('insertText',false,\(try json(manual)));void 0;")
+        web.invalidate()
+        try await waitForFile(first.package.path.appendingPathComponent("main.jsx"), manual)
+    }
+    @MainActor func testClosingNativeEditorCannotOverwriteAnExternalEdit() async throws {
+        let (root, first, _) = try nativeModels()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let web = try await nativeEditor(first)
+        defer { web.stopLoading() }
+        let url = first.package.path.appendingPathComponent("main.jsx")
+        let manual = "$render(<text>Pending edit in the closing view</text>);"
+        let external = "$render(<text>New content from another writer</text>);"
+        _ = try await evaluate(web, "document.querySelector('.cm-content').focus();document.execCommand('selectAll');document.execCommand('insertText',false,\(try json(manual)));void 0;")
+        try external.write(to: url, atomically: true, encoding: .utf8)
+        web.invalidate()
+        await withCheckedContinuation { continuation in
+            StudioDocumentHandoff.afterClosing(url.standardizedFileURL.path) { continuation.resume() }
+        }
+        XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), external)
+    }
     @MainActor func testNativeSaveWithoutAnAcknowledgementStillWrites() async throws {
         let (root, first, _) = try nativeModels()
         defer { try? FileManager.default.removeItem(at: root) }
@@ -336,7 +391,7 @@ final class VisualLayoutEditorTests: XCTestCase {
         let url = first.package.path.appendingPathComponent("main.jsx")
         let snapshot = try await nativeSnapshot(web, documentID: url.standardizedFileURL.path)
         let saved = "$render(<text>Saved without a callback</text>);"
-        let envelope = try json(["documentID": snapshot.documentID!, "sessionID": snapshot.sessionID!, "payload": ["content": saved]])
+        let envelope = try json(["documentID": snapshot.documentID!, "sessionID": snapshot.sessionID!, "payload": ["content": saved, "version": snapshot.version]])
         _ = try await evaluate(web, "window.WKWebViewJavascriptBridge.callHandler('document.save',\(envelope));void 0;")
         try await waitForFile(url, saved)
     }
@@ -404,12 +459,21 @@ final class VisualLayoutEditorTests: XCTestCase {
         XCTAssertTrue(FileManager.default.fileExists(atPath: url.path))
     }
     @MainActor func testQueuedAutosaveCannotOverwriteAReopenedNativeFile() async throws {
+        try await assertQueuedNativeAutosave(reopen: true)
+    }
+    @MainActor func testQueuedAutosaveCannotOverwriteNewerEditsInTheSameOpening() async throws {
+        try await assertQueuedNativeAutosave(reopen: false)
+    }
+    @MainActor private func assertQueuedNativeAutosave(reopen: Bool) async throws {
         let (root, first, second) = try nativeModels()
         defer { try? FileManager.default.removeItem(at: root) }
         let web = try await nativeEditor(first)
         defer { web.stopLoading() }
+        let id = first.package.path.appendingPathComponent("main.jsx").standardizedFileURL.path
+        let initial = try await nativeSnapshot(web, documentID: id)
         _ = try await evaluate(web, """
         const bridge=window.WKWebViewJavascriptBridge,fetch=bridge._fetchQueue,receive=bridge._handleMessageFromiOS;
+        window.__openedDocumentID=\(try json(id));window.__openedSessionID=\(try json(initial.sessionID!));
         window.__holdNextSave=true;window.__releaseSave=false;
         bridge._fetchQueue=()=>{
           const passed=[];
@@ -429,11 +493,12 @@ final class VisualLayoutEditorTests: XCTestCase {
         let old = "$render(<text>Old queued autosave</text>);", newer = "$render(<text>New edit after reopening</text>);"
         _ = try await evaluate(web, "document.querySelector('.cm-content').focus();document.execCommand('selectAll');document.execCommand('insertText',false,\(try json(old)));void 0;")
         try await wait(web, "!!window.__heldSave")
-        openNative(web, second)
-        try await wait(web, "document.querySelector('.cm-content').textContent.includes('Calm morning')")
-        openNative(web, first)
-        let id = first.package.path.appendingPathComponent("main.jsx").standardizedFileURL.path
-        try await wait(web, "window.__openedDocumentID===\(try json(id))")
+        if reopen {
+            openNative(web, second)
+            try await wait(web, "document.querySelector('.cm-content').textContent.includes('Calm morning')")
+            openNative(web, first)
+            try await wait(web, "window.__openedDocumentID===\(try json(id))")
+        }
         _ = try await evaluate(web, "document.querySelector('.cm-content').focus();document.execCommand('selectAll');document.execCommand('insertText',false,\(try json(newer)));void 0;")
         try await waitForFile(first.package.path.appendingPathComponent("main.jsx"), newer)
         _ = try await evaluate(web, "window.__releaseSave=true;window.WKWebViewJavascriptBridge.callHandler('document.resources',{documentID:\(try json(id)),sessionID:window.__openedSessionID},response=>{window.__saveBarrier=response.result==='ok';});")

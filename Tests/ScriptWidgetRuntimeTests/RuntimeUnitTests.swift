@@ -669,6 +669,75 @@ final class StudioDraftStoreTests: XCTestCase {
         XCTAssertEqual(store.recover(documentID: "/widget/b.jsx", currentContent: "b")?.content, "draft-b")
     }
 
+    @MainActor func testClosingHandoffWaitsForAllEditorsAndKeepsPathsIndependent() {
+        let id = directory.appendingPathComponent("main.jsx").path
+        let first = StudioDocumentHandoff.begin(id), second = StudioDocumentHandoff.begin(id)
+        var recovered: String?
+        StudioDocumentHandoff.afterClosing(id) {
+            recovered = self.store.recover(documentID: id, currentContent: "base")?.content
+        }
+        var otherOpened = false
+        StudioDocumentHandoff.afterClosing(id + ".other") { otherOpened = true }
+        XCTAssertTrue(otherOpened)
+        store.save(documentID: id, baseContent: "base", content: "first")
+        StudioDocumentHandoff.finish(id, token: first)
+        StudioDocumentHandoff.finish(id, token: first)
+        XCTAssertNil(recovered)
+        store.save(documentID: id, baseContent: "base", content: "last")
+        StudioDocumentHandoff.finish(id, token: second)
+        XCTAssertEqual(recovered, "last")
+    }
+
+    func testBufferedEditsUseUTF16OffsetsAndRecoverWithoutAnAsyncRead() {
+        let session = StudioDocumentSession(drafts: store)
+        _ = session.open(documentID: "/widget/main.jsx", content: "A\u{1F642}Bcd")
+        XCTAssertTrue(session.bufferChange(["version": 1, "changes": [
+            ["from": 0, "to": 1, "insert": "Start"],
+            ["from": 4, "to": 6, "insert": "end"],
+        ]]))
+        session.persistBufferedDraft()
+        let reopened = StudioDocumentSession(drafts: store)
+        XCTAssertEqual(reopened.open(documentID: "/widget/main.jsx", content: "A\u{1F642}Bcd"), "Start\u{1F642}Bend")
+        XCTAssertEqual(reopened.bufferedVersion, 0)
+        _ = session.open(documentID: "/widget/combining.jsx", content: "Ae\u{301}B")
+        XCTAssertTrue(session.bufferChange(["version": 1, "changes": [["from": 2, "to": 3, "insert": "X"]]]))
+        XCTAssertEqual(session.bufferedContent, "AeXB")
+    }
+
+    func testMalformedOrOutOfOrderBufferedEditsAreAtomic() {
+        let session = StudioDocumentSession(drafts: store)
+        _ = session.open(documentID: "/widget/main.jsx", content: "A\u{1F642}B")
+        // The rightmost replacement succeeds locally, then a split surrogate
+        // boundary fails: neither replacement may reach the recovery buffer.
+        XCTAssertFalse(session.bufferChange(["version": 1, "changes": [
+            ["from": 2, "to": 3, "insert": "bad"],
+            ["from": 3, "to": 4, "insert": "good"],
+        ]]))
+        XCTAssertEqual(session.bufferedContent, "A\u{1F642}B")
+        XCTAssertEqual(session.bufferedVersion, 0)
+        XCTAssertFalse(session.bufferChange(["version": 2, "changes": [["from": 0, "to": 1, "insert": "gap"]]]))
+        XCTAssertFalse(session.bufferChange(["version": 1, "changes": [
+            ["from": 0, "to": 3, "insert": "overlap"],
+            ["from": 1, "to": 3, "insert": "overlap"],
+        ]]))
+        XCTAssertEqual(session.bufferedContent, "A\u{1F642}B")
+        session.persistBufferedDraft()
+        XCTAssertNil(store.recover(documentID: "/widget/main.jsx", currentContent: "A\u{1F642}B"))
+    }
+
+    func testOlderSnapshotsCannotOverwriteBufferedManualEdits() {
+        let session = StudioDocumentSession(drafts: store)
+        _ = session.open(documentID: "/widget/main.jsx", content: "base")
+        XCTAssertTrue(session.bufferSnapshot("proposal", version: 4))
+        XCTAssertTrue(session.bufferChange(["version": 5, "changes": [["from": 0, "to": 8, "insert": "manual"]]]))
+        XCTAssertFalse(session.bufferSnapshot("proposal", version: 4))
+        session.persistBufferedDraft()
+        XCTAssertEqual(store.recover(documentID: "/widget/main.jsx", currentContent: "base")?.content, "manual")
+        _ = session.open(documentID: "/widget/other.jsx", content: "other")
+        XCTAssertEqual(session.bufferedVersion, 0)
+        XCTAssertEqual(session.bufferedContent, "other")
+    }
+
     func testStudioSnapshotNormalizesReverseSelection() throws {
         let snapshot = try XCTUnwrap(StudioDocumentSnapshot(state: [
             "content": "hello",

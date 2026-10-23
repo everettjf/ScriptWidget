@@ -121,6 +121,10 @@ class MirrorEditorInternalView: WKWebView {
                 callback?(["result": "failed"])
                 return
             }
+            guard let version = payload["version"] as? Int,
+                  self.documentSession.bufferSnapshot(value, version: version) else {
+                callback?(["result": "failed"]); return
+            }
             let saved = self.documentSession.save(value, documentID: documentID, writer: writer)
             callback?(["result": saved ? "ok" : "failed"])
         })
@@ -129,6 +133,10 @@ class MirrorEditorInternalView: WKWebView {
             guard let self, !self.isTearingDown,
                   parameters?["documentID"] as? String == self.currentDocumentID,
                   parameters?["sessionID"] as? String == self.documentGeneration.uuidString else {
+                callback?(["result": "failed"]); return
+            }
+            guard let payload = parameters?["payload"] as? [String: Any],
+                  self.documentSession.bufferChange(payload) else {
                 callback?(["result": "failed"]); return
             }
             self.scheduleDraftSnapshot()
@@ -176,6 +184,31 @@ class MirrorEditorInternalView: WKWebView {
     }
     
     func invalidate() {
+        guard !isTearingDown else { return }
+        if let documentID = currentDocumentID, isEditorReady {
+            let sessionID = documentGeneration.uuidString
+            let handoff = StudioDocumentHandoff.begin(documentID)
+            let closingAction = action
+            let request = StudioEditorCloseRequest { [self] response in
+                if let snapshot = StudioDocumentSnapshot(state: response),
+                   snapshot.documentID == documentID, snapshot.sessionID == sessionID {
+                    documentSession.bufferSnapshot(snapshot.content, version: snapshot.version)
+                }
+                if closingAction?.onIsReadOnly?() != true {
+                    if let writer = closingAction?.onWrite,
+                       closingAction?.onRead?() == documentSession.savedContent {
+                        _ = documentSession.save(documentSession.bufferedContent, documentID: documentID, writer: writer)
+                    } else {
+                        documentSession.persistBufferedDraft()
+                    }
+                }
+                StudioDocumentHandoff.finish(documentID, token: handoff)
+            }
+            // Retain the host through a bounded final snapshot even when
+            // SwiftUI has already detached its representable.
+            callStudio(handlerName: StudioProtocol.editorGetState, callback: request.finish)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) { request.finish(nil) }
+        }
         isTearingDown = true
         documentGeneration = UUID()
         pendingActions.removeAll()
@@ -256,7 +289,9 @@ class MirrorEditorInternalView: WKWebView {
                   self.currentDocumentID == documentID,
                   data["documentID"] as? String == documentID,
                   data["sessionID"] as? String == generation.uuidString,
-                  let value = data["content"] as? String else {
+                  let value = data["content"] as? String,
+                  let version = data["version"] as? Int,
+                  self.documentSession.bufferSnapshot(value, version: version) else {
                 callback(false, "")
                 return
             }
@@ -272,7 +307,8 @@ class MirrorEditorInternalView: WKWebView {
             guard let self, !self.isTearingDown, self.currentDocumentID == documentID,
                   self.documentGeneration == generation,
                   let snapshot = StudioDocumentSnapshot(state: response, editorID: self.editorID),
-                  snapshot.documentID == documentID, snapshot.sessionID == generation.uuidString else {
+                  snapshot.documentID == documentID, snapshot.sessionID == generation.uuidString,
+                  self.documentSession.bufferSnapshot(snapshot.content, version: snapshot.version) else {
                 completion(nil); return
             }
             completion(snapshot)
@@ -303,17 +339,13 @@ class MirrorEditorInternalView: WKWebView {
     private func scheduleDraftSnapshot() {
         draftWorkItem?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
-            guard let self, let documentID = self.currentDocumentID else { return }
-            let generation = self.documentGeneration
-            self.editorGetValue { succeed, content in
-                guard succeed else { return }
-                guard self.currentDocumentID == documentID, self.documentGeneration == generation else { return }
-                self.documentSession.recordDraft(content)
-            }
+            guard let self, !self.isTearingDown else { return }
+            self.documentSession.persistBufferedDraft()
         }
         draftWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: workItem)
     }
+
     
     
     func updateDocument(action: MirrorEditorInternalActionProvider) {
@@ -325,12 +357,15 @@ class MirrorEditorInternalView: WKWebView {
             return
         }
         let activateDocument = { [weak self] in
-            guard let self, !self.isTearingDown, self.requestedDocumentID == action.documentID else { return }
-            self.action = action
-            self.currentDocumentID = action.documentID
-            self.documentGeneration = UUID()
-            self.reloadCurrentScript()
+            StudioDocumentHandoff.afterClosing(action.documentID) { [weak self] in
+                guard let self, !self.isTearingDown, self.requestedDocumentID == action.documentID else { return }
+                self.action = action
+                self.currentDocumentID = action.documentID
+                self.documentGeneration = UUID()
+                self.reloadCurrentScript()
+            }
         }
+
         runJSAction { [weak self] in
             guard let self, !self.isTearingDown else { return }
             if self.currentDocumentID == nil {
@@ -400,6 +435,7 @@ class MirrorEditorInternalView: WKWebView {
                 handlerName: StudioProtocol.documentOpen,
                 payload: [
                     "content": content,
+                    "dirty": content != fileContent,
                     "version": 0,
                     "readOnly": action?.onIsReadOnly?() ?? false,
                     "resources": action?.onResources?() ?? [],

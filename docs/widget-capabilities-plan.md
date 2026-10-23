@@ -17,9 +17,10 @@ Spotify 已移除。C 音乐控制扩展和 D 远端/社交/Watch/系统监控�
 ## 当前真实状态
 
 - 上述功能主体已经实现，本批确认的保存、编辑器隔离和浏览器删除缺陷已修复；B 的全部操作和生命周期验收尚未完成。
-- 最终原生全量：Mac 688、iPhone 模拟器 698、iPad 模拟器 697 通过，均 0 失败；iPad 另补两项保存/截图检查通过。不同运行不合并计数，跳过项和限制见 [状态表](widget-capabilities-status.md)。完整 gate 和后续最终 Web gate 均退出 0。
+- 最终原生全量：Mac 696、iPhone 模拟器 706、iPad 模拟器 706 通过，均 0 失败；跳过项和限制见 [状态表](widget-capabilities-status.md)。完整 gate 退出 0，补充最终 Mac 全量覆盖最后加入的关闭落盘用例；不把不同运行计数合并。
 - 已修复旧入站自动保存、Copilot 窗口/文件/快照绑定、真实保存回执、Mac 可选回调遗漏写入、iPhone 快速切文件丢失内容，以及 Web 删除失败后错误移除项目。两端 bundle 已重建，7 项真实 IndexedDB 场景通过，构建矩阵及更新的签名 Debug 构建通过。
-- `99d6f7a` 的 [远端 Readiness](https://github.com/everettjf/scriptwidget/actions/runs/39869682111) 已失败：Linux job 通过，Apple job 在动画反向时钟检查观测到位移 0，尚未走到独立 XCTest 探针。现已改用动画就绪与真实帧采样：受控延迟启动会让旧检查失败，新检查通过；故意改成正向播放仍失败。这证明同步修复覆盖该场景，不代表已证明远端失败的唯一原因，最终 CI 仍待执行。
+- 后续生命周期回归又复现了关闭丢输入：现已完成关闭快照交接、直接落盘、恢复后重试保存、关闭时保护外部改动及同会话旧保存拒绝。组件级回归已通过；完整窗口布局切换、键盘/无障碍与实际设备验收仍未完成。
+- `99d6f7a` 的动画 CI 失败已有受控延迟启动复现及真实帧采样修复，故意正向播放仍被拒绝。`56eec76` 的 [Apple 完整 Readiness 步骤](https://github.com/everettjf/scriptwidget/actions/runs/39874795541) 已通过，包含独立 XCTest 探针；iPad 阶段当时仍在运行。[Linux/Windows 跨浏览器](https://github.com/everettjf/scriptwidget/actions/runs/39874795518) 已全部通过。后续关闭修复仍须新提交的 CI，不把旧 head 通过算成最终候选通过。
 - 已准备签名 Debug 构建 **27.1.3 (27013)**，未安装，不是商店归档。本轮尚未完成 Web 部署、原生上传或 App Review 提交。
 
 ## 按三个阶段交付
