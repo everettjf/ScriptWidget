@@ -44,4 +44,4 @@ If the run fails, inspect the saved report before retrying. The shell command pr
 
 ## Local model research
 
-The [local widget model and fine-tuning proposal](local-widget-model-plan.md) defines candidate Hugging Face models, offline deployment paths, dataset separation and proposed release gates. It is a research plan; no local-model quality or performance results have been measured yet.
+The [local widget model and fine-tuning proposal](local-widget-model-plan.md) defines candidate Hugging Face models, Mac-only offline deployment, dataset separation and proposed release gates. The primary candidate is Qwen3.5-4B on Apple Silicon; Qwen3.5-2B is a low-memory comparison. Web and iOS model integration are outside this plan. It is a research plan; no local-model quality or performance results have been measured yet.

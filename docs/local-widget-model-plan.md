@@ -1,14 +1,14 @@
-# ScriptWidget 本地生成模型调研与微调方案
+# ScriptWidget Mac 本地生成模型调研与微调方案
 
-调研日期：2026-10-23。状态：研究提案，尚未下载模型权重、运行推理、训练模型或接入产品。本文中的内存、资源预算和质量门槛是待验证的规划，不是实测结果。
+调研日期：2026-10-23。范围更新：仅考虑 Mac 本地模型，Web、iPhone 和 iPad 推理不在本计划中。状态：研究提案，尚未下载模型权重、运行推理、训练模型或接入产品。本文中的内存、资源预算和质量门槛是待验证的规划，不是实测结果。
 
 ## 1. 建议与首轮范围
 
-建议做一个我们维护的 Widget 专用模型：以 **Qwen3.5-2B 为首轮微调候选，Qwen3.5-4B 为质量对照**，先在 Apple Silicon Mac 验证，再导出到 WebLLM 做浏览器离线运行。先用基础模型、精简 API 检索和现有执行反馈建立基线，再进行 LoRA/QLoRA 微调；只有微调带来明确增益才发布自有模型。模型依据及固定 revision 见[来源快照](research/widget-local-model/model-sources.json)。
+建议做一个我们维护的 Widget 专用模型：以 **Qwen3.5-4B 为首轮微调候选，Qwen3.5-2B 为低内存对照**，仅面向 Apple Silicon Mac。取消跨浏览器部署约束后，优先验证 4B 的生成质量；这是一项选型假设，最终仍以基线评测为准。先用基础模型、精简 API 检索和现有执行反馈建立基线，再进行 LoRA/QLoRA 微调；只有微调带来明确增益才发布自有模型。模型依据及固定 revision 见[来源快照](research/widget-local-model/model-sources.json)。
 
-“自己的模型”指可追溯的基础权重、我们有权使用的数据、自有适配器、评测报告与版本化分发产物。可以暂定名 `ScriptWidget-Creator-2B-v0.1`；这只是提议名称，尚未创建 Hugging Face 模型仓库。基础模型的许可证、归属和 NOTICE 继续保留。
+“自己的模型”指可追溯的基础权重、我们有权使用的数据、自有适配器、评测报告与版本化分发产物。可以暂定名 `ScriptWidget-Creator-4B-v0.1`；这只是提议名称，尚未创建 Hugging Face 模型仓库。基础模型的许可证、归属和 NOTICE 继续保留。
 
-首轮完成“描述需求 → 生成单个 JSX → 原生执行 → 最多两次修复 → 展示预览 → 用户保存副本”。支持中文和英文、组件尺寸、浅深色、离线示例数据，以及对已有 JSX 的有限修改。先不做截图反推组件、多文件自主 Agent、自动登录服务、模型自行安装插件或后台自主发布。
+产品入口为 macOS Studio 内的本地 Agent，最终目标是下载一次后无需额外安装服务即可断网生成。首轮完成“描述需求 → 生成单个 JSX → 原生执行 → 最多两次修复 → 展示预览 → 用户保存副本”。支持中文和英文、组件尺寸、浅深色、离线示例数据，以及对已有 JSX 的有限修改。先不做截图反推组件、多文件自主 Agent、自动登录服务、模型自行安装插件或后台自主发布。
 
 这是未来独立研发项目，不要求修改当前已送审的版本。本次提交只有调研与计划。
 
@@ -26,7 +26,6 @@ ScriptWidget 使用自己的 JSX 方言和宿主 API。普通模型容易写出 
 | [AgentLoop.swift](../Shared/ScriptWidgetRuntime/AI/AgentLoop.swift) | 生成、执行、错误反馈、修复；产物为单个 JSX | 本地配置限制为首次生成加两次修复，控制上下文；以后嵌入推理需要抽象 provider 接口 |
 | [AgentRuntimeBridge.swift](../Shared/ScriptWidgetRuntime/AI/AgentRuntimeBridge.swift) | 独立临时预览包、原生执行与结果 | 明确使用固定 mock、禁止真实授权与敏感数据访问的生成验收模式；不能假设当前临时目录等同于完整隔离 |
 | [PromptBuilder.swift](../Shared/ScriptWidgetRuntime/AI/PromptBuilder.swift) | 单段 JSX 输出、ScriptWidget 语法说明、尺寸约束 | 适合小上下文的精简版本化参考资料与按需检索 |
-| [Web Studio](../Web/studio/src/App.tsx) | 编辑、预览、项目文件与 mock 数据界面 | 浏览器 Agent 控制器、模型 Worker 和 provider 适配器；目前并未直接复用 Swift Agent 循环 |
 | [AI 质量检查](ai-quality-testing.md) | 固定需求、真实生成/执行/修复、原生截图和回放 | 扩展成本地模型对照实验和独立留出集；现有在线测试的凭证条件需适配 |
 
 ## 3. Hugging Face 候选比较
@@ -35,48 +34,47 @@ ScriptWidget 使用自己的 JSX 方言和宿主 API。普通模型容易写出 
 
 | 候选及一手来源 | 许可证 / 总参数约数 | 建议角色与取舍 |
 | --- | --- | --- |
-| [Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B) | Apache-2.0 / 2.27B | **首轮主候选**。WebLLM 有预编译配置，MLX 上游有架构实现；先做文本生成，视觉模块处理必须在转换时核实 |
-| [Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B) | Apache-2.0 / 4.66B | Mac 质量档对照；2B 不达标时再决定是否微调，不能默认浏览器或手机都有足够内存 |
-| [Qwen3-4B-Instruct-2507](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) | Apache-2.0 / 4.02B | 纯文本、非思考模式对照。WebLLM 的普通 Qwen3-4B 记录不能证明就是 2507 权重；需单独核对转换与模板 |
-| [Qwen2.5-Coder-1.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct) | Apache-2.0 / 1.54B | 较小代码模型基线，WebLLM 有配置；与新模型比较实际 Widget 成功率 |
-| [Qwen2.5-Coder-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct) | Apache-2.0 / 7.62B | Mac 上的代码质量对照，或离线合成数据教师，不作为首轮默认下载 |
+| [Qwen3.5-2B](https://huggingface.co/Qwen/Qwen3.5-2B) | Apache-2.0 / 2.27B | 低内存对照，必要时作为轻量档；MLX 上游有架构实现，需验证文本权重转换与实际质量 |
+| [Qwen3.5-4B](https://huggingface.co/Qwen/Qwen3.5-4B) | Apache-2.0 / 4.66B | **首轮主候选**。优先面向 16GB 及以上 Apple Silicon Mac，验证质量与并发预览内存，尚未实测 |
+| [Qwen3-4B-Instruct-2507](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507) | Apache-2.0 / 4.02B | 纯文本、非思考模式对照；需核对 MLX 转换、tokenizer 与聊天模板 |
+| [Qwen2.5-Coder-1.5B-Instruct](https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct) | Apache-2.0 / 1.54B | 较小代码模型备选；只有 2B 仍不满足轻量档资源目标时再加测，避免扩大首轮矩阵 |
+| [Qwen2.5-Coder-7B-Instruct](https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct) | Apache-2.0 / 7.62B | Mac 上的代码质量对照，或大内存 Mac 的离线合成数据教师，不作为首轮默认下载 |
 | [Qwen3.5-0.8B](https://huggingface.co/Qwen/Qwen3.5-0.8B) | Apache-2.0 / 0.87B | 后续低内存实验，优先模板选择与参数修改；不预设能承担完整生成与修复 |
 | [SmolLM3-3B](https://huggingface.co/HuggingFaceTB/SmolLM3-3B) | Apache-2.0 / 3.08B | 非 Qwen 对照。模型卡说明中文训练占比较低，需中文任务实测，首轮不优先投入微调 |
-| [Gemma 4 E2B-it](https://huggingface.co/google/gemma-4-E2B-it) | Apache-2.0 / 5.12B | 新的备选。E2B 指有效参数规模，包含 embedding 后不是 2B 权重；WebLLM 文档描述自定义构建，不能当作现成预编译产品路径 |
+| [Gemma 4 E2B-it](https://huggingface.co/google/gemma-4-E2B-it) | Apache-2.0 / 5.12B | 新的备选。E2B 指有效参数规模，包含 embedding 后不是 2B 权重；MLX 架构与转换兼容性需单独验证，首轮不投入接入 |
 | [Qwen3-Coder-30B-A3B-Instruct](https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct) | Apache-2.0 / 30.53B | 大内存开发机上的质量上限或教师。约 3.3B 活跃参数不等于只存 3.3B 权重；4-bit 权重理论下限已约 15.3GB，实际更高 |
 | [Qwen2.5-Coder-3B-Instruct](https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct) | Qwen Research / 3.09B | **排除默认商业分发路线**。该版本许可证只直接授予非商业使用，商业用途需另行获得授权，不能与 1.5B、7B 一概视为 Apache-2.0 |
 
 Qwen3.5 默认会思考。首轮采用其官方支持的 `enable_thinking=false` 聊天模板配置，避免思考输出挤占代码预算；当前 AIClient 没有该参数透传，应先由本地服务器模板控制，再决定是否增加适配字段。不能只在提示词里写“不要思考”便当作已经关闭。[模型卡说明](https://huggingface.co/Qwen/Qwen3.5-4B)。3B 的商业限制以[固定版本 LICENSE](https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct/blob/488639f1ff808d1d3d0ba301aef8c11461451ec5/LICENSE)为准。
 
-不根据公共编码榜直接宣布胜者。若旧的 1.5B 加检索就达到产品门槛，应保留更小方案；若 2B 经过适配仍不合格，则缩小支持任务或转为 Mac 4B，而不是降低检查标准。
+不根据公共编码榜直接宣布胜者。若 2B 加检索已经达到产品门槛，可以保留更小方案；若 4B 没有明显质量收益，也不应仅为参数量更大而选择它。7B 作为质量对照，只有收益足以抵偿下载与内存成本时再考虑产品化。
 
-## 4. Web 与本地部署路径
+## 4. Mac 部署与设备范围
 
-### Mac：先复用本地服务，再决定是否内嵌
+### 原型：复用现有本地服务入口
 
 原型优先使用现有 Ollama / OpenAI-compatible 入口连接本机推理服务器，验证真实 Agent 循环。这不要求先给 App 增加模型 SDK。服务器必须明确绑定 loopback；本地调用不需要把提示词传给云服务。用户需安装服务的原型，不等同于最终“一键离线”体验。
 
-如原型达到门槛，产品内嵌优先评估 MLX Swift LM，使用 Metal 和 Apple Silicon。上游已有 Qwen3.5 与 LoRA 实现，但仍需验证目标权重转换、量化、取消、资源释放和构建体积。其 Package.swift 最低为 macOS 14 / iOS 17，本项目 App 仍支持 iOS 16，必须做平台与系统条件隔离，不能为此直接提高整个 App 的最低版本。[固定版本源码](https://github.com/ml-explore/mlx-swift-lm/tree/991266ad300f47a3b9f21e62ff5bdb679215e758)。
+### 产品：macOS Studio 内嵌 MLX
 
-llama.cpp 可作为 GGUF 与跨平台替代路线，但首轮不同时嵌入两套运行时。已有 Apple Private Cloud Compute provider 是另一条服务路径，不应标为完全离线或我们自行微调的本地权重。[llama.cpp 上游](https://github.com/ggml-org/llama.cpp)。
+如原型达到门槛，产品内嵌优先评估 MLX Swift LM，使用 Metal 和 Apple Silicon。上游已有 Qwen3.5 与 LoRA 实现，但仍需验证目标权重转换、量化、取消、资源释放和构建体积。其固定版本 Package.swift 最低要求 macOS 14，应将该功能按平台/系统隔离，不因此提高整个项目或 iOS App 的最低版本。[固定版本源码](https://github.com/ml-explore/mlx-swift-lm/tree/991266ad300f47a3b9f21e62ff5bdb679215e758)。
 
-### Web：WebLLM + WebGPU + Worker
+训练使用 MLX LM，App 推理使用 MLX Swift LM；二者是训练工具与产品运行时，不是在 App 内嵌两套推理后端。llama.cpp 可作为 Mac 上的 GGUF / Metal 替代路线，只有 MLX 遇到实际阻碍时再评估，不同时接入。已有 Apple Private Cloud Compute provider 是另一条服务路径，不应标为完全离线或我们自行微调的本地权重。[MLX LM 上游](https://github.com/ml-explore/mlx-lm)、[llama.cpp 上游](https://github.com/ggml-org/llama.cpp)。
 
-Web 首选 WebLLM，在 Worker 中加载模型并生成，主线程处理编辑与预览。调研时上游配置已经列出 Qwen3.5-2B、4B 的预编译记录：4-bit / 4096 上下文的 `vram_required_MB` 分别为 **2245.44 / 3867.82**；Coder-1.5B 对应 **1629.75**。这些是上游估计，不包括我们整页和系统的全部消耗，也不构成设备支持承诺。[固定配置](https://github.com/mlc-ai/web-llm/blob/c42c36670cfc426c75e53ee297443882f1ae8d84/src/config.ts)。
+### 设备与离线验收
 
-我们训练后的 safetensors、MLX 或 GGUF 文件不能直接丢给 WebLLM。需合并适配器、转换/量化为 MLC 格式，并匹配 tokenizer、聊天模板、模型配置和 WASM 模型库。Qwen3.5 还维护循环状态，取消、重试和项目切换必须正确重置 KV 与循环状态；不能只清空聊天数组。[WebLLM 高级用法](https://webllm.mlc.ai/docs/user/advanced_usage.html)。
+| 目标 | 首轮定位，均待实测 |
+| --- | --- |
+| Apple Silicon、16GB 及以上 | 4B / 4-bit 的主要产品验收范围，必须同时测编辑器与原生预览 |
+| Apple Silicon、8GB | 仅作为 2B 轻量档可行性实验，不承诺首版支持，也不阻塞 4B 主线 |
+| Apple Silicon、24/32GB 及以上 | 本机微调试验候选，同时测 7B 质量对照；完整训练是否可行以 100 步试跑决定 |
+| Intel Mac、旧版 macOS | 本次内嵌 MLX 功能不覆盖，普通编辑与已有 provider 按现有兼容范围继续提供 |
 
-离线可用需要缓存应用外壳、JS、WASM、tokenizer、权重分片和参考资料，并实测断网冷启动。首次下载需要联网；申请持久化存储不能保证浏览器永不清理缓存。界面需显示下载体积、进度、空间不足、重新下载、删除模型、浏览器不支持等状态，禁用模型时不应影响普通编辑。浏览器可终止 Worker / Service Worker，需要处理恢复。[WebLLM 基本用法](https://webllm.mlc.ai/docs/user/basic_usage.html)。
+仅在 Mac App 的生成阶段运行模型，macOS WidgetKit 扩展只运行保存后的 JSX。权重不放进脚本包、共享容器或 iCloud 脚本同步，不把推理引入 timeline。取消、重试与项目切换需重置 KV 和 Qwen3.5 的循环状态；要测试反复生成后的内存释放和不同项目间的上下文隔离。
 
-先限定支持 WebGPU 的桌面浏览器，通过能力探测和实测决定启用；不承诺所有手机浏览器。HTTPS Studio 访问 localhost 还涉及 CORS、混合内容和本地网络策略，因此 Web 首轮用浏览器内推理，连接本机服务留到后续。若做配对桥接，需明确配对、限定来源与 loopback，不能通过允许任意来源绕过边界。
+离线安装包包括模型、tokenizer、聊天模板、配置与版本化 API 资料。首次下载需要联网；下载完成后必须测试断网冷启动、生成、修复、预览和保存。界面需显示体积、进度、空间不足、下载损坏、删除及重新下载状态。卸载模型后普通编辑仍可使用。设备不足时明确提示，用户另选已有 provider，不静默切换到云端。
 
-Transformers.js 是另一种 ONNX / WebGPU 路线，但每个架构的导出、算子和量化都需另验，不能直接加载任意 HF 权重。首轮不并行维护第二套 Web 推理方案。[Transformers.js 官方文档](https://huggingface.co/docs/transformers.js/en/index)。
-
-### 手机：后置，有明确设备门槛
-
-先建立 Mac 与桌面 Web 的证据，再评估 iPhone / iPad 内嵌。当前用于验收的 iPhone 11 不能因为装了 iOS 26 就被视为足以容纳 2B 推理。需按设备可用内存、热状态、并发预览和系统终止情况确定支持清单。
-
-模型只在 App 或浏览器生成阶段运行，WidgetKit 扩展只运行保存后的 JSX。权重不放进脚本包、共享容器或 iCloud 脚本同步；不把推理引入 timeline、Control Widget 或 Live Activity 路径。设备不足时明确提示，用户另选已有 provider，不静默切换到云端。
+WebLLM、MLC 导出、浏览器缓存、localhost 桥接和 iOS 设备适配均移出执行计划。来源快照中的 Web 推理资料仅保留为原始调研记录，不构成后续开发 TODO。
 
 ## 5. 生成流程与模型边界
 
@@ -86,7 +84,7 @@ Transformers.js 是另一种 ONNX / WebGPU 路线，但每个架构的导出、�
 4. 在显式固定 mock 的预览环境执行，保留运行时限制。错误时只回传必要诊断和当前代码，最多修复两次；截断、超时、OOM 和取消均按失败记录。
 5. 展示预览、代码变化与需要的权限。保存新副本或经用户确认应用修改，使用项目 revision 检查，避免覆盖并发编辑。
 
-Web 需新增控制器来实现同一流程，共享 API 快照、测试用例和输出约定；不能说现有 Swift Agent 已可直接在 Web 运行。内嵌原生推理时，需要把当前具体 AIClient 调用整理为可替换接口，不把所有模型引擎塞进 URL 分支。
+在 macOS Studio 中复用现有 Swift Agent，内嵌推理时把当前具体 AIClient 调用整理为可替换接口；为 Mac 增加模型下载、加载、取消与卸载状态，避免阻塞编辑器主线程。MLX 依赖只进入 Mac App 的相应模块，不加入 widget 扩展、iOS 或 Web。
 
 首轮以 4096 token 总预算试验，例如输入不超过 2500、输出不超过 1300，其余留给模板开销。实际以 tokenizer 计数并拒绝超预算，不简单按字符截断。长组件可能不适用这个预算，应明确反馈或在 Mac 验证后提供 8K 档；模型卡的 128K/262K 上限不等于本地实际预算。每次修复重新压缩上下文，不能无限累积历史。
 
@@ -101,7 +99,7 @@ Web 需新增控制器来实现同一流程，共享 API 快照、测试用例�
 数据进入训练集前必须同时通过：
 
 - 来源与许可证核对。本仓库 MIT 不代表 Gallery 中所有第三方脚本、图片和字体都可直接训练、再分发。
-- 静态契约与运行检查，以及相关尺寸的原生浅深色截图审核。浏览器预览通过不能替代 native 通过。
+- 静态契约与运行检查，以及相关尺寸的 Mac 原生浅深色截图审核。训练与截图验收均固定 macOS runtime 版本。
 - 输入与输出脱敏，不含用户私有组件、真实健康/位置记录、token、账号或服务器敏感响应。
 - 语义审核：需求中的值、行为、布局和权限与结果一致；不能只筛选“未报错”。
 
@@ -111,23 +109,22 @@ Web 需新增控制器来实现同一流程，共享 API 快照、测试用例�
 
 首轮采用监督微调 SFT + LoRA/QLoRA，保持基础模型能力，重点教会 ScriptWidget 方言、API 选择、修改与错误修复。不要从零预训练，也不先做强化学习或全参数训练。
 
-可以选用 MLX LM 在 Apple Silicon 上实验，或 Transformers + PEFT + TRL 在 NVIDIA GPU 上训练。先用 100 步验证 Qwen3.5 当前架构、聊天模板、loss mask、适配层、显存和收敛；不能把只针对传统 attention 的 `q_proj/v_proj` 配置直接套到混合架构。用 assistant 输出监督，排除 prompt、填充和不需要的思考 token，固定 EOS 与推理时一致的模板。[MLX LoRA 文档](https://github.com/ml-explore/mlx-lm/blob/59995f131cf2b48950a67d2eb36d76b2a554b989/mlx_lm/LORA.md)、[PEFT 量化训练](https://huggingface.co/docs/peft/main/en/developer_guides/quantization)、[TRL SFTTrainer](https://huggingface.co/docs/trl/main/en/sft_trainer)。
+训练也优先在 Apple Silicon Mac 上使用 MLX LM，减少首轮工具链数量。先用 100 步验证 Qwen3.5 当前架构、聊天模板、loss mask、适配层、显存和收敛；不能把只针对传统 attention 的 `q_proj/v_proj` 配置直接套到混合架构。用 assistant 输出监督，排除 prompt、填充和不需要的思考 token，固定 EOS 与推理时一致的模板。[MLX LoRA 文档](https://github.com/ml-explore/mlx-lm/blob/59995f131cf2b48950a67d2eb36d76b2a554b989/mlx_lm/LORA.md)。
 
 起始参数作为待调配置：LoRA rank 16/32、1–3 epoch、4K 最大序列、按有效 token 做 packing、固定随机种子；学习率用小规模验证集选择，不把一组参数写成所有模型通用配方。优先选择验证集最优 checkpoint，避免仅因训练 loss 更低而继续训练。
 
 | 环节 | 首轮资源规划，均需实测 |
 | --- | --- |
-| 2B QLoRA 训练 | 以 16–24GB GPU 作为试验起点；不是最低显存保证 |
-| 4B QLoRA 训练 | 如确有必要，以 24–48GB GPU 作为预算起点 |
-| Mac 训练 | 24/32GB 及以上 Apple Silicon 作为候选，实际受序列、batch 和实现影响；不承诺 8GB 可训练 |
+| 4B MLX LoRA/QLoRA 训练 | 先在 24/32GB 及以上 Apple Silicon Mac 做 100 步短跑；实际受序列、batch、量化与适配层影响，不能保证该内存足够 |
+| 2B 训练 | 只有低内存产品档确有必要时再做；不与 4B 同时启动完整训练 |
 | 2B 本地推理 | 4-bit、短上下文按约 3–5GB 工作内存预留；还要给系统、编辑器和预览留空间 |
-| 4B 本地推理 | 先按约 5–8GB 预留；Mac 首轮测试优先 16GB 及以上，浏览器单独测 |
+| 4B 本地推理 | 先按约 5–8GB 预留；Mac 首轮测试优先 16GB 及以上 |
 
 这些区间是工程预算假设，不是下载大小、设备规格或测量值。权重大小、KV/循环状态、运行时缓存、预览和峰值分配必须分别记录。
 
 训练前先计数真实 token。例如 3000 条、平均 1200 token 为 360 万 token，一个到三个 epoch 为约 360–1080 万 token。100 步试跑后，用实际每步耗时与有效吞吐估算全程，再加数据处理、验证和导出耗时，设置费用与时长上限后才启动完整训练。本次研究不租用 GPU，也不产生训练开支。
 
-导出顺序为：基础模型固定 revision + 适配器 → 合并为受支持的高精度中间权重 → 分别转换/量化到 MLX 和 MLC → 重新评测。不能假设 MLX 的 GGUF 导出自动覆盖 Qwen3.5；如需要 GGUF，须独立验证 llama.cpp 转换工具。首轮只要求 Mac 一种格式和 Web MLC。
+导出顺序为：基础模型固定 revision + 适配器 → 合并为受支持的高精度中间权重 → 转换/量化到 Mac 使用的 MLX 格式 → 重新评测。不能假设 MLX 的 GGUF 导出自动覆盖 Qwen3.5；如需要 GGUF，须独立验证 llama.cpp 转换工具。首轮只交付一种 Mac 推理格式；不要求 MLC、ONNX 或其他平台产物。
 
 ## 8. 评测：决定是否值得拥有这个模型
 
@@ -135,7 +132,7 @@ Web 需新增控制器来实现同一流程，共享 API 快照、测试用例�
 
 测试覆盖新需求、修改、修复、中文/英文、全部尺寸、浅深色、缺失数据、API 边界、拒绝权限、恶意提示与非法路径。保留人工设计的新布局与组合任务，避免只检验模板复述。
 
-对主候选做同预算的 2×2 对照：基础模型 / SFT 模型 × 无检索 / 有检索。先比较基础 2B、4B、Qwen3-4B-2507 与 Coder-1.5B；只有主候选进入首轮训练，不为所有候选各做一次微调。统一采样配置、输入输出预算与首次生成加两次修复，固定三组种子，报告全部失败。
+对主候选做同预算的 2×2 对照：基础模型 / SFT 模型 × 无检索 / 有检索。先比较基础 4B、2B、Qwen3-4B-2507 与 Coder-7B；只有主候选进入首轮训练，不为所有候选各做一次微调。统一采样配置、输入输出预算与首次生成加两次修复，固定三组种子，报告全部失败。
 
 分别报告首轮成功率和修复后成功率、原生执行通过率、需求语义完成率、人工视觉接受率、权限违规、截断、超时和 OOM。记录 P50/P95 首 token 时间、完整生成时间、tokens/s、冷/热加载、峰值内存与下载体积；当前没有任何实测速度承诺。
 
@@ -149,7 +146,7 @@ Web 需新增控制器来实现同一流程，共享 API 快照、测试用例�
 | 原生浅深色截图人工接受 | ≥80%，双人盲评并记录分歧 |
 | 固定安全负例的越权执行 | 0；不能因模型拒绝就跳过宿主拦截测试 |
 | 微调收益 | 相同检索与预算下，相比基础模型语义完成率提高 ≥10 个百分点，或失败率降低 ≥25%；关键切片不下降超过 3 个百分点 |
-| 转换/量化 | 高精度、Mac 量化与 Web 量化复跑同一套用例，差异须解释并满足以上门槛 |
+| 转换/量化 | 高精度与 Mac MLX 量化复跑同一套用例，差异须解释并满足以上门槛 |
 
 整体比例附 95% 置信区间；同任务的模型差异采用配对统计，三次采样不能当作三倍独立需求。速度与内存门槛按目标设备试跑后冻结，不能只看开发机平均值。模型自身可靠性与 Agent 修复收益分开呈现。
 
@@ -163,23 +160,23 @@ Web 需新增控制器来实现同一流程，共享 API 快照、测试用例�
 
 最终分发清单需记录 base revision、adapter hash、数据集版本与许可汇总、训练/量化配置、运行时版本、API snapshot hash、文件大小/校验和、适用设备、评测报告、已知限制及许可证。只有通过评测与许可核对后，才在我们控制的 HF namespace / CDN 发布权重。
 
-实验模型可先保存在私有仓库，但公开 Web 页面不能内嵌私有 HF token。生产离线模型优先公开、可校验的权重下载；若未来需要私有分发，另行设计授权流程，不把密钥写进前端或脚本。推理、训练和遥测默认不上传用户内容，也不静默调用云端补救。
+实验模型可先保存在私有仓库。Mac 产品优先使用公开、可校验的权重下载；若未来需要私有分发，另行设计用户授权流程，不在 App 二进制、配置或脚本中内置共享 HF token。推理、训练和遥测默认不上传用户内容，也不静默调用云端补救。
 
 ## 10. 分阶段执行与停止条件
 
 | 阶段 | 必须交付 | 进入下一阶段的条件 |
 | --- | --- | --- |
-| A：基线与导出探针 | 冻结任务/许可清单；2B/4B/两个旧模型基线；2B 在本地服务及 WebLLM 各跑通一个完整生成/修复案例；资源报告 | 至少一条实际可用部署路径，预算与质量差距明确；如果是兼容问题先解决，不立即训练 |
-| B：数据与小规模 SFT | 人审种子集、隔离的数据分区、3000–5000 条可用样本、100 步资源试跑、2B adapter 与复现实验记录 | 独立验证集显示收益，无明显中文/权限/修改能力退化；否则修数据或停止投入 |
-| C：独立测试与双端产物 | 封存任务报告、量化回归、Mac 与 MLC 产物、原生截图盲评、离线冷启动和中断恢复测试 | 满足质量门槛及目标设备资源预算；2B 不够再批准 4B 训练，避免并行铺开 |
-| D：产品接入与小范围发布 | 下载/删除/能力探测、provider 接口与 Web 控制器、取消/保存冲突处理、模型卡、许可与分发清单 | 端到端验收通过后再安排 App 发版或 Web 部署 |
+| A：基线与导出探针 | 冻结任务/许可清单；4B/2B/纯文本 4B/代码 7B 基线；4B 在 Mac 本地服务和 MLX 各跑通生成/修复案例；16GB 目标机资源报告 | Mac 主路径可用，MLX 导入探针通过，预算与质量差距明确；如果是兼容问题先解决，不立即训练 |
+| B：数据与小规模 SFT | 人审种子集、隔离的数据分区、3000–5000 条可用样本、Mac 上 100 步资源试跑、4B adapter 与复现实验记录 | 独立验证集显示收益，无明显中文/权限/修改能力退化；否则修数据或停止投入 |
+| C：独立测试与 Mac 产物 | 封存任务报告、量化回归、Mac MLX 产物、原生截图盲评、离线冷启动和中断恢复测试 | 满足质量门槛及目标设备资源预算；4B 收益不足时重新选择 2B 或缩小任务，不自动追加多模型训练 |
+| D：产品接入与小范围发布 | 下载/删除/能力探测、Mac provider 接口与 Studio 界面、取消/保存冲突处理、模型卡、许可与分发清单 | Mac 端到端验收通过后再安排 macOS App 发版 |
 
 每阶段先交付可检查的报告，再决定下一阶段，不在本次研究后自动启动长期开发。若仅检索就达到门槛，可以先提供本地模型能力，把自有微调推迟；若微调没有稳定收益，不发布一个只换了名字的模型。
 
-后续 TODO：手机支持清单、多文件包生成、参考截图输入、0.8B 蒸馏、偏好训练和自动任务规划。这些均不属于首轮交付。
+后续 TODO：多文件包生成、参考截图输入、0.8B 蒸馏、偏好训练和自动任务规划。这些均不属于首轮交付。
 
 ## 11. 证据与本次交付
 
 上游模型和推理库会变化，选择时以[固定 revision 的来源快照](research/widget-local-model/model-sources.json)复核。本文的“支持”仅表示本次检查发现相关实现或配置，未完成实际兼容、性能或生成质量验证。
 
-本次交付包括本方案、10 个模型的元数据/许可证来源、推理库固定版本记录，以及现有 AI 质量文档的索引链接。没有训练权重、产品实现或发布变更。下一步最值得做的是阶段 A：用实际 ScriptWidget 需求跑出基线，确定 2B 是否足够，再决定训练投入。
+本次交付包括本方案、10 个模型的元数据/许可证来源、推理库固定版本记录，以及现有 AI 质量文档的索引链接。没有训练权重、产品实现或发布变更。下一步最值得做的是阶段 A：在 Mac 上用实际 ScriptWidget 需求比较 4B 的质量收益和 2B 的资源优势，再决定训练投入。
