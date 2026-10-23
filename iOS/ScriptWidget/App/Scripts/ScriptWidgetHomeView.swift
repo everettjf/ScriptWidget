@@ -67,6 +67,7 @@ struct ScriptWidgetHomeView: View {
 
     @State private var selectedEditItem: ScriptModel?
     @State private var selectedShareItem: ScriptModel?
+    @State private var selectedRecordItem: ScriptModel?
     @State private var selectedDeleteItem: ScriptModel?
     @State private var isShowingDeleteAlert = false
     
@@ -93,6 +94,9 @@ struct ScriptWidgetHomeView: View {
                     Button("Cancel", role: .cancel) { }
                 } message: { item in
                     Text("“\(item.name)” and its project files will be removed. This can’t be undone.")
+                }
+                .sheet(item: $selectedRecordItem) { item in
+                    ScriptWidgetRecordsView(package: item.package)
                 }
                 .navigationTitle("Widgets")
                 .searchable(text: $searchText, prompt: "Search widgets")
@@ -220,7 +224,18 @@ struct ScriptWidgetHomeView: View {
                                         .toolbar(.hidden, for: .tabBar)
                         ) {
                             WidgetRowView(model: item)
-                        }.swipeActions(allowsFullSwipe: false) {
+                        }
+                        .contextMenu {
+                            if (try? ScriptWidgetRecordKind.load(package: item.package)) != nil {
+                                Button { selectedRecordItem = item } label: { Label("Records & Configuration", systemImage: "list.bullet.rectangle") }
+                            }
+                        }
+                        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                            if (try? ScriptWidgetRecordKind.load(package: item.package)) != nil {
+                                Button { selectedRecordItem = item } label: { Label("Records", systemImage: "list.bullet.rectangle") }.tint(.teal)
+                            }
+                        }
+                        .swipeActions(allowsFullSwipe: false) {
                             Button {
                                 self.selectedShareItem = item
                             } label: {
@@ -233,7 +248,7 @@ struct ScriptWidgetHomeView: View {
                             } label: {
                                 Label("Edit", systemImage: "pencil.circle")
                             }
-                            .tint(Color(uiColor: .systemIndigo))
+                            .tint(StudioDesign.gold)
 
                             Button {
                                 let result = sharedScriptManager.duplicateScript(sourcePackageName: item.name)
@@ -243,7 +258,7 @@ struct ScriptWidgetHomeView: View {
                             } label: {
                                 Label("Remix", systemImage: "square.on.square")
                             }
-                            .tint(.purple)
+                            .tint(StudioDesign.coral)
 
                             Button(role: .destructive) {
                                 self.selectedDeleteItem = item

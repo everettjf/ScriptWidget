@@ -1,0 +1,282 @@
+{
+  "researchedDate": "2026-10-20",
+  "storefront": "US + CN",
+  "apps": [
+    {
+      "slug": "widgetsmith",
+      "appID": 1523682319,
+      "name": "Widgetsmith",
+      "storeURL": "https://apps.apple.com/us/app/widgetsmith/id1523682319?uo=4",
+      "lookupURL": "https://itunes.apple.com/lookup?id=1523682319&country=us",
+      "version": "8.7",
+      "releaseDate": "2026-09-28T15:13:39Z",
+      "screenshots": [
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/70/e1/a9/70e1a96b-ee79-073b-a238-2e635f5469fe/8.6_-_Panel_1.png/320x480bb.jpg",
+          "file": "sources/widgetsmith/01.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/17/24/bc/1724bc1f-1b1a-0859-a221-cd6e47730a75/8.6_-_Panel_2.png/320x480bb.jpg",
+          "file": "sources/widgetsmith/02.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/c4/5f/a9/c45fa956-10f6-feb8-8675-b064b198b330/8.6_-_Panel_3.png/320x480bb.jpg",
+          "file": "sources/widgetsmith/03.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/96/ee/ae/96eeae01-6783-83b4-fb82-008e5fe6f603/8.6_-_Panel_4.png/320x480bb.jpg",
+          "file": "sources/widgetsmith/04.jpg"
+        }
+      ],
+      "country": "US"
+    },
+    {
+      "slug": "widgy",
+      "appID": 1524540481,
+      "name": "Widgy Widgets: Home/Lock/Watch",
+      "storeURL": "https://apps.apple.com/us/app/widgy-widgets-home-lock-watch/id1524540481?uo=4",
+      "lookupURL": "https://itunes.apple.com/lookup?id=1524540481&country=us",
+      "version": "27.0.1",
+      "releaseDate": "2026-09-17T20:01:43Z",
+      "screenshots": [
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/48/7f/2b/487f2b99-dfee-d25c-d015-0e352194bfef/01-P69.png/392x696bb.png",
+          "file": "sources/widgy/01.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/dc/4f/a9/dc4fa92e-0be2-a257-e45c-61e96fd3dd7d/02-P28.png/392x696bb.png",
+          "file": "sources/widgy/02.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/17/87/3c/17873c5e-2554-cf43-7de6-46f622972f9a/03-A07.png/392x696bb.png",
+          "file": "sources/widgy/03.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/aa/31/89/aa3189e7-e3f9-ed42-73ee-59611515bd63/04-P43.png/392x696bb.png",
+          "file": "sources/widgy/04.jpg"
+        }
+      ],
+      "country": "US"
+    },
+    {
+      "slug": "color-widgets",
+      "appID": 1531594277,
+      "name": "Color Widgets",
+      "storeURL": "https://apps.apple.com/us/app/color-widgets/id1531594277?uo=4",
+      "lookupURL": "https://itunes.apple.com/lookup?id=1531594277&country=us",
+      "version": "9.0.0",
+      "releaseDate": "2026-09-15T10:34:27Z",
+      "screenshots": [
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/65/45/3c/65453c8a-b11b-1da3-51a0-9a9a85ee9740/Liquid_Glass_-_1.png/320x480bb.jpg",
+          "file": "sources/color-widgets/01.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/9e/25/58/9e25589b-af2e-dfa2-cf59-9dca903d6e89/Liquid_Glass_-_2.png/320x480bb.jpg",
+          "file": "sources/color-widgets/02.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/d7/3e/d6/d73ed6cb-49e6-8397-1ba7-1f6bc9eda28b/Liquid_Glass_-_3.png/320x480bb.jpg",
+          "file": "sources/color-widgets/03.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/2b/2e/6f/2b2e6f22-22e8-ea51-bdcb-be32ac54c023/Liquid_Glass_-_4.png/320x480bb.jpg",
+          "file": "sources/color-widgets/04.jpg"
+        }
+      ],
+      "country": "US"
+    },
+    {
+      "slug": "widgetable",
+      "appID": 1641107226,
+      "name": "Widgetable: Besties & Couples",
+      "storeURL": "https://apps.apple.com/us/app/widgetable-besties-couples/id1641107226?uo=4",
+      "lookupURL": "https://itunes.apple.com/lookup?id=1641107226&country=us",
+      "version": "4.2.010",
+      "releaseDate": "2026-10-16T13:54:05Z",
+      "screenshots": [
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/08/2a/bf/082abf64-85ce-aec8-1bbc-4282895f3c6d/iOS_1242x2208_en_1.jpg/392x696bb.jpg",
+          "file": "sources/widgetable/01.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/fb/b6/22/fbb622d2-e959-5044-0b75-6b593c6dc56b/iOS_1242x2208_en_2.jpg/392x696bb.jpg",
+          "file": "sources/widgetable/02.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/ee/3a/77/ee3a771d-bebc-8ed5-88ca-999d6e79b8fc/iOS_1242x2208_en_3.jpg/392x696bb.jpg",
+          "file": "sources/widgetable/03.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/ff/8e/ba/ff8ebadd-45ee-9dc8-d003-529098f19c8f/iOS_1242x2208_en_4.jpg/392x696bb.jpg",
+          "file": "sources/widgetable/04.jpg"
+        }
+      ],
+      "country": "US"
+    },
+    {
+      "slug": "scriptable",
+      "appID": 1405459188,
+      "name": "Scriptable",
+      "storeURL": "https://apps.apple.com/us/app/scriptable/id1405459188?uo=4",
+      "lookupURL": "https://itunes.apple.com/lookup?id=1405459188&country=us",
+      "version": "1.7.19",
+      "releaseDate": "2024-09-30T10:29:59Z",
+      "screenshots": [
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource124/v4/af/ae/12/afae1221-2233-c838-00a3-1453c6f3db4a/5ce3ba3d-0627-45bf-927b-4dbeed30055d_1.png/392x696bb.png",
+          "file": "sources/scriptable/01.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple124/v4/9a/15/b5/9a15b5f5-701a-13b6-1923-f5225f723cb5/pr_source.png/392x696bb.png",
+          "file": "sources/scriptable/02.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple114/v4/07/41/bc/0741bc85-0e0b-eac0-bfe2-46d51db1721c/pr_source.png/392x696bb.png",
+          "file": "sources/scriptable/03.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple114/v4/3e/ba/1a/3eba1a31-f4ba-1a1f-2dbf-7263d30f1b10/pr_source.png/392x696bb.png",
+          "file": "sources/scriptable/04.jpg"
+        }
+      ],
+      "country": "US"
+    },
+    {
+      "slug": "launcher",
+      "appID": 905099592,
+      "name": "Launcher with Multiple Widgets",
+      "storeURL": "https://apps.apple.com/us/app/launcher-with-multiple-widgets/id905099592?uo=4",
+      "lookupURL": "https://itunes.apple.com/lookup?id=905099592&country=us",
+      "version": "5.8.2",
+      "releaseDate": "2026-09-22T16:21:49Z",
+      "screenshots": [
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/5f/46/ca/5f46ca5e-6c62-003c-bbaf-d643363bca85/3e290e94-b797-435e-bfe8-445632bbcd32_iPhone_8_Plus-00-LockScreen2_framed.png/392x696bb.png",
+          "file": "sources/launcher/01.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/b7/d0/3e/b7d03ed9-9356-477e-188b-845d8ef448d9/a9060083-41ba-4268-ac20-2788f40fd61f_iPhone_8_Plus-1-New2-HomeScreen1_framed.png/392x696bb.png",
+          "file": "sources/launcher/02.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/20/4c/83/204c83f1-16eb-00c0-02dc-32245b5ddb6b/6a890701-0d5d-48c2-9404-5815c1520035_iPhone_7_Plus-2-New-HomeScreen2_framed.png/392x696bb.png",
+          "file": "sources/launcher/03.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/70/99/0a/70990a3c-fd72-7d66-feea-9c51eb3925ac/c3600edd-656b-443f-a69c-8ef772e9a9ca_iPhone_8_Plus-3-New2-HomeScreen3_framed.png/392x696bb.png",
+          "file": "sources/launcher/04.jpg"
+        }
+      ],
+      "country": "US"
+    },
+    {
+      "slug": "lock-launcher",
+      "appID": 1636719674,
+      "name": "Lock Launcher - Launch Apps",
+      "storeURL": "https://apps.apple.com/us/app/lock-launcher-launch-apps/id1636719674?uo=4",
+      "lookupURL": "https://itunes.apple.com/lookup?id=1636719674&country=us",
+      "version": "2.1.8",
+      "releaseDate": "2026-10-10T16:34:39Z",
+      "screenshots": [
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/c4/c8/d5/c4c8d59c-4b45-52f5-a588-75434ec9faf5/df0be49b-8e6e-41b5-97df-df5a3215a382_ens1.png/392x696bb.png",
+          "file": "sources/lock-launcher/01.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/ad/31/13/ad31138a-8ca7-0563-f63c-218aa163b358/24416839-037d-4202-aa1e-abd89de2a2db_ens6.png/392x696bb.png",
+          "file": "sources/lock-launcher/02.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/5a/98/96/5a9896a6-11a7-eafe-1fe8-437f0f7c1f7c/bf881538-0163-48de-86a7-6f2bb89ed658_enp8-1.png/392x696bb.png",
+          "file": "sources/lock-launcher/03.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/a4/a6/0d/a4a60d6b-ff09-3f7d-bf46-2f97a9663e09/ca17906e-e5b6-4e4e-8af4-632bb54b3e4d_ens2.png/392x696bb.png",
+          "file": "sources/lock-launcher/04.jpg"
+        }
+      ],
+      "country": "US"
+    },
+    {
+      "slug": "pixel-pals",
+      "appID": 6443919232,
+      "name": "Pixel Pals Widget Pet Game",
+      "storeURL": "https://apps.apple.com/us/app/pixel-pals-widget-pet-game/id6443919232?uo=4",
+      "lookupURL": "https://itunes.apple.com/lookup?id=6443919232&country=us",
+      "version": "2.0.21",
+      "releaseDate": "2025-11-11T17:47:12Z",
+      "screenshots": [
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/f5/04/23/f5042305-5b6d-6a65-165b-b1435ed6d4ec/703186ac-9eb2-4b03-9486-d387de4b1b54_IMG_0011.PNG/392x696bb.png",
+          "file": "sources/pixel-pals/01.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/58/d9/14/58d9141e-373b-c28c-7ba6-9a1950cc7ba5/257ef2f8-713d-4a40-9228-b124aece1103_IMG_0015.PNG/392x696bb.png",
+          "file": "sources/pixel-pals/02.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/36/b1/81/36b18177-6296-92fa-59f4-90596052d0ed/fe01ef95-498c-4d65-8046-55c14f8e32f1_IMG_0012.PNG/392x696bb.png",
+          "file": "sources/pixel-pals/03.jpg"
+        }
+      ],
+      "country": "US"
+    },
+    {
+      "country": "CN",
+      "slug": "iscreen",
+      "appID": 1534704608,
+      "name": "我的桌面 · iScreen - 桌面小组件主题壁纸",
+      "storeURL": "https://apps.apple.com/cn/app/%E6%88%91%E7%9A%84%E6%A1%8C%E9%9D%A2-iscreen-%E6%A1%8C%E9%9D%A2%E5%B0%8F%E7%BB%84%E4%BB%B6%E4%B8%BB%E9%A2%98%E5%A3%81%E7%BA%B8/id1534704608?uo=4",
+      "lookupURL": "https://itunes.apple.com/lookup?id=1534704608&country=cn",
+      "version": "5.1.15",
+      "releaseDate": "2026-10-15T00:05:28Z",
+      "screenshots": [
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/9a/47/6f/9a476fba-be86-8d2b-7601-292a8265e14f/c9eee85c-5871-401b-a41c-900593b6d6fc_2208-_U52a8_U753b__U4e2d.png/392x696bb.png",
+          "file": "sources/iscreen/01.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/7b/5f/95/7b5f9584-0e19-052f-ad57-ac2c47bc208b/2208-OS27__U7b80.png/392x696bb.png",
+          "file": "sources/iscreen/02.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/24/ae/25/24ae25eb-308c-3e8d-6ff0-f99a89166299/2208-_U7a7a_U95f4__U7b80.png/392x696bb.png",
+          "file": "sources/iscreen/03.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/65/9e/a4/659ea4e3-de14-2707-8485-16b79b9b69bf/2208-_U6db2_U6001_U73bb_U7483__U7b80.png/392x696bb.png",
+          "file": "sources/iscreen/04.jpg"
+        }
+      ]
+    },
+    {
+      "country": "CN",
+      "slug": "top-widgets",
+      "appID": 6446477593,
+      "name": "Top Widgets⁺ - 万能小组件手机桌面主题美化工具",
+      "storeURL": "https://apps.apple.com/cn/app/top-widgets-%E4%B8%87%E8%83%BD%E5%B0%8F%E7%BB%84%E4%BB%B6%E6%89%8B%E6%9C%BA%E6%A1%8C%E9%9D%A2%E4%B8%BB%E9%A2%98%E7%BE%8E%E5%8C%96%E5%B7%A5%E5%85%B7/id6446477593?uo=4",
+      "lookupURL": "https://itunes.apple.com/lookup?id=6446477593&country=cn",
+      "version": "3.0.2",
+      "releaseDate": "2026-09-25T04:04:13Z",
+      "screenshots": [
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/e4/f6/12/e4f6122e-815b-3ffa-3500-dbd2a96c6539/fa68d90e-78db-4571-afd4-d8deeb6ae1f0_11.jpg/392x696bb.jpg",
+          "file": "sources/top-widgets/01.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/e3/82/65/e38265e1-b60a-c5b8-8111-70d347bc7250/d25c7a82-995c-412a-bbf1-bd4e4d34dd5b_10_U5347_U7ea7-5.5_2.jpg/392x696bb.jpg",
+          "file": "sources/top-widgets/02.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/b6/9b/7b/b69b7bae-f065-e5cd-bc76-11c19487641b/ea482402-ab32-4787-92e4-79a69fd05fb1__U622a_U56fe5.5_U5bf8.png/392x696bb.png",
+          "file": "sources/top-widgets/03.jpg"
+        },
+        {
+          "url": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/75/c9/e5/75c9e589-3ccf-21d9-d360-5c70ab4f13a1/982c5f93-f08d-4ed0-9db3-7a96c88f13d2_22.jpg/392x696bb.jpg",
+          "file": "sources/top-widgets/04.jpg"
+        }
+      ]
+    }
+  ]
+}

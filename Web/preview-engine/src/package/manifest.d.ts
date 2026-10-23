@@ -7,3 +7,7 @@ export function decodeManifest(text: string): { manifest: WidgetManifest; error?
 export function newManifest(name: string, metadata?: Record<string, unknown>): WidgetManifest;
 export function legacyManifest(name: string, metadata?: Record<string, unknown>): WidgetManifest;
 export function validateManifest(manifest: WidgetManifest, paths: string[], options?: { checkEntryExists?: boolean }): ValidationReport;
+
+export function supportsMinimumRuntime(minimum: string, current?: string): boolean;
+
+export function validPackageName(name: unknown): boolean;

@@ -1,0 +1,10 @@
+import type { EditorView } from "@codemirror/view";
+import type { StateEffectType, StateField } from "@codemirror/state";
+import type { VisualLayoutModel } from "./visualLayout.js";
+export function visualImageResources(paths: unknown): string[];
+export const visualResourcesChanged: StateEffectType<unknown>;
+export const visualResources: StateField<string[]>;
+export function setVisualLayoutResources(view: EditorView, paths: unknown): void;
+export const visualAssetCatalog: Readonly<Record<string, {name: string; description: string; kind: string}>>;
+export const visualAssetLicense: string;
+export function insertVisualAsset(model: VisualLayoutModel, source: string, operation: {id: string; kind: string; path?: string}, resources?: string[]): {changes: {from: number; to: number; insert: string}[]; selectedFrom: number};

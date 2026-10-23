@@ -1,0 +1,9 @@
+Create and personalize more useful widgets with ScriptWidget.
+
+• Save real habit check-ins, hydration, moods and checklist progress, with history and recovery.
+• Explore improved countdown, photo, weather, health, GitHub, launcher, plant and pet templates.
+• Configure template settings and browse verified Gallery packages.
+• Preview widgets with editable sample data in Web Studio.
+• Improve offline caching, storage reliability and scheduled widget content.
+
+Some templates require device permissions or an internet connection. Health data is available on supported iOS devices.

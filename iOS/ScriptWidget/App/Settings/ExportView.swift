@@ -30,7 +30,7 @@ struct ExportView: View {
                 .disabled(isExporting || exportSucceeded)
 
                 ProgressView(value: progress)
-                    .tint(.indigo)
+                    .tint(StudioDesign.accent)
 
                 Text(statusMessage)
                     .font(.caption)

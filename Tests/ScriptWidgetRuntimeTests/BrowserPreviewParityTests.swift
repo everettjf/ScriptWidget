@@ -164,6 +164,50 @@ struct BrowserPreviewSnapshotView: View {
 #endif
 
 final class BrowserPreviewParityTests: XCTestCase {
+    private var preferenceFixtures: [(name: String, directory: URL)] = []
+
+    override func tearDown() {
+        for fixture in preferenceFixtures {
+            UserDefaults(suiteName: fixture.name)?.removePersistentDomain(forName: fixture.name)
+            try? FileManager.default.removeItem(at: fixture.directory)
+        }
+        preferenceFixtures.removeAll()
+        super.tearDown()
+    }
+
+    /// Match Web's fresh storage per execution without reading or modifying
+    /// earlier runs' app-group records (including old automatic counters).
+    private func isolateStorage(of runtime: ScriptWidgetRuntime) throws {
+        #if DEBUG
+        let name = "app.scriptwidget.parity.\(UUID().uuidString)"
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("ParityStorage-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: name))
+        preferenceFixtures.append((name, directory))
+        runtime.runningState?.storageDefaultsForTesting = defaults
+        runtime.runningState?.storageContainerForTesting = directory
+        #else
+        throw XCTSkip("Corpus execution requires the DEBUG isolated storage backend")
+        #endif
+    }
+    func testCorpusStorageStartsFreshWithoutClearingEarlierRuns() throws {
+        let package = ScriptWidgetPackage(path: FileManager.default.temporaryDirectory.appendingPathComponent("IsolatedCorpus-\(UUID().uuidString)"), readonly: true)
+        let first = ScriptWidgetRuntime(package: package, environments: ["widget-size": "medium", "widget-param": ""])
+        try isolateStorage(of: first)
+        let saved = first.executeJSXSyncForWidget("$storage.setString('probe','saved'); $render(<text>{$storage.getString('probe')}</text>);")
+        XCTAssertNil(saved.1)
+        XCTAssertEqual(try XCTUnwrap(saved.0).getChildren().first as? String, "saved")
+        let second = ScriptWidgetRuntime(package: package, environments: ["widget-size": "medium", "widget-param": ""])
+        try isolateStorage(of: second)
+        let empty = second.executeJSXSyncForWidget("$render(<text>{$storage.getString('probe')}</text>);")
+        XCTAssertNil(empty.1)
+        XCTAssertEqual(try XCTUnwrap(empty.0).getChildren().first as? String, "")
+        #if DEBUG
+        XCTAssertNotEqual(first.runningState?.storageContainerForTesting, second.runningState?.storageContainerForTesting)
+        XCTAssertFalse(first.runningState?.storageDefaultsForTesting === second.runningState?.storageDefaultsForTesting)
+        #endif
+    }
+
     #if os(iOS)
     /// Writes native PNGs for the corpus, Web/preview-engine/test/render/cases.json,
     /// and test/catalog/catalog.json
@@ -177,6 +221,9 @@ final class BrowserPreviewParityTests: XCTestCase {
         let output = Self.repositoryRoot.appendingPathComponent("Web/preview-engine/dist/native-snapshots")
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
         var prelude = try String(contentsOf: Self.parityDirectory.appendingPathComponent("prelude.js"), encoding: .utf8)
+        // Keep the real appearance captured under each job's trait collection;
+        // the shared tree-parity fixture deliberately fixes it to light.
+        prelude = prelude.replacingOccurrences(of: "isdarkmode: function () { return false; },", with: "isdarkmode: $device.isdarkmode,")
         // Screenshot-only fixture data, isolated from the app's persistent storage.
         if let fixturePath = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_FIXTURE"], !fixturePath.isEmpty {
             prelude += "\n" + (try String(contentsOfFile: fixturePath, encoding: .utf8)) + "\n"
@@ -187,16 +234,23 @@ final class BrowserPreviewParityTests: XCTestCase {
         // the 393-point iPhone small, medium, and large.
         let everySize = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_PROFILES"] == "all"
         let renders = everySize ? allRenders : allRenders.filter { $0.profile == BrowserPreviewSnapshotProfile.defaultProfile && ["small", "medium", "large"].contains($0.family) }
+        let selected = Set((ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_PACKAGES"] ?? "").split(separator: "|").map(String.init))
         var jobs: [(name: String, render: BrowserPreviewSnapshotProfile.Render, source: String, package: ScriptWidgetPackage, dark: Bool)] = []
         for (name, directory) in try Self.corpusPackages() {
+            if !selected.isEmpty && !selected.contains(name) { continue }
             let package = ScriptWidgetPackage(path: directory, readonly: true)
             guard let source = package.readMainFile().0, !Self.usesLiveData(source) else { continue }
-            for render in renders { jobs.append(("\(name)\(render.suffix)", render, prelude + source, package, false)) }
+            let appearances = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_APPEARANCES"] == "all" ? [false, true] : [false]
+            for render in renders {
+                for dark in appearances {
+                    jobs.append(("\(name)\(render.suffix)\(dark ? "--dark" : "")", render, prelude + source, package, dark))
+                }
+            }
         }
         let casesURL = Self.repositoryRoot.appendingPathComponent("Web/preview-engine/test/render/cases.json")
         let cases = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: casesURL)) as? [[String: Any]])
         let scratch = ScriptWidgetPackage(path: FileManager.default.temporaryDirectory, readonly: true)
-        for item in cases {
+        for item in cases where selected.isEmpty {
             let family = item["size"] as? String ?? "medium"
             let profile = item["profile"] as? String ?? BrowserPreviewSnapshotProfile.defaultProfile
             guard let render = allRenders.first(where: { $0.profile == profile && $0.family == family }) else { continue }
@@ -205,7 +259,7 @@ final class BrowserPreviewParityTests: XCTestCase {
         // The component catalog (test/catalog/catalog.json), one size per item.
         let catalogURL = Self.repositoryRoot.appendingPathComponent("Web/preview-engine/test/catalog/catalog.json")
         let catalog = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: catalogURL)) as? [[String: Any]])
-        for item in catalog {
+        for item in catalog where selected.isEmpty {
             let family = item["size"] as? String ?? "medium"
             guard let render = allRenders.first(where: { $0.profile == BrowserPreviewSnapshotProfile.defaultProfile && $0.family == family }) else { continue }
             jobs.append(("catalog/\(item["id"] as? String ?? "")\(render.suffix)", render, prelude + (item["source"] as? String ?? ""), scratch, item["dark"] as? Bool ?? false))
@@ -215,17 +269,43 @@ final class BrowserPreviewParityTests: XCTestCase {
         defer { ScriptWidgetRenderClock.fixedNow = nil }
         let filter = ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_FILTER"] ?? ""
         for job in jobs where filter.isEmpty || job.name.hasPrefix(filter) {
-            let runtime = ScriptWidgetRuntime(package: job.package, environments: ["widget-size": job.render.family, "widget-param": ""])
+            var runtime: ScriptWidgetRuntime!
+            UITraitCollection(userInterfaceStyle: job.dark ? .dark : .light).performAsCurrent {
+                runtime = ScriptWidgetRuntime(package: job.package, environments: ["widget-size": job.render.family, "widget-param": ""])
+            }
+            try isolateStorage(of: runtime)
             let result = await Task.detached { runtime.executeJSXSyncForWidget(job.source) }.value
             guard let element = result.0 else { continue }
             let context = ScriptWidgetElementContext(runtime: runtime, debugMode: false, scriptName: job.name, scriptParameter: "",
                                                      package: job.package, containerBackgroundElement: element)
-            let renderer = ImageRenderer(content: BrowserPreviewSnapshotView(element: element, context: context, size: job.render.size)
-                .environment(\.colorScheme, job.dark ? .dark : .light))
-            // Optional high-resolution native captures for App Store artwork.
-            let requestedScale = Double(ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_SCALE"] ?? "2") ?? 2
-            renderer.scale = CGFloat(min(4, max(1, requestedScale)))
-            guard let data = renderer.uiImage?.pngData() else { continue }
+            let data: Data
+            if ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_HOSTED_CONTROLS"] == "1" {
+                // ImageRenderer cannot capture UIKit-backed controls reliably.
+                // Use the actual hosted hierarchy for native control QA.
+                let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+                let previous = scene.windows.first { $0.isKeyWindow }
+                let window = UIWindow(windowScene: scene)
+                window.frame = CGRect(origin: .zero, size: job.render.size)
+                let controller = UIHostingController(rootView: BrowserPreviewSnapshotView(element: element, context: context, size: job.render.size)
+                    .environment(\.colorScheme, job.dark ? .dark : .light).ignoresSafeArea())
+                window.rootViewController = controller
+                window.makeKeyAndVisible()
+                defer { window.isHidden = true; previous?.makeKey() }
+                controller.view.setNeedsLayout(); controller.view.layoutIfNeeded()
+                try await Task.sleep(nanoseconds: 150_000_000)
+                let rendered = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+                    XCTAssertTrue(window.drawHierarchy(in: window.bounds, afterScreenUpdates: true))
+                }
+                data = try XCTUnwrap(rendered.pngData())
+            } else {
+                let renderer = ImageRenderer(content: BrowserPreviewSnapshotView(element: element, context: context, size: job.render.size)
+                    .environment(\.colorScheme, job.dark ? .dark : .light))
+                // Optional high-resolution native captures for App Store artwork.
+                let requestedScale = Double(ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_SCALE"] ?? "2") ?? 2
+                renderer.scale = CGFloat(min(4, max(1, requestedScale)))
+                guard let rendered = renderer.uiImage?.pngData() else { continue }
+                data = rendered
+            }
             let fileName = job.name.replacingOccurrences(of: "/", with: "__").replacingOccurrences(of: " ", with: "_") + ".png"
             try data.write(to: output.appendingPathComponent(fileName), options: .atomic)
         }
@@ -372,8 +452,9 @@ final class BrowserPreviewParityTests: XCTestCase {
     }
 
     static func usesLiveData(_ source: String) -> Bool {
-        source.contains("fetch(") || source.contains("$http.") || source.contains("$location.") ||
-            source.contains("$health.") || source.contains("$dataSource.")
+        // Scheduled templates use dedicated fixed-date/slot parity fixtures.
+        source.contains("$getenv(\"timeline-date\")") || source.contains("fetch(") || source.contains("$http.") || source.contains("$location.") ||
+            source.contains("$health.") || source.contains("$calendar.") || source.contains("$reminders.") || source.contains("$photos.") || source.contains("$services.") || source.contains("$music.") || source.contains("$dataSource.")
     }
 
     private func errorKind(_ error: ScriptWidgetError) -> String {
@@ -454,6 +535,7 @@ final class BrowserPreviewParityTests: XCTestCase {
                 continue
             }
             let runtime = ScriptWidgetRuntime(package: package, environments: ["widget-size": "medium", "widget-param": ""])
+            try isolateStorage(of: runtime)
             let (element, error) = runtime.executeJSXSyncForWidget(prelude + source)
             if let error {
                 entries[name] = ["error": errorKind(error)]

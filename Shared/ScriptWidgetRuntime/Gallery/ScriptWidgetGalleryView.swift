@@ -290,7 +290,7 @@ private struct GalleryItemDetail: View {
 
                 GroupBox("Trust & compatibility") {
                     VStack(alignment: .leading, spacing: 8) {
-                        Label("Runtime \(item.minimumRuntimeVersion)", systemImage: "checkmark.seal")
+                        Label("Runtime contract \(item.minimumRuntimeVersion)", systemImage: "checkmark.seal")
                         Label("\(item.files.count) files · \(ByteCountFormatter.string(fromByteCount: Int64(item.files.reduce(0) { $0 + $1.bytes }), countStyle: .file))", systemImage: "doc.on.doc")
                         Label("Every file is HTTPS host, byte-size, and SHA-256 verified before schema validation.", systemImage: "lock.shield")
                         Link(destination: item.sourceURL) { Label("Review source on GitHub", systemImage: "arrow.up.right.square") }

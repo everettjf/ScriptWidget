@@ -1,13 +1,15 @@
-import type { Appearance, ExecutionResult, WidgetManifest } from "../types.js";
+import type { Appearance, ExecutionResult, WidgetManifest, PackageFiles } from "../types.js";
 
 export interface ExecuteJob {
-  files: Record<string, string>;
+  files: PackageFiles;
   entry?: string;
   manifest?: WidgetManifest | null;
   environments?: Record<string, string>;
   preview?: { appearance: Appearance };
   fixtures?: unknown;
   prelude?: string;
+  /// Run a declared action against preview data only.
+  actionID?: string | null;
   timeoutMilliseconds?: number;
 }
 

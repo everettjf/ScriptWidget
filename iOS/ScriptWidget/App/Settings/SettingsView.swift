@@ -15,6 +15,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showingAlert = false
     @State private var alertMessage = ""
+    @State private var showingStorageReview = false
     
     func showAlert(_ message: String) {
         alertMessage = message
@@ -23,6 +24,7 @@ struct SettingsView: View {
     
     var body: some View {
         content
+            .sheet(isPresented: $showingStorageReview) { ScriptWidgetStorageUpgradeView() }
             .alert("Notification", isPresented: $showingAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
@@ -34,6 +36,12 @@ struct SettingsView: View {
         NavigationStack {
             Form {
                 Section {
+                    if #available(iOS 16.2,*) {
+                        NavigationLink(destination:ScriptLiveActivityManagementView()) { Label("Live Activities",systemImage:"lock.rectangle") }
+                    }
+                    NavigationLink(destination: ScriptWidgetActionDirectoryView()) {
+                        Label("Widget Actions",systemImage:"play.square")
+                    }
                     NavigationLink(destination: SettingTemplatesView()) {
                         Label("Templates", systemImage: "rectangle.stack")
                     }
@@ -63,7 +71,19 @@ struct SettingsView: View {
                     Text("Refresh after editing scripts outside the app or when a widget appears stale.")
                 }
 
+                if sharedScriptManager.storageContext != nil {
+                    Section("Records") {
+                        Button("Review Older Records") { showingStorageReview = true }
+                    }
+                }
                 Section("iCloud") { SettingsICloudView() }
+                Section("Services") {
+                    NavigationLink(destination: ScriptWidgetServiceAccountsView()) { Label("Service Accounts", systemImage: "person.crop.circle.badge.checkmark") }
+                }
+                Section("Calendar") { CalendarAccessSettingsView() }
+                Section("Reminders") { RemindersAccessSettingsView() }
+                Section("Photos") { PhotosAccessSettingsView() }
+                Section("Music") { ScriptWidgetMusicAccessSettingsView() }
                 Section("Health") { SettingsHealthView() }
                 Section("Location") { SettingsLocationView() }
 
@@ -137,89 +157,29 @@ private struct SettingsStatusView<Actions: View>: View {
 }
 
 private struct SettingsHealthView: View {
-    private enum HealthAuthorizationState {
-        case checking
-        case unavailable
-        case notDetermined
-        case denied
-        case partial
-        case authorized
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var authorizationState: ScriptWidgetHealthReviewState = .checking
 
-        var title: String {
-            switch self {
-            case .checking:
-                return "Checking..."
-            case .unavailable:
-                return "Health Unavailable"
-            case .notDetermined:
-                return "Not Authorized"
-            case .denied:
-                return "Access Denied"
-            case .partial:
-                return "Partially Authorized"
-            case .authorized:
-                return "Authorized"
-            }
-        }
-
-        var detail: String {
-            switch self {
-            case .checking:
-                return "Checking Health permissions."
-            case .unavailable:
-                return "Health data is not available on this device."
-            case .notDetermined:
-                return "Tap Authorize to request access for steps, active energy, and heart rate."
-            case .denied:
-                return "Access is denied. Enable ScriptWidget in the Health app."
-            case .partial:
-                return "Some Health data types are not authorized. You can enable more in the Health app."
-            case .authorized:
-                return "Health access is ready for widgets and scripts."
-            }
-        }
-
-        var shouldShowAuthorizeButton: Bool {
-            switch self {
-            case .notDetermined, .denied, .partial:
-                return true
-            case .checking, .unavailable, .authorized:
-                return false
-            }
-        }
-
-        var shouldShowOpenHealthButton: Bool {
-            switch self {
-            case .denied, .partial:
-                return true
-            case .checking, .unavailable, .notDetermined, .authorized:
-                return false
-            }
-        }
-
-        var systemImage: String {
-            switch self {
-            case .checking: "hourglass"
-            case .unavailable: "heart.slash"
-            case .notDetermined: "heart"
-            case .denied: "exclamationmark.shield"
-            case .partial: "heart.circle"
-            case .authorized: "checkmark.circle.fill"
-            }
-        }
-
-        var color: Color {
-            switch self {
-            case .checking, .unavailable: .secondary
-            case .notDetermined: .blue
-            case .denied: .red
-            case .partial: .orange
-            case .authorized: .green
-            }
+    private var title: String {
+        switch authorizationState {
+        case .checking: "Checking Health Setup…"
+        case .unavailable: "Health Unavailable"
+        case .reviewRequired: "Review Health Access"
+        case .reviewCompleted: "Health Review Completed"
+        case .failed: "Health Setup Could Not Be Checked"
         }
     }
 
-    @State private var authorizationState: HealthAuthorizationState = .checking
+    private var detail: String {
+        switch authorizationState {
+        case .checking: "Checking whether the Health permission review is needed."
+        case .unavailable: "Health data is not available on this device."
+        case .reviewRequired: "Choose which Health data to share for steps, heart rate, sleep, activity rings and workout summaries."
+        case .reviewCompleted: "Health keeps individual read permissions private. Empty results can mean no records or data you chose not to share. Review access in Health if needed."
+        case .failed: "Try reviewing Health access again or check ScriptWidget in the Health app."
+        }
+    }
+
     @State private var isRequesting = false
     @State private var showingAlert = false
     @State private var alertMessage = ""
@@ -228,24 +188,24 @@ private struct SettingsHealthView: View {
 
     var body: some View {
         SettingsStatusView(
-            title: authorizationState.title,
-            detail: authorizationState.detail,
-            systemImage: authorizationState.systemImage,
-            color: authorizationState.color
+            title: title,
+            detail: detail,
+            systemImage: "heart",
+            color: authorizationState == .unavailable ? .secondary : .blue
         ) {
             HStack(spacing: 8) {
-                if authorizationState.shouldShowAuthorizeButton {
+                if authorizationState == .reviewRequired || authorizationState == .failed {
                     Button {
                         requestAuthorization()
                     } label: {
-                        Text(isRequesting ? "Authorizing..." : "Authorize")
+                        Text(isRequesting ? "Reviewing…" : "Review Access")
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .disabled(isRequesting)
                 }
 
-                if authorizationState.shouldShowOpenHealthButton {
+                if authorizationState == .reviewCompleted || authorizationState == .failed {
                     Button {
                         openHealthApp()
                     } label: {
@@ -256,8 +216,8 @@ private struct SettingsHealthView: View {
                 }
             }
         }
-        .onAppear {
-            refreshAuthorizationState()
+        .task(id: scenePhase) {
+            if scenePhase == .active { refreshAuthorizationState() }
         }
         .alert("Health", isPresented: $showingAlert) {
             Button("OK", role: .cancel) { }
@@ -305,84 +265,29 @@ private struct SettingsHealthView: View {
                     if let error = error {
                         alertMessage = error.localizedDescription
                         showingAlert = true
+                        authorizationState = .failed
+                        return
                     }
 
                     switch status {
                     case .shouldRequest:
-                        authorizationState = .notDetermined
+                        authorizationState = ScriptWidgetHealthReviewState.evaluate(available: true, shouldRequest: true)
                     case .unnecessary:
-                        probeReadAuthorization(readTypes)
+                        authorizationState = ScriptWidgetHealthReviewState.evaluate(available: true, shouldRequest: false)
                     case .unknown:
-                        authorizationState = .notDetermined
+                        authorizationState = .reviewRequired
                     @unknown default:
-                        authorizationState = .notDetermined
+                        authorizationState = .reviewRequired
                     }
                 }
             }
         } else {
-            authorizationState = .notDetermined
-        }
-    }
-
-    private func probeReadAuthorization(_ readTypes: Set<HKObjectType>) {
-        let sampleTypes = readTypes.compactMap { $0 as? HKSampleType }
-        guard !sampleTypes.isEmpty else {
-            authorizationState = .unavailable
-            return
-        }
-
-        let group = DispatchGroup()
-        var authorizedCount = 0
-        var deniedCount = 0
-        var undeterminedCount = 0
-
-        for sampleType in sampleTypes {
-            group.enter()
-            let query = HKSampleQuery(sampleType: sampleType, predicate: nil, limit: 1, sortDescriptors: nil) { _, _, error in
-                DispatchQueue.main.async {
-                    if let error = error as? HKError {
-                        switch error.code {
-                        case .errorAuthorizationDenied:
-                            deniedCount += 1
-                        case .errorAuthorizationNotDetermined:
-                            undeterminedCount += 1
-                        default:
-                            authorizedCount += 1
-                        }
-                    } else {
-                        authorizedCount += 1
-                    }
-                    group.leave()
-                }
-            }
-            healthStore.execute(query)
-        }
-
-        group.notify(queue: .main) {
-            if undeterminedCount > 0 {
-                authorizationState = .notDetermined
-            } else if deniedCount > 0 && authorizedCount > 0 {
-                authorizationState = .partial
-            } else if deniedCount > 0 {
-                authorizationState = .denied
-            } else {
-                authorizationState = .authorized
-            }
+            authorizationState = .reviewRequired
         }
     }
 
     private func healthReadTypes() -> Set<HKObjectType> {
-        var readTypes = Set<HKObjectType>()
-        if let stepType = HKObjectType.quantityType(forIdentifier: .stepCount) {
-            readTypes.insert(stepType)
-        }
-        if let energyType = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned) {
-            readTypes.insert(energyType)
-        }
-        if let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate) {
-            readTypes.insert(heartRateType)
-        }
-        return readTypes
+        ScriptWidgetRuntimeHealth.authorizationReadTypes
     }
 
     private func openHealthApp() {
@@ -477,6 +382,7 @@ private struct SettingsLocationView: View {
         }
     }
 
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var manager = SettingsLocationManager()
 
     var body: some View {
@@ -512,6 +418,9 @@ private struct SettingsLocationView: View {
         .onAppear {
             manager.refresh()
         }
+        .task(id: scenePhase) {
+            if scenePhase == .active { manager.refresh() }
+        }
     }
 
     private func openSettings() {
@@ -532,6 +441,10 @@ private struct SettingsLocationView: View {
         }
 
         func refresh() {
+            DispatchQueue.global(qos: .utility).async {
+                ScriptWidgetRuntimeLocation.refreshAuthorizationState()
+            }
+            hasRequestedLocation = false
             state = makeState()
             if state == .authorizedAlways || state == .authorizedWhenInUse {
                 requestLocationIfNeeded()
@@ -556,6 +469,10 @@ private struct SettingsLocationView: View {
         }
 
         private func handleAuthorizationChange(status: CLAuthorizationStatus) {
+            DispatchQueue.global(qos: .utility).async {
+                ScriptWidgetRuntimeLocation.refreshAuthorizationState()
+            }
+            if status != .authorizedAlways && status != .authorizedWhenInUse { hasRequestedLocation = false }
             state = makeState(status: status)
             if status != .notDetermined {
                 isRequesting = false
@@ -604,7 +521,8 @@ private struct SettingsLocationView: View {
         }
 
         func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-            print("settings location error: \(error)")
+            // Avoid logging system errors that may contain location details.
+            hasRequestedLocation = false
         }
     }
 }

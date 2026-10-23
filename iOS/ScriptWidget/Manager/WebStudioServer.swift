@@ -39,6 +39,7 @@ final class WebStudioServer: ObservableObject {
 
     private let queue = DispatchQueue(label: "app.scriptwidget.web-studio", qos: .userInitiated)
     private var listener: NWListener?
+    private var libraryEditorLease: UUID?
     private var sessionToken = ""
     private var hasPairedBrowser = false
     private var lastSessionActivity: Date?
@@ -70,12 +71,16 @@ final class WebStudioServer: ObservableObject {
         logs.removeAll()
         log("info", "Starting Web Studio")
 
+        let lease = ScriptWidgetEditorPresence.register()
+        libraryEditorLease = lease
         do {
+            let library = try ScriptWidgetEditingLibrary(manager: sharedScriptManager)
             let listener = try NWListener(using: .tcp, on: .any)
             listener.service = NWListener.Service(name: "ScriptWidget", type: "_scriptwidget._tcp")
             listener.stateUpdateHandler = { [weak self] state in
                 guard let self else { return }
                 DispatchQueue.main.async {
+                    guard self.listener === listener else { return }
                     switch state {
                     case .ready:
                         self.port = listener.port?.rawValue ?? 0
@@ -113,18 +118,24 @@ final class WebStudioServer: ObservableObject {
                 }
             }
             listener.newConnectionHandler = { [weak self] connection in
-                self?.accept(connection)
+                self?.accept(connection, library: library)
             }
             self.listener = listener
             listener.start(queue: queue)
         } catch {
+            ScriptWidgetEditorPresence.unregister(libraryEditorLease)
+            libraryEditorLease = nil
             lastError = error.localizedDescription
             connectionHint = "Web Studio could not open a local port. Check Local Network access and try again."
             log("error", "Could not create listener: \(error.localizedDescription)")
         }
     }
 
+    deinit { ScriptWidgetEditorPresence.unregister(libraryEditorLease) }
+
     func stop() {
+        ScriptWidgetEditorPresence.unregister(libraryEditorLease)
+        libraryEditorLease = nil
         listener?.cancel()
         listener = nil
         leaseWorkItem?.cancel()
@@ -138,13 +149,13 @@ final class WebStudioServer: ObservableObject {
         log("info", "Web Studio stopped")
     }
 
-    private func accept(_ connection: NWConnection) {
+    private func accept(_ connection: NWConnection, library: ScriptWidgetEditingLibrary) {
         log("debug", "Accepted local HTTP connection")
         connection.start(queue: queue)
-        receive(on: connection, accumulated: Data())
+        receive(on: connection, accumulated: Data(), library: library)
     }
 
-    private func receive(on connection: NWConnection, accumulated: Data) {
+    private func receive(on connection: NWConnection, accumulated: Data, library: ScriptWidgetEditingLibrary) {
         connection.receive(minimumIncompleteLength: 1, maximumLength: 64 * 1024) { [weak self] data, _, isComplete, error in
             guard let self else { return }
             var buffer = accumulated
@@ -155,16 +166,16 @@ final class WebStudioServer: ObservableObject {
                 return
             }
             if let request = HTTPRequest.parse(buffer) {
-                self.route(request, connection: connection)
+                self.route(request, connection: connection, library: library)
             } else if isComplete || error != nil {
                 connection.cancel()
             } else {
-                self.receive(on: connection, accumulated: buffer)
+                self.receive(on: connection, accumulated: buffer, library: library)
             }
         }
     }
 
-    private func route(_ request: HTTPRequest, connection: NWConnection) {
+    private func route(_ request: HTTPRequest, connection: NWConnection, library: ScriptWidgetEditingLibrary) {
         if request.method == "POST", request.path == "/api/v1/pair" {
             guard !hasPairedBrowser else {
                 log("warning", "Rejected pairing while another browser owns the session")
@@ -191,14 +202,14 @@ final class WebStudioServer: ObservableObject {
                 return
             }
             refreshSessionLease()
-            routeAPI(request, connection: connection)
+            routeAPI(request, connection: connection, library: library)
             return
         }
 
         serveAsset(request.path, connection: connection)
     }
 
-    private func routeAPI(_ request: HTTPRequest, connection: NWConnection) {
+    private func routeAPI(_ request: HTTPRequest, connection: NWConnection, library: ScriptWidgetEditingLibrary) {
         if request.method == "GET", request.path == "/api/v1/session" {
             send(.json([
                 "connected": true,
@@ -226,7 +237,7 @@ final class WebStudioServer: ObservableObject {
         }
 
         if request.method == "GET", request.path == "/api/v1/packages" {
-            let packages: [[String: Any]] = sharedScriptManager.listScripts().map { model in
+            let packages: [[String: Any]] = library.packages.map { ScriptModel(package: $0) }.map { model in
                 let manifest = model.package.effectiveManifest()
                 let files = model.package.listFiles()
                     .map(\.relativePath)
@@ -270,7 +281,7 @@ final class WebStudioServer: ObservableObject {
         if request.path == "/api/v1/document", request.method == "GET" {
             guard let packageName = request.query["package"],
                   let relativePath = request.query["path"],
-                  let model = editableModel(named: packageName),
+                  let model = editableModel(named: packageName, library: library),
                   Self.isEditableTextFile(relativePath),
                   let content = model.package.readFile(relativePath: relativePath).0 else {
                 send(.json(status: 404, ["message": "Document not found"]), on: connection)
@@ -293,7 +304,7 @@ final class WebStudioServer: ObservableObject {
                   let content = body["content"] as? String,
                   let baseRevision = body["baseRevision"] as? String,
                   content.utf8.count <= 1024 * 1024,
-                  let model = editableModel(named: packageName),
+                  let model = editableModel(named: packageName, library: library),
                   Self.isEditableTextFile(relativePath) else {
                 send(.json(status: 400, ["message": "Invalid document request"]), on: connection)
                 return
@@ -338,20 +349,11 @@ final class WebStudioServer: ObservableObject {
             guard let body = request.json,
                   let packageName = body["package"] as? String,
                   let relativePath = body["path"] as? String,
-                  let model = editableModel(named: packageName),
+                  let model = editableModel(named: packageName, library: library),
                   Self.isEditableTextFile(relativePath),
-                  let fileURL = model.package.resolvedPackageURL(relativePath: relativePath),
+                  model.package.resolvedPackageURL(relativePath: relativePath) != nil,
                   model.package.readFile(relativePath: relativePath).0 == nil else {
                 send(.json(status: 400, ["message": "Choose a new, supported text-file path"]), on: connection)
-                return
-            }
-            do {
-                try FileManager.default.createDirectory(
-                    at: fileURL.deletingLastPathComponent(),
-                    withIntermediateDirectories: true
-                )
-            } catch {
-                send(.json(status: 400, ["message": "Could not create the file directory"]), on: connection)
                 return
             }
             let result = model.package.writeFile(relativePath: relativePath, content: "")
@@ -368,7 +370,7 @@ final class WebStudioServer: ObservableObject {
         if request.path == "/api/v1/document", request.method == "DELETE" {
             guard let packageName = request.query["package"],
                   let relativePath = request.query["path"],
-                  let model = editableModel(named: packageName),
+                  let model = editableModel(named: packageName, library: library),
                   Self.isEditableTextFile(relativePath),
                   relativePath != model.package.effectiveManifest().entry,
                   model.package.readFile(relativePath: relativePath).0 != nil else {
@@ -385,8 +387,8 @@ final class WebStudioServer: ObservableObject {
         send(.json(status: 404, ["message": "Unknown Studio API"]), on: connection)
     }
 
-    private func editableModel(named name: String) -> ScriptModel? {
-        sharedScriptManager.listScripts().first { $0.name == name && !$0.package.readonly }
+    private func editableModel(named name: String, library: ScriptWidgetEditingLibrary) -> ScriptModel? {
+        library.package(named: name).map { ScriptModel(package: $0) }
     }
 
     private func selectPreview(packageName: String, relativePath: String) {

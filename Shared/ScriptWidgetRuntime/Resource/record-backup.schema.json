@@ -1,0 +1,467 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://xnu.app/scriptwidget/schemas/record-backup-1.json",
+  "title": "ScriptWidget Record Backup 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "kind",
+    "packageName",
+    "createdAt",
+    "values",
+    "unsupportedValues"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "kind": {
+      "enum": [
+        "hydration",
+        "mood",
+        "checklist",
+        "habitStreak",
+        "habitHeatmap",
+        "countdown",
+        "photoCard",
+        "weather",
+        "healthCard",
+        "repoStats",
+        "launcher",
+        "plantCare",
+        "pocketPet",
+        "wallpaper"
+      ]
+    },
+    "packageName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240,
+      "description": "Semantic validation also enforces a safe package name and UTF-8/grapheme limits. This is a display name, never a restore destination."
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time",
+      "maxLength": 40
+    },
+    "values": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "maxLength": 262144
+      }
+    },
+    "unsupportedValues": {
+      "type": "object",
+      "description": "Diagnostic base64 fingerprints of wrongly typed values. Nonempty diagnostic exports cannot be restored; use a valid backup to repair current data.",
+      "additionalProperties": {
+        "type": "string",
+        "contentEncoding": "base64"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "hydration"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "values": {
+            "propertyNames": {
+              "enum": [
+                "hydration.v1",
+                "recordTemplate.config.v1"
+              ]
+            }
+          },
+          "unsupportedValues": {
+            "propertyNames": {
+              "enum": [
+                "hydration.v1",
+                "recordTemplate.config.v1"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "mood"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "values": {
+            "propertyNames": {
+              "enum": [
+                "mood.v1",
+                "recordTemplate.config.v1"
+              ]
+            }
+          },
+          "unsupportedValues": {
+            "propertyNames": {
+              "enum": [
+                "mood.v1",
+                "recordTemplate.config.v1"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "checklist"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "values": {
+            "propertyNames": {
+              "enum": [
+                "checklist.v1",
+                "recordTemplate.config.v1"
+              ]
+            }
+          },
+          "unsupportedValues": {
+            "propertyNames": {
+              "enum": [
+                "checklist.v1",
+                "recordTemplate.config.v1"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "habitStreak"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "values": {
+            "propertyNames": {
+              "enum": [
+                "habitStreak.v2",
+                "habit.lastDate",
+                "habit.streak",
+                "recordTemplate.config.v1"
+              ]
+            }
+          },
+          "unsupportedValues": {
+            "propertyNames": {
+              "enum": [
+                "habitStreak.v2",
+                "habit.lastDate",
+                "habit.streak",
+                "recordTemplate.config.v1"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "habitHeatmap"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "values": {
+            "propertyNames": {
+              "enum": [
+                "habitHeatmap.v1.read",
+                "habitHeatmap.v1.run",
+                "habitHeatmap.v1.meditate",
+                "recordTemplate.config.v1"
+              ]
+            }
+          },
+          "unsupportedValues": {
+            "propertyNames": {
+              "enum": [
+                "habitHeatmap.v1.read",
+                "habitHeatmap.v1.run",
+                "habitHeatmap.v1.meditate",
+                "recordTemplate.config.v1"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "countdown"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "values": {
+            "propertyNames": {
+              "enum": [
+                "recordTemplate.config.v1"
+              ]
+            }
+          },
+          "unsupportedValues": {
+            "propertyNames": {
+              "enum": [
+                "recordTemplate.config.v1"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "photoCard"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "values": {
+            "propertyNames": {
+              "enum": [
+                "recordTemplate.config.v1"
+              ]
+            }
+          },
+          "unsupportedValues": {
+            "propertyNames": {
+              "enum": [
+                "recordTemplate.config.v1"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "weather"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "values": {
+            "propertyNames": {
+              "enum": [
+                "recordTemplate.config.v1"
+              ]
+            }
+          },
+          "unsupportedValues": {
+            "propertyNames": {
+              "enum": [
+                "recordTemplate.config.v1"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "healthCard"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "values": {
+            "propertyNames": {
+              "enum": [
+                "recordTemplate.config.v1"
+              ]
+            }
+          },
+          "unsupportedValues": {
+            "propertyNames": {
+              "enum": [
+                "recordTemplate.config.v1"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "repoStats"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "values": {
+            "propertyNames": {
+              "enum": [
+                "recordTemplate.config.v1"
+              ]
+            }
+          },
+          "unsupportedValues": {
+            "propertyNames": {
+              "enum": [
+                "recordTemplate.config.v1"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "launcher"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "values": {
+            "propertyNames": {
+              "enum": [
+                "recordTemplate.config.v1"
+              ]
+            }
+          },
+          "unsupportedValues": {
+            "propertyNames": {
+              "enum": [
+                "recordTemplate.config.v1"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "plantCare"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "values": {
+            "propertyNames": {
+              "enum": [
+                "plantCare.v1",
+                "recordTemplate.config.v1"
+              ]
+            }
+          },
+          "unsupportedValues": {
+            "propertyNames": {
+              "enum": [
+                "plantCare.v1",
+                "recordTemplate.config.v1"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "pocketPet"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "values": {
+            "propertyNames": {
+              "enum": [
+                "pocketPet.v1",
+                "recordTemplate.config.v1"
+              ]
+            }
+          },
+          "unsupportedValues": {
+            "propertyNames": {
+              "enum": [
+                "pocketPet.v1",
+                "recordTemplate.config.v1"
+              ]
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "wallpaper"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "values": {
+            "propertyNames": {
+              "enum": [
+                "recordTemplate.config.v1"
+              ]
+            }
+          },
+          "unsupportedValues": {
+            "propertyNames": {
+              "enum": [
+                "recordTemplate.config.v1"
+              ]
+            }
+          }
+        }
+      }
+    }
+  ],
+  "description": "Native import is bounded to 1 MiB and validates UTF-8 budgets, decoded record JSON, configuration, dates and revisions. A schema-valid diagnostic export is not necessarily restorable."
+}

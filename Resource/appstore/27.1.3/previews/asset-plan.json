@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "app": "ScriptWidget",
+  "ascAppId": "1555600758",
+  "versionString": "27.1.3",
+  "locale": "en-US",
+  "style": {
+    "surface": "light native UI",
+    "accent": "icon teal",
+    "transitions": "simple cuts/dissolves",
+    "audio": "silent stereo AAC; no licensed soundtrack"
+  },
+  "assets": [
+    {
+      "id": "ios-preview",
+      "kind": "app-preview",
+      "file": "ios-preview-en.mp4",
+      "width": 886,
+      "height": 1920,
+      "fps": 30,
+      "durationSeconds": 24,
+      "source": "real dedicated iPhone Simulator recording; final candidate",
+      "story": [
+        "Create with JSX-style JavaScript",
+        "Preview your widget"
+      ],
+      "posterFrameSeconds": 14
+    },
+    {
+      "id": "macos-preview",
+      "kind": "app-preview",
+      "file": "macos-preview-en.mp4",
+      "width": 1920,
+      "height": 1080,
+      "fps": 30,
+      "durationSeconds": 24,
+      "source": "real native macOS app window recording; final candidate",
+      "story": [
+        "Create with JSX-style JavaScript",
+        "Preview layouts in different sizes"
+      ],
+      "posterFrameSeconds": 23
+    }
+  ],
+  "requirementsSource": "https://developer.apple.com/help/app-store-connect/reference/app-information/app-preview-specifications",
+  "validation": [
+    "15\u201330 seconds",
+    "H.264 progressive High level4.0, 10\u201312Mbps",
+    "AAC stereo 256kbps 48kHz",
+    "real UI only; no system widget substitutes",
+    "no private account/health/calendar/photo data",
+    "inspect representative output frames before upload"
+  ],
+  "status": "local technical checks and sampled-frame inspection passed; not uploaded",
+  "sources": {
+    "ios": {
+      "path": "__Release/capabilities/release-close/app-preview-sources/ios-raw.mov",
+      "sha256": "4cb89e5b4f2789cdf7d353a72f6da6864b2eb078a1fdcfbfe8e3186260bbd610"
+    },
+    "macos": {
+      "path": "__Release/capabilities/release-close/app-preview-sources/macos-raw.mov",
+      "sha256": "4bd293c2423842929f2cb35a060e721545bd0a4fd4d64ae5c783b30694f2c510"
+    }
+  },
+  "productCommit": "46aa78593ce8e75e02295c161c88b021de02a123"
+}

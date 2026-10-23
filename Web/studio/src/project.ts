@@ -110,6 +110,10 @@ export function packageReport(project: Pick<Project, "files">): PackageReport {
   return { manifest: decoded.manifest, ...report };
 }
 
+/// Runtime needs binary file presence, without receiving the image bytes.
+export const executionFiles = (files: PackageFiles): PackageFiles =>
+  Object.fromEntries(Object.entries(files).map(([name, value]) => [name, typeof value === "string" ? value : new Uint8Array()]));
+
 export const textFiles = (files: PackageFiles): Record<string, string> =>
   Object.fromEntries(Object.entries(files).filter((entry): entry is [string, string] => typeof entry[1] === "string"));
 

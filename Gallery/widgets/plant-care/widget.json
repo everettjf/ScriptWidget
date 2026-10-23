@@ -1,0 +1,66 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.plant-care",
+  "name": "Plant Care",
+  "version": "2.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.3",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait",
+    "accessoryCircular",
+    "accessoryRectangular",
+    "accessoryInline"
+  ],
+  "permissions": [
+    "storage"
+  ],
+  "networkDomains": [],
+  "description": "Local explicit daily care with saved history, undo and original JSX artwork.",
+  "category": "fun",
+  "tags": [
+    "local",
+    "care",
+    "interactive"
+  ],
+  "icon": "leaf",
+  "actions": [
+    {
+      "id": "waterPlant",
+      "title": "Record plant care",
+      "systemImage": "drop",
+      "function": "waterPlant"
+    },
+    {
+      "id": "undoRecord",
+      "title": "Undo last care",
+      "systemImage": "arrow.uturn.backward",
+      "function": "undoRecord"
+    },
+    {
+      "id": "resetToday",
+      "title": "Clear today",
+      "systemImage": "trash",
+      "function": "resetToday"
+    }
+  ],
+  "controls": [
+    {
+      "id": "waterPlant",
+      "type": "button",
+      "title": "Record plant care",
+      "systemImage": "drop",
+      "actionID": "waterPlant"
+    }
+  ],
+  "timeline": {
+    "dailyTimes": [
+      "00:00"
+    ]
+  },
+  "preview": "preview.png"
+}

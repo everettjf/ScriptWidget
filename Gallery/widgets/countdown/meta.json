@@ -1,0 +1,11 @@
+{
+  "description": "A calm countdown with saved dates, yearly repeats and three accent colors. Configure it in Records & Configuration or use a date parameter.",
+  "category": "productivity",
+  "tags": [
+    "countdown",
+    "date"
+  ],
+  "difficulty": "beginner",
+  "icon": "hourglass",
+  "featured": true
+}

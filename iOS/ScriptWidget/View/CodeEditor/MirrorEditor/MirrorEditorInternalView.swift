@@ -10,49 +10,32 @@ import WebKit
 import Combine
 
 
-class MirrorEditorService {
-    static let saveNotification = Notification.Name("MirrorEditorSaveNotification")
-    static func save(documentID: String, completion: @escaping (Bool) -> Void) {
-        let request = MirrorEditorSaveRequest(documentID: documentID, completion: completion)
+@MainActor final class MirrorEditorService {
+    static let saveNotification = Notification.Name("MirrorEditorService_SaveNotification")
+    fileprivate static let snapshotNotification = Notification.Name("MirrorEditorService_SnapshotNotification")
+    fileprivate static let replaceDocumentNotification = Notification.Name("MirrorEditorService_ReplaceDocumentNotification")
+
+    static func save(target: StudioEditorTarget, completion: @escaping (Bool) -> Void) {
+        let request = StudioEditorSaveRequest(target: target, completion: completion)
         NotificationCenter.default.post(name: saveNotification, object: request)
         DispatchQueue.main.asyncAfter(deadline: .now() + 10) { request.finish(false) }
     }
 
-    fileprivate static let snapshotNotification = Notification.Name("MirrorEditorSnapshotNotification")
-    fileprivate static let replaceDocumentNotification = Notification.Name("MirrorEditorReplaceDocumentNotification")
-
-    static func requestSnapshot(completion: @escaping (MirrorEditorDocumentSnapshot?) -> Void) {
-        NotificationCenter.default.post(
-            name: snapshotNotification,
-            object: MirrorEditorSnapshotRequest(completion: completion)
-        )
+    static func requestSnapshot(target: StudioEditorTarget, completion: @escaping (StudioDocumentSnapshot?) -> Void) {
+        let request = StudioEditorSnapshotRequest(target: target, completion: completion)
+        NotificationCenter.default.post(name: snapshotNotification, object: request)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { request.finish(nil) }
     }
 
-    static func replaceDocument(with content: String) {
-        NotificationCenter.default.post(name: replaceDocumentNotification, object: content)
+    static func replaceDocument(with content: String, snapshot: StudioDocumentSnapshot,
+                                completion: @escaping (StudioDocumentApplyResult) -> Void) {
+        let request = StudioEditorReplacementRequest(snapshot: snapshot, content: content, completion: completion)
+        NotificationCenter.default.post(name: replaceDocumentNotification, object: request)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { request.finish(.unavailable) }
     }
 }
 
 typealias MirrorEditorDocumentSnapshot = StudioDocumentSnapshot
-
-private final class MirrorEditorSaveRequest {
-    let documentID: String
-    private var completion: ((Bool) -> Void)?
-    init(documentID: String, completion: @escaping (Bool) -> Void) {
-        self.documentID = documentID
-        self.completion = completion
-    }
-    func finish(_ succeeded: Bool) {
-        let callback = completion
-        completion = nil
-        callback?(succeeded)
-    }
-}
-
-private struct MirrorEditorSnapshotRequest {
-    let completion: (MirrorEditorDocumentSnapshot?) -> Void
-}
-
 
 struct MirrorEditorInternalActionProvider {
     typealias READER = () -> String
@@ -63,9 +46,11 @@ struct MirrorEditorInternalActionProvider {
     var onRead: READER?
     var onWrite: WRITER?
     var onIsReadOnly: ISREADONLY?
+    var onResources: (() -> [String])? = nil
 }
 
 class MirrorEditorInternalView: WKWebView {
+    var libraryEditorLease: UUID?
     public var accessoryView: UIView?
     
     var bridge: WKWebViewJavascriptBridge?
@@ -75,21 +60,27 @@ class MirrorEditorInternalView: WKWebView {
     var isTearingDown = false
     
     private let documentSession = StudioDocumentSession()
+    private var requestedDocumentID: String?
     private var currentDocumentID: String?
+    private var documentGeneration = UUID()
     private var draftWorkItem: DispatchWorkItem?
     
     var action: MirrorEditorInternalActionProvider?
     
 
+    let editorID: UUID
+
     required init?(coder: NSCoder) {
+        editorID = UUID()
         super.init(coder: coder)
         
     }
     
-    init() {
+    init(editorID: UUID = UUID()) {
+        self.editorID = editorID
         let configuration = WKWebViewConfiguration()
         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
-        configuration.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+        configuration.setURLSchemeHandler(StudioEditorBundleSchemeHandler(), forURLScheme: StudioEditorBundleSchemeHandler.scheme)
         super.init(frame: .zero, configuration: configuration)
         
         self.isOpaque = false
@@ -122,58 +113,115 @@ class MirrorEditorInternalView: WKWebView {
                 return
             }
             
-            guard let self, let documentID = parameters?["documentID"] as? String,
+            guard let self, !self.isTearingDown, self.action?.onIsReadOnly?() != true,
+                  let documentID = parameters?["documentID"] as? String,
+                  documentID == self.currentDocumentID,
+                  parameters?["sessionID"] as? String == self.documentGeneration.uuidString,
                   let writer = self.action?.onWrite else {
                 callback?(["result": "failed"])
                 return
+            }
+            guard let version = payload["version"] as? Int,
+                  self.documentSession.bufferSnapshot(value, version: version) else {
+                callback?(["result": "failed"]); return
             }
             let saved = self.documentSession.save(value, documentID: documentID, writer: writer)
             callback?(["result": saved ? "ok" : "failed"])
         })
 
-        self.bridge?.register(handlerName: StudioProtocol.documentChanged, handler: { [weak self] _, callback in
-            self?.scheduleDraftSnapshot()
+        self.bridge?.register(handlerName: StudioProtocol.documentChanged, handler: { [weak self] parameters, callback in
+            guard let self, !self.isTearingDown,
+                  parameters?["documentID"] as? String == self.currentDocumentID,
+                  parameters?["sessionID"] as? String == self.documentGeneration.uuidString else {
+                callback?(["result": "failed"]); return
+            }
+            guard let payload = parameters?["payload"] as? [String: Any],
+                  self.documentSession.bufferChange(payload) else {
+                callback?(["result": "failed"]); return
+            }
+            self.scheduleDraftSnapshot()
             callback?(["result": "ok"])
         })
+
+        self.bridge?.register(handlerName: StudioProtocol.documentResources) { [weak self] parameters, callback in
+            guard let self, !self.isTearingDown, let id = self.currentDocumentID,
+                  parameters?["documentID"] as? String == id,
+                  parameters?["sessionID"] as? String == self.documentGeneration.uuidString else {
+                callback?(["result": "failed"]); return
+            }
+            callback?(["result": "ok", "documentID": id, "resources": self.action?.onResources?() ?? []])
+        }
         
-        guard let bundlePath = Bundle.main.url(forResource: "StudioEditor", withExtension: "bundle") else {
-            fatalError("StudioEditor.bundle is missing")
-        }
-        guard let bundle = Bundle(url: bundlePath) else {
-            fatalError("StudioEditor.bundle is invalid")
-        }
-        guard let indexURL = bundle.url(forResource: "index", withExtension: "html") else {
-            fatalError("StudioEditor.bundle/index.html is missing")
-        }
-        self.loadFileURL(indexURL, allowingReadAccessTo: bundle.resourceURL!)
+        self.load(URLRequest(url: StudioEditorBundleSchemeHandler.indexURL))
         
         let saveNoti = NotificationCenter.default.publisher(for: MirrorEditorService.saveNotification, object: nil).sink { [weak self] noti in
-            guard let self else { return }
-            if let request = noti.object as? MirrorEditorSaveRequest {
-                guard request.documentID == self.currentDocumentID else { return }
-                self.saveCurrentContent(completion: request.finish)
-            } else {
-                self.saveCurrentContent()
-            }
+            guard let self, !self.isTearingDown,
+                  let request = noti.object as? StudioEditorSaveRequest,
+                  request.target.editorID == self.editorID else { return }
+            guard request.target.documentID == self.currentDocumentID else { request.finish(false); return }
+            self.saveCurrentContent(completion: request.finish)
         }
         self.cancellables.append(saveNoti)
 
         let snapshotNotification = NotificationCenter.default.publisher(for: MirrorEditorService.snapshotNotification)
             .sink { [weak self] notification in
-                guard let request = notification.object as? MirrorEditorSnapshotRequest else { return }
-                self?.readSnapshot(completion: request.completion)
+                guard let self, !self.isTearingDown,
+                      let request = notification.object as? StudioEditorSnapshotRequest,
+                      request.target.editorID == self.editorID else { return }
+                guard request.target.documentID == self.currentDocumentID else { request.finish(nil); return }
+                self.readSnapshot(completion: request.finish)
             }
         self.cancellables.append(snapshotNotification)
 
         let replaceNotification = NotificationCenter.default.publisher(for: MirrorEditorService.replaceDocumentNotification)
             .sink { [weak self] notification in
-                guard let content = notification.object as? String else { return }
-                self?.replaceDocument(with: content)
+                guard let self, !self.isTearingDown,
+                      let request = notification.object as? StudioEditorReplacementRequest,
+                      request.snapshot.editorID == self.editorID else { return }
+                self.replaceDocument(request)
             }
         self.cancellables.append(replaceNotification)
+        StudioEditorHostRegistry.register(editorID: editorID, host: self) { [weak self] in
+            self?.invalidate()
+        }
     }
     
+    func invalidate() {
+        guard !isTearingDown else { return }
+        if let documentID = currentDocumentID, isEditorReady {
+            let sessionID = documentGeneration.uuidString
+            let handoff = StudioDocumentHandoff.begin(documentID)
+            let closingAction = action
+            let request = StudioEditorCloseRequest { [self] response in
+                if let snapshot = StudioDocumentSnapshot(state: response),
+                   snapshot.documentID == documentID, snapshot.sessionID == sessionID {
+                    documentSession.bufferSnapshot(snapshot.content, version: snapshot.version)
+                }
+                if closingAction?.onIsReadOnly?() != true {
+                    if let writer = closingAction?.onWrite,
+                       closingAction?.onRead?() == documentSession.savedContent {
+                        _ = documentSession.save(documentSession.bufferedContent, documentID: documentID, writer: writer)
+                    } else {
+                        documentSession.persistBufferedDraft()
+                    }
+                }
+                StudioDocumentHandoff.finish(documentID, token: handoff)
+            }
+            // Retain the host through a bounded final snapshot even when
+            // SwiftUI has already detached its representable.
+            callStudio(handlerName: StudioProtocol.editorGetState, callback: request.finish)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) { request.finish(nil) }
+        }
+        isTearingDown = true
+        documentGeneration = UUID()
+        pendingActions.removeAll()
+        draftWorkItem?.cancel()
+        for cancellable in cancellables { cancellable.cancel() }
+        cancellables.removeAll()
+    }
+
     deinit {
+        ScriptWidgetEditorPresence.unregister(libraryEditorLease)
         print("de-init editor")
         isTearingDown = true
         pendingActions.removeAll()
@@ -197,9 +245,15 @@ class MirrorEditorInternalView: WKWebView {
             completion(false)
             return
         }
+        let generation = documentGeneration
         editorGetValue { [weak self] succeed, value in
-            guard let self, !self.isTearingDown, self.currentDocumentID == documentID, succeed else {
+            guard let self, !self.isTearingDown, self.currentDocumentID == documentID,
+                  self.documentGeneration == generation, succeed else {
                 completion(false)
+                return
+            }
+            if self.action?.onIsReadOnly?() == true {
+                completion(value == self.documentSession.savedContent)
                 return
             }
             guard let writer = self.action?.onWrite else { completion(false); return }
@@ -227,14 +281,20 @@ class MirrorEditorInternalView: WKWebView {
             callback(false, "")
             return
         }
+        let documentID = currentDocumentID, generation = documentGeneration
         callStudio(handlerName: StudioProtocol.editorGetState, callback: { responseData in
             guard let data = responseData as? [String: Any] else {
                 callback(false, "")
                 return
             }
             
-            guard data["documentID"] as? String == self.currentDocumentID,
-                  let value = data["content"] as? String else {
+            guard !self.isTearingDown, self.documentGeneration == generation,
+                  self.currentDocumentID == documentID,
+                  data["documentID"] as? String == documentID,
+                  data["sessionID"] as? String == generation.uuidString,
+                  let value = data["content"] as? String,
+                  let version = data["version"] as? Int,
+                  self.documentSession.bufferSnapshot(value, version: version) else {
                 callback(false, "")
                 return
             }
@@ -243,62 +303,88 @@ class MirrorEditorInternalView: WKWebView {
         })
     }
 
-    private func readSnapshot(completion: @escaping (MirrorEditorDocumentSnapshot?) -> Void) {
-        guard !isTearingDown else {
-            completion(nil)
-            return
-        }
-        callStudio(handlerName: StudioProtocol.editorGetState) { responseData in
-            completion(MirrorEditorDocumentSnapshot(state: responseData))
+    private func readSnapshot(completion: @escaping (StudioDocumentSnapshot?) -> Void) {
+        guard isEditorReady, !isTearingDown, let documentID = currentDocumentID else { completion(nil); return }
+        let generation = documentGeneration
+        callStudio(handlerName: StudioProtocol.editorGetState) { [weak self] response in
+            guard let self, !self.isTearingDown, self.currentDocumentID == documentID,
+                  self.documentGeneration == generation,
+                  let snapshot = StudioDocumentSnapshot(state: response, editorID: self.editorID),
+                  snapshot.documentID == documentID, snapshot.sessionID == generation.uuidString,
+                  self.documentSession.bufferSnapshot(snapshot.content, version: snapshot.version) else {
+                completion(nil); return
+            }
+            completion(snapshot)
         }
     }
 
-    private func replaceDocument(with content: String) {
-        guard !isTearingDown, action?.onIsReadOnly?() != true else { return }
-        callStudio(
-            handlerName: StudioProtocol.documentReplace,
-            payload: ["content": content, "version": 0]
-        ) { [weak self] response in
-            guard let self else { return }
-            let result = (response as? [String: Any])?["result"] as? String
-            guard result == "ok" || result == nil else { return }
-            if self.action?.onWrite?(content) == true {
-                self.documentSession.markSaved(content)
+    private func replaceDocument(_ request: StudioEditorReplacementRequest) {
+        guard request.isPending else { return }
+        guard isEditorReady, !isTearingDown else { request.finish(.unavailable); return }
+        let snapshot = request.snapshot
+        guard snapshot.documentID == currentDocumentID,
+              snapshot.sessionID == documentGeneration.uuidString,
+              action?.onIsReadOnly?() != true else { request.finish(.conflict); return }
+        let generation = documentGeneration
+        callStudio(handlerName: StudioProtocol.documentReplace,
+                   payload: ["content": request.content, "expectedContent": snapshot.content, "version": snapshot.version + 1]) { [weak self] response in
+            guard let self, request.isPending else { return }
+            guard !self.isTearingDown, self.documentGeneration == generation,
+                  self.currentDocumentID == snapshot.documentID else { request.finish(.conflict); return }
+            guard (response as? [String: Any])?["result"] as? String == "ok" else {
+                request.finish(.conflict); return
             }
+            // Read current text so newer manual edits survive a delayed reply.
+            self.saveCurrentContent { saved in request.finish(saved ? .saved : .saveFailed) }
         }
     }
 
     private func scheduleDraftSnapshot() {
         draftWorkItem?.cancel()
         let workItem = DispatchWorkItem { [weak self] in
-            guard let self, let documentID = self.currentDocumentID else { return }
-            self.editorGetValue { succeed, content in
-                guard succeed else { return }
-                guard self.currentDocumentID == documentID else { return }
-                self.documentSession.recordDraft(content)
-            }
+            guard let self, !self.isTearingDown else { return }
+            self.documentSession.persistBufferedDraft()
         }
         draftWorkItem = workItem
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: workItem)
     }
+
     
     
     func updateDocument(action: MirrorEditorInternalActionProvider) {
-        self.action = action
+        guard !isTearingDown else { return }
+        requestedDocumentID = action.documentID
         guard currentDocumentID != action.documentID else {
-            if isEditorReady {
-                editorSetReadOnly(action.onIsReadOnly?() ?? false)
-            }
+            self.action = action
+            if isEditorReady { editorSetReadOnly(action.onIsReadOnly?() ?? false) }
             return
         }
-        currentDocumentID = action.documentID
-        self.runJSAction { [weak self] in
-            self?.reloadCurrentScript()
+        let activateDocument = { [weak self] in
+            StudioDocumentHandoff.afterClosing(action.documentID) { [weak self] in
+                guard let self, !self.isTearingDown, self.requestedDocumentID == action.documentID else { return }
+                self.action = action
+                self.currentDocumentID = action.documentID
+                self.documentGeneration = UUID()
+                self.reloadCurrentScript()
+            }
+        }
+
+        runJSAction { [weak self] in
+            guard let self, !self.isTearingDown else { return }
+            if self.currentDocumentID == nil {
+                activateDocument()
+            } else {
+                // Read and save the outgoing document before replacing its
+                // writer and identity, including edits before the debounce.
+                self.saveCurrentContent { saved in
+                    if saved { activateDocument() }
+                }
+            }
         }
     }
 
     private func studioEnvelope(type: String, payload: [String: Any]) -> [String: Any] {
-        StudioProtocol.envelope(type: type, documentID: currentDocumentID, payload: payload)
+        StudioProtocol.envelope(type: type, documentID: currentDocumentID, payload: payload, sessionID: documentGeneration.uuidString)
     }
 
     private func callStudio(
@@ -345,14 +431,17 @@ class MirrorEditorInternalView: WKWebView {
         if let onRead = action?.onRead {
             let fileContent = onRead()
             guard let currentDocumentID else { return }
+            documentGeneration = UUID()
             let content = documentSession.open(documentID: currentDocumentID, content: fileContent)
             
             callStudio(
                 handlerName: StudioProtocol.documentOpen,
                 payload: [
                     "content": content,
+                    "dirty": content != fileContent,
                     "version": 0,
                     "readOnly": action?.onIsReadOnly?() ?? false,
+                    "resources": action?.onResources?() ?? [],
                 ]
             )
         }

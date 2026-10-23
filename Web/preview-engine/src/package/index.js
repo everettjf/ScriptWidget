@@ -25,6 +25,7 @@ export async function importPackage(bytes, options) {
   const archive = await readArchive(bytes, options);
   if (archive.error) return archive;
   const files = classifyFiles(archive.files);
+  if (Object.keys(files).some((path) => path.toLowerCase() === "widget.json" && path !== "widget.json")) return { error: "[package:invalid_manifest_case] Use the exact file name widget.json." };
   let manifest;
   if (typeof files["widget.json"] === "string") {
     const decoded = decodeManifest(files["widget.json"]);

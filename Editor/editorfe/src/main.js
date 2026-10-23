@@ -34,6 +34,8 @@ import { STUDIO_PROTOCOL_VERSION, StudioMessage } from "./studioProtocol.js";
 import { scriptWidgetCompletions } from "./scriptWidgetCompletions.js";
 import { scriptWidgetDiagnostics, scriptWidgetHover } from "./scriptWidgetLanguage.js";
 import { studioTheme } from "./studioTheme.js";
+import { visualLayoutEditor } from "./visualLayoutEditor.js";
+import { setVisualLayoutResources } from "./visualAssets.js";
 import { loadDocumentState, saveDocumentState } from "./documentState.js";
 import { DocumentSaveCoordinator, initialStudioState, recoverableDraft, reduceStudioState, removeDraft, shouldWarnBeforeLeaving, writeDraft } from "./webStudioState.js";
 import { WebStudioAPI } from "./webStudioAPI.js";
@@ -46,7 +48,9 @@ const readOnly = new Compartment();
 const theme = new Compartment();
 let bridge = null;
 let documentID = null;
+let documentSessionID = null;
 let documentVersion = 0;
+let documentGeneration = 0;
 let suppressChanges = false;
 let saveTimer = null;
 let stateTimer = null;
@@ -78,11 +82,11 @@ function scheduleSave() {
   window.clearTimeout(saveTimer);
   setSaveStatus("Saving…", "saving");
   saveTimer = window.setTimeout(() => {
-    const content = view.state.doc.toString();
-    callNative(bridge, StudioMessage.documentSave, { content, version: documentVersion }, documentID, (response = {}) => {
-      if (isWebStudio) return;
+    const content = view.state.doc.toString(), version = documentVersion, id = documentID, session = documentSessionID, generation = documentGeneration;
+    callNative(bridge, StudioMessage.documentSave, { content, version }, id, (response = {}) => {
+      if (isWebStudio || id !== documentID || session !== documentSessionID || generation !== documentGeneration || version !== documentVersion) return;
       setSaveStatus(response.result === "ok" || response.result === "unavailable" ? "Saved" : "Save failed", response.result === "failed" ? "error" : "saved");
-    });
+    }, session);
   }, 700);
 }
 
@@ -95,7 +99,7 @@ function onEditorUpdate(update) {
   update.changes.iterChanges((fromA, toA, fromB, toB, inserted) => {
     changes.push({ from: fromA, to: toA, insert: inserted.toString(), newFrom: fromB, newTo: toB });
   });
-  callNative(bridge, StudioMessage.documentChanged, { changes, version: documentVersion }, documentID);
+  callNative(bridge, StudioMessage.documentChanged, { changes, version: documentVersion }, documentID, undefined, documentSessionID);
   scheduleSave();
 }
 
@@ -104,6 +108,15 @@ const extensions = [
   highlightActiveLineGutter(),
   highlightSpecialChars(),
   history(),
+  visualLayoutEditor({ refreshResources: () => new Promise((resolve, reject) => {
+    const expectedID = documentID, generation = documentGeneration, expectedSession = documentSessionID;
+    const timeout = window.setTimeout(() => reject(new Error("Resource refresh timed out")), 5000);
+    callNative(bridge, StudioMessage.documentResources, {}, expectedID, (response = {}) => {
+      window.clearTimeout(timeout);
+      if (expectedID !== documentID || generation !== documentGeneration || response.result !== "ok" || response.documentID !== expectedID || !Array.isArray(response.resources)) reject(new Error("Document resources are unavailable"));
+      else resolve(response.resources);
+    }, expectedSession);
+  }) }),
   foldGutter(),
   drawSelection(),
   dropCursor(),
@@ -140,20 +153,30 @@ const view = new EditorView({
   parent: editorParent,
 });
 
-function replaceDocument(content, nextDocumentID = documentID, version = 0) {
+function replaceDocument(content, nextDocumentID = documentID, version = 0, notifyNative = false) {
+  window.clearTimeout(saveTimer);
+  documentGeneration += 1;
   const previousSelection = view.state.selection.main;
   saveDocumentState(window.localStorage, documentID, { anchor: previousSelection.anchor, head: previousSelection.head, scrollTop: view.scrollDOM.scrollTop });
   suppressChanges = true;
+  const changedDocument = nextDocumentID !== documentID;
   documentID = nextDocumentID;
   documentVersion = version;
   const restored = loadDocumentState(window.localStorage, documentID, (content ?? "").length);
-  view.dispatch({
-    changes: { from: 0, to: view.state.doc.length, insert: content ?? "" },
-    selection: restored ? { anchor: restored.anchor, head: restored.head } : { anchor: 0 },
-    scrollIntoView: true,
-  });
+  const selection = restored ? { anchor: restored.anchor, head: restored.head } : { anchor: 0 };
+  if (changedDocument) {
+    // A native document.open must not make Undo restore another file's source.
+    // Keep configured theme/access, but start this document's history clean.
+    const appearance = theme.get(view.state), wasReadOnly = view.state.readOnly;
+    let nextState = EditorState.create({ doc: content ?? "", extensions, selection });
+    nextState = nextState.update({ effects: [theme.reconfigure(appearance), readOnly.reconfigure(EditorState.readOnly.of(wasReadOnly))] }).state;
+    view.setState(nextState);
+  } else {
+    view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: content ?? "" }, selection, scrollIntoView: true });
+  }
   if (restored) window.requestAnimationFrame(() => { view.scrollDOM.scrollTop = restored.scrollTop; });
   suppressChanges = false;
+  if (notifyNative) callNative(bridge, StudioMessage.documentChanged, { content: view.state.doc.toString(), version: documentVersion }, documentID, undefined, documentSessionID);
   setSaveStatus("Saved", "saved");
 }
 
@@ -171,24 +194,27 @@ function insertText(content) {
 
 async function formatDocument() {
   if (view.state.readOnly) return false;
+  const source = view.state.doc.toString(), generation = documentGeneration, version = documentVersion;
+  const current = () => !view.state.readOnly && generation === documentGeneration && version === documentVersion && source === view.state.doc.toString();
   try {
     const [{ format }, { default: babelPlugin }, { default: estreePlugin }] = await Promise.all([
       import("prettier/standalone"),
       import("prettier/plugins/babel"),
       import("prettier/plugins/estree"),
     ]);
-    const formatted = await format(view.state.doc.toString(), {
+    const formatted = await format(source, {
       parser: "babel",
       plugins: [babelPlugin, estreePlugin],
       semi: true,
       singleQuote: true,
       trailingComma: "es5",
     });
-    replaceDocument(formatted, documentID, documentVersion + 1);
+    if (!current()) return false;
+    replaceDocument(formatted, documentID, documentVersion + 1, true);
     scheduleSave();
     return true;
   } catch (error) {
-    callNative(bridge, "diagnostics.publish", { message: String(error), severity: "error" }, documentID);
+    if (current()) callNative(bridge, "diagnostics.publish", { message: String(error), severity: "error" }, documentID, undefined, documentSessionID);
     return false;
   }
 }
@@ -216,6 +242,8 @@ function publishDiagnostics(items = []) {
 function register(name, handler) {
   bridge.registerHandler(name, async (data = {}, callback = () => {}) => {
     try {
+      if (documentSessionID !== null && name !== StudioMessage.documentOpen && name !== StudioMessage.editorSetTheme &&
+          (data.documentID !== documentID || data.sessionID !== documentSessionID)) throw new Error("The editor session changed.");
       callback({ result: "ok", ...(await handler(data)) });
     } catch (error) {
       callback({ result: "failed", message: String(error) });
@@ -226,13 +254,20 @@ function register(name, handler) {
 connectNativeBridge((nativeBridge) => {
   bridge = nativeBridge;
 
-  register(StudioMessage.documentOpen, ({ payload = {}, documentID: id }) => {
+  register(StudioMessage.documentOpen, ({ payload = {}, documentID: id, sessionID = null }) => {
+    documentSessionID = sessionID;
     replaceDocument(payload.content, id, payload.version ?? 0);
+    setVisualLayoutResources(view, payload.resources ?? []);
     setReadOnly(payload.readOnly);
+    if (payload.dirty) {
+      setSaveStatus("Restored unsaved edits", "editing");
+      if (!payload.readOnly) scheduleSave();
+    }
     return { protocolVersion: STUDIO_PROTOCOL_VERSION };
   });
   register(StudioMessage.documentReplace, ({ payload = {}, documentID: id }) => {
-    replaceDocument(payload.content, id, payload.version ?? documentVersion);
+    if (view.state.readOnly || (payload.expectedContent !== undefined && payload.expectedContent !== view.state.doc.toString())) throw new Error("The file changed or is read only.");
+    replaceDocument(payload.content, id, payload.version ?? documentVersion, true);
     return {};
   });
   register(StudioMessage.documentSetReadOnly, ({ payload = {} }) => {
@@ -249,6 +284,7 @@ connectNativeBridge((nativeBridge) => {
     content: view.state.doc.toString(),
     version: documentVersion,
     documentID,
+    sessionID: documentSessionID,
     selection: { from: view.state.selection.main.from, to: view.state.selection.main.to },
   }));
   register(StudioMessage.diagnosticsPublish, ({ payload = {} }) => {
@@ -406,6 +442,7 @@ async function startWebStudio() {
     conflict = null;
     conflictBanner.hidden = true;
     replaceDocument(result.content, nextID, 0);
+    setVisualLayoutResources(view, packages.find(item => item.id === loadedPackageID)?.files ?? []);
     saveCoordinator.open({ documentID: nextID, packageID: loadedPackageID, path: loadedPath, revision: result.revision, content: result.content });
     setReadOnly(Boolean(result.readOnly));
     updateDocumentChrome(result);
@@ -543,6 +580,12 @@ async function startWebStudio() {
     callHandler(name, envelope, callback = () => {}) {
       if (name === StudioMessage.documentSave) {
         saveWebDocument(envelope.payload.content, callback);
+      } else if (name === StudioMessage.documentResources) {
+        const expectedID = documentID, expectedPackage = loadedPackageID;
+        api("/api/v1/packages").then(result => {
+          if (expectedID !== documentID || envelope.documentID !== documentID || expectedPackage !== loadedPackageID) { callback({result:"failed"}); return; }
+          callback({result:"ok",documentID:expectedID,resources:(result.packages ?? []).find(item => item.id === expectedPackage)?.files ?? []});
+        }).catch(() => callback({result:"failed"}));
       } else {
         callback({ result: "ok" });
       }

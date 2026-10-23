@@ -1,0 +1,12 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.layout-starter",
+  "name": "Layout Starter",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "entry": "main.jsx",
+  "supportedFamilies": ["systemSmall", "systemMedium", "systemLarge", "systemExtraLarge", "systemExtraLargePortrait"],
+  "permissions": [],
+  "networkDomains": [],
+  "description": "A literal JSX canvas for the shared native/Web Layout editor. Select layers, change text and properties, reorder and undo without replacing your JavaScript."
+}

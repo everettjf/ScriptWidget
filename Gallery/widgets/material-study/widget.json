@@ -1,0 +1,13 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.material-study",
+  "name": "Material Study",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.4",
+  "entry": "main.jsx",
+  "supportedFamilies": ["systemSmall", "systemMedium", "systemLarge", "systemExtraLarge", "systemExtraLargePortrait", "accessoryInline", "accessoryCircular", "accessoryRectangular"],
+  "permissions": [],
+  "networkDomains": [],
+  "description": "Original shapes behind a public frosted material card with a static 3D tilt and accessibility fallbacks."
+}

@@ -13,8 +13,10 @@ struct MirrorEditorScriptView: UIViewRepresentable {
     
     let model: ScriptModel
     let filePath: URL
+    let editorID: UUID
     
-    init(model: ScriptModel, filePath: URL) {
+    init(model: ScriptModel, filePath: URL, editorID: UUID = UUID()) {
+        self.editorID = editorID
         self.model = model
         self.filePath = filePath
         withUnsafePointer(to: &self) { addr in
@@ -40,18 +42,27 @@ struct MirrorEditorScriptView: UIViewRepresentable {
         } onIsReadOnly: {
             
             return model.package.readonly
+        } onResources: {
+            model.package.editorImageResources()
         }
         return provider
     }
     
     func makeUIView(context: Context) -> MirrorEditorInternalView {
         print("MirrorEditorScriptView make ui view : \(filePath.lastPathComponent)")
-        let uiView = MirrorEditorInternalView()
+        let uiView = MirrorEditorInternalView(editorID: editorID)
+        uiView.libraryEditorLease = ScriptWidgetEditorPresence.register()
         uiView.updateDocument(action: createActionProvider())
         
         return uiView;
     }
     
+    static func dismantleUIView(_ uiView: MirrorEditorInternalView, coordinator: ()) {
+        ScriptWidgetEditorPresence.unregister(uiView.libraryEditorLease)
+        uiView.libraryEditorLease = nil
+        uiView.invalidate()
+    }
+
     func updateUIView(_ uiView: MirrorEditorInternalView, context: Context) {
         print("MirrorEditorScriptView update ui view: \(filePath.lastPathComponent)")
         uiView.updateDocument(action: createActionProvider())

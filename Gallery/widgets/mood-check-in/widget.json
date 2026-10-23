@@ -1,0 +1,126 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.mood-check-in",
+  "name": "Mood Check-in",
+  "version": "1.2.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.3",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait",
+    "accessoryCircular",
+    "accessoryRectangular",
+    "accessoryInline"
+  ],
+  "permissions": [
+    "storage"
+  ],
+  "networkDomains": [],
+  "description": "Save a daily mood with a personal intention, seven-day history, reset and undo.",
+  "category": "health",
+  "tags": [
+    "mood",
+    "mindfulness",
+    "journal"
+  ],
+  "icon": "face.smiling",
+  "actions": [
+    {
+      "id": "moodOne",
+      "title": "Record mood 1",
+      "systemImage": "face.smiling",
+      "function": "moodOne"
+    },
+    {
+      "id": "moodTwo",
+      "title": "Record mood 2",
+      "systemImage": "face.smiling",
+      "function": "moodTwo"
+    },
+    {
+      "id": "moodThree",
+      "title": "Record mood 3",
+      "systemImage": "face.smiling",
+      "function": "moodThree"
+    },
+    {
+      "id": "moodFour",
+      "title": "Record mood 4",
+      "systemImage": "face.smiling",
+      "function": "moodFour"
+    },
+    {
+      "id": "moodFive",
+      "title": "Record mood 5",
+      "systemImage": "face.smiling",
+      "function": "moodFive"
+    },
+    {
+      "id": "undoRecord",
+      "title": "Undo last mood change",
+      "systemImage": "arrow.uturn.backward",
+      "function": "undoRecord"
+    },
+    {
+      "id": "resetToday",
+      "title": "Reset today’s mood",
+      "systemImage": "arrow.counterclockwise",
+      "function": "resetToday"
+    }
+  ],
+  "controls": [
+    {
+      "id": "moodOne",
+      "type": "button",
+      "title": "Record mood 1",
+      "systemImage": "face.smiling",
+      "actionID": "moodOne"
+    },
+    {
+      "id": "moodTwo",
+      "type": "button",
+      "title": "Record mood 2",
+      "systemImage": "face.smiling",
+      "actionID": "moodTwo"
+    },
+    {
+      "id": "moodThree",
+      "type": "button",
+      "title": "Record mood 3",
+      "systemImage": "face.smiling",
+      "actionID": "moodThree"
+    },
+    {
+      "id": "moodFour",
+      "type": "button",
+      "title": "Record mood 4",
+      "systemImage": "face.smiling",
+      "actionID": "moodFour"
+    },
+    {
+      "id": "moodFive",
+      "type": "button",
+      "title": "Record mood 5",
+      "systemImage": "face.smiling",
+      "actionID": "moodFive"
+    },
+    {
+      "id": "undoRecord",
+      "type": "button",
+      "title": "Undo last mood change",
+      "systemImage": "arrow.uturn.backward",
+      "actionID": "undoRecord"
+    },
+    {
+      "id": "resetToday",
+      "type": "button",
+      "title": "Reset today’s mood",
+      "systemImage": "arrow.counterclockwise",
+      "actionID": "resetToday"
+    }
+  ]
+}

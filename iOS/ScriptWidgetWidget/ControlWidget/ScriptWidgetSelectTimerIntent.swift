@@ -3,38 +3,20 @@ import Foundation
 import WidgetKit
 
 private enum ScriptWidgetControlCatalog {
-    static func controls(type: WidgetPackageControlType) -> [(package: ScriptWidgetPackage, control: WidgetPackageControl)] {
-        ScriptWidgetActionCatalog.live.packages.flatMap { package -> [(package: ScriptWidgetPackage, control: WidgetPackageControl)] in
-            guard let manifest = package.readManifest(),
-                  WidgetPackageManifestValidator.validate(manifest, package: package).isValid else { return [] }
-            return (manifest.controls ?? [])
-                .filter { $0.type == type }
-                .map { (package, $0) }
-        }
+    static func controls(type: WidgetPackageControlType) -> [(ResolvedScriptWidgetAction, WidgetPackageControl)] {
+        ScriptWidgetActionCatalog.live.controls(type: type)
     }
 
-    static func resolve(id: String, type: WidgetPackageControlType) -> (ScriptWidgetPackage, WidgetPackageControl)? {
-        guard let (_, control) = ScriptWidgetActionCatalog.live.resolveControl(identifier: id, type: type) else { return nil }
-        return controls(type: type).first {
-            $0.control.id == control.id && (entityID(package: $0.package, control: $0.control) == id || legacyEntityID(package: $0.package, control: $0.control) == id)
-        }
+    static func resolve(id: String, type: WidgetPackageControlType) -> (ResolvedScriptWidgetAction, WidgetPackageControl)? {
+        ScriptWidgetActionCatalog.live.resolveControl(identifier: id, type: type)
     }
 
-    static func entityID(package: ScriptWidgetPackage, control: WidgetPackageControl) -> String {
-        let manifest = package.readManifest() ?? package.effectiveManifest()
-        return "\(manifest.id)::\(control.id)"
+    static func entityID(resolved: ResolvedScriptWidgetAction, control: WidgetPackageControl) -> String {
+        ScriptWidgetActionCatalog.controlIdentifier(resolved, control)
     }
 
-    static func legacyEntityID(package: ScriptWidgetPackage, control: WidgetPackageControl) -> String {
-        "\(package.name)::\(control.id)"
-    }
-
-    static func storageValue(package: ScriptWidgetPackage, key: String) -> Bool {
-        let defaults = UserDefaults(suiteName: "group.everettjf.scriptwidget") ?? .standard
-        let value = defaults.object(forKey: "script.\(package.name).\(key)")
-        if let bool = value as? Bool { return bool }
-        if let string = value as? String { return string == "true" || string == "1" }
-        return false
+    static func storageValue(resolved: ResolvedScriptWidgetAction, key: String) -> Bool {
+        (try? ScriptWidgetActionExecutor.toggleValue(resolved: resolved, stateKey: key)) ?? false
     }
 
 }
@@ -56,22 +38,22 @@ struct ScriptWidgetButtonControlEntity: AppEntity, Identifiable {
 struct ScriptWidgetButtonControlQuery: EntityQuery {
     func entities(for identifiers: [String]) async throws -> [ScriptWidgetButtonControlEntity] {
         identifiers.compactMap { id in
-            guard let (_, control) = ScriptWidgetControlCatalog.resolve(id: id, type: .button) else { return nil }
+            guard let (resolved, control) = ScriptWidgetControlCatalog.resolve(id: id, type: .button) else { return nil }
             return .init(
                 id: id,
                 title: control.title,
-                subtitle: control.subtitle,
+                subtitle: resolved.controlSubtitle(control),
                 systemImage: control.systemImage
             )
         }
     }
 
     func suggestedEntities() async throws -> [ScriptWidgetButtonControlEntity] {
-        ScriptWidgetControlCatalog.controls(type: .button).map { package, control in
+        ScriptWidgetControlCatalog.controls(type: .button).map { resolved, control in
             .init(
-                id: ScriptWidgetControlCatalog.entityID(package: package, control: control),
+                id: ScriptWidgetControlCatalog.entityID(resolved: resolved, control: control),
                 title: control.title,
-                subtitle: control.subtitle,
+                subtitle: resolved.controlSubtitle(control),
                 systemImage: control.systemImage
             )
         }
@@ -95,17 +77,17 @@ struct ScriptWidgetToggleControlEntity: AppEntity, Identifiable {
 struct ScriptWidgetToggleControlQuery: EntityQuery {
     func entities(for identifiers: [String]) async throws -> [ScriptWidgetToggleControlEntity] {
         identifiers.compactMap { id in
-            guard let (_, control) = ScriptWidgetControlCatalog.resolve(id: id, type: .toggle) else { return nil }
-            return .init(id: id, title: control.title, subtitle: control.subtitle, systemImage: control.systemImage)
+            guard let (resolved, control) = ScriptWidgetControlCatalog.resolve(id: id, type: .toggle) else { return nil }
+            return .init(id: id, title: control.title, subtitle: resolved.controlSubtitle(control), systemImage: control.systemImage)
         }
     }
 
     func suggestedEntities() async throws -> [ScriptWidgetToggleControlEntity] {
-        ScriptWidgetControlCatalog.controls(type: .toggle).map { package, control in
+        ScriptWidgetControlCatalog.controls(type: .toggle).map { resolved, control in
             .init(
-                id: ScriptWidgetControlCatalog.entityID(package: package, control: control),
+                id: ScriptWidgetControlCatalog.entityID(resolved: resolved, control: control),
                 title: control.title,
-                subtitle: control.subtitle,
+                subtitle: resolved.controlSubtitle(control),
                 systemImage: control.systemImage
             )
         }
@@ -162,13 +144,13 @@ struct ScriptWidgetToggleControlProvider: AppIntentControlValueProvider {
 
     func currentValue(configuration: SelectScriptWidgetToggleIntent) async throws -> ScriptWidgetToggleControlValue {
         let preview = previewValue(configuration: configuration)
-        guard let (package, control) = ScriptWidgetControlCatalog.resolve(id: preview.id, type: .toggle),
+        guard let (resolved, control) = ScriptWidgetControlCatalog.resolve(id: preview.id, type: .toggle),
               let stateKey = control.stateKey else { return preview }
         return .init(
             id: preview.id,
             title: control.title,
             systemImage: control.systemImage,
-            isOn: ScriptWidgetControlCatalog.storageValue(package: package, key: stateKey)
+            isOn: ScriptWidgetControlCatalog.storageValue(resolved: resolved, key: stateKey)
         )
     }
 }

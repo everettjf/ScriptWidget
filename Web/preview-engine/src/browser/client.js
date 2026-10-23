@@ -69,19 +69,20 @@ export function createPreviewSandbox({ sandboxDocument, sandboxURL, assetBaseURL
     ready,
     async execute({
       files,
-      entry = "main.jsx",
+      entry,
       manifest = null,
       environments = { "widget-size": "medium", "widget-param": "" },
       preview = { appearance: "light" },
       fixtures = {},
       prelude = "",
+      actionID = null,
       timeoutMilliseconds = runtimeContract.executionTimeoutMilliseconds,
     }) {
       await ready;
       const { supportScripts } = await assets;
       const id = `run-${++sequence}`;
       const config = JSON.stringify({
-        contract: runtimeContract, environments, preview, fixtures,
+        contract: runtimeContract, environments, preview, fixtures, actionID,
         manifest: manifest ?? null, hasManifest: manifest !== null && manifest !== undefined,
       });
       return new Promise((resolve) => {

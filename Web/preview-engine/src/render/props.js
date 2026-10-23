@@ -15,6 +15,17 @@ export function swiftDouble(text) {
   return null;
 }
 
+export function parseRotation3D(value) {
+  if (typeof value !== "string") return null;
+  const parts = value.split(",");
+  if (parts.length !== 4) return null;
+  const values = parts.map(part => swiftDouble(part.trim()));
+  if (!values.every(value => typeof value === "number" && Number.isFinite(value))) return null;
+  const scale = Math.max(...values.slice(1).map(value => Math.abs(value)));
+  if (scale === 0) return null;
+  return {degree:values[0] % 360,x:values[1]/scale,y:values[2]/scale,z:values[3]/scale};
+}
+
 /// Swift `Int(String)`.
 export const swiftInt = (text) => (typeof text === "string" && /^[+-]?\d+$/.test(text) ? Number(text) : null);
 

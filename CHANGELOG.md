@@ -2,6 +2,21 @@
 
 Notable user-visible changes are recorded here. ScriptWidget follows semantic versioning for public package/runtime contracts even when App Store marketing versions use another cadence.
 
+## 27.1.3 — release candidate (M1–M5 development in progress)
+
+- Save real habit, hydration, mood and checklist records with history, undo and backup/recovery.
+- Add configurable countdown, photo, weather, basic health, public GitHub data, launcher, local Live Activity, plant, pet and wallpaper templates.
+- Expand verified Gallery packages and editable Web Studio sample data.
+- Improve owner-scoped record storage, offline caches, Calendar source selection and bounded timeline generation.
+- Fix library opening when read-only legacy preferences cannot synchronize after a successful file-backed storage write.
+- Add selected-list Reminders reads and explicit create, update and completion actions with durable replay receipts.
+- Simulate declared widget actions in Web Studio against persistent, editable preview data.
+- Add explicit selected-photo/album access, private thumbnails and a scheduled Photo Album Rotator with equivalent Web sample data.
+- Add bounded sleep, activity-ring and workout summaries, a Health Overview template and editable Web sample data.
+- Fix native Promise callback ownership so completed and abandoned executions release their JavaScript VM and snapshot.
+- Serialize native runtime subscription, result delivery and cancellation to prevent intermittent empty results and reference-lifetime crashes.
+- Continue expanded personal-data APIs, authenticated services/music and visual editing on the same release branch; M3–M5 remain in progress.
+
 ## Unreleased
 
 ### Added

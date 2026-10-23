@@ -21,8 +21,14 @@ final class ScriptWidgetFetchManager: NSObject, URLSessionDataDelegate, URLSessi
     }
     private let lock = NSLock()
     private var transfers: [Int: Transfer] = [:]
+    private let configuration: URLSessionConfiguration
+
+    init(configuration: URLSessionConfiguration = .default) {
+        self.configuration = configuration.copy() as! URLSessionConfiguration
+        super.init()
+    }
     private lazy var session: URLSession = {
-        let config = URLSessionConfiguration.default
+        let config = configuration
         config.timeoutIntervalForRequest = 5.0
         config.timeoutIntervalForResource = 10.0
         config.urlCache = nil
@@ -30,7 +36,7 @@ final class ScriptWidgetFetchManager: NSObject, URLSessionDataDelegate, URLSessi
         return URLSession(configuration: config, delegate: self, delegateQueue: nil)
     }()
     
-    func makeTask(httpMethod: String, url: URL, params: [AnyHashable : Any]?, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask {
+    func makeTask(httpMethod: String, url: URL, params: [AnyHashable : Any]?, redirectValidator: ((URL) -> Bool)? = nil, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask {
         
         var request = URLRequest(url: url)
         request.httpMethod = httpMethod
@@ -66,7 +72,7 @@ final class ScriptWidgetFetchManager: NSObject, URLSessionDataDelegate, URLSessi
         if let body = request.httpBody, body.count > Self.maximumRequestBodyBytes {
             request.httpBody = nil
         }
-        return makeTask(request: request, completionHandler: completionHandler)
+        return makeTask(request: request, redirectValidator: redirectValidator, completionHandler: completionHandler)
     }
 
     func makeTask(
@@ -166,6 +172,15 @@ enum ScriptWidgetFetchPolicy {
 }
 
 enum ScriptWidgetNetworkPolicy {
+    static func allowsRedirect(_ url: URL, state: ScriptWidgetRunningState, pluginHosts: [String]? = nil) -> Bool {
+        guard state.isCurrentExecution, ScriptWidgetFetchPolicy.validationError(for: url) == nil,
+              packageAllows(url, package: state.package) else { return false }
+        if let pluginHosts {
+            guard url.scheme?.lowercased() == "https", let host = url.host?.lowercased() else { return false }
+            return self.host(host, matchesAny: pluginHosts)
+        }
+        return true
+    }
     static func isValidDomainDeclaration(_ value: String) -> Bool {
         let normalized = value.lowercased()
         return value == normalized && !normalized.contains("://") && !normalized.contains("/") && !normalized.contains(":")
@@ -232,14 +247,22 @@ enum ScriptWidgetPushRegistration {
 }
 
 
-let internal_fetch:@convention(block) (String, String, [AnyHashable : Any]?)-> ScriptWidgetRuntimePromise = { (httpMethod, url,params) in
+private func performScriptWidgetFetch(_ httpMethod: String, _ url: String, _ params: [AnyHashable: Any]?, metadata: Bool = false) -> ScriptWidgetRuntimePromise {
     return ScriptWidgetRuntimePromise { (resolve, reject) in
-        guard let executionSession = JSContext.current()?.scriptWidgetRunningState?.executionSession,
-              executionSession.isActive else {
+        guard let state = JSContext.current()?.scriptWidgetRunningState, state.isCurrentExecution else {
             reject.call(withArguments: ["Execution session is no longer active"])
             return
         }
         
+        guard !state.isLiveActivityPresentation else {
+            reject.call(withArguments:["[live_activity_unavailable] Live Activity presentations cannot request network data; update their state from the app"])
+            return
+        }
+        let executionSession = state.executionSession
+        guard !state.isTimelineProjection else {
+            reject.call(withArguments: ["[timeline_read_only] Future entries cannot make live network requests; read a saved snapshot"])
+            return
+        }
         guard let urlValue = URL(string: url) else {
             reject.call(withArguments: ["\(url) is not url"])
             return
@@ -248,21 +271,36 @@ let internal_fetch:@convention(block) (String, String, [AnyHashable : Any]?)-> S
             reject.call(withArguments: [validationError])
             return
         }
-        guard let state = JSContext.current()?.scriptWidgetRunningState,
-              ScriptWidgetNetworkPolicy.packageAllows(urlValue, package: state.package) else {
+        guard ScriptWidgetNetworkPolicy.packageAllows(urlValue, package: state.package) else {
             reject.call(withArguments: ["Network host is not declared in widget.json"])
             return
         }
         
         var task: URLSessionDataTask!
-        task = sharedFetchManager.makeTask(httpMethod: httpMethod, url: urlValue, params: params) { (data, response, error) in
+        task = state.fetchManager.makeTask(httpMethod: httpMethod, url: urlValue, params: params, redirectValidator: {
+            ScriptWidgetNetworkPolicy.allowsRedirect($0, state: state)
+        }) { (data, response, error) in
             executionSession.complete(task)
-            guard executionSession.isActive else { return }
+            guard state.isCurrentExecution else { return }
             if let error = error {
                 reject.call(withArguments: [error.localizedDescription])
             } else if let data = data {
                 guard data.count <= ScriptWidgetFetchManager.maximumResponseBytes else {
                     reject.call(withArguments: ["Response exceeds the 2097152-byte limit"])
+                    return
+                }
+                if metadata {
+                    guard let http = response as? HTTPURLResponse,
+                          let body = params?["responseType"] as? String == "base64" ? data.base64EncodedString() : String(data: data, encoding: .utf8) else {
+                        reject.call(withArguments: ["Response is not HTTP or has invalid UTF-8"])
+                        return
+                    }
+                    let allowed = ["content-type", "cache-control", "expires", "last-modified", "date", "retry-after"]
+                    var headers: [String: String] = [:]
+                    for name in allowed {
+                        if let value = http.value(forHTTPHeaderField: name), value.utf8.count <= 2048 { headers[name] = value }
+                    }
+                    resolve.call(withArguments: [["status": http.statusCode, "body": body, "headers": headers]])
                     return
                 }
                 if let responseType = params?["responseType"] as? String, responseType == "base64" {
@@ -277,7 +315,7 @@ let internal_fetch:@convention(block) (String, String, [AnyHashable : Any]?)-> S
                 reject.call(withArguments: ["\(urlValue) is empty"])
             }
         }
-        guard executionSession.register(task) else {
+        guard state.isCurrentExecution, executionSession.register(task) else {
             task.cancel()
             reject.call(withArguments: ["Network request budget exceeded"])
             return
@@ -287,12 +325,18 @@ let internal_fetch:@convention(block) (String, String, [AnyHashable : Any]?)-> S
 }
 
 
+let internal_fetch: @convention(block) (String, String, [AnyHashable: Any]?) -> ScriptWidgetRuntimePromise = { method, url, params in
+    performScriptWidgetFetch(method, url, params)
+}
+
+
 let custom_fetch:@convention(block) (String, [AnyHashable : Any]?)-> ScriptWidgetRuntimePromise = { (url,params) in
     return internal_fetch("GET", url, params)
 }
 
 @objc protocol ScriptWidgetRuntimeHttpExports: JSExport {
     static func get(_ url: String, _ params: [AnyHashable : Any]?)-> ScriptWidgetRuntimePromise
+    static func getResponse(_ url: String, _ params: [AnyHashable: Any]?) -> ScriptWidgetRuntimePromise
     static func post(_ url: String, _ params: [AnyHashable : Any]?)-> ScriptWidgetRuntimePromise
     static func put(_ url: String, _ params: [AnyHashable : Any]?)-> ScriptWidgetRuntimePromise
     static func patch(_ url: String, _ params: [AnyHashable : Any]?)-> ScriptWidgetRuntimePromise
@@ -304,6 +348,10 @@ let custom_fetch:@convention(block) (String, [AnyHashable : Any]?)-> ScriptWidge
         return internal_fetch("GET", url, params)
     }
     
+    static func getResponse(_ url: String, _ params: [AnyHashable: Any]?) -> ScriptWidgetRuntimePromise {
+        performScriptWidgetFetch("GET", url, params, metadata: true)
+    }
+
     static func post(_ url: String, _ params: [AnyHashable : Any]?) -> ScriptWidgetRuntimePromise {
         return internal_fetch("POST", url, params)
     }

@@ -9,6 +9,8 @@ import { PreviewPane, type DetailTab } from "@/components/PreviewPane";
 import { Sidebar } from "@/components/Sidebar";
 import { TemplatesDialog } from "@/components/TemplatesDialog";
 import { TopBar } from "@/components/TopBar";
+import { WallpaperDialog } from "@/components/WallpaperDialog";
+import { isWallpaperTemplate } from "@/wallpaperConfiguration.ts";
 import { useColorScheme } from "@/hooks/useColorScheme.ts";
 import { useConfirm } from "@/hooks/useConfirm.tsx";
 import { usePreview, type PreviewSettings } from "@/hooks/usePreview.ts";
@@ -26,6 +28,9 @@ function initialSettings(colorScheme: "light" | "dark"): PreviewSettings {
     appearance: preferences.read("appearance", colorScheme),
     renderingMode: "fullColor",
     parameter: "",
+    timelineDate: "",
+    reduceTransparency: window.matchMedia("(prefers-reduced-transparency: reduce)").matches,
+    reduceMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
   };
 }
 
@@ -37,6 +42,7 @@ export function App() {
   const [tab, setTab] = useState<DetailTab>("problems");
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [newFileOpen, setNewFileOpen] = useState(false);
+  const [wallpaperProject, setWallpaperProject] = useState<string | null>(null);
   const [installedFile, setInstalledFile] = useState<string | null>(null);
   const [confirm, confirmDialog] = useConfirm();
   const importInput = useRef<HTMLInputElement>(null);
@@ -99,8 +105,12 @@ export function App() {
     const name = file.name.toLowerCase().replace(/[^a-z0-9._-]+/g, "-");
     const target = `image/${name}`;
     if (project.files[target] && !(await confirm({ title: `Replace ${target}?`, description: "The existing image is replaced in this project.", action: "Replace" }))) return;
-    model.updateFiles({ [target]: new Uint8Array(await file.arrayBuffer()) });
-    toast.success(`Added ${target}`, { description: `Use <image id="${name.replace(/\.[^.]+$/, "")}" /> in your widget.` });
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (!model.updateProjectFiles(project.id, project.files, { [target]: bytes })) {
+      toast.error("The project changed while the image was being added. Add it again to the intended project.");
+      return;
+    }
+    toast.success(`Added ${target}`, { description: `Insert it from Assets, or use <image name="${name}" /> in your widget.` });
   };
 
   // Dropping a .swt or .zip anywhere on the page imports it; images are
@@ -142,7 +152,9 @@ export function App() {
           projects={model.projects} project={project} path={path} entry={report.manifest?.entry}
           onOpenProject={model.openProject}
           onDeleteProject={async (item) => {
-            if (await confirm({ title: `Delete “${item.name}”?`, description: "The project is removed from this browser. Export it first if you want to keep it.", action: "Delete", destructive: true })) await model.removeProject(item.id);
+            if (!(await confirm({ title: `Delete “${item.name}”?`, description: "The project is removed from this browser. Export it first if you want to keep it.", action: "Delete", destructive: true }))) return;
+            try { await model.removeProject(item.id); }
+            catch { toast.error("Project could not be deleted", { description: "The browser did not confirm deletion. Your project and edits were kept. Try again or export a backup." }); }
           }}
           onOpenFile={model.openFile}
           onDeleteFile={async (file) => {
@@ -152,9 +164,11 @@ export function App() {
           }}
           onAddFile={() => setNewFileOpen(true)}
           onAddImage={() => imageInput.current?.click()}
+          onWallpaper={isWallpaperTemplate(project.files) ? () => setWallpaperProject(project.id) : undefined}
         />
         <EditorPane project={project} path={path} saveState={model.saveState} colorScheme={colorScheme} onChange={onEdit} />
         <PreviewPane
+          project={project}
           className="max-[1100px]:col-span-full max-[1100px]:border-t max-[720px]:-order-1 max-[720px]:border-t-0"
           settings={effective} families={families} onSettings={changeSettings} preview={preview} report={report}
           fixtures={project.fixtures} onFixtures={model.setFixtures} tab={tab} onTab={setTab}
@@ -168,6 +182,11 @@ export function App() {
       <NewFileDialog open={newFileOpen} onOpenChange={setNewFileOpen} files={project.files}
         onCreate={(file) => { model.updateFiles({ [file]: /\.json$/i.test(file) ? "{}\n" : "" }); model.openFile(file); }} />
       <InstallDialog fileName={installedFile} onOpenChange={(open) => { if (!open) setInstalledFile(null); }} />
+      {wallpaperProject === project.id && <WallpaperDialog key={project.id} project={project} onClose={() => setWallpaperProject(null)} onSave={(changes, expected) => {
+        if (!model.updateProjectFiles(expected.id, expected.files, changes)) return false;
+        toast.success("Saved wallpaper settings and crops", { description: "Export the widget package to use them on your device." });
+        return true;
+      }} />}
       {confirmDialog}
       <input id="import-input" ref={importInput} type="file" accept=".swt,.zip,application/zip" hidden
         onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void importFile(file); }} />

@@ -14,7 +14,25 @@ import SwiftUI
 
  */
 
+struct ScriptWidgetRotation3D {
+    let degree: Double
+    let x: CGFloat
+    let y: CGFloat
+    let z: CGFloat
+
+    init?(_ value: String) {
+        let parts = value.components(separatedBy:",").compactMap { Double($0.trimmingCharacters(in:.whitespacesAndNewlines)) }
+        guard parts.count == 4, value.components(separatedBy:",").count == 4, parts.allSatisfy(\.isFinite) else { return nil }
+        let scale = max(abs(parts[1]),abs(parts[2]),abs(parts[3]))
+        guard scale > 0 else { return nil }
+        degree = parts[0].truncatingRemainder(dividingBy:360)
+        x = CGFloat(parts[1]/scale); y = CGFloat(parts[2]/scale); z = CGFloat(parts[3]/scale)
+    }
+}
+
 struct ScriptWidgetAttributeRotation3DEffectModifier: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scriptWidgetVisualAccessibility) private var preview
 
     var degree: Double?
     var x: CGFloat = 1
@@ -23,20 +41,14 @@ struct ScriptWidgetAttributeRotation3DEffectModifier: ViewModifier {
 
     init(_ element: ScriptWidgetRuntimeElement) {
 
-        if let rotation3dValue = element.getPropString("rotation3d") {
-            let parts = rotation3dValue.components(separatedBy: ",")
-            if parts.count == 4 {
-                if let degreeValue = Double(parts[0]) { self.degree = degreeValue }
-                if let xValue = Double(parts[1]) { self.x = CGFloat(xValue) }
-                if let yValue = Double(parts[2]) { self.y = CGFloat(yValue) }
-                if let zValue = Double(parts[3]) { self.z = CGFloat(zValue) }
-            }
+        if let value = element.getPropString("rotation3d"), let rotation = ScriptWidgetRotation3D(value) {
+            degree = rotation.degree; x = rotation.x; y = rotation.y; z = rotation.z
         }
     }
     
     @ViewBuilder
     func body(content: Content) -> some View {
-        if let degree = self.degree {
+        if let degree = self.degree, !(preview.reduceMotion ?? reduceMotion) {
             content
                 .rotation3DEffect(Angle(degrees: degree), axis: (x: self.x, y: self.y, z: self.z))
         } else {

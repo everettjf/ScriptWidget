@@ -2,6 +2,26 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>ScriptWidgetServiceKeychainGroup</key>
+	<string>$(AppIdentifierPrefix)com.everettjf.scriptwidget.services</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ScriptWidget reads photos and albums you select to prepare private widget thumbnails.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Allow ScriptWidget to read reminders from lists you choose and apply reminder actions you trigger.</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>Allow ScriptWidget to read reminders from lists you choose and apply reminder actions you trigger.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key><string>Editor</string>
+			<key>CFBundleURLName</key><string>app.scriptwidget.calendar-access</string>
+			<key>CFBundleURLSchemes</key><array><string>scriptwidget</string></array>
+		</dict>
+	</array>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Allow ScriptWidget to read events for calendar widgets you choose.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Allow ScriptWidget to read events for calendar widgets you choose.</string>
 	<key>CFBundleDisplayName</key>
 	<string>ScriptWidget Studio</string>
 	<key>CFBundleName</key>

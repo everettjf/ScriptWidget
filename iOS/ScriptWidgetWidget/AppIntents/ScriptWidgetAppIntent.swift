@@ -18,9 +18,7 @@ struct ScriptWidgetAppIntent: WidgetConfigurationIntent {
 
     struct AvailableScriptOptionsProvider: DynamicOptionsProvider {
         func results() async throws -> [String] {
-            let items = sharedScriptManager.listScripts()
-            let scripts = items.map { $0.name }
-            return scripts
+            try ScriptWidgetHostExecution.availableNames()
         }
     }
 

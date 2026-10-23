@@ -16,10 +16,13 @@ Custom components are fully expanded on the JavaScript execution thread before S
 
 Live Activity content receives:
 
-- `live-activity-state`: an app-controlled UTF-8 state payload, limited to 4 KiB.
+- `live-activity-state`: an app-controlled UTF-8 state payload. Static attributes and dynamic state together must fit the encoded 4 KiB budget.
+- `live-activity-is-stale`: `true` or `false` from the system presentation context.
 - `live-activity-surface`: `lockScreen` or `dynamicIsland`.
 
-The app-side manager can start an activity with initial state, update an activity by ID, end one with final state, or end all activities. Dynamic Island bottom content uses the system's below-if-too-wide placement so narrow landscape presentations remain readable. Interactive actions use `LiveActivityIntent` on iOS.
+On iOS 16.2 or later, the app's Live Activities management screen starts local activities, restores the system list, updates state and ends or dismisses activities. Each activity is bound to its library and installation. Dynamic Island bottom content uses the system's below-if-too-wide placement. Network, plugin service and location requests are unavailable in these rendering contexts; obtain data in the app and update state. See [local Live Activities](live-activities.md) for the demo, data validation and remaining device acceptance.
+
+Interactive Live Activity controls require `LiveActivityIntent` on iOS. The local demo is managed in the app and does not advertise interactive Island controls; ordinary declared actions should not be assumed to satisfy this protocol automatically.
 
 ## Scriptable Control Widgets
 

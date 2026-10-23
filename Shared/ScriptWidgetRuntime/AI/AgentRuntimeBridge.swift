@@ -102,7 +102,8 @@ final class AgentRuntimeBridge {
                     return
                 }
 
-                let runtime = ScriptWidgetRuntime(package: package, environments: [
+                let preview = ScriptWidgetPackage(path: package.path, readonly: true)
+                let runtime = ScriptWidgetRuntime(package: preview, environments: [
                     "widget-size": size.rawValue,
                     "widget-param": "",
                     "widget-rendering-mode": "fullColor",

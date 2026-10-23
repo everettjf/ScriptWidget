@@ -66,54 +66,9 @@ enum ScriptWidgetMemoryPressure {
     }
 }
 
-enum ScriptWidgetError: Error {
-    case undefinedRender(String)
-
-    case internalError(String)
-    case transformError(String)
-    case scriptError(String)
-    case scriptException(String)
-    case resourceLimit(String)
-
-    /// The underlying message, used both for logging and for surfacing the
-    /// failure to the user in the widget/preview instead of a blank view.
-    var displayMessage: String {
-        switch self {
-        case .undefinedRender(let msg),
-             .internalError(let msg),
-             .transformError(let msg),
-             .scriptError(let msg),
-             .scriptException(let msg),
-             .resourceLimit(let msg):
-            return msg
-        }
-    }
-
-    var category: String {
-        switch self {
-        case .undefinedRender: return "Render"
-        case .internalError: return "Internal"
-        case .transformError: return "Syntax"
-        case .scriptError, .scriptException: return "Runtime"
-        case .resourceLimit: return "Resource Limit"
-        }
-    }
-
-    var recoverySuggestion: String {
-        switch self {
-        case .undefinedRender: return "Call $render(...) once from the main script."
-        case .internalError: return "Retry. If this persists, export the package and report the diagnostic."
-        case .transformError: return "Check the highlighted JSX syntax and property values."
-        case .scriptError, .scriptException: return "Use the reported line and stack trace to inspect the script."
-        case .resourceLimit: return "Reduce source size, imported work, network data, or execution time."
-        }
-    }
-
-    var diagnosticMessage: String { "[\(category)] \(displayMessage)\n\(recoverySuggestion)" }
-}
 
 enum ScriptWidgetRuntimeContract {
-    static let apiVersion = "1.2"
+    static let apiVersion = ScriptWidgetBuildContract.nativeRuntimeAPIVersion
     static let maximumSourceBytes = 512 * 1_024
     static let maximumTranspiledBytes = 2 * 1_024 * 1_024
     static let executionTimeout: DispatchTimeInterval = .seconds(5)
@@ -121,13 +76,14 @@ enum ScriptWidgetRuntimeContract {
     /// Public JavaScriptCore APIs cannot preempt a native parser/built-in call.
     static let compileTimeout: TimeInterval = 10
     static let maximumElementNodes = 1_000
+    static let maximumMaterialBackgrounds = 4
     static let maximumElementDepth = 64
     static let maximumPropsPerElement = 128
 
     static let globalAPIs = [
-        "$component", "$console", "$device", "$dynamic_island", "$element",
+        "$calendar", "$component", "$console", "$device", "$dynamic_island", "$element",
         "$error", "$fetch", "$file", "$getenv", "$health", "$http", "$import",
-        "$location", "$render", "$runtime", "$storage", "$system", "$xml", "console", "fetch",
+        "$location", "$music", "$photos", "$reminders", "$render", "$runtime", "$services", "$storage", "$system", "$xml", "console", "fetch",
     ]
 
     static func validateSource(_ source: String) -> ScriptWidgetError? {
@@ -155,12 +111,14 @@ enum ScriptWidgetRuntimeContract {
                 "elementNodes": maximumElementNodes,
                 "elementDepth": maximumElementDepth,
                 "propsPerElement": maximumPropsPerElement,
+                "systemDataQueries": ScriptWidgetExecutionSession.maximumDataQueries,
             ],
         ]
     }
 
     static func validateElementTree(_ root: ScriptWidgetRuntimeElement) -> ScriptWidgetError? {
         var count = 0
+        var materials = 0
         var activePath: Set<ObjectIdentifier> = []
 
         func visit(_ element: ScriptWidgetRuntimeElement, depth: Int) -> ScriptWidgetError? {
@@ -168,6 +126,12 @@ enum ScriptWidgetRuntimeContract {
                 return .resourceLimit("Element tree exceeds the maximum depth of \(maximumElementDepth)")
             }
             count += 1
+            if element.tagAsString()?.lowercased() != "spacer", ScriptWidgetBackgroundMaterial.isEnabled(element.getPropString("backgroundMaterial")) {
+                materials += 1
+                guard materials <= maximumMaterialBackgrounds else {
+                    return .resourceLimit("Element tree exceeds the \(maximumMaterialBackgrounds)-material background limit")
+                }
+            }
             guard count <= maximumElementNodes else {
                 return .resourceLimit("Element tree exceeds the \(maximumElementNodes)-node limit")
             }
@@ -472,22 +436,33 @@ enum ScriptWidgetPrecompiler {
     }
 }
 
+
 class ScriptWidgetRuntime {
     
     private let runtimeContext = JSContext()!
+    private let publisherLane = ScriptWidgetPublisherLane()
     
     private var environments : [String:String]
     private var package : ScriptWidgetPackage
     private var performanceTrace: ScriptWidgetRuntimeTrace?
     
-    init(package: ScriptWidgetPackage, environments: [String:String]) {
-        self.package = package
-        self.environments = environments
+    init(package: ScriptWidgetPackage, environments: [String:String], executionSnapshot: ScriptWidgetExecutionSnapshot? = nil, isDarkMode: Bool? = nil, isUserInitiatedAction: Bool = false) {
+        let executionPackage = executionSnapshot?.package ?? package
+        self.package = executionPackage
+        var resolvedEnvironment = environments
+        if environments["timeline-date"] == nil, let schedule = executionPackage.readManifest()?.timeline, schedule.isValid {
+            let now = Date()
+            let plan = ScriptWidgetTimelinePlan(schedule: schedule, now: now, fallbackReload: now.addingTimeInterval(3_600))
+            resolvedEnvironment = plan.entries[0].environments(timeZone: plan.timeZone).merging(environments) { _, explicit in explicit }
+        }
+        self.environments = resolvedEnvironment
         // APIs like $file/$console read per-execution state from the
         // owning JSContext.
         // Capture appearance before JavaScript moves to a worker queue.
         let runningState = ScriptWidgetRunningState(
-            package: package, isDarkMode: ScriptWidgetRuntimeDevice.systemIsDarkMode
+            package: executionPackage, isDarkMode: isDarkMode ?? ScriptWidgetRuntimeDevice.systemIsDarkMode,
+            isTimelineProjection: resolvedEnvironment["timeline-is-projection"] == "true",
+            isLiveActivityPresentation: ["live-activity","dynamic-island"].contains(resolvedEnvironment["widget-size"] ?? ""), executionSnapshot: executionSnapshot, isUserInitiatedAction: isUserInitiatedAction
         )
         runtimeContext.scriptWidgetRunningState = runningState
         ScriptWidgetExecutionGuard.install(on: runtimeContext, session: runningState.executionSession)
@@ -505,6 +480,15 @@ class ScriptWidgetRuntime {
         runningState?.executionSession.cancel(reason)
     }
     
+    /// Display-only fixed date used by scheduled native renders. This does not
+    /// grant execution authority or change query permissions.
+    var presentationDate: Date? {
+        guard let text = environments["timeline-date"], text.utf8.count <= 128 else { return nil }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter.date(from: text) ?? ISO8601DateFormatter().date(from: text)
+    }
+
     public func setEnvironment(_ key: String, _ value: String) {
         self.environments[key] = value
     }
@@ -539,6 +523,11 @@ class ScriptWidgetRuntime {
             runtimeContext["$http"] = ScriptWidgetRuntimeHttp.self
             runtimeContext["$file"] = ScriptWidgetRuntimeFile.self
             runtimeContext["$system"] = ScriptWidgetRuntimeSystem.self
+            runtimeContext["$calendar"] = ScriptWidgetRuntimeCalendar.self
+            runtimeContext["$photos"] = ScriptWidgetRuntimePhotos.self
+            runtimeContext["$services"] = ScriptWidgetRuntimeServices.self
+            runtimeContext["$music"] = ScriptWidgetRuntimeMusic.self
+            runtimeContext["$reminders"] = ScriptWidgetRuntimeReminders.self
             runtimeContext["$health"] = ScriptWidgetRuntimeHealth.self
             runtimeContext["$location"] = ScriptWidgetRuntimeLocation.self
             runtimeContext["$storage"] = ScriptWidgetRuntimeStorage.self
@@ -556,7 +545,34 @@ class ScriptWidgetRuntime {
         }
     }
     
+    private func packagePreflightError() -> ScriptWidgetError? {
+        do { try runningState?.validateExecutionSnapshot() }
+        catch {
+            if runningState?.executionSnapshot == nil, (error as? ScriptWidgetStorageNamespaceError) == .inventoryRequired {
+                return .scriptError("[package:migration_required] Open ScriptWidget to reload this widget's execution identity.")
+            }
+            return .scriptError("[package:identity_changed] The execution package changed or is unavailable. Reload it before running again.")
+        }
+        guard package.hasManifest else { return nil }
+        guard let manifest = package.readManifest() else { return .scriptError("[package:invalid_manifest] widget.json is invalid.") }
+        let report = WidgetPackageManifestValidator.validate(manifest, package: package, checkEntryExists: false)
+        guard let issue = report.errors.first else { return nil }
+        return .scriptError("[package:\(issue.code)] Review widget.json and update ScriptWidget if required.")
+    }
+
     private func transform(_ paramJSX: String, wrapMain: Bool, callAsynFunctionName: String = "") -> AnyPublisher<String, ScriptWidgetError> {
+        if wrapMain {
+            do {
+                try runningState?.captureManagedEntry(paramJSX)
+                if let captured = runningState?.executionSnapshot { package = captured.package }
+            } catch {
+                return Fail(error: .scriptError("[package:identity_changed] The managed package could not be captured. Reload it before running again.")).eraseToAnyPublisher()
+            }
+        }
+        if let error = packagePreflightError() { return Fail(error: error).eraseToAnyPublisher() }
+        if wrapMain, let captured = runningState?.executionSnapshot, paramJSX != captured.source {
+            return Fail(error: .scriptError("[package:source_changed] Run the captured entry or explicitly capture an editor override.")).eraseToAnyPublisher()
+        }
         if let error = ScriptWidgetRuntimeContract.validateSource(paramJSX) {
             return Fail(error: error).eraseToAnyPublisher()
         }
@@ -587,6 +603,9 @@ class ScriptWidgetRuntime {
             }) ?? ScriptWidgetTranspileCache.get(cacheKey)
             if let cached = cachedOutput {
                 self.performanceTrace?.increment("transpile.cache.memory-or-disk-hit")
+                if wrapMain, callAsynFunctionName.isEmpty {
+                    _ = ScriptWidgetCompiledArtifactStore.save(package: self.package, source: paramJSX, javaScript: cached)
+                }
                 promise(.success(cached))
                 return
             }
@@ -767,39 +786,29 @@ extension ScriptWidgetRuntime {
             trace.finish()
             performanceTrace = nil
         }
-        var resultError: ScriptWidgetError?
-        var resultElement: ScriptWidgetRuntimeElement?
-        
-        let sem = DispatchSemaphore(value: 0)
-        var cancellables: [AnyCancellable] = []
-
-        DispatchQueue.global().async {
-
-            let cancelable = self.internalExecuteJSXForWidget(JSX)
-                .sink { (completion) in
-                    switch completion {
-                    case .finished:
-                        sem.signal()
-                        
-                    case .failure(let error):
-                        SWLog.error("widget execution failed: \(error)")
-                        resultError = error
-                        
-                        sem.signal()
-                    }
-                } receiveValue: { (element) in
-                    resultElement = element
-                }
-            cancellables.append(cancelable)
+        // A synchronous host can occupy the main thread while JSC runs on the
+        // publisher lane. Capture its installed identity and Music snapshot
+        // before waiting; never enqueue a Music read behind that same wait.
+        if Thread.isMainThread, let state = runningState,
+           state.package.readManifest()?.permissions.contains(.music) == true {
+            do {
+                try state.captureManagedEntry(JSX)
+                if let captured = state.executionSnapshot { package = captured.package }
+            } catch {
+                return (nil, .scriptError("[package:identity_changed] Reload the managed widget before running again."))
+            }
+            if let error = packagePreflightError() { return (nil, error) }
+            ScriptWidgetRuntimeMusic.prepareForSynchronousHost(state)
         }
-        
-        guard sem.wait(timeout: .now() + ScriptWidgetRuntimeContract.executionTimeout) == .success else {
-            runningState?.executionSession.cancel(.timeout)
-            cancellables.removeAll()
-            return (nil, .resourceLimit("Script exceeded the 5-second execution limit"))
+        let result = ScriptWidgetSynchronousResult<ScriptWidgetRuntimeElement>(publisherLane: publisherLane)
+        publisherLane.queue.async {
+            let token = self.internalExecuteJSXForWidget(JSX)
+                .sink(receiveCompletion: { result.finish($0) }, receiveValue: { result.receive($0) })
+            result.install(token)
         }
-        
-        return (resultElement, resultError)
+        return result.wait(until: .now() + ScriptWidgetRuntimeContract.executionTimeout) {
+            self.runningState?.executionSession.cancel(.timeout)
+        }
     }
     
     private func internalExecuteJSXForWidget(_ JSX: String) -> AnyPublisher<ScriptWidgetRuntimeElement, ScriptWidgetError> {
@@ -820,7 +829,8 @@ extension ScriptWidgetRuntime {
      }
      */
     private func internalExecuteJavaScriptForWidget(_ JavaScript: String) -> AnyPublisher<ScriptWidgetRuntimeElement, ScriptWidgetError> {
-        return Future<ScriptWidgetRuntimeElement, ScriptWidgetError> { [self] promise in
+        return Future<ScriptWidgetRuntimeElement, ScriptWidgetError> { [self] rawPromise in
+            let promise = publisherLane.fulfill(rawPromise)
             guard let supportJS = self.readSupportScript("util.js") else {
                 promise(.failure(.internalError("scriptwidget not found")))
                 return
@@ -832,7 +842,8 @@ extension ScriptWidgetRuntime {
             var resultElement: ScriptWidgetRuntimeElement?
             var rootResolutionError: ScriptWidgetError?
             
-            let renderWidget:@convention(block) (ScriptWidgetRuntimeElement)->Void = { rootElement in
+            let renderWidget:@convention(block) (ScriptWidgetRuntimeElement)->Void = { [weak self] rootElement in
+                guard let self else { semaphore.signal(); return }
                 switch self.resolveWidgetElementTree(rootElement) {
                 case .success(let resolved):
                     resultElement = resolved
@@ -943,6 +954,10 @@ extension ScriptWidgetRuntime {
                     promise(.failure(.resourceLimit("Script exceeded the 5-second execution limit")))
                     return
                 }
+                // The context retains its render block and result cell. Drop
+                // the cell before publishing native elements with JSValue tags.
+                let renderedElement = resultElement
+                resultElement = nil
                 // check javascript exception
                 if let exceptionInfo = exceptionInfo {
                     promise(.failure(.scriptException(exceptionInfo)))
@@ -953,7 +968,7 @@ extension ScriptWidgetRuntime {
                     return
                 }
                 
-                guard let element = resultElement else {
+                guard let element = renderedElement else {
                     promise(.failure(.scriptError("Transform result is not Element : \(String(describing: resultElement))")))
                     return
                 }
@@ -982,41 +997,15 @@ extension ScriptWidgetRuntime {
             trace.finish()
             performanceTrace = nil
         }
-        var resultError: ScriptWidgetError?
-        var resultElement: ScriptWidgetDynamicIslandRuntimeElement?
-        
-        let sem = DispatchSemaphore(value: 0)
-        var cancellables: [AnyCancellable] = []
-
-        DispatchQueue.global().async {
-            
-            let cancelable = self.internalExecuteJSXForDynamicIsland(JSX)
-                .sink { (completion) in
-                    switch completion {
-                    case .finished:
-                        print("script run finished")
-                        
-                        sem.signal()
-                        
-                    case .failure(let error):
-                        print("failed : \(error)")
-                        resultError = error
-                        
-                        sem.signal()
-                    }
-                } receiveValue: { (element) in
-                    resultElement = element
-                }
-            cancellables.append(cancelable)
+        let result = ScriptWidgetSynchronousResult<ScriptWidgetDynamicIslandRuntimeElement>(publisherLane: publisherLane)
+        publisherLane.queue.async {
+            let token = self.internalExecuteJSXForDynamicIsland(JSX)
+                .sink(receiveCompletion: { result.finish($0) }, receiveValue: { result.receive($0) })
+            result.install(token)
         }
-        
-        guard sem.wait(timeout: .now() + ScriptWidgetRuntimeContract.executionTimeout) == .success else {
-            runningState?.executionSession.cancel(.timeout)
-            cancellables.removeAll()
-            return (nil, .resourceLimit("Script exceeded the 5-second execution limit"))
+        return result.wait(until: .now() + ScriptWidgetRuntimeContract.executionTimeout) {
+            self.runningState?.executionSession.cancel(.timeout)
         }
-        
-        return (resultElement, resultError)
     }
     
     private func internalExecuteJSXForDynamicIsland(_ JSX: String) -> AnyPublisher<ScriptWidgetDynamicIslandRuntimeElement, ScriptWidgetError> {
@@ -1037,7 +1026,8 @@ extension ScriptWidgetRuntime {
      }
      */
     private func internalExecuteJavaScriptForDynamicIsland(_ JavaScript: String) -> AnyPublisher<ScriptWidgetDynamicIslandRuntimeElement, ScriptWidgetError> {
-        return Future<ScriptWidgetDynamicIslandRuntimeElement, ScriptWidgetError> { [self] promise in
+        return Future<ScriptWidgetDynamicIslandRuntimeElement, ScriptWidgetError> { [self] rawPromise in
+            let promise = publisherLane.fulfill(rawPromise)
             guard let supportJS = self.readSupportScript("util.js") else {
                 promise(.failure(.internalError("scriptwidget not found")))
                 return
@@ -1057,7 +1047,8 @@ extension ScriptWidgetRuntime {
             
             // ignore for dynamic island
             // -begin
-            let renderDynamicIsland:@convention(block) (NSDictionary)->Void = { islandInfo in
+            let renderDynamicIsland:@convention(block) (NSDictionary)->Void = { [weak self] islandInfo in
+                guard let self else { semaphore.signal(); return }
                 print("not support in normal widget rendering : islandInfo = \(islandInfo)")
                 
                 guard let minimal = islandInfo["minimal"] as? ScriptWidgetRuntimeElement,
@@ -1205,6 +1196,10 @@ extension ScriptWidgetRuntime {
                     promise(.failure(.resourceLimit("Script exceeded the 5-second execution limit")))
                     return
                 }
+                // The context retains its render block and result cell. Drop
+                // the cell before publishing native elements with JSValue tags.
+                let renderedElement = resultElement
+                resultElement = nil
                 // check javascript exception
                 if let exceptionInfo = exceptionInfo {
                     promise(.failure(.scriptException(exceptionInfo)))
@@ -1215,7 +1210,7 @@ extension ScriptWidgetRuntime {
                     return
                 }
                 
-                guard let element = resultElement else {
+                guard let element = renderedElement else {
                     promise(.failure(.scriptError("Transform result is not Element : \(String(describing: resultElement))")))
                     return
                 }
@@ -1252,39 +1247,15 @@ extension ScriptWidgetRuntime {
             trace.finish()
             performanceTrace = nil
         }
-        var resultError: ScriptWidgetError?
-        var resultElement: String?
-        
-        let sem = DispatchSemaphore(value: 0)
-        var cancellables: [AnyCancellable] = []
-
-        DispatchQueue.global().async {
-            
-            let cancelable = self.internalExecuteJSXForFunction(JSX, functionName)
-                .sink { (completion) in
-                    switch completion {
-                    case .finished:
-                        sem.signal()
-                        
-                    case .failure(let error):
-                        SWLog.error("function execution failed: \(error)")
-                        resultError = error
-                        
-                        sem.signal()
-                    }
-                } receiveValue: { (element) in
-                    resultElement = element
-                }
-            cancellables.append(cancelable)
+        let result = ScriptWidgetSynchronousResult<String>(publisherLane: publisherLane)
+        publisherLane.queue.async {
+            let token = self.internalExecuteJSXForFunction(JSX, functionName)
+                .sink(receiveCompletion: { result.finish($0) }, receiveValue: { result.receive($0) })
+            result.install(token)
         }
-        
-        guard sem.wait(timeout: .now() + ScriptWidgetRuntimeContract.executionTimeout) == .success else {
-            runningState?.executionSession.cancel(.timeout)
-            cancellables.removeAll()
-            return (nil, .resourceLimit("Script exceeded the 5-second execution limit"))
+        return result.wait(until: .now() + ScriptWidgetRuntimeContract.executionTimeout) {
+            self.runningState?.executionSession.cancel(.timeout)
         }
-        
-        return (resultElement, resultError)
     }
     
     private func internalExecuteJSXForFunction(_ JSX: String, _ functionName: String) -> AnyPublisher<String, ScriptWidgetError> {
@@ -1303,7 +1274,8 @@ extension ScriptWidgetRuntime {
      }
      */
     private func internalExecuteJavaScriptForFunction(_ JavaScript: String) -> AnyPublisher<String, ScriptWidgetError> {
-        return Future<String, ScriptWidgetError> { [self] promise in
+        return Future<String, ScriptWidgetError> { [self] rawPromise in
+            let promise = publisherLane.fulfill(rawPromise)
             guard let supportJS = self.readSupportScript("util.js") else {
                 promise(.failure(.internalError("scriptwidget not found")))
                 return
@@ -1313,17 +1285,14 @@ extension ScriptWidgetRuntime {
             
             let semaphore = DispatchSemaphore(value: 0)
             
-            let renderWidget:@convention(block) (ScriptWidgetRuntimeElement)->Void = { rootElement in
-                semaphore.signal()
-            }
+            // Rendering is feedback, not completion: the declared action may
+            // still be awaiting a system write after the entry rendered.
+            let renderWidget:@convention(block) (ScriptWidgetRuntimeElement)->Void = { _ in }
             self.runtimeContext["$render"] = unsafeBitCast(renderWidget, to: JSValue.self)
             
             // ignore for dynamic island
             // -begin
-            let renderDynamicIsland:@convention(block) (NSDictionary)->Void = { islandInfo in
-                print("not support in normal widget rendering : islandInfo = \(islandInfo)")
-                semaphore.signal()
-            }
+            let renderDynamicIsland:@convention(block) (NSDictionary)->Void = { _ in }
             self.runtimeContext["$dynamic_island"] = unsafeBitCast(renderDynamicIsland, to: JSValue.self)
             // -end
             
@@ -1396,7 +1365,17 @@ extension ScriptWidgetRuntime {
             }
 
             // Call main
-            let _ = mainEntry.call(withArguments: [])
+            let complete: @convention(block) (JSValue) -> Void = { _ in semaphore.signal() }
+            let failed: @convention(block) (JSValue) -> Void = { error in
+                exceptionInfo = error.toString() ?? "Action failed"
+                semaphore.signal()
+            }
+            guard let mainResult = mainEntry.call(withArguments: []),
+                  let then = mainResult.objectForKeyedSubscript("then"), !then.isUndefined else {
+                promise(.failure(.internalError("The action entry did not return an asynchronous result")))
+                return
+            }
+            mainResult.invokeMethod("then", withArguments: [unsafeBitCast(complete, to: JSValue.self), unsafeBitCast(failed, to: JSValue.self)])
 
             DispatchQueue.global().async {
                 guard semaphore.wait(timeout: .now() + ScriptWidgetRuntimeContract.executionTimeout) == .success else {

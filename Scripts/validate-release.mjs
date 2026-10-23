@@ -10,7 +10,17 @@ const packageSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetR
 const skillSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/Resource/skill.schema.json"), "utf8"));
 const pluginSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/Resource/plugin.schema.json"), "utf8"));
 const failures = [];
+// These component paths must stay on public APIs for distribution. General
+// JavaScriptCore bridging elsewhere has a different contract and is not banned.
+for (const file of ["Attributes/Animation/ClockHandRotationEffect.swift", "Attributes/Animation/SwingAnimationModifier.swift", "Elements/ScriptWidgetElementTagGif.swift"]) {
+  const source = await readFile(join(root, "Shared/ScriptWidgetRuntime/Widget/Component", file), "utf8");
+  if (/_typeByName|_ClockHandRotationEffect|unsafeBitCast/.test(source)) failures.push(`${file}: private animation bridge must not be reintroduced`);
+}
 const names = (await readdir(templateRoot)).sort();
+const metadataSource = await readFile(join(root, "Shared/ScriptWidgetRuntime/Common/ScriptMetadata.swift"), "utf8");
+const categoryDeclaration = metadataSource.match(/enum ScriptCategory:[\s\S]*?\{([\s\S]*?)\n\s*var id:/)?.[1] ?? "";
+const categories = new Set([...categoryDeclaration.matchAll(/\bcase (\w+)/g)].map(match => match[1]));
+if (!categories.size) failures.push("Cannot read the native template category contract");
 
 for (const communityFile of ["README_CN.md", "CODE_OF_CONDUCT.md", "GOVERNANCE.md", "CHANGELOG.md", ".github/CODEOWNERS", ".github/dependabot.yml", ".github/ISSUE_TEMPLATE/gallery_submission.yml"]) {
   try { await stat(join(root, communityFile)); }
@@ -29,10 +39,41 @@ for (const name of names) {
   for (const key of ["description", "category", "difficulty", "icon"]) {
     if (!meta[key]) failures.push(`${name}: missing ${key}`);
   }
+  if (!categories.has(meta.category)) failures.push(`${name}: unknown template category ${meta.category}`);
   if (source.includes("fetch(") && !["weather", "finance", "productivity"].includes(meta.category)) {
     failures.push(`${name}: network template must use a network-related category`);
   }
   if (Buffer.byteLength(source) > 512 * 1024) failures.push(`${name}: source exceeds runtime limit`);
+}
+
+const recordBackupSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/Resource/record-backup.schema.json"), "utf8"));
+if (recordBackupSchema.properties?.formatVersion?.const !== 1 || recordBackupSchema.additionalProperties !== false) {
+  failures.push("Record Backup 1 schema must declare its closed versioned envelope");
+}
+const recordKinds = recordBackupSchema.properties?.kind?.enum ?? [];
+const recordBranches = recordBackupSchema.allOf ?? [];
+const descriptorKinds = new Set();
+for (const name of names) {
+  const files = await readdir(join(templateRoot, name));
+  if (!files.includes("record-template.json")) continue;
+  const descriptor = JSON.parse(await readFile(join(templateRoot, name, "record-template.json"), "utf8"));
+  const manifest = JSON.parse(await readFile(join(templateRoot, name, "widget.json"), "utf8"));
+  descriptorKinds.add(descriptor.kind);
+  const minimumRuntimeVersion = descriptor.kind === "wallpaper" ? "1.4" : "1.3";
+  if (descriptor.formatVersion !== 1 || !recordKinds.includes(descriptor.kind) || Object.keys(descriptor).length !== 2 || !manifest.permissions.includes("storage") || manifest.minimumRuntimeVersion !== minimumRuntimeVersion) {
+    failures.push(`${name}: record descriptor or storage requirements are invalid`);
+  }
+}
+if (new Set(recordKinds).size !== recordKinds.length || recordKinds.length !== descriptorKinds.size || recordBranches.length !== recordKinds.length) {
+  failures.push("Record Backup 1 schema kinds and branches must cover every record template exactly once");
+}
+for (const kind of recordKinds) {
+  const branches = recordBranches.filter((branch) => branch.if?.properties?.kind?.const === kind);
+  const values = branches[0]?.then?.properties?.values?.propertyNames?.enum;
+  const diagnostics = branches[0]?.then?.properties?.unsupportedValues?.propertyNames?.enum;
+  if (!descriptorKinds.has(kind) || branches.length !== 1 || !Array.isArray(values) || !values.includes("recordTemplate.config.v1") || JSON.stringify(values) !== JSON.stringify(diagnostics)) {
+    failures.push(`Record Backup 1 ${kind}: missing template, duplicate branch, or mismatched diagnostic key scope`);
+  }
 }
 
 const generatedDocs = await readFile(join(root, "docs/scriptwidget-runtime-api.md"), "utf8");
@@ -70,8 +111,27 @@ for (const required of ["widget.json", "32 MiB", "64 MiB", "symbolic links", "le
 }
 
 const iosInfo = await readFile(join(root, "iOS/ScriptWidget/Info.plist"), "utf8");
-for (const key of ["NSHealthShareUsageDescription", "NSHealthUpdateUsageDescription", "NSLocationWhenInUseUsageDescription"]) {
+for (const key of ["NSHealthShareUsageDescription", "NSHealthUpdateUsageDescription", "NSLocationWhenInUseUsageDescription", "NSAppleMusicUsageDescription"]) {
   if (!iosInfo.includes(`<key>${key}</key>`)) failures.push(`iOS Info.plist is missing ${key}`);
+}
+const widgetMusicInfo = await readFile(join(root, "iOS/ScriptWidgetWidget/Info.plist"), "utf8");
+if (!widgetMusicInfo.includes("<key>NSAppleMusicUsageDescription</key>")) failures.push("iOS widget Info.plist is missing NSAppleMusicUsageDescription");
+
+// Service credentials share a dedicated group; the first/default group must
+// remain app-specific so existing AI items never default into the shared group.
+const serviceGroup = "$(AppIdentifierPrefix)com.everettjf.scriptwidget.services";
+for (const [infoPath, entitlementPath] of [
+  ["iOS/ScriptWidget/Info.plist", "iOS/ScriptWidget/ScriptWidget.entitlements"],
+  ["iOS/ScriptWidgetWidget/Info.plist", "iOS/ScriptWidgetWidget/ScriptWidgetWidget.entitlements"],
+  ["macOS/ScriptWidgetMac/Info.plist", "macOS/ScriptWidgetMac/macOS.entitlements"],
+  ["macOS/ScriptWidgetMacWidget/Info.plist", "macOS/ScriptWidgetMacWidget/ScriptWidgetMacWidget.entitlements"],
+]) {
+  const info = await readFile(join(root, infoPath), "utf8"), entitlements = await readFile(join(root, entitlementPath), "utf8");
+  const declaredGroup = info.match(/<key>ScriptWidgetServiceKeychainGroup<\/key>\s*<string>([^<]+)<\/string>/)?.[1];
+  const groupBlock = entitlements.match(/<key>keychain-access-groups<\/key>\s*<array>([\s\S]*?)<\/array>/)?.[1] ?? "";
+  const groups = [...groupBlock.matchAll(/<string>([^<]+)<\/string>/g)].map(value => value[1]);
+  if (declaredGroup !== serviceGroup || (info.match(/<key>ScriptWidgetServiceKeychainGroup<\/key>/g) ?? []).length !== 1) failures.push(`${infoPath}: service Keychain group must match the signed shared service group`);
+  if (JSON.stringify(groups) !== JSON.stringify(["$(AppIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)", serviceGroup]) || (entitlements.match(/<key>keychain-access-groups<\/key>/g) ?? []).length !== 1) failures.push(`${entitlementPath}: preserve the app-specific default group before the dedicated shared service group`);
 }
 
 const aiSettings = await readFile(join(root, "Shared/ScriptWidgetRuntime/AI/AISettings.swift"), "utf8");
@@ -80,8 +140,8 @@ if (!aiSettings.includes("apiKey is intentionally omitted") || !aiSettings.inclu
 }
 
 const packageSource = await readFile(join(root, "Shared/ScriptWidgetRuntime/Common/ScriptWidgetPackage.swift"), "utf8");
-if (!packageSource.includes("write(to: fullPath, options: .atomic)")) {
-  failures.push("script source saves must remain atomic");
+for (const guardrail of ["ScriptWidgetPackageFiles.write(data, root: path, relative: relative)", "O_CREAT | O_EXCL | O_NOFOLLOW", "fsync(fd) == 0 && renameat(directory, temporary, directory, name) == 0"]) {
+  if (!packageSource.includes(guardrail)) failures.push(`atomic package saves are missing ${guardrail}`);
 }
 const managerSource = await readFile(join(root, "Shared/ScriptWidgetRuntime/Common/ScriptManager.swift"), "utf8");
 for (const guardrail of ["ScriptPackageArchivePreflight", "maximumExpandedBytes", "isSymbolicLinkKey", "WidgetPackageManifestValidator"]) {

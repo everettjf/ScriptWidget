@@ -1,0 +1,246 @@
+{
+  "date": "2026-10-20",
+  "repositoryCommit": "2f8f1b8769b6881fb0b0910043441a7fa5efb6c3",
+  "appCount": 10,
+  "screenshotCount": 39,
+  "capabilities": [
+    {
+      "feature": "时钟、日期、文案、节日/生日倒计时",
+      "status": "A",
+      "area": "组件模板",
+      "evidence": "现有 text/date、JS 日期计算及 Countdown 系列模板。",
+      "nextStep": "先做风格一致的多尺寸套装。",
+      "source": "Shared/ScriptWidgetRuntime/Widget/Component/ScriptWidgetElementView.swift"
+    },
+    {
+      "feature": "相片卡片、拼贴、海报式图片组件",
+      "status": "A",
+      "area": "组件模板",
+      "evidence": "已有 image、布局组件和导入/裁切图片流程。",
+      "nextStep": "可先用用户导入的包内图片制作；不是自动相册。",
+      "source": "iOS/ScriptWidget/View/PhotoPicker/PhotoPickerViewController.swift"
+    },
+    {
+      "feature": "真实步数、活动能量、最近心率",
+      "status": "A",
+      "area": "iOS 数据",
+      "evidence": "已有只读 HealthKit 查询与授权接口。",
+      "nextStep": "需要真实权限、无数据/拒绝状态和真机验收。",
+      "source": "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeHealth.swift"
+    },
+    {
+      "feature": "习惯热力图、饮水/心情计数、本地待办",
+      "status": "A",
+      "area": "本地交互",
+      "evidence": "按钮/App Intent、包隔离存储已具备；Habit Heatmap 已加入真实按日记录。",
+      "nextStep": "可补更多原创交互模板；该模板改动尚未进入旧的 27012 二进制。",
+      "source": "Shared/ScriptWidgetRuntime/Resource/Script.bundle/template/Habit Heatmap/main.jsx"
+    },
+    {
+      "feature": "公开 JSON 数据面板、图表、汇率/指标",
+      "status": "A",
+      "area": "网络数据",
+      "evidence": "fetch、HTTP、chart、gauge、Data Source Plugin 基础已具备。",
+      "nextStep": "选择有稳定公开数据源的示例；声明权限/域名，处理失败与缓存。",
+      "source": "Shared/ScriptWidgetRuntime/Plugin/ScriptWidgetDataSources.swift"
+    },
+    {
+      "feature": "天气实况和位置天气",
+      "status": "A",
+      "area": "网络数据",
+      "evidence": "已有 CoreLocation 和 Open-Meteo 天气模板。",
+      "nextStep": "补一致样式、过期标识、缓存及服务条款/配额确认。",
+      "source": "Shared/ScriptWidgetRuntime/Resource/Script.bundle/template/Weather Now (Open-Meteo)/main.jsx"
+    },
+    {
+      "feature": "网页、已知 URL Scheme、Shortcuts 启动面板",
+      "status": "B",
+      "area": "动作产品化",
+      "evidence": "已有 Link 和示例启动网格；不等于所有第三方应用都可直接启动。",
+      "nextStep": "补动作目录、图标选择、参数配置，逐应用/系统验证跳转。",
+      "source": "Shared/ScriptWidgetRuntime/Widget/Component/Elements/ScriptWidgetElementTagLink.swift"
+    },
+    {
+      "feature": "控制中心按钮/开关",
+      "status": "B",
+      "area": "系统入口",
+      "evidence": "已有 ControlWidgetButton/Toggle，绑定包声明的动作。",
+      "nextStep": "完善模板与配置流程；控制中心不是任意 JSX 大画布。",
+      "source": "iOS/ScriptWidgetWidget/ControlWidget/ScriptWidgetControlWidget.swift"
+    },
+    {
+      "feature": "本地 Live Activity / Dynamic Island 状态卡",
+      "status": "B",
+      "area": "系统入口",
+      "evidence": "已有 ActivityKit 创建、更新、结束和多个展示区域。",
+      "nextStep": "基础可复用；长时间生命周期、远端状态与真机更新需专项工作。",
+      "source": "iOS/ScriptWidget/App/LiveActivity/ScriptLiveActivityManager.swift"
+    },
+    {
+      "feature": "按时段切换组件内容",
+      "status": "B",
+      "area": "时间线",
+      "evidence": "JS 条件能够按运行时日期选择内容；当前 Provider 主要按频率请求刷新。",
+      "nextStep": "精准切换需计划多条 timeline、数据预取和时间环境设计；不能承诺分钟级后台执行。",
+      "source": "iOS/ScriptWidgetWidget/ScriptWidgetTimelineProvider.swift"
+    },
+    {
+      "feature": "壁纸配色、拟透明背景和整套主题",
+      "status": "B",
+      "area": "外观产品化",
+      "evidence": "颜色、渐变、图片与裁切可复用；未找到完整壁纸定位/透明配置向导。",
+      "nextStep": "实现壁纸截图裁切向导和设备布局校准；主题/图标资源需单独建设。",
+      "source": "iOS/ScriptWidget/View/PhotoPicker/PhotoPickerViewController.swift"
+    },
+    {
+      "feature": "原创宠物/植物：本地点击与养成状态",
+      "status": "B",
+      "area": "互动模板",
+      "evidence": "已有图形/图片/GIF、时钟动画、按钮和存储基础。",
+      "nextStep": "先做按点击和时间戳计算状态的单机原型；常驻动画表现需跨设备测试。",
+      "source": "Shared/ScriptWidgetRuntime/Widget/Component/Attributes/Animation/ScriptWidgetAttributeAnimationModifier.swift"
+    },
+    {
+      "feature": "玻璃材质、空间/动态壁纸完整制作",
+      "status": "C",
+      "area": "新外观模块",
+      "evidence": "当前可用图像与渐变做风格近似；未找到对应完整编辑器或原生 glassEffect 桥接。",
+      "nextStep": "原生材质与系统壁纸机制需单独实现，不能只靠换模板承诺同等效果。",
+      "source": "Shared/ScriptWidgetRuntime/Widget/Component/ScriptWidgetElementView.swift"
+    },
+    {
+      "feature": "读取/修改真实日历与系统提醒事项",
+      "status": "C",
+      "area": "原生 API",
+      "evidence": "本次源码检索未找到 EventKit 桥接；Daily Agenda 只显示参数列表。",
+      "nextStep": "新增只读接口/权限与缓存优先；写入或勾选需独立的动作权限设计。",
+      "source": "Shared/ScriptWidgetRuntime/Resource/Script.bundle/template/Daily Agenda/main.jsx"
+    },
+    {
+      "feature": "自动读取相册、智能照片轮播",
+      "status": "C",
+      "area": "原生 API",
+      "evidence": "导入图片不等于已提供 Photos 照片库查询。",
+      "nextStep": "补图库选择、有限照片权限、缩略图缓存和轮播 timeline。",
+      "source": "iOS/ScriptWidget/View/PhotoPicker/PhotoPickerViewController.swift"
+    },
+    {
+      "feature": "真实音乐读取与控制（Apple Music / Spotify）",
+      "status": "C",
+      "area": "原生/服务 API",
+      "evidence": "Now Playing 是写死曲目和控制图标的展示示例；未找到 MusicKit/MediaPlayer 运行时桥接。",
+      "nextStep": "需平台授权、原生播放动作或 OAuth、凭据归属和状态刷新；不能直接当真实播放器宣传。",
+      "source": "Shared/ScriptWidgetRuntime/Resource/Script.bundle/template/Now Playing/main.jsx"
+    },
+    {
+      "feature": "睡眠、完整活动圆环、锻炼/趋势等健康扩展",
+      "status": "C",
+      "area": "原生 API",
+      "evidence": "目前明确接口只有步数、活动能量、最近心率。",
+      "nextStep": "新增 HealthKit 类型、只读权限、时间区间查询与隐私测试。",
+      "source": "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeHealth.swift"
+    },
+    {
+      "feature": "情侣/好友距离、共同宠物、跨用户传图和状态",
+      "status": "C",
+      "area": "独立服务",
+      "evidence": "本地存储和单设备定位无法提供远端用户的状态。",
+      "nextStep": "账户、配对、访问控制、后端、通知与后台位置策略均需独立设计。",
+      "source": "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeLocation.swift"
+    },
+    {
+      "feature": "需要 OAuth 的账户数据与远程操作",
+      "status": "C",
+      "area": "凭据能力",
+      "evidence": "现有公开 HTTP/声明式插件不能替代完整的用户授权与凭据生命周期。",
+      "nextStep": "先定义用户拥有的凭据能力和权限边界，再做具体服务集成。",
+      "source": "Shared/ScriptWidgetRuntime/Plugin/ScriptWidgetDataSources.swift"
+    },
+    {
+      "feature": "Apple Watch 表盘/Smart Stack 原生组件",
+      "status": "C",
+      "area": "新平台",
+      "evidence": "当前仓库包含 iOS/macOS App/Widget 目标，未找到原生 watchOS 目标。",
+      "nextStep": "需要 watchOS target、数据同步、渲染兼容与真机验证；不与系统镜像 Live Activity 混同。",
+      "source": "iOS/ScriptWidgetWidget/ScriptWidgetMain.swift"
+    },
+    {
+      "feature": "拖拽图层的可视化 Widget 设计器",
+      "status": "C",
+      "area": "新编辑器",
+      "evidence": "当前主要是 JSX 代码、预览和 AI 创作流程。",
+      "nextStep": "需要布局中间模型、选择/拖拽/撤销、属性编辑与 JSX 往返策略。",
+      "source": "Web/studio/src/components/PreviewPane.tsx"
+    },
+    {
+      "feature": "任意系统性能监控和无条件 24/7 运行",
+      "status": "C",
+      "area": "平台边界",
+      "evidence": "现有 processorCount、physical memory 等是基础信息；未暴露系统范围 FPS/CPU 占用/网络速率接口。",
+      "nextStep": "逐指标验证公开 API 与运行上下文；不可从竞品截图推断系统无限后台能力。",
+      "source": "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetRuntimeSystem.swift"
+    }
+  ],
+  "appNotes": {
+    "widgetsmith": {
+      "positioning": "生活信息与个人审美",
+      "features": "照片、天气、时间、倒计时、活动数据；商店描述还包括日历、提醒事项、音乐及按时间切换。",
+      "visualObservation": "浅色分屏配整机桌面，每屏突出一个用户收益；照片和个人风格是视觉主体。",
+      "assessment": "可借鉴相片＋信息卡的成套主题。原生日历、音乐和相册自动读取不能用现有示例 UI 充当已实现。"
+    },
+    "widgy": {
+      "positioning": "高自由度信息面板",
+      "features": "图层定制、社区导入、图表、健康、天气；描述包含 Lock Screen、Watch、Live Activities。",
+      "visualObservation": "深色整机桌面，一屏同时展示日期、天气、健康、图表；强调个人风格和信息密度。",
+      "assessment": "与我们的 JSX 组合能力较接近。差距集中在可视化图层编辑、社区分发体验和部分系统数据源。"
+    },
+    "color-widgets": {
+      "positioning": "整套桌面主题",
+      "features": "组件、照片、天气、倒计时、健康，以及主题、图标和壁纸素材。",
+      "visualObservation": "用颜色统一壁纸、图标和组件，第一屏就呈现整套搭配，后续按审美与屏幕场景展开。",
+      "assessment": "组件本身多数可组合；主题包、图标安装引导、素材版权与运营属于额外产品工作。"
+    },
+    "widgetable": {
+      "positioning": "关系与互动陪伴",
+      "features": "共同养宠、心情、想念计数、照片文字分享，以及好友距离等连接功能。",
+      "visualObservation": "可爱角色、成对或多人场景，大面积视觉素材突出关系和陪伴，编辑器几乎不是卖点。",
+      "assessment": "单机养宠、心情和点击计数可用存储与按钮实现；好友关系、远端定位和状态同步需要独立后端。"
+    },
+    "scriptable": {
+      "positioning": "JavaScript 原生自动化",
+      "features": "脚本、文件、位置、日历、提醒事项等原生桥接；商店描述包含 Siri 和通知自动化。",
+      "visualObservation": "主要直接展示脚本列表、代码、文档和配置界面，突出工具本身和原生能力。",
+      "assessment": "我们可借鉴 API 文档与示例链路；首屏仍应展示结果，保留 JSX 和 Web Studio 的差异。其原生 API 覆盖范围不能直接当成我们的范围。"
+    },
+    "launcher": {
+      "positioning": "常用动作一键触达",
+      "features": "应用、联系人、网页、Shortcuts 与音乐等动作；商店描述还包括时段/位置规则和多个系统入口。",
+      "visualObservation": "把联系人和应用图标排列在真实桌面或锁屏里，使用行动导向的短标题，强调省步骤。",
+      "assessment": "已具备 Link、按钮、App Intents 与控制组件基础；需要动作目录、配置界面、逐项跳转验收，不能承诺任意应用无跳转。"
+    },
+    "lock-launcher": {
+      "positioning": "锁屏与灵动岛启动面板",
+      "features": "URL Scheme、Shortcuts、应用启动、控制中心和 Live Activities；还宣传性能指标等面板。",
+      "visualObservation": "先展示锁屏点击入口，再展示 Dock 和大图标网格，突出密度、即时性和用途。",
+      "assessment": "基础启动面板可组合。系统范围 CPU/FPS/网络速率等需单独核对公开数据源，现有核数和内存总量接口并不等价。"
+    },
+    "pixel-pals": {
+      "positioning": "像素角色陪伴",
+      "features": "像素宠物和 Home/Lock Screen、Live Activities 个性化；公开截图包含壁纸裁切式透明设置。",
+      "visualObservation": "角色和小组件的真实摆放是重点，素材较偏直接功能截图；用透明背景减少组件容器感。",
+      "assessment": "本地状态、点击互动、原创像素素材可以做；常驻动画、后台更新和多系统表面的表现必须真机确认。"
+    },
+    "iscreen": {
+      "positioning": "主题与创意玩法",
+      "features": "主题、照片、倒计时、健康、灵动岛、控制中心、空间壁纸等；中国区描述强调 iOS 27 大尺寸。",
+      "visualObservation": "浅色主题加大字号，按灵动岛、超大组件、空间壁纸和玻璃效果逐屏展示新鲜感。",
+      "assessment": "我们已有多表面基础。壁纸编辑、图库、拟透明配置和原生玻璃效果仍需专门实现；系统新尺寸还需要对应 SDK 与逐模板验收。"
+    },
+    "top-widgets": {
+      "positioning": "美化与实用面板",
+      "features": "主题、照片、时钟、健康、快捷启动、待机等；中国区页面还宣传竖屏特大号组件。",
+      "visualObservation": "整屏桌面、照片拼贴与电量/健康面板混排，兼顾主题氛围和信息密度。",
+      "assessment": "视觉模板可作为近期方向，健康支持只按已有三项查询承诺；充电动画与桌面组件运行机制应分别评估。"
+    }
+  }
+}

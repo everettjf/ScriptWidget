@@ -10,13 +10,14 @@ import SwiftUI
 struct ScriptPackageEditorView: View {
     let model: ScriptModel
     @Binding var filePath: URL
+    var editorID = UUID()
 
     var body: some View {
         VStack {
             ScriptPackageHorizontalFileView(model: model, currentFilePath: filePath) { file in
                 changeFile(fileModel: file)
             }
-            MirrorEditorScriptView(model: model, filePath: filePath)
+            MirrorEditorScriptView(model: model, filePath: filePath, editorID: editorID)
         }
     }
     

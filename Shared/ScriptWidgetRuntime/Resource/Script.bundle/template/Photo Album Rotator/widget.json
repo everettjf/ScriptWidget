@@ -1,0 +1,32 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.photo-album-rotator",
+  "name": "Photo Album Rotator",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait",
+    "accessoryCircular",
+    "accessoryRectangular",
+    "accessoryInline"
+  ],
+  "permissions": [
+    "photos"
+  ],
+  "networkDomains": [],
+  "minimumRuntimeVersion": "1.4",
+  "description": "Rotate bounded snapshots from photos and albums explicitly selected in Settings.",
+  "timeline": {
+    "dailyTimes": [
+      "00:00",
+      "06:00",
+      "12:00",
+      "18:00"
+    ]
+  }
+}

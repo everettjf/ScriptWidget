@@ -1,0 +1,23 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.live-activity",
+  "name": "Live Activity Demo",
+  "version": "2.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.3",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemMedium"
+  ],
+  "permissions": [],
+  "networkDomains": [],
+  "description": "App-supplied local activity state with optional progress and an OS timer for the lock screen and Dynamic Island.",
+  "category": "productivity",
+  "tags": [
+    "live-activity",
+    "focus",
+    "timer"
+  ],
+  "icon": "timer",
+  "preview": "preview.png"
+}

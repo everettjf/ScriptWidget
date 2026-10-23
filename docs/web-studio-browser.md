@@ -30,14 +30,23 @@ the browser and previews them itself.
   `$import`, and images under `image/`. **Add image…** uploads PNG, JPEG, WebP,
   or GIF files (up to 8 MB) for `<image id="name" />` and `<gif file="name" />`.
 - The editor has ScriptWidget completions, hover help, and diagnostics.
-- Projects are saved in this browser automatically. Clearing site data removes
-  them, so export a `.swt` to keep a copy.
+- Projects are saved in this browser automatically after the editing debounce.
+  Switching projects flushes the outgoing draft. **Saved in this browser** appears
+  only after the tracked drafts are stored; an older completion cannot clear a
+  newer edit or hide an outgoing draft. Saves/deletions are ordered. Wait for the
+  saved state before closing; clearing site data removes drafts, so export a
+  `.swt` to keep a copy. If storage is unavailable, the UI asks you to export.
+- A project disappears only after its deletion commits. If the browser rejects
+  deletion, an error keeps the project and any edits made while waiting; you can
+  retry or export a backup. Existing disk projects still require a confirmed
+  disk deletion after a later save has fallen back to memory.
 
 ## Preview
 
 - Choose a device (iPhone sizes, iPad, or Mac), a widget size from the manifest's
   `supportedFamilies`, light or dark appearance, a rendering mode, and the
   `widget-param` value.
+- **Reduce transparency** and **Reduce motion** simulate accessibility fallbacks without changing widget source. They start from browser media preferences. Material is a labeled CSS approximation of SwiftUI; the system's Liquid Glass and wallpaper refraction are not reproduced. See [Visual effects](visual-effects.md).
 - The preview runs your code in an isolated sandbox with the same rules as the
   iPhone runtime: the same compiler, limits, `$render` behavior, and error
   categories. It renders with layout calibrated against iOS.
@@ -131,16 +140,18 @@ copied into `src/components/ui` and import `cn` from `@/lib/utils`.
 
 New projects include sample returns for every `$device` and `$system` method,
 plus location and HealthKit availability, authorization, steps, active energy,
-and heart rate. These are example values, not readings from your computer or
+and heart rate, as well as calendar authorization, calendar lists and event results. These are example values, not readings from your computer or
 phone. Dark mode follows the appearance control unless explicitly overridden.
 Template gallery previews use the same default samples.
 
 Open **Mock Data** below the preview and choose a data source and API. Primitive
 fields have form controls; **Response JSON** handles complete objects, arrays,
 nulls, and unusual return shapes. **Apply mock data** applies JSON edits. Choose
-**Throw / reject error** to exercise an error branch. Health and location also
-have coherent **Sample success**, **Permission denied** and **Unavailable**
-scenarios. **Reset this API** restores only the selected API's example.
+**Throw / reject error** to exercise an error branch. Location and calendar
+have **Sample success**, **No data**, **Permission denied** and **Unavailable**
+scenarios. Health uses **No shared data** instead of claiming read denial:
+consent review remains completed and measurements return zero or empty results.
+Unavailable Health and Location authorization requests reject, matching the native APIs. Calendar calls still require `calendar` in `widget.json`; mocks do not grant this permission. **Reset this API** restores only the selected API's example.
 **Add missing samples** fills older projects without replacing existing method
 mocks, legacy fixture values, custom keys, or network rules.
 
@@ -186,3 +197,6 @@ precedence over legacy `location`, `health.*`, `device` and `system` fixtures.
 The Node preview CLI also accepts this fixture format. Defaults in a project
 are intentionally stable, including sample timestamps; change them when testing
 time-sensitive scripts. Browser JavaScript's real clock is not frozen by mocks.
+
+
+Preview compilation validates a present `widget.json` before executing scripts. A malformed or incompatible package shows a package error even if configured Mock Data would return success. Package files override a host-supplied manifest object. `minimumRuntimeVersion` targets native API compatibility; the preview's own engine version remains separate.

@@ -17,3 +17,5 @@ export interface Chrome {
 export function findChrome(): string | null;
 export function serveDirectory(directory: string, routes?: Record<string, { type: string; body: string | Uint8Array }>): Promise<{ origin: string; close(): void }>;
 export function launchChrome(options?: { width?: number; height?: number; scale?: number; startupTimeoutMilliseconds?: number; callTimeoutMilliseconds?: number }): Promise<Chrome>;
+
+export function clickReady(page: ChromePage, expression: string): Promise<void>;

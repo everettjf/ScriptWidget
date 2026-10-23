@@ -393,7 +393,9 @@ enum DataSourcePluginExecutor {
 @objc final class ScriptWidgetRuntimeDataSource: NSObject, ScriptWidgetRuntimeDataSourceExports {
     static func request(_ pluginID: String, _ operationID: String, _ parameters: [String: Any]?) -> ScriptWidgetRuntimePromise {
         ScriptWidgetRuntimePromise { resolve, reject in
-            guard let state = JSContext.current()?.scriptWidgetRunningState, state.executionSession.isActive else { reject.call(withArguments: ["Execution session is no longer active"]); return }
+            guard let state = JSContext.current()?.scriptWidgetRunningState, state.isCurrentExecution else { reject.call(withArguments: ["Execution session is no longer active"]); return }
+            guard !state.isLiveActivityPresentation else { reject.call(withArguments:["[live_activity_unavailable] Live Activity presentations cannot request service data; update their state from the app"]); return }
+            guard !state.isTimelineProjection else { reject.call(withArguments: ["[timeline_read_only] Future entries cannot make live service requests"]); return }
             guard let widgetManifest = state.package.readManifest(), widgetManifest.plugins?.contains(pluginID) == true else { reject.call(withArguments: ["Plugin \(pluginID) is not declared in widget.json"]); return }
             guard widgetManifest.permissions.contains(.network) else { reject.call(withArguments: ["Plugin requests require the network permission"]); return }
             guard let plugin = DataSourcePluginManager.shared.manifest(id: pluginID) else { reject.call(withArguments: ["Plugin \(pluginID) is not installed"]); return }
@@ -401,9 +403,11 @@ enum DataSourcePluginExecutor {
                 let prepared = try DataSourceRequestBuilder.prepare(plugin: plugin, operationID: operationID, values: parameters ?? [:])
                 guard let host = prepared.request.url?.host?.lowercased(), ScriptWidgetNetworkPolicy.host(host, matchesAny: widgetManifest.networkDomains) else { throw DataSourcePluginError.permission("Data source host is not declared in widget.json networkDomains.") }
                 var task: URLSessionDataTask!
-                task = sharedFetchManager.makeTask(request: prepared.request) { data, response, error in
+                task = state.fetchManager.makeTask(request: prepared.request, redirectValidator: { url in
+                    ScriptWidgetNetworkPolicy.allowsRedirect(url, state: state, pluginHosts: plugin.hosts)
+                }) { data, response, error in
                     state.executionSession.complete(task)
-                    guard state.executionSession.isActive else { return }
+                    guard state.isCurrentExecution else { return }
                     if let error { reject.call(withArguments: [error.localizedDescription]); return }
                     guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode), let data else { reject.call(withArguments: ["Data source request failed"]); return }
                     if prepared.operation.responseType == .json {
@@ -412,7 +416,7 @@ enum DataSourcePluginExecutor {
                     } else if let text = String(data: data, encoding: .utf8) { resolve.call(withArguments: [text]) }
                     else { reject.call(withArguments: ["Data source returned non-UTF-8 text"]) }
                 }
-                guard state.executionSession.register(task) else { task.cancel(); reject.call(withArguments: ["Network request budget exceeded"]); return }
+                guard state.isCurrentExecution, state.executionSession.register(task) else { task.cancel(); reject.call(withArguments: ["Network request budget exceeded"]); return }
                 task.resume()
             } catch { reject.call(withArguments: [error.localizedDescription]) }
         }

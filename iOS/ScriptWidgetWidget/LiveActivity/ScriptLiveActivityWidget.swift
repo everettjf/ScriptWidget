@@ -26,7 +26,8 @@ struct ScriptLiveActivityWidget: Widget {
         let creator = ScriptDynamicIslandCreator(
             scriptName: context.attributes.scriptName,
             scriptParameter: context.attributes.scriptParameter,
-            scriptState: context.state.scriptState
+            scriptState: context.state.scriptState,
+            binding:context.attributes.binding,isStale:context.isStale
         )
 
         creator.runScriptSync()
@@ -74,21 +75,24 @@ struct ScriptLiveActivityRootView: View {
     let scriptParameter: String
     
     let scriptState: String
+    let binding: ScriptWidgetLiveActivityBinding?
+    let isStale: Bool
 
-    init(scriptName: String, scriptParameter: String, scriptState: String) {
+    init(scriptName: String, scriptParameter: String, scriptState: String, binding: ScriptWidgetLiveActivityBinding? = nil, isStale: Bool = false) {
         self.scriptName = scriptName
         self.scriptParameter = scriptParameter
         self.scriptState = scriptState
+        self.binding=binding;self.isStale=isStale
         _data = StateObject(wrappedValue: Self.makeData(
             scriptName: scriptName,
             scriptParameter: scriptParameter,
-            scriptState: scriptState
+            scriptState: scriptState,binding:binding,isStale:isStale
         ))
     }
 
-    private static func makeData(scriptName: String, scriptParameter: String, scriptState: String) -> ScriptLiveActivityDataObject {
+    private static func makeData(scriptName: String, scriptParameter: String, scriptState: String, binding: ScriptWidgetLiveActivityBinding?, isStale: Bool) -> ScriptLiveActivityDataObject {
         let data = ScriptLiveActivityDataObject(scriptName: scriptName, scriptParameter: scriptParameter,
-                                               scriptState: scriptState, surface: "lockScreen")
+                                               scriptState: scriptState, surface: "lockScreen",binding:binding,isStale:isStale)
         data.runScriptSync()
         return data
     }
@@ -118,10 +122,12 @@ struct LockScreenLiveActivityView: View {
         ScriptLiveActivityRootView(
             scriptName: context.attributes.scriptName,
             scriptParameter: context.attributes.scriptParameter,
-            scriptState: context.state.scriptState
+            scriptState: context.state.scriptState,binding:context.attributes.binding,isStale:context.isStale
         )
-        .id(context.state)
+        .id(LiveActivityPresentationID(state:context.state,isStale:context.isStale))
 //        .activitySystemActionForegroundColor(.indigo)
 //        .activityBackgroundTint(.cyan)
     }
 }
+
+private struct LiveActivityPresentationID: Hashable { let state: ScriptLiveActivityAttributes.ContentState;let isStale: Bool }

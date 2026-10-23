@@ -21,6 +21,7 @@ struct ProjectFileNode: Identifiable, Hashable {
 class FileListDataObject: ObservableObject {
     @Published var files: [FileModel] = []
     @Published var nodes: [ProjectFileNode] = []
+    private var refreshObserver: NSObjectProtocol?
     
     let scriptModel: ScriptModel
     init(scriptModel: ScriptModel) {
@@ -33,25 +34,33 @@ class FileListDataObject: ObservableObject {
     func reload() {
         scriptModel.package.updateFiles()
         self.files = scriptModel.package.listFiles()
-        self.nodes = Self.loadNodes(at: scriptModel.package.path, relativeTo: scriptModel.package.path)
+        let root = scriptModel.package.path.standardizedFileURL.resolvingSymlinksInPath()
+        self.nodes = Self.loadNodes(at: root, relativeTo: root)
     }
     
     
-    func addObserver() {
-        NotificationCenter.default.addObserver(forName: ImageDataObject.refreshNotification, object: nil, queue: OperationQueue.main) { (noti) in
-            self.reload()
+    private func addObserver() {
+        refreshObserver = NotificationCenter.default.addObserver(forName: ImageDataObject.refreshNotification, object: nil, queue: OperationQueue.main) { [weak self] _ in
+            self?.reload()
         }
+    }
+
+    deinit {
+        if let refreshObserver { NotificationCenter.default.removeObserver(refreshObserver) }
     }
 
     private static func loadNodes(at directory: URL, relativeTo root: URL) -> [ProjectFileNode] {
         let urls = (try? FileManager.default.contentsOfDirectory(
             at: directory,
-            includingPropertiesForKeys: [.isDirectoryKey],
+            includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey],
             options: [.skipsHiddenFiles]
         )) ?? []
-        return urls.compactMap { url in
-            guard url.lastPathComponent != "__Build" else { return nil }
-            let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true
+        return urls.compactMap { entry in
+            guard entry.lastPathComponent != "__Build" else { return nil }
+            guard let values = try? entry.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]),
+                  values.isSymbolicLink != true else { return nil }
+            let url = entry.standardizedFileURL.resolvingSymlinksInPath()
+            let isDirectory = values.isDirectory == true
             let rootPrefix = root.path.hasSuffix("/") ? root.path : root.path + "/"
             guard url.path.hasPrefix(rootPrefix) else { return nil }
             let relativePath = String(url.path.dropFirst(rootPrefix.count))

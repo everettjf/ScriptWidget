@@ -13,17 +13,19 @@ class ScriptDynamicIslandCreator {
     let scriptName: String
     let scriptParameter: String
     let scriptState: String
-    let package: ScriptWidgetPackage
+    let binding: ScriptWidgetLiveActivityBinding?
+    let isStale: Bool
+    private(set) var package: ScriptWidgetPackage = globalScriptWidgetPackage
     
     var rootElement : ScriptWidgetDynamicIslandRuntimeElement
     var runtime: ScriptWidgetRuntime?
     
-    init(scriptName: String, scriptParameter: String, scriptState: String) {
+    init(scriptName: String, scriptParameter: String, scriptState: String, binding: ScriptWidgetLiveActivityBinding? = nil, isStale: Bool = false) {
         self.scriptName = scriptName
         self.scriptParameter = scriptParameter
         self.scriptState = scriptState
+        self.binding=binding;self.isStale=isStale
         
-        self.package = buildScriptManager.getScriptPackage(packageName: self.scriptName)
         
         self.rootElement = ScriptWidgetDynamicIslandRuntimeElement(text: ".")
     }
@@ -36,21 +38,28 @@ class ScriptDynamicIslandCreator {
         
         self.systemLog("[START]")
         
-        let read = package.readMainFileResult()
-        guard let JSX = read.content else {
-            let message = read.icloud == .downloading
-                ? "Downloading script. Open ScriptWidget to finish syncing, then start the activity again."
-                : "Script unavailable. Open ScriptWidget and start the activity again."
+        self.runtime = nil
+        let execution: ScriptWidgetHostExecution
+        do {
+            guard let binding else { throw ScriptWidgetLiveActivityBindingError.invalidBinding }
+            execution = try binding.load(cacheOnly:true)
+            self.package = execution.package
+        } catch {
+            let message = (error as? ScriptWidgetLiveActivityBindingError)?.localizedDescription
+                ?? (error as? ScriptWidgetHostReadError)?.message
+                ?? "Widget library unavailable. Open ScriptWidget to check the selected library."
             self.rootElement = ScriptWidgetDynamicIslandRuntimeElement(text: message)
             return
         }
+        let JSX = execution.source
 
         let runtime = ScriptWidgetRuntime(package: self.package, environments: [
             "widget-size" : "dynamic-island",
             "widget-param": scriptParameter,
             "live-activity-state": scriptState,
+            "live-activity-is-stale": isStale ? "true" : "false",
             "live-activity-surface": "dynamicIsland",
-        ])
+        ], executionSnapshot: execution.snapshot)
         
         let result = runtime.executeJSXSyncForDynamicIsland(JSX)
         
@@ -64,7 +73,7 @@ class ScriptDynamicIslandCreator {
             
             if let error = result.1 {
                 let message = error.displayMessage
-                self.systemLog(message)
+                self.systemLog("[runtime_error]")
                 self.rootElement = ScriptWidgetDynamicIslandRuntimeElement(text: message)
             }
         }

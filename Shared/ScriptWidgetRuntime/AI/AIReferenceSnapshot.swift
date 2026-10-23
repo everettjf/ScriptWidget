@@ -37,7 +37,7 @@ enum AIReferenceSnapshotLoader {
     private static let softCharBudget = 60_000
 
     private static let priorityAPIs: [String] = [
-        "fetch", "http", "storage", "location", "health",
+        "fetch", "http", "storage", "location", "health", "calendar",
         "device", "file", "getenv", "system", "console",
     ]
 

@@ -5,7 +5,7 @@
 
 export type WidgetFamilyName = "systemSmall" | "systemMedium" | "systemLarge" | "systemExtraLarge" | "systemExtraLargePortrait" | "accessoryCircular" | "accessoryRectangular" | "accessoryInline";
 export type WidgetSize = "small" | "medium" | "large" | "extraLarge" | "extraLargePortrait" | "accessoryCircular" | "accessoryRectangular" | "accessoryInline";
-export type Permission = "network" | "location" | "health" | "storage" | "files";
+export type Permission = "network" | "location" | "health" | "calendar" | "reminders" | "remindersWrite" | "photos" | "services" | "music" | "storage" | "files";
 export type Severity = "error" | "warning" | "info";
 export type Appearance = "light" | "dark";
 export type RenderingMode = "fullColor" | "accented" | "vibrant";
@@ -17,6 +17,8 @@ export interface WidgetManifest {
   name: string;
   version: string;
   runtimeVersion: string;
+  minimumRuntimeVersion?: string | null;
+  timeline?: import("./timeline.js").TimelineSchedule | null;
   entry: string;
   supportedFamilies: WidgetFamilyName[];
   permissions: Permission[];
@@ -59,5 +61,6 @@ export interface ExecutionResult {
   error: { kind: string; message: string } | null;
   logs: LogEntry[];
   diagnostics: Issue[];
+  mockState?: { storage: Record<string, unknown>; remindersState: { formatVersion: number; items: Array<Record<string, unknown>>; receipts: Array<Record<string, unknown>> } };
   timing?: { compileMilliseconds: number; executeMilliseconds: number };
 }

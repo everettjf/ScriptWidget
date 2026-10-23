@@ -1,9 +1,12 @@
+import { storageAPICatalog } from "./storageAPICatalog.js";
+import { dataAPICatalog } from "./dataAPICatalog.js";
+
 // Editor metadata for the native JSX components selected by
 // ScriptWidgetElementView's switch. The native switch remains the runtime
 // authority; tests verify that this metadata stays aligned with it.
 export const scriptWidgetAPI = {
   "schemaVersion": 1,
-  "runtimeVersion": "26.6",
+  "runtimeVersion": "1.4",
   "documentation": "Public JSX surface shared by ScriptWidget Runtime and Studio.",
   "platforms": {
     "ios": "16.0",
@@ -12,6 +15,7 @@ export const scriptWidgetAPI = {
   },
   "globalProperties": {
     "background": { "type": "color", "documentation": "Background color, hex value, or named color." },
+    "backgroundMaterial": { "type": "enum", "values": ["none", "ultraThin", "thin", "regular", "thick", "ultraThick"], "documentation": "Runtime API 1.4. Public SwiftUI frosted material inside the widget, not Home Screen wallpaper blur or system Liquid Glass. At most four material backgrounds per tree. background supplies an opaque-composited Reduce Transparency fallback. In accented/vibrant mode local material is omitted for system rendering; none keeps the ordinary background." },
     "color": { "type": "color", "documentation": "Foreground color, hex value, or named color." },
     "font": { "type": "enum", "values": ["largeTitle", "title", "title2", "title3", "headline", "subheadline", "body", "callout", "footnote", "caption", "caption2"], "documentation": "Semantic text style." },
     "fontWeight": { "type": "enum", "values": ["ultraLight", "thin", "light", "regular", "medium", "semibold", "bold", "heavy", "black"], "documentation": "Font weight." },
@@ -23,9 +27,9 @@ export const scriptWidgetAPI = {
     "alignment": { "type": "enum", "values": ["center", "leading", "trailing", "top", "bottom", "topLeading", "topTrailing", "bottomLeading", "bottomTrailing", "firstTextBaseline", "lastTextBaseline"], "documentation": "Layout alignment." },
     "clip": { "type": "enum", "values": ["circle", "rect", "capsule", "ellipse"], "documentation": "Clip the view to a shape." },
     "rotation": { "type": "number", "documentation": "Rotation in degrees." },
-    "rotation3d": { "type": "string", "documentation": "3D rotation description." },
+    "rotation3d": { "type": "string", "documentation": "Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax." },
     "shadow": { "type": "string", "documentation": "Shadow color, radius, and offset description." },
-    "animation": { "type": "string", "documentation": "Timeline-driven animation description." },
+    "animation": { "type": "string", "documentation": "iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks." },
     "widgetAccentable": { "type": "boolean", "documentation": "Group this view into the accent layer in tinted and vibrant widget appearances." },
     "linkurl": { "type": "url", "documentation": "Widget deep link URL." }
   },
@@ -38,7 +42,7 @@ export const scriptWidgetAPI = {
     "Text": { "documentation": "Display text content.", "children": false, "properties": { "text": { "type": "string" } } },
     "Date": { "documentation": "Display a formatted date.", "children": false, "properties": { "date": { "type": "date|number", "required": true }, "style": { "type": "enum", "values": ["time", "date", "relative", "offset", "timer"] } } },
     "Image": { "documentation": "Display a bundled, remote, or SF Symbol image.", "children": false, "properties": { "systemName": { "type": "string" }, "name": { "type": "string" }, "id": { "type": "string", "deprecated": "Use name." }, "url": { "type": "url" }, "src": { "type": "url", "deprecated": "Use url." }, "ratio": { "type": "number" }, "mode": { "type": "enum", "values": ["fit", "fill"] }, "accentedRenderingMode": { "type": "enum", "values": ["accented", "desaturated", "accentedDesaturated", "fullColor"], "documentation": "Control how the image is rendered in tinted and clear widget appearances." } } },
-    "Gif": { "documentation": "Display a GIF from the package.", "children": false, "properties": { "file": { "type": "string", "required": true } } },
+    "Gif": { "documentation": "Display a bounded package GIF using system decoding: up to 8 MiB input and 1,048,576 canvas pixels. iOS retains at most 60 downsampled frames / 4 MiB decoded pixels; more frames fall back to the first frame. Mac, Reduce Motion and reduced luminance use a static first frame. Active iOS previews use public SwiftUI timing with variable frame delays. Snapshots, inactive scenes, Mac and accessibility fallbacks use the first frame. No private clock bridge or continuous WidgetKit guarantee.", "children": false, "properties": { "file": { "type": "string", "required": true } } },
     "Spacer": { "documentation": "Flexible layout space.", "children": false, "properties": { "minLength": { "type": "number" } } },
     "Rect": { "documentation": "Rectangle shape.", "children": false, "properties": { "trim": { "type": "number|string" }, "stroke": { "type": "string" } } },
     "RoundedRect": { "documentation": "Filled rounded rectangle.", "children": false, "properties": { "radius": { "type": "number" } } },
@@ -61,10 +65,20 @@ export const scriptWidgetAPI = {
     "Toggle": { "documentation": "Interactive widget toggle. A declared actionID requires a package-relative storage stateKey.", "children": true, "availability": { "interactiveIos": "17.0" }, "requiredAny": ["onClick", "actionID"], "properties": { "on": { "type": "boolean", "required": true }, "onClick": { "type": "function", "conflicts": ["actionID"] }, "actionID": { "type": "action-id", "requires": ["stateKey"], "conflicts": ["onClick"] }, "stateKey": { "type": "storage-key", "requires": ["actionID"] } } }
   },
   "functions": {
-    "fetch": { "documentation": "Perform a network request." },
+    ...Object.fromEntries(storageAPICatalog.map((api) => [api.id, api])),
+    ...Object.fromEntries(dataAPICatalog.map((api) => [api.id, {
+      documentation: api.notes,
+      arguments: api.arguments,
+      returns: api.asynchronous ? "Promise<json>" : typeof api.value === "object" ? "json" : typeof api.value,
+    }])),
+    "$file.exists": { "documentation": "Return whether a regular file is locally present inside this package, including binary assets. Missing files, directories, unsafe paths and links return false. Does not download iCloud files or read outside the package. Web preview uses workspace file presence.", "arguments": ["path"], "returns": "boolean", "minimumRuntimeVersion": "1.3" },
+    "$file.read": { "documentation": "Read package-relative UTF-8 text. Missing or unavailable files return an empty string.", "arguments": ["path"], "returns": "string" },
+    "$file.readJSON": { "documentation": "Read a package-relative JSON object.", "arguments": ["path"], "returns": "json" },
+    "fetch": { "documentation": "Perform a network request and return its response text. Existing HTTP methods keep this string result." },
+    "$http.getResponse": { "documentation": "GET response metadata: {status, body, headers}. Headers are limited to content-type, cache-control, expires, last-modified, date and retry-after (lowercase; each at most 2048 UTF-8 bytes). Network permissions, public-host policy, redirects, body limits and timeline restrictions still apply. HTTP error statuses resolve; transport errors reject.", "arguments": ["url", "options?"], "returns": "Promise<json>", "minimumRuntimeVersion": "1.3" },
     "importJS": { "documentation": "Import a package-relative JavaScript file." },
     "$dataSource.request": { "documentation": "Call a declared Data Source Plugin operation. Requires Package 2.0 plugins, network permission, and networkDomains declarations.", "arguments": ["pluginID", "operationID", "parameters"], "returns": "Promise<json|string>" },
     "$xml.parse": { "documentation": "Parse up to 256 KiB of XML into {name, attributes, text, children}. DTDs and external entities are rejected; depth and node limits apply.", "arguments": ["source"], "returns": "XMLNode" }
   },
-  "environmentValues": ["widget-size", "widget-param", "widget-rendering-mode", "live-activity-state", "live-activity-surface", "action-id", "action-source", "action-value", "control-id", "control-value"]
+  "environmentValues": ["timeline-date", "timeline-time-zone", "timeline-slot", "timeline-is-projection", "widget-size", "widget-param", "widget-rendering-mode", "live-activity-state", "live-activity-is-stale", "live-activity-surface", "action-id", "action-source", "action-value", "control-id", "control-value"]
 };

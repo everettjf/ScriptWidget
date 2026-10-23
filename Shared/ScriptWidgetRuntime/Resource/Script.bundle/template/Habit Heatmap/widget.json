@@ -1,0 +1,66 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.habit-heatmap",
+  "name": "Habit Heatmap",
+  "version": "1.2.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.3",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait",
+    "accessoryCircular",
+    "accessoryRectangular",
+    "accessoryInline"
+  ],
+  "permissions": [
+    "storage"
+  ],
+  "networkDomains": [],
+  "actions": [
+    {
+      "id": "checkInRead",
+      "title": "Check in first habit",
+      "systemImage": "book.fill",
+      "function": "checkInRead"
+    },
+    {
+      "id": "checkInRun",
+      "title": "Check in second habit",
+      "systemImage": "figure.run",
+      "function": "checkInRun"
+    },
+    {
+      "id": "checkInMeditate",
+      "title": "Check in third habit",
+      "systemImage": "leaf.fill",
+      "function": "checkInMeditate"
+    }
+  ],
+  "controls": [
+    {
+      "id": "checkInRead",
+      "type": "button",
+      "title": "Check in first habit",
+      "systemImage": "book.fill",
+      "actionID": "checkInRead"
+    },
+    {
+      "id": "checkInRun",
+      "type": "button",
+      "title": "Check in second habit",
+      "systemImage": "figure.run",
+      "actionID": "checkInRun"
+    },
+    {
+      "id": "checkInMeditate",
+      "type": "button",
+      "title": "Check in third habit",
+      "systemImage": "leaf.fill",
+      "actionID": "checkInMeditate"
+    }
+  ]
+}

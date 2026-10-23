@@ -46,3 +46,24 @@ test("XML parser is completed in JavaScript", () => {
   assert.equal(result.from, "const feed = $xml.".length);
   assert.ok(result.options.some((option) => option.label === "parse"));
 });
+
+test("data namespaces complete methods with return types and permission guidance", () => {
+  for (const [namespace, method, detail] of [["health", "stepCountToday", "Promise<json>"], ["location", "current", "Promise<json>"], ["device", "battery", "json"], ["system", "locale", "string"]]) {
+    const text = `const value = $${namespace}.`;
+    const result = scriptWidgetCompletions(context(text));
+    assert.equal(result.from, text.length);
+    const option = result.options.find((item) => item.label === method);
+    assert.ok(option, namespace);
+    assert.equal(option.detail, detail);
+    assert.ok(option.info.length > 20);
+  }
+  assert.equal(scriptWidgetCompletions(context("$unknown.")), null);
+  assert.deepEqual(scriptWidgetCompletions(context("$dataSource.req")).options.map((item) => item.label), ["request"]);
+});
+
+test("package file presence and existing text readers are completed with bounded local semantics",()=>{
+ const options=scriptWidgetCompletions(context("$file.")).options;
+ assert.deepEqual(options.map(item=>item.label).sort(),["exists","read","readJSON"]);
+ assert.equal(options.find(item=>item.label==="exists").detail,"boolean");
+ assert.match(options.find(item=>item.label==="exists").info,/inside this package/);
+});

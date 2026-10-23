@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { executePackageInNode } from "../src/node.js";
+import { newManifest } from "../src/package/manifest.js";
 import { normalizePackagePath } from "../src/packageFiles.js";
 
 const run = (source, { files = {}, ...options } = {}) =>
@@ -91,9 +92,9 @@ test("fetch is fixture-only and enforces native network policy", async () => {
   const policy = (url, manifest) => run(`let r; try { r = await fetch(${JSON.stringify(url)}); } catch (e) { r = "rejected:" + e; } $render(<text>{r}</text>);`, { fixtures, manifest });
   assert.match((await policy("https://127.0.0.1/x")).tree, /Local and private network hosts are not allowed/);
   assert.match((await policy("file:///etc/passwd")).tree, /Only HTTP and HTTPS URLs are allowed/);
-  const manifest = { permissions: [], networkDomains: [] };
+  const manifest = { ...newManifest("Network policy"), permissions: [], networkDomains: [] };
   assert.match((await policy("https://api.example.com/v1", manifest)).tree, /Network host is not declared in widget.json/);
-  const declared = { permissions: ["network"], networkDomains: ["*.example.com"] };
+  const declared = { ...newManifest("Network policy"), permissions: ["network"], networkDomains: ["*.example.com"] };
   assert.match((await policy("https://api.example.com/v1", declared)).tree, /ok/);
 
   const missing = await policy("https://other.example.org/");
@@ -122,7 +123,13 @@ test("package paths are normalized inside the package root", () => {
 });
 
 test("API mocks clone values, preserve async errors, and cannot replace rendering or policy", async () => {
+  const locationAccess = {
+    "$location.isAvailable": { value: true },
+    "$location.authorizationStatus": { value: "authorizedWhenInUse" },
+    "$location.isAuthorizedForWidgetUpdates": { value: true },
+  };
   const fixtures = { api: {
+    ...locationAccess,
     "$device.battery": { value: { level: 0, state: "charging" } },
     "$system.name": { value: "ignored unknown method" },
     "$system.brightness": { error: "sensor unavailable" },
@@ -138,7 +145,7 @@ test("API mocks clone values, preserve async errors, and cannot replace renderin
   `, { fixtures });
   assert.equal(output.error, null);
   assert.deepEqual(JSON.parse(JSON.parse(output.tree).children[0]), { battery: { level: 0, state: "charging" }, syncError: "sensor unavailable", asyncError: "location permission denied" });
-  const empty = await run('$render(<text>{String(await $location.current())}</text>);', { fixtures: { api: { "$location.current": { value: null } } } });
+  const empty = await run('$render(<text>{String(await $location.current())}</text>);', { fixtures: { api: { ...locationAccess, "$location.current": { value: null } } } });
   assert.equal(JSON.parse(empty.tree).children[0], "null");
   const legacy = await run('const p = await $location.current(); $render(<text>{String(p.latitude)}</text>);', { fixtures: { location: { latitude: 9 } } });
   assert.equal(JSON.parse(legacy.tree).children[0], "9");
@@ -156,7 +163,7 @@ test("mock storage resets between runs and direct host values retain precedence"
 
 test("Data Source mocks require a matching operation and all package network declarations", async () => {
   const fixtures = { dataSource: [{ pluginID: "example.weather", operationID: "current", url: "https://api.example.com/weather", value: { temperature: 22 } }] };
-  const manifest = { permissions: ["network"], networkDomains: ["api.example.com"], plugins: ["example.weather"] };
+  const manifest = { ...newManifest("Data Sources"), permissions: ["network"], networkDomains: ["api.example.com"], plugins: ["example.weather"] };
   const source = 'const value = await $dataSource.request("example.weather", "current", {city:"London"}); $render(<text>{JSON.stringify(value)}</text>);';
   const allowed = await run(source, { fixtures, manifest });
   assert.equal(allowed.error, null);
@@ -170,4 +177,40 @@ test("Data Source mocks require a matching operation and all package network dec
   assert.ok(mismatch.diagnostics.some((item) => item.code === "fixture.dataSource.missing"));
   const failure = { dataSource: [{ ...fixtures.dataSource[0], error: "server down" }] };
   assert.match((await run(source, { fixtures: failure, manifest })).error.message, /server down/);
+});
+
+test("HTTP metadata reports status/cache headers and preserves legacy text responses",async()=>{
+ const url="https://example.com/data";
+ const result=await run(`const value=await $http.getResponse('${url}');const legacy=await $http.get('${url}');$render(<text>{JSON.stringify({value,legacy})}</text>);`,{
+  fixtures:{fetch:[{url,status:503,body:"response text",headers:{"Content-Type":"text/plain","Expires":"Thu, 01 Jan 2026 13:00:00 GMT","Set-Cookie":"secret","Authorization":"secret","Retry-After":"x".repeat(2049)}}]}
+ });
+ assert.equal(result.error,null);const value=JSON.parse(JSON.parse(result.tree).children.join(""));
+ assert.deepEqual(value,{value:{status:503,body:"response text",headers:{"content-type":"text/plain",expires:"Thu, 01 Jan 2026 13:00:00 GMT"}},legacy:"response text"});
+ const blocked=await run("try { await $http.getResponse('https://example.com'); $render(<text>unexpected</text>); } catch(error) { $render(<text>{String(error)}</text>); }",{manifest:{...newManifest("No network"),permissions:[],networkDomains:[]}});
+ assert.match(JSON.parse(blocked.tree).children.join(""),/Network host is not declared/);
+});
+
+test("Live Activity presentations deny network, plugins and location even when getenv is replaced",async()=>{
+ const {executePackageInNode}=await import("../src/node.js");
+ for(const size of ["live-activity","dynamic-island"]){
+  const source=`$getenv=()=>"medium";const errors=[];for(const call of [()=>fetch("https://example.com"),()=>$http.getResponse("https://example.com"),()=>$dataSource.request("example.plugin","read",{}),()=>$location.current(),()=>$location.requestAuthorization()]){try{await call();errors.push("unexpected");}catch(error){errors.push(String(error));}}$render(<text>{JSON.stringify(errors)}</text>);`;
+  const result=await executePackageInNode({files:{"main.jsx":source},environments:{"widget-size":size},fixtures:{location:{latitude:1,longitude:2},fetch:[{url:"https://example.com",body:"not allowed"}]}});
+  assert.equal(result.error,null);const errors=JSON.parse(JSON.parse(result.tree).children.join(""));assert.equal(errors.length,5);assert.ok(errors.every(error=>error.includes("live_activity_unavailable")),JSON.stringify(errors));
+ }
+});
+
+
+test("file.exists includes binary resources but never directories, prototype members or unsafe paths",async()=>{
+ const paths=["image/test.png","empty.txt","missing","image","../outside","/etc/passwd","image/../image/test.png","image//test.png","C:/test.png","constructor","./empty.txt"];
+ const result=await run(`$render(<text>{JSON.stringify(${JSON.stringify(paths)}.map(path=>$file.exists(path)))}</text>);`,{files:{"image/test.png":new Uint8Array([0,255,1]),"empty.txt":""}});
+ assert.equal(result.error,null,result.error?.message);assert.deepEqual(JSON.parse(JSON.parse(result.tree).children[0]),[true,true,false,false,false,false,false,false,false,false,false]);
+});
+test("binary package paths stay present without decoding their bytes as text",async()=>{
+ const result=await run('$render(<text>{JSON.stringify({exists:$file.exists("image/test.png"),read:$file.read("image/test.png"),missing:$file.read("constructor")})}</text>);',{files:{"image/test.png":new Uint8Array([0,255,1])}});
+ assert.equal(result.error,null);assert.deepEqual(JSON.parse(JSON.parse(result.tree).children[0]),{exists:true,read:"",missing:""});
+});
+
+test("binary file presence cannot make its bytes executable as an imported module",async()=>{
+ const result=await run('$render(<text>{String($import("binary.js"))}</text>);',{files:{"binary.js":new Uint8Array([0,255,1])}});
+ assert.equal(result.error,null);assert.ok(result.tree.includes("false"));
 });

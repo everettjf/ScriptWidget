@@ -1,0 +1,28 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.countdown",
+  "name": "Countdown",
+  "version": "2.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.3",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait",
+    "accessoryCircular",
+    "accessoryRectangular",
+    "accessoryInline"
+  ],
+  "permissions": [
+    "storage"
+  ],
+  "networkDomains": [],
+  "timeline": {
+    "dailyTimes": [
+      "00:00"
+    ]
+  }
+}

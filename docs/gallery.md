@@ -10,6 +10,12 @@ Hashes make changes reviewable and detect corrupted or substituted downloads, bu
 
 The index is cached for 15 minutes. ScriptWidget sends `If-None-Match` when GitHub provides an ETag and uses the last fully validated cache when offline. GitHub rate-limit responses are shown without silently accepting unverified data.
 
+Gallery 1.0's `minimumRuntimeVersion` is the runtime **contract** version (`1.0`), matching `widget.json.runtimeVersion`. A package's independent `widget.json.minimumRuntimeVersion` declares its minimum **API** version. The installer validates that requirement before installing; a cached index does not bypass it. The curated record templates require API 1.3 and say so in their summaries. Older apps can still read the index, but must update before installing these packages.
+
+The repository catalog includes fifteen complete record/configuration templates: countdown, repository stats, heatmap, streak, health, hydration, both weather options, mood, checklist, photos, plant care, pocket pet, launcher and wallpaper matching. These entries become available online only after their index and files are published together. These are complete copies of the native templates, including nested helpers and declared assets. Health and location need native authorization and availability; public weather/repository requests need network access or previously cached data. An offline catalog does not mean missing personal or network data will be invented.
+
+After reviewing a native template change, run `node Scripts/sync-gallery-templates.mjs --write` to copy the explicitly curated templates and regenerate exact sizes and SHA-256 hashes. Without `--write`, the command checks byte-for-byte equality and fails on missing, changed or stale files. The release gate runs this check. Adding another template requires editing the explicit curator list and reviewing the generated source/index diff; discovery alone never publishes it. The Gallery copy omits the native README because its relative documentation links target the native source tree.
+
 ## Submit a widget
 
 1. Create a Package 2.0 folder containing `widget.json` and `main.jsx` (plus any declared assets).

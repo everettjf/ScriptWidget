@@ -2,6 +2,20 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSAppleMusicUsageDescription</key>
+	<string>Show the current Music app track and playback state in your widgets. ScriptWidget does not scan or change your music library.</string>
+	<key>ScriptWidgetServiceKeychainGroup</key>
+	<string>$(AppIdentifierPrefix)com.everettjf.scriptwidget.services</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ScriptWidget reads photos and albums you select to prepare private widget thumbnails.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Allow ScriptWidget to read reminders from lists you choose and apply reminder actions you trigger.</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>Allow ScriptWidget to read reminders from lists you choose and apply reminder actions you trigger.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Allow ScriptWidget to read events for calendar widgets you choose.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>Allow ScriptWidget to read events for calendar widgets you choose.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -368,7 +382,7 @@
 		<string>_scriptwidget._tcp</string>
 	</array>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Allow ScriptWidget to read Health data for widget templates.</string>
+	<string>Display the Health data you choose to share, including steps, heart rate, sleep, activity rings and workouts, in your widgets.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Allow ScriptWidget to update Health data if you enable it.</string>
 	<key>NSLocalNetworkUsageDescription</key>

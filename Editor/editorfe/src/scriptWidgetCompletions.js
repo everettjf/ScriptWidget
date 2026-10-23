@@ -78,14 +78,16 @@ export function scriptWidgetCompletions(context) {
     };
   }
 
-  const xmlMethod = context.matchBefore(/\$xml\.[A-Za-z]*$/);
-  if (xmlMethod) {
+  const apiMethod = context.matchBefore(/\$[A-Za-z]+\.[A-Za-z]*$/);
+  if (apiMethod) {
+    const prefix = apiMethod.text.slice(0, apiMethod.text.indexOf(".") + 1);
+    const definitions = Object.entries(scriptWidgetAPI.functions).filter(([name]) => name.startsWith(prefix));
+    if (!definitions.length) return null;
     return {
-      from: xmlMethod.from + "$xml.".length,
-      options: Object.entries(scriptWidgetAPI.functions)
-        .filter(([name]) => name.startsWith("$xml."))
+      from: apiMethod.from + prefix.length,
+      options: definitions
         .map(([name, definition]) => ({
-          label: name.slice("$xml.".length),
+          label: name.slice(prefix.length),
           type: "function",
           detail: definition.returns,
           info: definition.documentation,

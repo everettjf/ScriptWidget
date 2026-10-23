@@ -1,7 +1,10 @@
 {
-  "description": "Track your daily habit streak with a visual chain.",
+  "description": "Explicit daily check-ins with a real streak, recent history, reset and undo. Earlier automatic counters remain untouched.",
   "category": "productivity",
-  "tags": ["habit","streak"],
+  "tags": [
+    "habit",
+    "streak"
+  ],
   "difficulty": "medium",
   "icon": "flame.fill",
   "featured": true

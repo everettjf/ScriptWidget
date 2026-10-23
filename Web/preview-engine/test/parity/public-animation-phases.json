@@ -1,0 +1,898 @@
+[
+  {
+    "angle" : 30,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clockSecond"
+  },
+  {
+    "angle" : 0.5,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clockMinute"
+  },
+  {
+    "angle" : 0.5,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clockMiniute"
+  },
+  {
+    "angle" : 0.041666666666666671,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clockHour"
+  },
+  {
+    "angle" : 90,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clock"
+  },
+  {
+    "angle" : -90,
+    "date" : 978307205000,
+    "interval" : -10,
+    "timezone" : "UTC",
+    "type" : "clock"
+  },
+  {
+    "angle" : 0,
+    "date" : 978307205000,
+    "interval" : 0.10000000000000001,
+    "timezone" : "UTC",
+    "type" : "clock"
+  },
+  {
+    "angle" : 8.9999999999999988e-306,
+    "date" : 978307205000,
+    "interval" : 1e+308,
+    "timezone" : "UTC",
+    "type" : "clock"
+  },
+  {
+    "angle" : 30,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clockSecond"
+  },
+  {
+    "angle" : 270.5,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clockMinute"
+  },
+  {
+    "angle" : 270.5,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clockMiniute"
+  },
+  {
+    "angle" : 172.54166666666666,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clockHour"
+  },
+  {
+    "angle" : 90,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clock"
+  },
+  {
+    "angle" : -90,
+    "date" : 978307205000,
+    "interval" : -10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clock"
+  },
+  {
+    "angle" : 0,
+    "date" : 978307205000,
+    "interval" : 0.10000000000000001,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clock"
+  },
+  {
+    "angle" : 3.7268999999999999e-302,
+    "date" : 978307205000,
+    "interval" : 1e+308,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clock"
+  },
+  {
+    "angle" : 30,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clockSecond"
+  },
+  {
+    "angle" : 0.5,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clockMinute"
+  },
+  {
+    "angle" : 0.5,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clockMiniute"
+  },
+  {
+    "angle" : 210.04166666666669,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clockHour"
+  },
+  {
+    "angle" : -270,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clock"
+  },
+  {
+    "angle" : 270,
+    "date" : 978307205000,
+    "interval" : -10,
+    "timezone" : "America\/New_York",
+    "type" : "clock"
+  },
+  {
+    "angle" : -0,
+    "date" : 978307205000,
+    "interval" : 0.10000000000000001,
+    "timezone" : "America\/New_York",
+    "type" : "clock"
+  },
+  {
+    "angle" : -3.2391000000000002e-302,
+    "date" : 978307205000,
+    "interval" : 1e+308,
+    "timezone" : "America\/New_York",
+    "type" : "clock"
+  },
+  {
+    "angle" : 30,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clockSecond"
+  },
+  {
+    "angle" : 0.5,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clockMinute"
+  },
+  {
+    "angle" : 0.5,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clockMiniute"
+  },
+  {
+    "angle" : 120.04166666666667,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clockHour"
+  },
+  {
+    "angle" : -270,
+    "date" : 978307205000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clock"
+  },
+  {
+    "angle" : 270,
+    "date" : 978307205000,
+    "interval" : -10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clock"
+  },
+  {
+    "angle" : -0,
+    "date" : 978307205000,
+    "interval" : 0.10000000000000001,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clock"
+  },
+  {
+    "angle" : -5.1830999999999996e-302,
+    "date" : 978307205000,
+    "interval" : 1e+308,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clock"
+  },
+  {
+    "angle" : 354,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clockSecond"
+  },
+  {
+    "angle" : 359.89999999999998,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clockMinute"
+  },
+  {
+    "angle" : 359.89999999999998,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clockMiniute"
+  },
+  {
+    "angle" : 209.99166666666667,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clockHour"
+  },
+  {
+    "angle" : 342.00000107288361,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clock"
+  },
+  {
+    "angle" : -342.00000107288361,
+    "date" : 1772953199000,
+    "interval" : -10,
+    "timezone" : "UTC",
+    "type" : "clock"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953199000,
+    "interval" : 0.10000000000000001,
+    "timezone" : "UTC",
+    "type" : "clock"
+  },
+  {
+    "angle" : 1.4303627982e-297,
+    "date" : 1772953199000,
+    "interval" : 1e+308,
+    "timezone" : "UTC",
+    "type" : "clock"
+  },
+  {
+    "angle" : 354,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clockSecond"
+  },
+  {
+    "angle" : 269.89999999999998,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clockMinute"
+  },
+  {
+    "angle" : 269.89999999999998,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clockMiniute"
+  },
+  {
+    "angle" : 22.491666666666667,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clockHour"
+  },
+  {
+    "angle" : 342.00000107288361,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clock"
+  },
+  {
+    "angle" : -342.00000107288361,
+    "date" : 1772953199000,
+    "interval" : -10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clock"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953199000,
+    "interval" : 0.10000000000000001,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clock"
+  },
+  {
+    "angle" : 1.4304000581999999e-297,
+    "date" : 1772953199000,
+    "interval" : 1e+308,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clock"
+  },
+  {
+    "angle" : 354,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clockSecond"
+  },
+  {
+    "angle" : 359.89999999999998,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clockMinute"
+  },
+  {
+    "angle" : 359.89999999999998,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clockMiniute"
+  },
+  {
+    "angle" : 59.991666666666667,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clockHour"
+  },
+  {
+    "angle" : 342.00000107288361,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clock"
+  },
+  {
+    "angle" : -342.00000107288361,
+    "date" : 1772953199000,
+    "interval" : -10,
+    "timezone" : "America\/New_York",
+    "type" : "clock"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953199000,
+    "interval" : 0.10000000000000001,
+    "timezone" : "America\/New_York",
+    "type" : "clock"
+  },
+  {
+    "angle" : 1.4303303981999999e-297,
+    "date" : 1772953199000,
+    "interval" : 1e+308,
+    "timezone" : "America\/New_York",
+    "type" : "clock"
+  },
+  {
+    "angle" : 354,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clockSecond"
+  },
+  {
+    "angle" : 359.89999999999998,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clockMinute"
+  },
+  {
+    "angle" : 359.89999999999998,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clockMiniute"
+  },
+  {
+    "angle" : 329.99166666666667,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clockHour"
+  },
+  {
+    "angle" : 342.00000107288361,
+    "date" : 1772953199000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clock"
+  },
+  {
+    "angle" : -342.00000107288361,
+    "date" : 1772953199000,
+    "interval" : -10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clock"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953199000,
+    "interval" : 0.10000000000000001,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clock"
+  },
+  {
+    "angle" : 1.4303109582e-297,
+    "date" : 1772953199000,
+    "interval" : 1e+308,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clock"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clockSecond"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clockMinute"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clockMiniute"
+  },
+  {
+    "angle" : 210,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clockHour"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clock"
+  },
+  {
+    "angle" : -0,
+    "date" : 1772953200000,
+    "interval" : -10,
+    "timezone" : "UTC",
+    "type" : "clock"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953200000,
+    "interval" : 0.10000000000000001,
+    "timezone" : "UTC",
+    "type" : "clock"
+  },
+  {
+    "angle" : 1.4303628e-297,
+    "date" : 1772953200000,
+    "interval" : 1e+308,
+    "timezone" : "UTC",
+    "type" : "clock"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clockSecond"
+  },
+  {
+    "angle" : 270,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clockMinute"
+  },
+  {
+    "angle" : 270,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clockMiniute"
+  },
+  {
+    "angle" : 22.5,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clockHour"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clock"
+  },
+  {
+    "angle" : -0,
+    "date" : 1772953200000,
+    "interval" : -10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clock"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953200000,
+    "interval" : 0.10000000000000001,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clock"
+  },
+  {
+    "angle" : 1.43040006e-297,
+    "date" : 1772953200000,
+    "interval" : 1e+308,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clock"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clockSecond"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clockMinute"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clockMiniute"
+  },
+  {
+    "angle" : 90,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clockHour"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clock"
+  },
+  {
+    "angle" : -0,
+    "date" : 1772953200000,
+    "interval" : -10,
+    "timezone" : "America\/New_York",
+    "type" : "clock"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953200000,
+    "interval" : 0.10000000000000001,
+    "timezone" : "America\/New_York",
+    "type" : "clock"
+  },
+  {
+    "angle" : 1.4303368800000001e-297,
+    "date" : 1772953200000,
+    "interval" : 1e+308,
+    "timezone" : "America\/New_York",
+    "type" : "clock"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clockSecond"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clockMinute"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clockMiniute"
+  },
+  {
+    "angle" : 330,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clockHour"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953200000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clock"
+  },
+  {
+    "angle" : -0,
+    "date" : 1772953200000,
+    "interval" : -10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clock"
+  },
+  {
+    "angle" : 0,
+    "date" : 1772953200000,
+    "interval" : 0.10000000000000001,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clock"
+  },
+  {
+    "angle" : 1.4303109600000001e-297,
+    "date" : 1772953200000,
+    "interval" : 1e+308,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clock"
+  },
+  {
+    "angle" : 90,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clockSecond"
+  },
+  {
+    "angle" : 181.5,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clockMinute"
+  },
+  {
+    "angle" : 181.5,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clockMiniute"
+  },
+  {
+    "angle" : 195.125,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clockHour"
+  },
+  {
+    "angle" : 270,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "UTC",
+    "type" : "clock"
+  },
+  {
+    "angle" : -270,
+    "date" : 1793514615000,
+    "interval" : -10,
+    "timezone" : "UTC",
+    "type" : "clock"
+  },
+  {
+    "angle" : 0,
+    "date" : 1793514615000,
+    "interval" : 0.10000000000000001,
+    "timezone" : "UTC",
+    "type" : "clock"
+  },
+  {
+    "angle" : 1.4673733470000001e-297,
+    "date" : 1793514615000,
+    "interval" : 1e+308,
+    "timezone" : "UTC",
+    "type" : "clock"
+  },
+  {
+    "angle" : 90,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clockSecond"
+  },
+  {
+    "angle" : 91.5,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clockMinute"
+  },
+  {
+    "angle" : 91.5,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clockMiniute"
+  },
+  {
+    "angle" : 7.625,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clockHour"
+  },
+  {
+    "angle" : 270,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clock"
+  },
+  {
+    "angle" : -270,
+    "date" : 1793514615000,
+    "interval" : -10,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clock"
+  },
+  {
+    "angle" : 0,
+    "date" : 1793514615000,
+    "interval" : 0.10000000000000001,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clock"
+  },
+  {
+    "angle" : 1.4674106070000002e-297,
+    "date" : 1793514615000,
+    "interval" : 1e+308,
+    "timezone" : "Asia\/Kathmandu",
+    "type" : "clock"
+  },
+  {
+    "angle" : 90,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clockSecond"
+  },
+  {
+    "angle" : 181.5,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clockMinute"
+  },
+  {
+    "angle" : 181.5,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clockMiniute"
+  },
+  {
+    "angle" : 45.125,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clockHour"
+  },
+  {
+    "angle" : 270,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "America\/New_York",
+    "type" : "clock"
+  },
+  {
+    "angle" : -270,
+    "date" : 1793514615000,
+    "interval" : -10,
+    "timezone" : "America\/New_York",
+    "type" : "clock"
+  },
+  {
+    "angle" : 0,
+    "date" : 1793514615000,
+    "interval" : 0.10000000000000001,
+    "timezone" : "America\/New_York",
+    "type" : "clock"
+  },
+  {
+    "angle" : 1.467340947e-297,
+    "date" : 1793514615000,
+    "interval" : 1e+308,
+    "timezone" : "America\/New_York",
+    "type" : "clock"
+  },
+  {
+    "angle" : 90,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clockSecond"
+  },
+  {
+    "angle" : 181.5,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clockMinute"
+  },
+  {
+    "angle" : 181.5,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clockMiniute"
+  },
+  {
+    "angle" : 345.125,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clockHour"
+  },
+  {
+    "angle" : 270,
+    "date" : 1793514615000,
+    "interval" : 10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clock"
+  },
+  {
+    "angle" : -270,
+    "date" : 1793514615000,
+    "interval" : -10,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clock"
+  },
+  {
+    "angle" : 0,
+    "date" : 1793514615000,
+    "interval" : 0.10000000000000001,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clock"
+  },
+  {
+    "angle" : 1.467327987e-297,
+    "date" : 1793514615000,
+    "interval" : 1e+308,
+    "timezone" : "America\/Los_Angeles",
+    "type" : "clock"
+  }
+]

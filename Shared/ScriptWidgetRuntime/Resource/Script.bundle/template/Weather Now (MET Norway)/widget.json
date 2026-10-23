@@ -1,0 +1,36 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.weather-now-met",
+  "name": "Weather Now (MET Norway)",
+  "version": "2.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.3",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait",
+    "accessoryCircular",
+    "accessoryRectangular",
+    "accessoryInline"
+  ],
+  "permissions": [
+    "location",
+    "network",
+    "storage"
+  ],
+  "networkDomains": [
+    "api.met.no"
+  ],
+  "description": "MET Norway forecasts with a saved-city fallback, response-aware cache and Celsius/Fahrenheit. Configure a city in Records & Configuration.",
+  "category": "weather",
+  "tags": [
+    "weather",
+    "location",
+    "offline"
+  ],
+  "icon": "cloud.sun.fill",
+  "preview": "preview.png"
+}

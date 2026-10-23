@@ -1,6 +1,8 @@
 # ScriptWidget Roadmap
 
-Last updated: 2026-08-09. This roadmap communicates direction, not a promise of dates. Priorities are decided by user impact, platform relevance, security, reliability, maintainability, and contributor capacity. iOS, iPadOS, and macOS are the supported product boundary; watchOS and visionOS are not currently planned.
+Last updated: 2026-10-21. This roadmap communicates direction, not a promise of dates. Priorities are decided by user impact, platform relevance, security, reliability, maintainability, and contributor capacity. iOS, iPadOS, and macOS are the supported product boundary. Native watchOS support requires a later feasibility gate; visionOS is outside the current plan.
+
+The [Widget capability expansion plan](docs/widget-capabilities-plan.md) turns research across 10 widget apps into 22 tracked capabilities. It sequences existing templates and interactions, real personal data, authenticated services and music, visual creation, shared experiences, and a gated Watch track. Each capability requires native behavior, preview mocks, compatibility, tests, and release evidence before being marked shipped.
 
 ## Product thesis
 
@@ -10,12 +12,16 @@ ScriptWidget aims to be the best open-source way for anyone to build native Appl
 
 - Native WidgetKit runtime for iPhone, iPad, and Mac, including interactive controls, Live Activity, and Dynamic Island surfaces.
 - ScriptWidget Studio on Mac with CodeMirror, completion, diagnostics, Console, multi-family preview, command shortcuts, and first-run tutorial.
-- Versioned Runtime API 1.0, Package 2.0 manifests, Skills 1.0, secure archive imports, and generated reference documentation.
+- Versioned native Runtime API 1.2, Package 2.0 manifests, Skills 1.0, secure archive imports, and generated reference documentation.
 - OpenAI-compatible generation with Keychain credentials, structured prompt context, run/diagnose/refine loops, evaluations, and reusable Skills.
-- 70 validated templates with generated preview fixtures.
+- Validated templates with generated preview fixtures, including persistent habit check-ins in source; availability in uploaded binaries is tracked separately.
 - Local build-cache fallback for iCloud-evicted scripts; physical-device acceptance for GitHub issue #6 remains open.
 - GitHub-backed Widget & Skills Gallery with strict schema/path/host/size/SHA-256 checks, ETag caching, offline fallback, transactional install/update, and seed packages.
 - Cross-platform Runtime tests and release-readiness CI.
+
+## Current release scope
+
+The next release targets M1–M5 together on `codex/release-m1-m2` (PR #62). M1/M2 foundations and templates are retained; M3 personal-data expansion, M4 authenticated services/music and M5 visual editing are in progress, not complete. The Reminders checkpoint is restored on this same branch. Watch and remote/social updates remain outside scope.
 
 ## Now — prove reliability and contributor experience
 

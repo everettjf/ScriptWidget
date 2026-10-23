@@ -14,7 +14,7 @@ class ScriptWidgetDataObject : ObservableObject {
     let scriptName: String
     let scriptParameter: String
     let widgetFamily: WidgetFamily
-    let package: ScriptWidgetPackage
+    private(set) var package: ScriptWidgetPackage = globalScriptWidgetPackage
     
     @Published var rootElement : ScriptWidgetRuntimeElement
     var runtime: ScriptWidgetRuntime?
@@ -22,14 +22,17 @@ class ScriptWidgetDataObject : ObservableObject {
     var cancellables: [AnyCancellable] = []
     
     let widgetRenderingMode: String
+    let timelineEnvironments: [String: String]
+    let isDarkMode: Bool?
 
-    init(scriptName: String, scriptParameter: String, widgetFamily: WidgetFamily, widgetRenderingMode: String = "fullColor") {
+    init(scriptName: String, scriptParameter: String, widgetFamily: WidgetFamily, widgetRenderingMode: String = "fullColor", timelineEnvironments: [String: String] = [:], isDarkMode: Bool? = nil) {
         self.scriptName = scriptName
         self.scriptParameter = scriptParameter
         self.widgetFamily = widgetFamily
         self.widgetRenderingMode = widgetRenderingMode
+        self.timelineEnvironments = timelineEnvironments
+        self.isDarkMode = isDarkMode
         
-        self.package = sharedScriptManager.getScriptPackage(packageName: self.scriptName)
         
         self.rootElement = ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: ["."])
     }
@@ -52,23 +55,19 @@ class ScriptWidgetDataObject : ObservableObject {
         
         self.systemLog("[START]")
         
-        let readResult = self.package.readMainFileResult()
-        guard let JSX = readResult.content else {
-            // Distinguish a transient iCloud download from a real failure so the
-            // widget shows a reassuring message instead of a scary error (#6).
-            let info: String
-            switch readResult.icloud {
-            case .downloading:
-                info = "Downloading from iCloud…\nThis widget will update once the script is available."
-            case .notInICloud:
-                info = "Script not found.\nOpen the app once while online to sync it."
-            default:
-                info = "Failed to open script : \(readResult.message)"
-            }
-            self.rootElement = createTextElement(info: info)
+        self.runtime = nil
+        let execution: ScriptWidgetHostExecution
+        do {
+            execution = try ScriptWidgetHostExecution.load(name: scriptName, cacheOnly: false)
+            self.package = execution.package
+        } catch {
+            let message = (error as? ScriptWidgetHostReadError)?.message
+                ?? "Widget library unavailable. Open ScriptWidget to finish opening or migrating the library."
+            self.rootElement = createTextElement(info: message)
             return
         }
-        
+        let JSX = execution.source
+
         let standardWidgetSizeString: String = {
             switch self.widgetFamily {
             case .systemLarge: return "large"
@@ -95,7 +94,7 @@ class ScriptWidgetDataObject : ObservableObject {
             "widget-size" : widgetSizeString,
             "widget-param": scriptParameter,
             "widget-rendering-mode": widgetRenderingMode,
-        ])
+        ].merging(timelineEnvironments) { _, planned in planned }, executionSnapshot: execution.snapshot, isDarkMode: isDarkMode)
         
         let result = runtime.executeJSXSyncForWidget(JSX)
         

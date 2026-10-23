@@ -13,12 +13,16 @@ const host = {
   evaluateScript(source) { new vm.Script(source, { filename: "script.js" }).runInContext(context); },
   compiledImport(relativePath) {
     const path = normalizePackagePath(relativePath);
-    if (path === null || files[path] === undefined) return null;
+    if (path === null || !Object.prototype.hasOwnProperty.call(files,path) || typeof files[path] !== "string") return null;
     return imports[path] ?? JSON.stringify({ ok: false, kind: "transformError", message: "Not a script file" });
   },
   readFile(relativePath) {
     const path = normalizePackagePath(relativePath);
-    return path === null ? null : files[path] ?? null;
+    return path === null || !Object.prototype.hasOwnProperty.call(files,path) ? null : files[path] ?? null;
+  },
+  fileExists(relativePath) {
+    const path=normalizePackagePath(relativePath);
+    return path !== null && Object.prototype.hasOwnProperty.call(files,path);
   },
   supportScript(name) { return supportScripts[name] ?? null; },
   parseXML() { return JSON.stringify({ ok: false, error: "$xml.parse is not available in the web preview yet" }); },

@@ -26,10 +26,15 @@ struct ScriptWidgetAppShortcuts: AppShortcutsProvider {
 
 @main
 struct ScriptWidgetMacApp: App {
+    @FocusedValue(\.studioEditorTarget) private var editorTarget
+
 
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate;
 
     init() {
+        #if DEBUG
+        ScriptWidgetCutoverProcessProbe.runIfRequested()
+        #endif
         ScriptWidgetPrecompiler.install()
     }
 
@@ -38,9 +43,21 @@ struct ScriptWidgetMacApp: App {
             if let outputDirectory = BatchPreviewConfiguration.outputDirectory {
                 BatchPreviewView(outputDirectory: outputDirectory)
             } else {
-                ContentView()
+                Group {
+                    if ScriptWidgetApplicationTestHost.isActive {
+                        ContentView()
+                    } else {
+                        ScriptWidgetLibraryLaunchView(model: .shared) {
+                            ContentView().task { await registerWidgetPushSubscriptions() }
+                        }
+                    }
+                }
+                    .modifier(CalendarAccessPresentationModifier())
+                    .onReceive(NotificationCenter.default.publisher(for: .NSSystemTimeZoneDidChange)
+                        .merge(with: NotificationCenter.default.publisher(for: .NSCalendarDayChanged))) { _ in
+                        WidgetCenter.shared.reloadAllTimelines()
+                    }
                     .frame(minWidth: 980, minHeight: 620)
-                    .task { await registerWidgetPushSubscriptions() }
             }
         }
         .defaultPosition(.center)
@@ -64,11 +81,10 @@ struct ScriptWidgetMacApp: App {
                 }.keyboardShortcut("g", modifiers: [.command, .shift])
 
                 Button("Save") {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                        NotificationCenter.default.post(name: EditorService.saveNotification, object: nil, userInfo: nil)
-                        NotificationCenter.default.post(name: PreviewService.updateNotification, object: nil, userInfo: nil)
-                    }
+                    guard let editorTarget else { return }
+                    EditorService.save(target: editorTarget) { _ in }
                 }.keyboardShortcut("s")
+                .disabled(editorTarget == nil)
 
                 Button("Run") {
                     NotificationCenter.default.post(name: PreviewService.updateNotification, object: nil, userInfo: nil)
@@ -247,12 +263,40 @@ private struct BatchPreviewView: View {
 }
 
 private struct ScriptWidgetMacSettingsView: View {
+    @State private var showingStorageReview = false
+    @State private var showingLibraries = false
     var body: some View {
         TabView {
             SettingAIView()
                 .tabItem {
                     Label("AI", systemImage: "sparkles")
                 }
+
+            NavigationStack { ScriptWidgetActionDirectoryView() }
+                .frame(minWidth:520,minHeight:400)
+                .tabItem { Label("Widget Actions",systemImage:"play.square") }
+
+            Form {
+                Section("Widget Library") {
+                    Button("Choose Widget Library") { showingLibraries = true }
+                }
+                Section("Calendar") { CalendarAccessSettingsView() }
+                Section("Reminders") { RemindersAccessSettingsView() }
+                Section("Photos") { PhotosAccessSettingsView() }
+                Section("Music") { ScriptWidgetMusicAccessSettingsView() }
+                if sharedScriptManager.storageContext != nil {
+                    Section("Records") { Button("Review Older Records") { showingStorageReview = true } }
+                }
+            }
+            .sheet(isPresented: $showingLibraries) { ScriptWidgetLibrarySelectionView(model: .shared).frame(minWidth: 540, minHeight: 420) }
+            .sheet(isPresented: $showingStorageReview) { ScriptWidgetStorageUpgradeView().frame(minWidth: 540, minHeight: 580) }
+            .formStyle(.grouped)
+            .frame(minWidth: 520, minHeight: 320)
+            .tabItem { Label("Data Access", systemImage: "lock.shield") }
+
+            NavigationStack { ScriptWidgetServiceAccountsView() }
+                .frame(minWidth: 540, minHeight: 480)
+                .tabItem { Label("Services", systemImage: "person.crop.circle.badge.checkmark") }
 
             Form {
                 Section("More Apps") {

@@ -33,3 +33,10 @@ test("the comparison is sensitive to environment differences", async () => {
   const withoutPrelude = await executePackageInNode({ files, timeZone: native.timeZone });
   assert.notEqual(withoutPrelude.tree, native.entries["component/date"].tree);
 });
+
+test("generic corpus prelude prevents imported helper calls from reaching live networking",async()=>{
+  const prelude=fs.readFileSync(path.join(parityDirectory,"prelude.js"),"utf8");
+  const files={"main.jsx":"$import('lib/network.js');const result=await hiddenRequest();$render(<text>{result}</text>);","lib/network.js":"async function hiddenRequest(){try{await $http.getResponse('https://api.example.com/data');return 'live';}catch{return 'offline';}}"};
+  const result=await executePackageInNode({files,prelude,fixtures:{fetch:[{url:"https://api.example.com/data",status:200,body:"live"}]}});
+  assert.equal(result.error,null);assert.ok(result.tree.includes("offline"));
+});

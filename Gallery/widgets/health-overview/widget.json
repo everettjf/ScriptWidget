@@ -1,0 +1,24 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.health-overview",
+  "name": "Health Overview",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait",
+    "accessoryCircular",
+    "accessoryRectangular",
+    "accessoryInline"
+  ],
+  "permissions": [
+    "health"
+  ],
+  "networkDomains": [],
+  "description": "Read-only sleep, real activity rings and bounded workout summaries. No readings are saved.",
+  "minimumRuntimeVersion": "1.4"
+}

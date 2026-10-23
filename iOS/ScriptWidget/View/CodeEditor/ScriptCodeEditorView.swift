@@ -28,6 +28,7 @@ struct ScriptCodeEditorNavButtonView: View {
 
 
 class ScriptCodeEditorViewDataObject : ObservableObject {
+    let editorID = UUID()
     
     @Published var scriptModel: ScriptModel
     @Published var filePath: URL
@@ -90,9 +91,9 @@ struct ScriptCodeEditorView: View {
     }
     
     var codeeditor: some View {
-        ScriptPackageEditorView(model: dataObject.scriptModel, filePath: $dataObject.filePath)
+        ScriptPackageEditorView(model: dataObject.scriptModel, filePath: $dataObject.filePath, editorID: dataObject.editorID)
             .onDisappear {
-                NotificationCenter.default.post(name: MirrorEditorService.saveNotification, object: nil)
+                MirrorEditorService.save(target: StudioEditorTarget(editorID: dataObject.editorID, documentID: dataObject.filePath.standardizedFileURL.path)) { _ in }
             }
     }
     
@@ -112,7 +113,8 @@ struct ScriptCodeEditorView: View {
                     Divider()
                     ScriptCodeStudioPanelView(
                         scriptModel: dataObject.scriptModel,
-                        filePath: $dataObject.filePath
+                        filePath: $dataObject.filePath,
+                        editorID: dataObject.editorID
                     )
                 }
             }
@@ -134,7 +136,7 @@ struct ScriptCodeEditorView: View {
             }
             .sheet(isPresented: $showCopilotView) {
                 NavigationStack {
-                    ScriptCodeCopilotView(scriptModel: dataObject.scriptModel)
+                    ScriptCodeCopilotView(scriptModel: dataObject.scriptModel, editorID: dataObject.editorID, documentID: dataObject.filePath.standardizedFileURL.path)
                         .navigationTitle("AI Copilot")
                         .toolbar {
                             ToolbarItem(placement: .confirmationAction) {
@@ -171,14 +173,17 @@ struct ScriptCodeEditorView: View {
                         let package = dataObject.scriptModel.package
                         isSaving = true
                         DispatchQueue.global(qos: .userInitiated).async {
+                            let expected=(try? ScriptWidgetLiveActivityBinding.capture(name:package.name,cacheOnly:false))?.0
                             let result = sharedScriptManager.buildScriptPackage(package: package, requireSharedContainer: true)
                             DispatchQueue.main.async {
                                 isSaving = false
                                 guard result.0 else { showAlert(result.1); return }
-                                if sharedLiveActivityManager.create(scriptName: package.name, scriptParameter: "") != nil {
+                                guard let expected,expected.ownerID==package.managedScope?.binding?.ownerID,
+                                      (try? package.managedScope?.validate(name:package.name)) != nil else { showAlert("This widget installation changed. Reopen it and try again.");return }
+                                if sharedLiveActivityManager.create(scriptName: package.name, scriptParameter: "",expectedBinding:expected) != nil {
                                     showAlert("Lock screen live activity created.")
                                 } else {
-                                    showAlert("Live Activity could not be started. Check that Live Activities are enabled and try again.")
+                                    showAlert(sharedLiveActivityManager.message ?? "Live Activity could not be started. Check device support and Settings.")
                                 }
                             }
                         }
@@ -233,7 +238,7 @@ struct ScriptCodeEditorView: View {
         guard !isSaving else { return }
         isSaving = true
         didSave = false
-        MirrorEditorService.save(documentID: dataObject.filePath.standardizedFileURL.path) { succeeded in
+        MirrorEditorService.save(target: StudioEditorTarget(editorID: dataObject.editorID, documentID: dataObject.filePath.standardizedFileURL.path)) { succeeded in
             isSaving = false
             guard succeeded else {
                 showAlert("Could not save the script. Your edits are still in the editor. Try saving again before leaving.")
@@ -250,6 +255,7 @@ struct ScriptCodeEditorView: View {
 private struct ScriptCodeStudioPanelView: View {
     let scriptModel: ScriptModel
     @Binding var filePath: URL
+    let editorID: UUID
     @State private var selectedTab = 0
 
     var body: some View {
@@ -264,7 +270,7 @@ private struct ScriptCodeStudioPanelView: View {
             if selectedTab == 0 {
                 ScriptCodePreviewView(model: scriptModel, filePath: $filePath, showsCloseButton: false)
             } else {
-                ScriptCodeCopilotView(scriptModel: scriptModel)
+                ScriptCodeCopilotView(scriptModel: scriptModel, editorID: editorID, documentID: filePath.standardizedFileURL.path)
             }
         }
         .background(StudioDesign.groupedBackground)
@@ -273,6 +279,12 @@ private struct ScriptCodeStudioPanelView: View {
 
 private struct ScriptCodeCopilotView: View {
     let scriptModel: ScriptModel
+    let editorID: UUID
+    let documentID: String?
+    @State private var proposalSnapshot: StudioDocumentSnapshot?
+    @State private var requestID = UUID()
+    @State private var isApplying = false
+    @State private var isReading = false
 
     @StateObject private var session = AIGenerateSession()
     @State private var instruction = ""
@@ -324,7 +336,7 @@ private struct ScriptCodeCopilotView: View {
                         beginCopilotRequest(fixCurrentError: true)
                     }
                 }
-                .disabled(session.isRunning || scriptModel.package.readonly)
+                .disabled(session.isRunning || isReading || isApplying || scriptModel.package.readonly)
 
                 if session.isRunning {
                     AIGenerateProgressView(session: session)
@@ -346,6 +358,8 @@ private struct ScriptCodeCopilotView: View {
         .onReceive(session.$phase) { phase in
             consume(phase: phase)
         }
+        .onChange(of: documentID) { _ in resetProposal() }
+        .onDisappear { resetProposal() }
         .onAppear { skills = AIWidgetSkillManager.shared.allSkills() }
         .onReceive(NotificationCenter.default.publisher(for: AIWidgetSkillManager.changedNotification)) { _ in
             skills = AIWidgetSkillManager.shared.allSkills()
@@ -374,13 +388,11 @@ private struct ScriptCodeCopilotView: View {
                 }
                 Spacer()
                 Button("Apply", systemImage: "checkmark") {
-                    MirrorEditorService.replaceDocument(with: proposedCode)
-                    originalCode = proposedCode
-                    proposedCode = ""
-                    statusMessage = "Applied and saved. Use Undo to restore the previous version."
+                    applyProposal()
                 }
                 .buttonStyle(.borderedProminent)
             }
+            .disabled(isApplying || proposalSnapshot == nil)
         }
     }
 
@@ -394,6 +406,33 @@ private struct ScriptCodeCopilotView: View {
         }
         .frame(maxHeight: 190)
         .background(StudioDesign.cardBackground, in: .rect(cornerRadius: StudioDesign.controlCornerRadius))
+    }
+
+    private func resetProposal() {
+        requestID = UUID()
+        proposalSnapshot = nil
+        proposedCode = ""
+        isApplying = false
+        isReading = false
+        statusMessage = nil
+        session.cancel()
+    }
+
+    private func applyProposal() {
+        guard !isApplying, let snapshot = proposalSnapshot else { return }
+        let code = proposedCode, token = requestID
+        isApplying = true
+        statusMessage = "Applying and saving…"
+        MirrorEditorService.replaceDocument(with: code, snapshot: snapshot) { result in
+            guard requestID == token else { return }
+            isApplying = false
+            statusMessage = result.message
+            if result == .saved {
+                originalCode = code
+                proposedCode = ""
+                proposalSnapshot = nil
+            }
+        }
     }
 
     private func beginCopilotRequest(fixCurrentError: Bool) {
@@ -410,24 +449,33 @@ private struct ScriptCodeCopilotView: View {
             requestText = trimmed
         }
 
-        MirrorEditorService.requestSnapshot { snapshot in
-            DispatchQueue.main.async {
-                guard let snapshot else {
-                    statusMessage = "The editor is not ready yet."
-                    return
-                }
-                originalCode = snapshot.content
-                proposedCode = ""
-                session.copilot(
-                    currentCode: snapshot.content,
-                    instruction: AIWidgetSkills.augment(requestText, selectedIDs: selectedSkillIDs),
-                    runtimeDiagnostic: diagnostic
-                )
+        guard !isReading, !isApplying, let documentID else { return }
+        let token = UUID()
+        requestID = token
+        isReading = true
+        MirrorEditorService.requestSnapshot(target: StudioEditorTarget(editorID: editorID, documentID: documentID)) { snapshot in
+            guard requestID == token else { return }
+            isReading = false
+            guard let snapshot else {
+                statusMessage = "The editor is not ready yet."
+                return
             }
+            proposalSnapshot = snapshot
+            originalCode = snapshot.content
+            proposedCode = ""
+            statusMessage = diagnostic == nil && fixCurrentError
+                ? "No current runtime error was recorded; asking AI to inspect the code."
+                : nil
+            session.copilot(
+                currentCode: snapshot.content,
+                instruction: AIWidgetSkills.augment(requestText, selectedIDs: selectedSkillIDs),
+                runtimeDiagnostic: diagnostic
+            )
         }
     }
 
     private func consume(phase: AIGenerateSession.Phase) {
+        guard proposalSnapshot != nil else { return }
         switch phase {
         case .done(let jsx):
             proposedCode = jsx

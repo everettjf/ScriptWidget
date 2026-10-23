@@ -21,10 +21,21 @@ struct ScriptWidgetTimelineProvider: AppIntentTimelineProvider {
     }
 
     func timeline(for configuration: ScriptWidgetAppIntent, in context: Context) async -> Timeline<ScriptWidgetTimelineEntry> {
+        let now = Date()
         let offset = (configuration.Frequency ?? .hours_1).refreshOffset
-        let entryDate = Calendar.current.date(byAdding: offset.component, value: offset.value, to: Date())!
-        let entry = ScriptWidgetTimelineEntry(isPreview: false, date: entryDate, configuration: configuration)
-        return Timeline(entries: [entry], policy: .atEnd)
+        let fallback = Calendar.current.date(byAdding: offset.component, value: offset.value, to: now) ?? now.addingTimeInterval(3_600)
+        let execution = try? ScriptWidgetHostExecution.load(name: configuration.Script ?? "")
+        let schedule = execution.flatMap { captured in
+            captured.package.readManifest().flatMap {
+                WidgetPackageManifestValidator.validate($0, package: captured.package, checkEntryExists: false).isValid ? $0.timeline : nil
+            }
+        }
+        let plan = ScriptWidgetTimelinePlan(schedule: schedule, now: now, fallbackReload: fallback)
+        let entries = plan.entries.map {
+            ScriptWidgetTimelineEntry(isPreview: false, date: $0.date, configuration: configuration,
+                                      timelineEnvironments: $0.environments(timeZone: plan.timeZone))
+        }
+        return Timeline(entries: entries, policy: .after(plan.reloadAfter))
     }
 }
 
@@ -48,6 +59,7 @@ struct ScriptWidgetTimelineEntry: TimelineEntry {
     let isPreview: Bool
     let date: Date
     let configuration: ScriptWidgetAppIntent
+    var timelineEnvironments: [String: String] = [:]
 }
 
 class ScriptWidgetDataObject : ObservableObject {
@@ -55,7 +67,9 @@ class ScriptWidgetDataObject : ObservableObject {
     let scriptParameter: String
     let widgetFamily: WidgetFamily
     let widgetRenderingMode: String
-    let package: ScriptWidgetPackage
+    let timelineEnvironments: [String: String]
+    let isDarkMode: Bool?
+    private(set) var package: ScriptWidgetPackage = globalScriptWidgetPackage
     
     @Published var rootElement : ScriptWidgetRuntimeElement
     
@@ -63,13 +77,14 @@ class ScriptWidgetDataObject : ObservableObject {
     
     var cancellables: [AnyCancellable] = []
     
-    init(scriptName: String, scriptParameter: String, widgetFamily: WidgetFamily, widgetRenderingMode: String = "fullColor") {
+    init(scriptName: String, scriptParameter: String, widgetFamily: WidgetFamily, widgetRenderingMode: String = "fullColor", timelineEnvironments: [String: String] = [:], isDarkMode: Bool? = nil) {
         self.scriptName = scriptName
         self.scriptParameter = scriptParameter
         self.widgetFamily = widgetFamily
         self.widgetRenderingMode = widgetRenderingMode
+        self.timelineEnvironments = timelineEnvironments
+        self.isDarkMode = isDarkMode
         self.runtime = nil
-        self.package = sharedScriptManager.getScriptPackage(packageName: self.scriptName)
         
         self.rootElement = ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: ["."])
     }
@@ -92,22 +107,19 @@ class ScriptWidgetDataObject : ObservableObject {
         
         self.systemLog("[START]")
         
-        let readResult = self.package.readMainFileResult()
-        guard let JSX = readResult.content else {
-            // Distinguish a transient iCloud download from a real failure (#6).
-            let info: String
-            switch readResult.icloud {
-            case .downloading:
-                info = "Downloading from iCloud…\nThis widget will update once the script is available."
-            case .notInICloud:
-                info = "Script not found.\nOpen the app once while online to sync it."
-            default:
-                info = "Failed open script : \(readResult.message)"
-            }
-            self.rootElement = createTextElement(info: info)
+        self.runtime = nil
+        let execution: ScriptWidgetHostExecution
+        do {
+            execution = try ScriptWidgetHostExecution.load(name: scriptName, cacheOnly: false)
+            self.package = execution.package
+        } catch {
+            let message = (error as? ScriptWidgetHostReadError)?.message
+                ?? "Widget library unavailable. Open ScriptWidget to finish opening or migrating the library."
+            self.rootElement = createTextElement(info: message)
             return
         }
-        
+        let JSX = execution.source
+
         let standardWidgetSizeString: String
         switch self.widgetFamily {
         case .systemLarge: standardWidgetSizeString = "large"
@@ -130,7 +142,7 @@ class ScriptWidgetDataObject : ObservableObject {
             "widget-size" : widgetSizeString,
             "widget-param": self.scriptParameter,
             "widget-rendering-mode": widgetRenderingMode,
-        ])
+        ].merging(timelineEnvironments) { _, planned in planned }, executionSnapshot: execution.snapshot, isDarkMode: isDarkMode)
         
         let result = runtime.executeJSXSyncForWidget(JSX)
         
@@ -161,13 +173,15 @@ struct ScriptWidgetWidgetElementRootView: View {
     private let data: ScriptWidgetDataObject
     let widgetFamily: WidgetFamily
 
-    init(widgetFamily: WidgetFamily, renderingMode: WidgetRenderingMode, entry: ScriptWidgetTimelineEntry) {
+    init(widgetFamily: WidgetFamily, renderingMode: WidgetRenderingMode, colorScheme: ColorScheme, entry: ScriptWidgetTimelineEntry) {
         self.widgetFamily = widgetFamily
         let data = ScriptWidgetDataObject(
             scriptName: entry.configuration.Script ?? "",
             scriptParameter: entry.configuration.Parameter ?? "",
             widgetFamily: self.widgetFamily,
-            widgetRenderingMode: renderingMode == .accented ? "accented" : (renderingMode == .vibrant ? "vibrant" : "fullColor")
+            widgetRenderingMode: renderingMode == .accented ? "accented" : (renderingMode == .vibrant ? "vibrant" : "fullColor"),
+            timelineEnvironments: entry.timelineEnvironments,
+            isDarkMode: colorScheme == .dark
         )
         data.runScriptSync()
         self.data = data
@@ -192,6 +206,7 @@ struct ScriptWidgetWidgetElementRootView: View {
 
 struct ScriptWidgetMacWidgetEntryView : View {
     @Environment(\.widgetFamily) var widgetFamily
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(\.widgetRenderingMode) private var widgetRenderingMode
     var entry: ScriptWidgetTimelineEntry
     
@@ -203,7 +218,7 @@ struct ScriptWidgetMacWidgetEntryView : View {
             ScriptWidgetPlaceholderView()
                 .containerBackground(.background, for: .widget)
         } else {
-            ScriptWidgetWidgetElementRootView(widgetFamily: self.widgetFamily, renderingMode: widgetRenderingMode, entry: self.entry)
+            ScriptWidgetWidgetElementRootView(widgetFamily: self.widgetFamily, renderingMode: widgetRenderingMode, colorScheme: colorScheme, entry: self.entry)
         }
     }
 }

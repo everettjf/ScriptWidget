@@ -1,1 +1,11 @@
-{"description":"A friendly reminder for the next plant-watering day.","category":"health","tags":["plants","watering","home"],"difficulty":"beginner","icon":"leaf.fill"}
+{
+  "description": "Local explicit daily care with saved history, undo and original JSX artwork.",
+  "category": "fun",
+  "tags": [
+    "local",
+    "care",
+    "interactive"
+  ],
+  "difficulty": "beginner",
+  "icon": "leaf"
+}

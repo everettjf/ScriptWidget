@@ -18,7 +18,21 @@ import JavaScriptCore
 }
 
 @objc public class ScriptWidgetRuntimeElement: NSObject, ScriptWidgetRuntimeElementExports, Identifiable {
-    dynamic var tag: JSValue
+    // A JSExport object must not strongly retain its JSValue: that roots the
+    // VM which owns the exported object. Native string tags remain available
+    // to the renderer after execution without keeping the VM alive.
+    private var managedTag: JSManagedValue?
+    private weak var tagVirtualMachine: JSVirtualMachine?
+    dynamic var tag: JSValue {
+        get { managedTag?.value ?? JSValue() }
+        set {
+            if let managedTag { tagVirtualMachine?.removeManagedReference(managedTag, withOwner: self) }
+            tagString = newValue.isString ? newValue.toString() : nil
+            managedTag = JSManagedValue(value: newValue)
+            tagVirtualMachine = newValue.context?.virtualMachine
+            if let managedTag { tagVirtualMachine?.addManagedReference(managedTag, withOwner: self) }
+        }
+    }
     dynamic var props: [AnyHashable:Any]? {
         didSet { parsedProps.removeAll(keepingCapacity: true) }
     }
@@ -30,17 +44,21 @@ import JavaScriptCore
     private var parsedProps: [String: Any] = [:]
 
     required init(tag: JSValue, props: [AnyHashable:Any]?, children: [Any]?) {
-        self.tag = tag
         self.props = props
         self.children = children
         self.tagString = nil
+        super.init()
+        self.tag = tag
     }
     
     init(tagString: String, props: [AnyHashable:Any]?, children: [Any]?) {
-        self.tag = JSValue()
         self.props = props
         self.children = children
         self.tagString = tagString
+    }
+
+    deinit {
+        if let managedTag { tagVirtualMachine?.removeManagedReference(managedTag, withOwner: self) }
     }
     
     public func getProps() -> [AnyHashable:Any] {
@@ -58,10 +76,9 @@ import JavaScriptCore
     }
     
     public func tagAsString() -> String? {
-        if self.tag.isString {
-            return self.tag.toString()
-        }
-        return self.tagString
+        if let tagString { return tagString }
+        guard let value = managedTag?.value, value.isString else { return nil }
+        return value.toString()
     }
     
     public func childrenAsElements() -> [ScriptWidgetRuntimeElement] {

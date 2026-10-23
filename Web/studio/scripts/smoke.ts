@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { launchChrome, serveDirectory, type ChromePage } from "../../preview-engine/scripts/lib/chrome.mjs";
+import { launchChrome, serveDirectory, clickReady, type ChromePage } from "../../preview-engine/scripts/lib/chrome.mjs";
 
 const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../dist");
 const fixture = fs.readFileSync(path.resolve(dist, "../../preview-engine/test/fixtures/web-export.swt"));
@@ -15,6 +15,7 @@ const server = await serveDirectory(siteRoot ?? dist, { "/__fixture.swt": { type
 const studioURL = `${server.origin}${siteRoot ? "/studio/index.html" : "/index.html"}`;
 const exceptions = (page: ChromePage) => page.consoleMessages.filter((line) => line.startsWith("exception") || line.startsWith("error"));
 let failed = false;
+
 
 async function desktop(): Promise<void> {
   const chrome = await launchChrome({ width: 1400, height: 900, scale: 1 });
@@ -58,6 +59,11 @@ async function desktop(): Promise<void> {
     })()`);
     await page.waitFor(`document.querySelectorAll('#project-list li').length === ${projectsBefore + 1} && !document.getElementById('drop-overlay')`, 20000);
     console.log("dropped .swt imports");
+    // Binary assets stay outside the runtime realm, but their paths remain queryable.
+    await page.evaluate("document.querySelector('.cm-content').focus(); document.execCommand('selectAll')");
+    await page.call("Input.insertText", { text: '$render(<text>{"Binary files: " + $file.exists("image/dot.png") + ":" + $file.exists("image")}</text>);' });
+    await page.waitFor("document.querySelector('.sw-widget')?.textContent.includes('Binary files: true:false')", 20000);
+    console.log("binary file presence: sandbox sees PNG paths, not directories");
     // Editing the source updates the preview.
     await page.evaluate("document.querySelector('.cm-content').focus(); document.execCommand('selectAll')");
     await page.call("Input.insertText", { text: "$render(<text>Edited in the smoke test</text>)" });
@@ -110,10 +116,179 @@ async function blockedSandbox(): Promise<void> {
   }
 }
 
+async function scheduledTheme(): Promise<void> {
+  const chrome = await launchChrome({ width: 1400, height: 1000, scale: 1 });
+  try {
+    const page = await chrome.newPage();
+    await page.goto(studioURL);
+    await page.waitFor("!!document.querySelector('.sw-widget')", 20000);
+    await page.evaluate("document.getElementById('open-templates').click()");
+    await page.waitFor("document.querySelectorAll('.template-card').length > 50");
+    await page.evaluate("[...document.querySelectorAll('.template-card')].find((card) => card.textContent.includes('Day Rhythm')).click()");
+    await page.waitFor("!!document.getElementById('template-copy')");
+    await page.evaluate("document.getElementById('template-copy').click()");
+    await page.waitFor("!document.getElementById('template-detail') && !!document.getElementById('timeline-date')", 20000);
+    const choose = async (value: string) => page.evaluate(`(() => {
+      const input = document.getElementById('timeline-date');
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(value)});
+      input.dispatchEvent(new Event('input',{bubbles:true}));
+      input.dispatchEvent(new Event('change',{bubbles:true}));
+    })()`);
+    await choose("2026-01-01T13:00");
+    await page.waitFor("document.querySelector('.sw-widget')?.textContent.includes('Afternoon flow')", 20000);
+    if (process.env.SCRIPTWIDGET_TIMELINE_SCREENSHOT) fs.writeFileSync(process.env.SCRIPTWIDGET_TIMELINE_SCREENSHOT, await page.screenshot());
+    await page.evaluate("[...document.getElementById('timeline-date').parentElement.parentElement.querySelectorAll('button')].find((button) => button.textContent !== 'Now').click()");
+    await page.waitFor("document.getElementById('timeline-date').value === '2026-01-01T18:00' && document.querySelector('.sw-widget')?.textContent.includes('Evening reset')", 20000);
+    await choose("2026-01-01T23:00");
+    await page.waitFor("document.querySelector('.sw-widget')?.textContent.includes('Quiet hours')", 20000);
+    await page.evaluate("[...document.querySelectorAll('button')].find((button) => button.textContent === 'Now').click()");
+    await page.waitFor("document.getElementById('timeline-date').value === '' && document.getElementById('preview-status').textContent.startsWith('Web fast preview')", 20000);
+    if (exceptions(page).length) throw new Error(exceptions(page).join("\n"));
+    console.log("timeline: fixed afternoon, next transition, night and Now states render through preview controls");
+  } finally { await chrome.close(); }
+}
+
+async function calendarScope(): Promise<void> {
+  const chrome = await launchChrome({ width: 1400, height: 1000, scale: 1 });
+  try {
+    const page = await chrome.newPage();
+    await page.goto(studioURL);
+    await page.waitFor("!!document.querySelector('.sw-widget')", 20000);
+    await page.evaluate("document.getElementById('open-templates').click()");
+    await page.waitFor("document.querySelectorAll('.template-card').length > 50");
+    await page.evaluate("[...document.querySelectorAll('.template-card')].find((card) => card.textContent.includes('Calendar Agenda')).click()");
+    await page.waitFor("!!document.getElementById('template-copy')");
+    await page.evaluate("document.getElementById('template-copy').click()");
+    await page.waitFor("!document.getElementById('template-detail') && document.querySelector('.sw-widget')?.textContent.includes('Read and recharge')", 20000);
+    await clickReady(page, "[...document.querySelectorAll('[role=tab]')].find(tab=>tab.textContent==='Mock Data')");
+    await page.waitFor("document.querySelector('[role=tab][aria-selected=true]')?.textContent === 'Mock Data' && document.getElementById('mock-data-panel').offsetParent !== null");
+    await page.waitFor("!!document.getElementById('mock-group')");
+    await page.evaluate("(() => {const input=document.getElementById('mock-group');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,'calendar');input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    await page.waitFor("!!document.getElementById('mock-calendar-selection')");
+    const choose = async (value: string) => {
+      await page.evaluate(`(() => {const input=document.getElementById('mock-calendar-selection');Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}));})()`);
+      await page.evaluate("[...document.getElementById('mock-data-panel').querySelectorAll('button')].find((button) => button.textContent === 'Apply source selection').click()");
+    };
+    await choose("[]");
+    await page.waitFor("document.querySelector('.sw-widget')?.textContent.includes('Choose Calendar sources')", 20000);
+    if (!(await page.evaluate<boolean>("document.querySelector('[role=tab][aria-selected=true]')?.textContent === 'Mock Data'"))) throw new Error("Calendar mock editing must remain on its visible tab");
+    if (process.env.SCRIPTWIDGET_CALENDAR_SCOPE_SCREENSHOT) {
+      await page.evaluate("document.getElementById('mock-calendar-selection').scrollIntoView({block:'center'})");
+      fs.writeFileSync(process.env.SCRIPTWIDGET_CALENDAR_SCOPE_SCREENSHOT, await page.screenshot());
+    }
+    await choose('["sample.personal"]');
+    await page.waitFor("document.querySelector('.sw-widget')?.textContent.includes('Read and recharge')", 20000);
+    await choose('["sample.personal","sample.personal"]');
+    await page.waitFor("document.getElementById('mock-data-panel').textContent.includes('Calendar selection must')");
+    const preserved = await page.evaluate<boolean>("document.getElementById('mock-calendar-selection').value === '[\"sample.personal\",\"sample.personal\"]' && document.querySelector('.sw-widget').textContent.includes('Read and recharge')");
+    if (!preserved) throw new Error("Invalid Calendar scope must preserve the draft and previous valid preview");
+    if (exceptions(page).length) throw new Error(exceptions(page).join("\n"));
+    console.log("calendar: source scope blocks healthy mocks, restores a valid subset and preserves invalid drafts");
+  } finally { await chrome.close(); }
+}
+
+async function connectedServices(): Promise<void> {
+  const chrome = await launchChrome({width:1400,height:1000,scale:1});
+  try {
+    const page = await chrome.newPage();
+    await page.call("Emulation.setEmulatedMedia",{features:[{name:"prefers-color-scheme",value:"light"}]});
+    const openMocks = async () => {
+      await clickReady(page, "[...document.querySelectorAll('[role=tab]')].find(tab=>tab.textContent==='Mock Data')");
+      await page.waitFor("document.querySelector('[role=tab][aria-selected=true]')?.textContent==='Mock Data' && document.getElementById('mock-data-panel').offsetParent!==null");
+    };
+    await page.goto(studioURL);
+    await page.waitFor("!!document.querySelector('.sw-widget')",20000);
+    await clickReady(page, "document.getElementById('open-templates')");
+    await page.waitFor("[...document.querySelectorAll('.template-card')].some(card=>card.textContent.includes('GitHub Profile'))");
+    await page.evaluate("[...document.querySelectorAll('.template-card')].find(card=>card.textContent.includes('GitHub Profile')).click()");
+    await page.waitFor("!!document.getElementById('template-copy')");
+    await page.evaluate("document.getElementById('template-copy').click()");
+    await page.waitFor("document.getElementById('project-name').value==='GitHub Profile' && document.querySelector('.sw-widget')?.textContent.includes('Mona')",20000);
+    await openMocks();
+    await page.waitFor("!!document.getElementById('mock-group')");
+    await page.evaluate("(() => {const input=document.getElementById('mock-group');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,'services');input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    await page.waitFor("document.getElementById('mock-data-panel').textContent.includes('GitHub sample data only')");
+    await page.evaluate("(() => {const input=document.getElementById('mock-api');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,'$services.profile');input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    await page.waitFor("!!document.getElementById('mock-result.publicRepositories')");
+    await page.evaluate("(() => {const input=document.getElementById('mock-result.publicRepositories');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'47');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
+    await page.waitFor("document.querySelector('.sw-widget')?.textContent.includes('47')",20000);
+    const scenario = async (label: string, expected: string) => {
+      await page.evaluate(`[...document.getElementById('mock-data-panel').querySelectorAll('button')].find(button=>button.textContent===${JSON.stringify(label)}).click()`);
+      await page.waitFor(`document.querySelector('.sw-widget')?.textContent.includes(${JSON.stringify(expected)})`,20000);
+      if (!(await page.evaluate<boolean>("document.querySelector('[role=tab][aria-selected=true]')?.textContent==='Mock Data'"))) throw new Error("Service editing must keep its visible Mock Data panel");
+    };
+    await scenario("Disconnected","Connect GitHub");
+    await scenario("No widget access","Allow this widget");
+    await scenario("Private count not shared","Private repository count not shared");
+    await scenario("Rate limited","Try again later");
+    await scenario("Offline","Unable to refresh");
+    await page.waitFor("document.getElementById('save-state').textContent==='Saved in this browser'");
+    await page.goto(studioURL);
+    await page.waitFor("document.getElementById('project-name').value==='GitHub Profile' && document.querySelector('.sw-widget')?.textContent.includes('Unable to refresh')",20000);
+    await openMocks();
+    await page.waitFor("!!document.getElementById('mock-group')");
+    await page.evaluate("(() => {const input=document.getElementById('mock-group');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,'services');input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    await scenario("Sample success","Mona");
+    await page.evaluate("(() => {const input=document.getElementById('mock-api');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,'$services.profile');input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+    await page.waitFor("document.getElementById('mock-result.publicRepositories')?.offsetParent!==null && document.getElementById('save-state').textContent==='Saved in this browser'");
+    if (process.env.SCRIPTWIDGET_SERVICES_SCREENSHOT) {
+      await page.evaluate("document.getElementById('mock-result.publicRepositories').scrollIntoView({block:'end'})");
+      fs.writeFileSync(process.env.SCRIPTWIDGET_SERVICES_SCREENSHOT,await page.screenshot());
+    }
+    if (exceptions(page).length) throw new Error(exceptions(page).join("\n"));
+    console.log("services: healthy GitHub template, editable counts, revoked/missing/private/limited/offline states and persisted mocks passed");
+  } finally { await chrome.close(); }
+}
+
+async function musicPlayback(): Promise<void> {
+  const chrome = await launchChrome({width:1400,height:1000,scale:1});
+  try {
+    const page = await chrome.newPage();
+    // Make the closing Gallery overlay outlive its fast widget preview so the
+    // real pointer test consistently exercises the transition, including CI.
+    await page.call("Animation.enable");
+    await page.call("Animation.setPlaybackRate",{playbackRate:0.1});
+    await page.call("Emulation.setEmulatedMedia",{features:[{name:"prefers-color-scheme",value:"light"}]});
+    const click = (expression: string) => clickReady(page, expression);
+    const select = async (id: string, value: string) => page.evaluate(`(() => {const input=document.getElementById(${JSON.stringify(id)});Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+    await page.goto(studioURL);
+    await page.waitFor("!!document.querySelector('.sw-widget')",20000);
+    await click("document.getElementById('open-templates')");
+    await page.waitFor("[...document.querySelectorAll('.template-card')].some(card=>card.textContent.includes('Music Playback'))");
+    await page.evaluate("[...document.querySelectorAll('.template-card')].find(card=>card.textContent.includes('Music Playback')).click()");
+    await page.waitFor("!!document.getElementById('template-copy')");
+    await page.evaluate("document.getElementById('template-copy').click()");
+    await page.waitFor("document.getElementById('project-name').value==='Music Playback' && document.querySelector('.sw-widget')?.textContent.includes('Morning Light')",20000);
+    await click("[...document.querySelectorAll('[role=tab]')].find(tab=>tab.textContent==='Mock Data')");
+    await page.waitFor("document.querySelector('[role=tab][aria-selected=true]')?.textContent==='Mock Data' && document.getElementById('mock-data-panel').offsetParent!==null");
+    await select("mock-group","music"); await select("mock-api","$music.current");
+    await page.waitFor("!!document.getElementById('mock-result.title')");
+    await page.evaluate("(() => {const input=document.getElementById('mock-result.title');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'Evening Walk');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
+    await page.waitFor("document.querySelector('.sw-widget')?.textContent.includes('Evening Walk')",20000);
+    for (const [label,expected] of [["Paused","Paused"],["Stopped","No current track"],["Track details withheld","Track details unavailable"],["Permission denied","Allow Music access"],["Unavailable","Music unavailable"],["Playing","Morning Light"]]) {
+      await page.evaluate(`[...document.getElementById('mock-data-panel').querySelectorAll('button')].find(button=>button.textContent===${JSON.stringify(label)}).click()`);
+      await page.waitFor(`document.querySelector('.sw-widget')?.textContent.includes(${JSON.stringify(expected)})`,20000);
+    }
+    await page.waitFor("document.getElementById('save-state').textContent==='Saved in this browser'");
+    if (process.env.SCRIPTWIDGET_MUSIC_SCREENSHOT) {
+      await page.evaluate("document.getElementById('mock-result.title').scrollIntoView({block:'end'})");
+      fs.writeFileSync(process.env.SCRIPTWIDGET_MUSIC_SCREENSHOT,await page.screenshot());
+    }
+    await page.goto(studioURL);
+    await page.waitFor("document.getElementById('project-name').value==='Music Playback' && document.querySelector('.sw-widget')?.textContent.includes('Morning Light')",20000);
+    if (exceptions(page).length) throw new Error(exceptions(page).join("\n"));
+    console.log("music: editable track, six playback/permission states and persisted mocks passed");
+  } finally { await chrome.close(); }
+}
+
 try {
   await desktop();
   await phone();
   await blockedSandbox();
+  await scheduledTheme();
+  await calendarScope();
+  await connectedServices();
+  await musicPlayback();
 } catch (error) {
   console.error((error as Error).message);
   failed = true;

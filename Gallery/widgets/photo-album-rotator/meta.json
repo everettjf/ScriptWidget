@@ -1,0 +1,12 @@
+{
+  "name": "Photo Album Rotator",
+  "description": "Rotate bounded snapshots from photos and albums explicitly selected in Settings.",
+  "category": "fun",
+  "tags": [
+    "photos",
+    "album",
+    "rotation"
+  ],
+  "difficulty": "beginner",
+  "icon": "photo.on.rectangle"
+}

@@ -1,0 +1,93 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { launchChrome, serveDirectory, clickReady } from "../../preview-engine/scripts/lib/chrome.mjs";
+import { importPackage } from "../../preview-engine/src/package/index.js";
+
+const dist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../dist");
+const server = await serveDirectory(dist), chrome = await launchChrome({ width: 1440, height: 1100, scale: 1 });
+try {
+  const page = await chrome.newPage();
+  // Exercise real pointer operations while dialogs take longer to settle.
+  await page.call("Animation.enable");
+  await page.call("Animation.setPlaybackRate", { playbackRate: 0.25 });
+  await page.call("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "light" }] });
+  await page.goto(`${server.origin}/index.html`); await page.waitFor("!!document.querySelector('.sw-widget')", 20000);
+  const click = (expression: string) => clickReady(page, expression);
+  const id = (value: string) => `document.getElementById(${JSON.stringify(value)})`;
+  const set = async (name: string, value: string) => page.evaluate(`(()=>{const input=${id(name)};Object.getOwnPropertyDescriptor(${name === "wallpaper-appearance" || name === "wallpaper-content" ? "HTMLSelectElement" : "HTMLInputElement"}.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('${name === "wallpaper-appearance" || name === "wallpaper-content" ? "change" : "input"}',{bubbles:true}));})()`);
+  const upload = async () => page.evaluate(`(async()=>{const canvas=document.createElement('canvas');canvas.width=1179;canvas.height=2556;const c=canvas.getContext('2d'),gradient=c.createLinearGradient(0,0,1179,2556);gradient.addColorStop(0,'#f8dcc7');gradient.addColorStop(0.55,'#d9dfc7');gradient.addColorStop(1,'#6b9b83');c.fillStyle=gradient;c.fillRect(0,0,1179,2556);c.fillStyle='#eebfa2';c.beginPath();c.arc(850,650,230,0,Math.PI*2);c.fill();c.fillStyle='#47765f';c.beginPath();c.moveTo(0,1800);c.bezierCurveTo(300,1200,800,2000,1179,1500);c.lineTo(1179,2556);c.lineTo(0,2556);c.fill();const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));const data=new DataTransfer();data.items.add(new File([blob],'private-location-wallpaper.png',{type:'image/png'}));const input=document.getElementById('wallpaper-image-input');input.files=data.files;input.dispatchEvent(new Event('change',{bubbles:true}));})()`);
+  await click(id("open-templates"));
+  await page.waitFor("!![...document.querySelectorAll('.template-card')].find(card=>card.textContent.includes('Wallpaper Match')&&card.querySelector('span.text-primary')?.textContent==='Gallery')");
+  await click("[...document.querySelectorAll('.template-card')].find(card=>card.textContent.includes('Wallpaper Match')&&card.querySelector('span.text-primary')?.textContent==='Gallery')");
+  await page.waitFor("!!document.getElementById('template-copy')"); await click(id("template-copy"));
+  await page.waitFor("!!document.getElementById('open-wallpaper') && !document.querySelector('[role=dialog]')");
+  const source = await page.evaluate<string>("document.querySelector('.cm-content').textContent");
+  await click(id("open-wallpaper")); await page.waitFor("!!document.getElementById('wallpaper-image-input')"); await upload();
+  await page.waitFor("!!document.getElementById('wallpaper-selection')&&!document.getElementById('wallpaper-add-crop').disabled");
+  await page.waitFor("!document.getElementById('wallpaper-dialog').getAnimations({subtree:true}).some(animation=>animation.playState==='running')");
+  const before = await page.evaluate<string>("document.getElementById('wallpaper-x').value");
+  const start = await page.evaluate<{ x: number; y: number }>("(()=>{const r=document.getElementById('wallpaper-selection').getBoundingClientRect();return{x:r.x+r.width/2,y:r.y+r.height/2}})()");
+  await page.call("Input.dispatchMouseEvent", { type: "mousePressed", ...start, button: "left", clickCount: 1 });
+  await page.call("Input.dispatchMouseEvent", { type: "mouseMoved", x: start.x + 10, y: start.y + 10, button: "left", buttons: 1 });
+  await page.call("Input.dispatchMouseEvent", { type: "mouseReleased", x: start.x + 10, y: start.y + 10, button: "left", clickCount: 1 });
+  await page.waitFor(`document.getElementById('wallpaper-x').value!==${JSON.stringify(before)}`);
+  assert.notEqual(await page.evaluate("document.getElementById('wallpaper-x').value"), before);
+  for (const [key, value] of Object.entries({ x: "10", y: "400", width: "900", height: "420", title: "Quiet space", caption: "A little room to breathe" })) await set(`wallpaper-${key}`, value);
+  await set("wallpaper-content", "text"); await click(id("wallpaper-add-crop"));
+  await page.waitFor("document.querySelector('[aria-label=\"Saved crop selections\"]').textContent.includes('Medium · light · Top left')");
+  // Replacing the same slot keeps both PNGs until the unused one is explicitly deleted.
+  await set("wallpaper-x", "100"); await click(id("wallpaper-add-crop"));
+  await page.waitFor("document.getElementById('wallpaper-dialog').textContent.includes('2/12 crop files')");
+  await page.waitFor("!document.querySelector('[data-sonner-toast][data-visible=true]')", 10000);
+  assert.equal(await page.evaluate("(()=>{const title=document.querySelector('#wallpaper-dialog [data-slot=dialog-title]'),r=title.getBoundingClientRect();return title.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))})()"), true);
+  if (process.env.SCRIPTWIDGET_WALLPAPER_WEB) fs.writeFileSync(process.env.SCRIPTWIDGET_WALLPAPER_WEB, await page.screenshot());
+  await click(id("wallpaper-save")); await page.waitFor("!document.getElementById('wallpaper-dialog')");
+  await page.waitFor("!!document.querySelector('.sw-widget img')&&document.querySelector('.sw-widget img').naturalWidth===900", 20000);
+  assert.equal(await page.evaluate("document.querySelector('.cm-content').textContent"), source);
+  assert.equal(await page.evaluate("document.querySelector('.sw-widget').textContent.includes('Quiet space')"), true);
+  await page.waitFor("document.getElementById('save-state').textContent==='Saved in this browser'");
+  const persisted = await page.evaluate<{ raw: string; files: string[]; storage: unknown }>(`(async()=>{const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('scriptwidget-studio',1);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)});const projects=await new Promise(resolve=>{const r=db.transaction('projects').objectStore('projects').getAll();r.onsuccess=()=>resolve(r.result)});db.close();const p=projects.find(p=>p.files['wallpaper.json']);return{raw:p.files['wallpaper.json'],files:Object.keys(p.files),storage:JSON.parse(p.fixtures).storage}})()`);
+  assert.equal(JSON.parse(persisted.raw).values.backgrounds.length, 1);
+  assert.equal(persisted.files.filter((file) => file.startsWith("image/background-")).length, 2);
+  assert.ok(!persisted.files.some((file) => file.includes("private-location")));
+  assert.deepEqual(persisted.storage, {});
+  // Capture the actual Export button's Blob, then validate its archive contents.
+  await page.evaluate("window.__objectURL=URL.createObjectURL;URL.createObjectURL=(blob)=>{window.__exportBlob=blob;return window.__objectURL.call(URL,blob)}");
+  await click(id("export-package"));
+  await page.waitFor("window.__exportBlob?.type==='application/zip'");
+  const exported = await page.evaluate<string>("(async()=>{const bytes=new Uint8Array(await window.__exportBlob.arrayBuffer());let binary='';for(const byte of bytes)binary+=String.fromCharCode(byte);return btoa(binary)})()");
+  await page.evaluate("URL.createObjectURL=window.__objectURL");
+  const archive = Buffer.from(exported, "base64"), imported = await importPackage(archive);
+  if (imported.error !== undefined) throw new Error(imported.error);
+  assert.equal(imported.files["wallpaper.json"], persisted.raw);
+  assert.equal(Object.keys(imported.files).filter((file) => file.startsWith("image/background-")).length, 2);
+  assert.ok(!Object.keys(imported.files).some((file) => file.includes("private-location")));
+  if (process.env.SCRIPTWIDGET_WALLPAPER_PACKAGE) fs.writeFileSync(process.env.SCRIPTWIDGET_WALLPAPER_PACKAGE, archive);
+  await page.goto(`${server.origin}/index.html`); await page.waitFor("!!document.querySelector('.sw-widget img')", 20000);
+  await click(id("open-wallpaper"));
+  const unused = "[...document.querySelectorAll('#wallpaper-dialog button')].find(b=>b.textContent==='Delete unused crop')";
+  await page.waitFor(`!!(${unused})`); await click(unused); await click(id("wallpaper-save"));
+  await page.waitFor("!document.getElementById('wallpaper-dialog')");
+  await click(id("open-wallpaper")); await page.waitFor("!!document.getElementById('wallpaper-image-input')");
+  assert.equal(await page.evaluate("document.getElementById('wallpaper-title').value"), "Quiet space");
+  assert.equal(await page.evaluate("document.getElementById('wallpaper-dialog').textContent.includes('1/12 crop files')"), true);
+  await page.call("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
+  assert.equal(await page.evaluate("document.documentElement.scrollWidth<=innerWidth+1 && document.getElementById('wallpaper-dialog').scrollWidth<=document.getElementById('wallpaper-dialog').clientWidth+1"), true);
+  // An external file edit invalidates the reviewed snapshot rather than overwriting it.
+  await page.evaluate("(async()=>{const c=document.createElement('canvas');c.width=2;c.height=2;const blob=await new Promise(resolve=>c.toBlob(resolve));const data=new DataTransfer();data.items.add(new File([blob],'external-change.png',{type:'image/png'}));const input=document.getElementById('image-input');input.files=data.files;input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+  await page.waitFor("document.getElementById('file-list').textContent.includes('image/external-change.png')");
+  await click(id("wallpaper-save"));
+  await page.waitFor("document.getElementById('wallpaper-problem')?.textContent.includes('project changed')");
+  // Hold a real decode across Cancel + a new project. Its late result is discarded.
+  await page.evaluate("window.__decode=createImageBitmap;window.__requested=false;window.createImageBitmap=(...args)=>new Promise((resolve,reject)=>{window.__requested=true;window.__resume=()=>window.__decode(...args).then(resolve,reject)})");
+  await upload(); await page.waitFor("window.__requested===true");
+  await click("[...document.querySelectorAll('#wallpaper-dialog button')].find(b=>b.textContent==='Cancel')");
+  await click(id("new-project")); await page.waitFor("!document.getElementById('open-wallpaper')");
+  await page.evaluate("window.__resume();window.createImageBitmap=window.__decode");
+  await page.waitFor("!!document.querySelector('.sw-widget')", 20000);
+  assert.equal(await page.evaluate("document.getElementById('file-list').textContent.includes('background-')"), false);
+  assert.deepEqual(page.consoleMessages.filter((line: string) => line.startsWith("exception") || line.startsWith("error")), []);
+  console.log("✓ Wallpaper UI: Gallery copy, image input, pointer/numeric crop, slot replacement, retained source, real preview, portable settings, reload, unused cleanup, mobile and late decode cancellation passed");
+} finally { await chrome.close(); server.close(); }

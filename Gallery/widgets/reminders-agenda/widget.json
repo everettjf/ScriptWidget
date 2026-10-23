@@ -1,0 +1,42 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.reminders-agenda",
+  "name": "Reminders Agenda",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait",
+    "accessoryCircular",
+    "accessoryRectangular",
+    "accessoryInline"
+  ],
+  "permissions": [
+    "reminders",
+    "remindersWrite",
+    "storage"
+  ],
+  "networkDomains": [],
+  "description": "Reminders due today from selected lists, with an explicit Complete next action.",
+  "minimumRuntimeVersion": "1.4",
+  "actions": [
+    {
+      "id": "complete-next",
+      "title": "Complete next reminder",
+      "systemImage": "checkmark.circle",
+      "function": "completeNext",
+      "description": "Mark the next due reminder completed in a selected list."
+    },
+    {
+      "id": "clear-pending",
+      "title": "Clear pending after checking Reminders",
+      "systemImage": "arrow.counterclockwise",
+      "function": "clearPending",
+      "description": "After inspecting Reminders for an uncertain write, clear this template\u2019s pending request. Does not undo system changes."
+    }
+  ]
+}

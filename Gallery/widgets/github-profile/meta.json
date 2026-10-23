@@ -1,0 +1,7 @@
+{
+  "description": "Your authenticated GitHub profile and repository counts, with explicit per-widget account access.",
+  "category": "productivity",
+  "difficulty": "beginner",
+  "icon": "person.crop.rectangle",
+  "tags": ["github", "account", "repositories"]
+}

@@ -1,0 +1,151 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.packing-checklist",
+  "name": "Packing Checklist",
+  "version": "1.2.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.3",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait",
+    "accessoryCircular",
+    "accessoryRectangular",
+    "accessoryInline"
+  ],
+  "permissions": [
+    "storage"
+  ],
+  "networkDomains": [],
+  "description": "Check off a configurable daily packing list with saved history, reset and undo.",
+  "category": "productivity",
+  "tags": [
+    "packing",
+    "travel",
+    "checklist"
+  ],
+  "icon": "suitcase.rolling.fill",
+  "actions": [
+    {
+      "id": "toggleOne",
+      "title": "Toggle checklist item 1",
+      "systemImage": "checklist",
+      "function": "toggleOne"
+    },
+    {
+      "id": "toggleTwo",
+      "title": "Toggle checklist item 2",
+      "systemImage": "checklist",
+      "function": "toggleTwo"
+    },
+    {
+      "id": "toggleThree",
+      "title": "Toggle checklist item 3",
+      "systemImage": "checklist",
+      "function": "toggleThree"
+    },
+    {
+      "id": "toggleFour",
+      "title": "Toggle checklist item 4",
+      "systemImage": "checklist",
+      "function": "toggleFour"
+    },
+    {
+      "id": "toggleFive",
+      "title": "Toggle checklist item 5",
+      "systemImage": "checklist",
+      "function": "toggleFive"
+    },
+    {
+      "id": "toggleSix",
+      "title": "Toggle checklist item 6",
+      "systemImage": "checklist",
+      "function": "toggleSix"
+    },
+    {
+      "id": "toggleSeven",
+      "title": "Toggle checklist item 7",
+      "systemImage": "checklist",
+      "function": "toggleSeven"
+    },
+    {
+      "id": "toggleEight",
+      "title": "Toggle checklist item 8",
+      "systemImage": "checklist",
+      "function": "toggleEight"
+    },
+    {
+      "id": "undoRecord",
+      "title": "Undo checklist change",
+      "systemImage": "arrow.uturn.backward",
+      "function": "undoRecord"
+    },
+    {
+      "id": "resetToday",
+      "title": "Reset today’s checklist",
+      "systemImage": "arrow.counterclockwise",
+      "function": "resetToday"
+    }
+  ],
+  "controls": [
+    {
+      "id": "toggleOne",
+      "type": "button",
+      "title": "Toggle checklist item 1",
+      "systemImage": "checklist",
+      "actionID": "toggleOne"
+    },
+    {
+      "id": "toggleTwo",
+      "type": "button",
+      "title": "Toggle checklist item 2",
+      "systemImage": "checklist",
+      "actionID": "toggleTwo"
+    },
+    {
+      "id": "toggleThree",
+      "type": "button",
+      "title": "Toggle checklist item 3",
+      "systemImage": "checklist",
+      "actionID": "toggleThree"
+    },
+    {
+      "id": "toggleFour",
+      "type": "button",
+      "title": "Toggle checklist item 4",
+      "systemImage": "checklist",
+      "actionID": "toggleFour"
+    },
+    {
+      "id": "toggleFive",
+      "type": "button",
+      "title": "Toggle checklist item 5",
+      "systemImage": "checklist",
+      "actionID": "toggleFive"
+    },
+    {
+      "id": "toggleSix",
+      "type": "button",
+      "title": "Toggle checklist item 6",
+      "systemImage": "checklist",
+      "actionID": "toggleSix"
+    },
+    {
+      "id": "toggleSeven",
+      "type": "button",
+      "title": "Toggle checklist item 7",
+      "systemImage": "checklist",
+      "actionID": "toggleSeven"
+    },
+    {
+      "id": "toggleEight",
+      "type": "button",
+      "title": "Toggle checklist item 8",
+      "systemImage": "checklist",
+      "actionID": "toggleEight"
+    }
+  ]
+}

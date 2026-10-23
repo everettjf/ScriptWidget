@@ -5,8 +5,10 @@
 
 import {
   alignments, cssColor, defaultFont, elementFont, fontFamily, gradientCSS, parseColor, parseFont, parseFrame,
-  parsePadding, parsePaint, platform, propReader, setPlatform, styleFont, swiftDouble, systemBackground,
+  parsePadding, parsePaint, parseRotation3D, platform, propReader, setPlatform, styleFont, swiftDouble, systemBackground,
 } from "./props.js";
+import { prepareGif } from "./gif.js";
+import { clockPeriods, clockPeriod, clockPhase, swingDuration, swingDistance, swingPhase } from "./animation.js";
 import { coverage, generalProps, ignoredProp } from "./coverage.js";
 import { deviceProfiles, widgetSize } from "./profiles.js";
 import { symbolMetrics } from "./symbolMetrics.generated.js";
@@ -165,10 +167,11 @@ async function naturalSizes(urls, doc) {
 /// Must run in a document with layout (text is measured by the browser).
 export async function renderWidget(treeJSON, {
   family = "medium", profile = "iphone-393", appearance = "light", renderingMode = "fullColor", lockScreen = true, resources = {}, document: doc = globalThis.document,
-  now = null, animations = "live",
+  now = null, animations = "live", animationElapsed = null, reduceTransparency = false, reduceMotion = false,
 } = {}) {
   // Milliseconds since 1970 for a fixed clock (snapshot tests), or null.
   const fixedNow = typeof now === "number" && Number.isFinite(now) ? now : null;
+  if (reduceMotion) animations = "firstFrame";
   const size = widgetSize(profile, family);
   const diagnostics = [];
   const reported = new Set();
@@ -181,34 +184,28 @@ export async function renderWidget(treeJSON, {
   let tint = null;
   const primary = () => tint ?? color("primary");
   const root = decodeTree(treeJSON);
-  const urls = new Set();
-  for (const [path, url] of Object.entries(resources)) if (path.startsWith("image/")) urls.add(url);
+  const urls = new Set(), gifUses = new Map(), preparedGifs = new Map();
+  for (const [path, url] of Object.entries(resources)) if (path.startsWith("image/") && !/\.gif$/i.test(path)) urls.add(url);
   collectImageURLs(root, urls);
-  const imageSizes = await naturalSizes(urls, doc);
-  // "firstFrame" draws the GIF frame ImageRenderer captures (see below).
-  const stillGifs = new Map();
-  if (animations === "firstFrame") {
-    await Promise.all(Object.entries(resources).filter(([path]) => /\.gif$/i.test(path)).map(async ([, url]) => {
-      try {
-        const blob = await (await fetch(url)).blob();
-        let bitmap;
-        if (typeof ImageDecoder === "function") {
-          const decoder = new ImageDecoder({ data: blob.stream(), type: blob.type || "image/gif" });
-          await decoder.tracks.ready;
-          // The iOS GIF view masks frame i to the arc (i-1..i) x 360/n and spins
-          // the masks; at rest the top of the circle (270°) shows the frame
-          // just before that boundary.
-          const count = decoder.tracks.selectedTrack?.frameCount ?? 1;
-          bitmap = (await decoder.decode({ frameIndex: Math.max(0, Math.ceil(0.75 * count) - 1) })).image;
-        } else bitmap = await createImageBitmap(blob);
-        const canvas = doc.createElement("canvas");
-        canvas.width = bitmap.displayWidth ?? bitmap.width; canvas.height = bitmap.displayHeight ?? bitmap.height;
-        canvas.getContext("2d").drawImage(bitmap, 0, 0);
-        bitmap.close?.();
-        stillGifs.set(url, canvas.toDataURL("image/png"));
-      } catch { /* keep the animated GIF */ }
-    }));
+  const collectGifs = element => {
+    if (!isElement(element)) return;
+    const reader = propReader(element.props);
+    const found = element.tag === "gif" ? packageGif(reader.string("file") ?? "") : element.tag === "image" ? packageImage(reader.string("name", "id") ?? "") : null;
+    const url = typeof found === "string" ? found : found && /\.gif$/i.test(found.path) ? found.url : null;
+    if (url) { const use = gifUses.get(url) ?? { image:false }; use.image ||= element.tag === "image"; gifUses.set(url,use); }
+    childrenAsElements(element).forEach(collectGifs);
+  };
+  collectGifs(root);
+  // Decode only used GIFs, sequentially. Freeze failures never retain animation.
+  for (const [url, use] of gifUses) {
+    try {
+      const value = await prepareGif(url,{document:doc,firstFrame:reduceMotion || animations === "firstFrame" || deviceProfiles[profile]?.platform === "macos",needImage:use.image});
+      preparedGifs.set(url,value);
+      if (value.firstFrame) urls.add(value.firstFrame);
+      if (value.info.frameLimit || value.memoryFallback) report("warning","gif.static_fallback","GIF uses its first frame because the preview animation budget was exceeded");
+    } catch { preparedGifs.set(url,null); report("warning","gif.unavailable","GIF could not be decoded within preview input and canvas limits"); }
   }
+  const imageSizes = await naturalSizes(urls, doc);
   const measurer = createTextMeasurer(doc);
 
   // Leaves carry a draw(node, element) callback.
@@ -472,9 +469,12 @@ export async function renderWidget(treeJSON, {
       const found = packageImage(name);
       if (found) {
         if (/\.heic$/i.test(found.path)) report("warning", "image.format", `HEIC image ${found.path} may not display in this browser`);
-        const natural = imageSizes.get(found.url) ?? [10, 10];
-        if (mode === "fit" || mode === "fill") return leaf(new AspectNode(natural, reader.double("ratio"), mode), drawPicture(found.url, mode === "fill" ? "cover" : "contain"));
-        return leaf(new FlexibleNode(natural), drawPicture(found.url, "fill"));
+        const prepared = /\.gif$/i.test(found.path) ? preparedGifs.get(found.url) : undefined;
+        if (/\.gif$/i.test(found.path) && !prepared?.firstFrame) return text("GIF unavailable",defaultFont(),null);
+        const imageURL = prepared?.firstFrame ?? found.url;
+        const natural = imageSizes.get(imageURL) ?? [10, 10];
+        if (mode === "fit" || mode === "fill") return leaf(new AspectNode(natural, reader.double("ratio"), mode), drawPicture(imageURL, mode === "fill" ? "cover" : "contain"));
+        return leaf(new FlexibleNode(natural), drawPicture(imageURL, "fill"));
       }
       report("warning", "image.missing", `Package image "${name}" was not found in image/`);
     }
@@ -561,6 +561,12 @@ export async function renderWidget(treeJSON, {
       const paint = parsePaint(background, appearance);
       if (paint) decoration.background = paint;
     }
+    const material = reader.string("backgroundMaterial");
+    if (!isRoot && ["ultraThin", "thin", "regular", "thick", "ultraThick"].includes(material)) {
+      decoration.material = material;
+      decoration.materialFallback = parsePaint(background, appearance);
+      delete decoration.background;
+    }
     const corner = reader.double("corner");
     if (corner !== null) decoration.cornerRadius = corner;
     let clipShape = reader.int("clip") === 1 ? "" : null;
@@ -569,9 +575,10 @@ export async function renderWidget(treeJSON, {
     const opacity = reader.double("opacity");
     if (opacity !== null) decoration.opacity = Math.max(0, Math.min(1, opacity));
     // The macOS widget compiles ScriptWidgetAttributeAnimationModifier to a
-    // no-op, so animations (and their JSON errors) do not apply there.
-    const animation = platform() === "macos" ? null : parseAnimation(reader.string("animation"));
-    if (platform() === "macos" && reader.string("animation") !== null) report("info", "animation.macos", "Animations do not run in macOS widgets");
+    // static standard-clock poses; custom effects and JSON errors stay no-op.
+    const parsedAnimation = parseAnimation(reader.string("animation"));
+    const animation = platform() === "macos" ? (clockPeriods[parsedAnimation?.type] ? parsedAnimation : null) : parsedAnimation;
+    if (platform() === "macos" && reader.string("animation") !== null) report("info", "animation.macos", "Mac shows static clock poses; other animations remain at rest");
     if (animation?.type === "error") return text("animation json error", defaultFont(), null);
     if (animation) {
       // The animation modifier sits between opacity and rotation, so it
@@ -584,12 +591,9 @@ export async function renderWidget(treeJSON, {
     const rotation = reader.double("rotation");
     if (rotation !== null) transforms.push(`rotate(${rotation}deg)`);
     const rotation3d = reader.string("rotation3d");
-    if (rotation3d !== null) {
-      const parts = rotation3d.split(",");
-      if (parts.length === 4 && swiftDouble(parts[0]) !== null) {
-        const [x, y, z] = parts.slice(1).map((part) => swiftDouble(part));
-        transforms.push(`perspective(400px) rotate3d(${x ?? 1}, ${y ?? 0}, ${z ?? 0}, ${swiftDouble(parts[0])}deg)`);
-      }
+    if (rotation3d !== null && !reduceMotion) {
+      const rotation = parseRotation3D(rotation3d);
+      if (rotation) transforms.push(`perspective(400px) rotate3d(${rotation.x}, ${rotation.y}, ${rotation.z}, ${rotation.degree}deg)`);
     }
     if (transforms.length) decoration.transform = transforms.join(" ");
     const shadow = reader.string("shadow");
@@ -619,29 +623,18 @@ export async function renderWidget(treeJSON, {
     if (value === null) return null;
     if (value.startsWith("animation:")) {
       let json;
-      try { json = JSON.parse(value.slice("animation:".length)); } catch { return { type: "error" }; }
+      try { json = JSON.parse(value.slice("animation:".length), (_, value) => { if (typeof value === "number" && !Number.isFinite(value)) throw new Error("Invalid animation number"); return value; }); } catch { return { type: "error" }; }
       const type = typeof json?.type === "string" ? json.type : "";
       if (type === "clock") {
-        return { type, timezone: typeof json.timezone === "string" ? json.timezone : "current", anchor: typeof json.anchor === "string" ? json.anchor : "center", interval: typeof json.interval === "number" ? Math.max(1, json.interval) : 10 };
+        return { type, timezone: typeof json.timezone === "string" ? json.timezone : "current", anchor: typeof json.anchor === "string" ? json.anchor : "center", interval: typeof json.interval === "number" ? clockPeriod(json.interval) : 10 };
       }
-      if (type === "swing") return { type, duration: typeof json.duration === "number" ? json.duration : 1, direction: json.direction === "horizontal" ? "horizontal" : json.direction === undefined ? "horizontal" : "vertical", distance: typeof json.distance === "number" ? json.distance : 10 };
-      return clockPeriods[type] ? { type, timezone: "current", anchor: "center" } : null;
+      if (type === "swing") return { type, duration: swingDuration(json.duration), direction: json.direction === "horizontal" ? "horizontal" : json.direction === undefined ? "horizontal" : "vertical", distance: swingDistance(json.distance) };
+      return clockPeriods[type] ? { type, timezone: typeof json.timezone === "string" ? json.timezone : "current", anchor: typeof json.anchor === "string" ? json.anchor : "center" } : null;
     }
     const parts = value.split(",").filter((part) => part !== "");
     if (parts.length === 1) return clockPeriods[value] || value === "swing" ? (value === "swing" ? { type: "swing", duration: 1, direction: "horizontal", distance: 10 } : { type: value, timezone: "current", anchor: "center" }) : null;
-    if (parts.length === 2 && parts[0].trim() === "clockCustom" && swiftDouble(parts[1].trim()) !== null) return { type: "clock", timezone: "current", anchor: "center", interval: Math.max(1, swiftDouble(parts[1].trim())) };
+    if (parts.length === 2 && parts[0].trim() === "clockCustom" && swiftDouble(parts[1].trim()) !== null) return { type: "clock", timezone: "current", anchor: "center", interval: clockPeriod(swiftDouble(parts[1].trim())) };
     return null;
-  }
-
-  const clockPeriods = { clockSecond: 60, clockMinute: 3600, clockMiniute: 3600, clockHour: 43200 };
-
-  function secondsSinceMidnight(timezone) {
-    const options = { hour: "numeric", minute: "numeric", second: "numeric", hourCycle: "h23" };
-    let parts;
-    try { parts = new Intl.DateTimeFormat("en-US", timezone === "current" ? options : { ...options, timeZone: timezone }).formatToParts(new Date()); }
-    catch { parts = new Intl.DateTimeFormat("en-US", options).formatToParts(new Date()); }
-    const get = (type) => Number(parts.find((part) => part.type === type)?.value ?? 0);
-    return get("hour") * 3600 + get("minute") * 60 + get("second") + new Date().getMilliseconds() / 1000;
   }
 
   // MARK: Tags
@@ -696,7 +689,7 @@ export async function renderWidget(treeJSON, {
       case "image": content = imageNode(reader); break;
       case "gif": {
         const url = packageGif(reader.string("file") ?? "");
-        if (url) { report("info", "tag.approximated", "<gif> animates with the browser's GIF player"); content = leaf(new FlexibleNode(), drawPicture(stillGifs.get(url) ?? url, "contain")); }
+        if (url && preparedGifs.get(url)?.url) { report("info", "tag.approximated", "<gif> uses bounded browser playback or a static frame; native WidgetKit timing differs"); content = leaf(new FlexibleNode(), drawPicture(preparedGifs.get(url).url, "contain")); }
         else content = text("GIF unavailable", defaultFont(), null);
         break;
       }
@@ -1170,23 +1163,27 @@ export async function renderWidget(treeJSON, {
 
   function applyDecoration(element, decoration, width, height) {
     const style = element.style;
-    if (decoration.animation && animations === "firstFrame") {
-      // What ImageRenderer captures: clock hands at rest, and the swing
-      // overlay's nested frames at angle 0, which leave the content where
-      // its own layout put it (measured with Animation Aquarium).
-      void decoration.animation;
-    } else if (decoration.animation) {
+    if (decoration.material) paintMaterial(element, decoration.material, decoration.materialFallback, width, height);
+    if (decoration.animation && (!reduceMotion || clockPeriods[decoration.animation.type])) {
       const animation = decoration.animation;
+      const frozen = reduceMotion || platform() === "macos" || animations === "firstFrame" || fixedNow !== null || Number.isFinite(animationElapsed);
       if (animation.type === "swing") {
         const axis = animation.direction === "horizontal" ? "X" : "Y";
-        style.animation = `sw-swing-${axis} ${Math.max(0.1, animation.duration)}s ease-in-out infinite alternate`;
-        style.setProperty("--sw-swing", `${animation.distance}px`);
+        style.setProperty("--sw-swing", `${swingDistance(animation.distance)}px`);
+        style.transform = `translate${axis}(${swingPhase(Number.isFinite(animationElapsed) ? animationElapsed : 0, animation.duration, animation.distance)}px)`;
+        if (!frozen) style.animation = `sw-swing-${axis} ${2 * swingDuration(animation.duration)}s linear infinite`;
       } else {
-        const period = animation.type === "clock" ? animation.interval : clockPeriods[animation.type];
+        const angle = clockPhase({ type: animation.type, interval: animation.interval, timezone: animation.timezone, date: fixedNow ?? Date.now() });
         const [ax, ay] = alignments[animation.anchor] ? { center: [0.5, 0.5], leading: [0, 0.5], trailing: [1, 0.5], top: [0.5, 0], bottom: [0.5, 1], topLeading: [0, 0], topTrailing: [1, 0], bottomLeading: [0, 1], bottomTrailing: [1, 1] }[animation.anchor] : [0.5, 0.5];
         style.transformOrigin = `${ax * 100}% ${ay * 100}%`;
-        style.animation = `sw-clock ${period}s linear infinite`;
-        style.animationDelay = `${-(secondsSinceMidnight(animation.timezone) % period)}s`;
+        style.setProperty("--sw-start-angle", `${angle}deg`); style.transform = `rotate(${angle}deg)`;
+        const period = animation.type === "clock" ? 2 * Math.abs(clockPeriod(animation.interval)) : clockPeriods[animation.type];
+        // Extreme periods have no useful visible motion; retain the exact pose
+        // rather than emitting an infinite or out-of-range CSS duration.
+        if (!frozen && Number.isFinite(period) && period <= 31536000) {
+          style.animation = `sw-clock ${period}s linear infinite`;
+          if (animation.type === "clock" && animation.interval < 0) style.animationDirection = "reverse";
+        }
       }
     }
     if (decoration.background?.color) style.backgroundColor = cssColor(decoration.background.color);
@@ -1204,6 +1201,34 @@ export async function renderWidget(treeJSON, {
   }
 
   // MARK: Widget container (ScriptWidgetWidgetElementRootView)
+
+  let materialCount = 0;
+  function paintMaterial(element, material, fallback, width, height) {
+    const style = element.style;
+    const opacities = { ultraThin: 0.3, thin: 0.46, regular: 0.65, thick: 0.8, ultraThick: 0.92 };
+    if (!Object.hasOwn(opacities, material)) return;
+    style.backgroundImage = "none";
+    element.dataset.swMaterial = material;
+    const css = doc.defaultView?.CSS;
+    const cssSupported = css?.supports?.("backdrop-filter", "blur(1px)") || css?.supports?.("-webkit-backdrop-filter", "blur(1px)");
+    materialCount += 1;
+    if (renderingMode !== "fullColor") {
+      style.backgroundColor = "transparent"; style.backgroundImage = "none";
+      element.dataset.swMaterialFallback = "system";
+      report("info", "material.system", "Local material is omitted in accented/vibrant mode; the system controls the widget background.");
+    } else if (reduceTransparency || materialCount > 4 || cssSupported !== true) {
+      style.backgroundColor = appearance === "dark" ? "black" : "white";
+      if (fallback?.color) { const fill = cssColor(fallback.color); style.backgroundImage = `linear-gradient(${fill}, ${fill})`; }
+      else if (fallback?.gradient) style.backgroundImage = gradientCSS(fallback.gradient, width, height);
+      element.dataset.swMaterialFallback = "solid";
+      report("info", "material.fallback", "Material uses an opaque background fallback (Reduce Transparency, unavailable CSS blur, or preview budget).");
+    } else {
+      style.backdropFilter = "blur(16px) saturate(140%)"; style.webkitBackdropFilter = style.backdropFilter;
+      const component = appearance === "dark" ? 30 : 255;
+      style.backgroundColor = `rgba(${component}, ${component}, ${component}, ${opacities[material]})`;
+      report("info", "material.approximated", "CSS backdrop blur approximates SwiftUI material inside the widget; it does not reproduce system Liquid Glass or blur Home Screen wallpaper.");
+    }
+  }
 
   const previousPlatform = setPlatform(deviceProfiles[profile]?.platform ?? "ios");
   try {
@@ -1223,6 +1248,7 @@ export async function renderWidget(treeJSON, {
     if (renderingMode === "fullColor" && !(lockScreen && family.startsWith("accessory"))) {
       if (rootPaint?.color) widget.style.backgroundColor = cssColor(rootPaint.color);
       else if (rootPaint?.gradient) widget.style.backgroundImage = gradientCSS(rootPaint.gradient, size.width, size.height);
+      paintMaterial(widget, propReader(root.props).string("backgroundMaterial"), rootPaint, size.width, size.height);
     } else {
       // WidgetKit removes the container background on the Lock Screen and in
       // tinted Home Screen modes; show a neutral wallpaper stand-in.
@@ -1231,7 +1257,8 @@ export async function renderWidget(treeJSON, {
       if (renderingMode !== "fullColor") report("info", "mode.approximated", `${renderingMode} rendering mode is approximated`);
     }
     const keyframes = doc.createElement("style");
-    keyframes.textContent = "@keyframes sw-clock{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}@keyframes sw-swing-X{from{transform:translateX(calc(-1*var(--sw-swing)))}to{transform:translateX(var(--sw-swing))}}@keyframes sw-swing-Y{from{transform:translateY(calc(-1*var(--sw-swing)))}to{transform:translateY(var(--sw-swing))}}";
+    const swingFrames = axis => Array.from({length: 41}, (_, index) => `${index * 2.5}%{transform:translate${axis}(calc(${Math.sin(index / 40 * 2 * Math.PI)} * var(--sw-swing)))}`).join("");
+    keyframes.textContent = `@keyframes sw-clock{from{transform:rotate(var(--sw-start-angle))}to{transform:rotate(calc(var(--sw-start-angle) + 360deg))}}@keyframes sw-swing-X{${swingFrames("X")}}@keyframes sw-swing-Y{${swingFrames("Y")}}`;
     widget.appendChild(keyframes);
     draw(rootNode, widget);
     return { element: widget, size, diagnostics };

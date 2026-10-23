@@ -26,6 +26,8 @@ struct EmptyListBackgroundView: View {
     @State private var showCreate = false
     @State private var createTemplatePath: [String] = []
     @State private var selectedFeatured: ScriptModel?
+    @State private var showingCreationError = false
+    @State private var creationError = ""
 
     var body: some View {
         ScrollView {
@@ -53,13 +55,8 @@ struct EmptyListBackgroundView: View {
         .sheet(item: $selectedFeatured) { item in
             NavigationStack {
                 ScriptCodeEditorView(mode: .creator, scriptModel: item, actionCreate: {
-                    guard let content = item.package.readMainFile().0 else { return }
-                    let imageCopyPath = item.package.imagePath
-                    _ = sharedScriptManager.createScript(
-                        content: content,
-                        recommendPackageName: item.name,
-                        imageCopyPath: imageCopyPath
-                    )
+                    let result = sharedScriptManager.createScript(fromTemplate: item.package)
+                    guard result.0 else { creationError = result.1; showingCreationError = true; return }
                     NotificationCenter.default.post(
                         name: ScriptWidgetHomeViewDataObject.scriptCreateNotification,
                         object: nil
@@ -67,6 +64,9 @@ struct EmptyListBackgroundView: View {
                     selectedFeatured = nil
                 })
             }
+            .alert("Create failed", isPresented: $showingCreationError) {
+                Button("OK", role: .cancel) { }
+            } message: { Text(creationError) }
         }
     }
 

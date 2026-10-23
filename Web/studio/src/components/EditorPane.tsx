@@ -49,10 +49,12 @@ export function EditorPane({ project, path, saveState, colorScheme, onChange }: 
     if (instance.currentPath !== path || instance.view.state.doc.toString() !== value) instance.open(path, value);
   }, [project.id, path, value]);
 
+  useEffect(() => { editor.current?.setResources(Object.keys(project.files)); }, [project.id, project.files, path, value]);
+
   const imageURL = useMemo(() => (value instanceof Uint8Array ? resourceURLs({ [path]: value })[path] : undefined), [path, value]);
 
   return (
-    <section className="flex min-h-0 min-w-0 flex-col bg-card" aria-label="Editor">
+    <section className="isolate flex min-h-0 min-w-0 flex-col bg-card" aria-label="Editor">
       <div className="flex items-center justify-between gap-3 border-b px-3 py-1.5 text-xs">
         <span id="current-file" className="truncate font-medium">{path}</span>
         <span id="save-state" className="text-muted-foreground" aria-live="polite">{saveLabels[saveState]}</span>

@@ -1,7 +1,12 @@
 {
-  "description": "Three large shortcuts for the links you open most.",
+  "description": "Saved web/app links and named Shortcuts with native configuration, reorder, draft tests and multiple sizes.",
   "category": "productivity",
-  "tags": ["launcher", "links", "shortcuts", "interactive"],
+  "tags": [
+    "launcher",
+    "links",
+    "shortcuts",
+    "interactive"
+  ],
   "difficulty": "beginner",
   "icon": "square.grid.3x1.folder.badge.plus",
   "featured": true

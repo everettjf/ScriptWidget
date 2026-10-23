@@ -8,11 +8,13 @@
 // Keep up to ten years of local calendar dates per habit. No network required.
 // Duplicate copies have separate history; this is not iCloud sync.
 
+if (!$import("lib/records.js")) throw new Error("Install the complete template, including lib/records.js.");
+const savedNames = localRecords.configuration("habitHeatmap");
 const size = $getenv("widget-size");
 const habits = [
-  { id: "read", name: "Read", action: "checkInRead", color: ["#1B2A1E", "#0E4429", "#006D32", "#26A641", "#39D353"] },
-  { id: "run", name: "Run", action: "checkInRun", color: ["#1E1B2A", "#2E2266", "#4434A5", "#6B5BE0", "#9D8CFF"] },
-  { id: "meditate", name: "Meditate", action: "checkInMeditate", color: ["#2A1E1B", "#5C2A10", "#9A4A12", "#D9741C", "#FFA94D"] },
+  { id: "read", name: savedNames.readName, action: "checkInRead", color: ["#1B2A1E", "#0E4429", "#006D32", "#26A641", "#39D353"] },
+  { id: "run", name: savedNames.runName, action: "checkInRun", color: ["#1E1B2A", "#2E2266", "#4434A5", "#6B5BE0", "#9D8CFF"] },
+  { id: "meditate", name: savedNames.meditateName, action: "checkInMeditate", color: ["#2A1E1B", "#5C2A10", "#9A4A12", "#D9741C", "#FFA94D"] },
 ];
 const dateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 // Calendar arithmetic at noon handles DST without assuming 24-hour days.
@@ -21,8 +23,7 @@ const today = dayOffset(new Date(), 0);
 const todayKey = dateKey(today);
 const oldestKey = dateKey(dayOffset(today, -3659));
 const storageKey = (habit) => `habitHeatmap.v1.${habit.id}`;
-const readDays = (habit) => {
-  const raw = $storage.getString(storageKey(habit));
+const parseDays = (raw) => {
   if (!raw) return [];
   let days;
   try { days = JSON.parse(raw); } catch (error) { throw new Error("Habit history is unreadable. Restore it before checking in."); }
@@ -33,20 +34,24 @@ const readDays = (habit) => {
   })) throw new Error("Invalid habit history. Restore it before checking in.");
   return Array.from(new Set(days)).sort();
 };
+const readDays = (habit) => parseDays($storage.getString(storageKey(habit)));
 function checkIn(habit) {
-  const days = readDays(habit);
-  if (days.includes(todayKey)) {
-    $render(<text>Already checked in</text>);
-    return;
+  // A conflict rereads and revalidates history rather than replacing another
+  // process's new day. Rendering and rejected attempts never create records.
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const raw = $storage.getString(storageKey(habit));
+    const days = parseDays(raw);
+    if (days.includes(todayKey)) { $render(<text>Already checked in</text>); return; }
+    const updated = days.filter((day) => day >= oldestKey);
+    updated.push(todayKey);
+    updated.sort();
+    if (updated.length > 3660 || typeof $storage.compareAndSetString !== "function") break;
+    if ($storage.compareAndSetString(storageKey(habit), raw, JSON.stringify(updated))) {
+      $render(<text>Checked in</text>);
+      return;
+    }
   }
-  // Separate habit keys prevent one habit's update from replacing another's.
-  const updated = days.filter((day) => day >= oldestKey);
-  updated.push(todayKey);
-  updated.sort();
-  if (updated.length > 3660 || !$storage.setString(storageKey(habit), JSON.stringify(updated))) {
-    throw new Error("Could not save check-in. Please try again.");
-  }
-  $render(<text>Checked in</text>);
+  throw new Error("Could not save check-in. Storage may be busy; please try again.");
 }
 function checkInRead() { return checkIn(habits[0]); }
 function checkInRun() { return checkIn(habits[1]); }
@@ -97,7 +102,7 @@ const Header = ({ habit, font }) => (
 );
 
 const CheckIn = ({ habit }) => (
-  <button onClick={habit.action}>
+  <button actionID={habit.action}>
     <hstack spacing="4">
       <icon systemName={daysFor(habit).includes(todayKey) ? "checkmark.circle.fill" : "plus.circle"} size="12" color={habit.color[4]} />
       <text font="caption" color={habit.color[4]}>{daysFor(habit).includes(todayKey) ? "Done today" : "Check in"}</text>

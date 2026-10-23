@@ -6,13 +6,72 @@
 //
 
 import Foundation
+import CoreFoundation
 import JavaScriptCore
 
 @objc protocol ScriptWidgetRuntimeLocationExports: JSExport {
     static func isAvailable() -> Bool
     static func authorizationStatus() -> String
+    static func isAuthorizedForWidgetUpdates() -> Bool
     static func requestAuthorization(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise
     static func current(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise
+}
+
+/// Deterministic permission and cache policy, shared by app/extension paths.
+enum ScriptWidgetLocationPolicy {
+    static func packageAllows(_ package: ScriptWidgetPackage) -> Bool {
+        guard package.hasManifest else { return true } // Preserve genuine legacy packages.
+        guard let manifest = package.readManifest(), manifest.permissions.contains(.location) else { return false }
+        return WidgetPackageManifestValidator.validate(manifest, package: package, checkEntryExists: false).isValid
+    }
+
+    static func canRead(servicesEnabled: Bool, status: String, widget: Bool, widgetAuthorized: Bool) -> Bool {
+        servicesEnabled && ["authorizedAlways", "authorizedWhenInUse"].contains(status) && (!widget || widgetAuthorized)
+    }
+}
+
+enum ScriptWidgetLocationCache {
+    static let key = "ScriptWidget.LocationCache.v1"
+    static let maximumBytes = 4 * 1_024
+    static let maximumAge: TimeInterval = 86_400
+
+    static func read(defaults: UserDefaults, allowed: Bool, accuracyAuthorization: String, maxAgeSeconds: Double?, now: Date = Date()) -> [String: Any]? {
+        _ = defaults.synchronize()
+        guard allowed, let data = defaults.data(forKey: key),
+              let payload = decode(data, accuracyAuthorization: accuracyAuthorization, maxAgeSeconds: maxAgeSeconds, now: now) else {
+            defaults.removeObject(forKey: key)
+            _ = defaults.synchronize()
+            return nil
+        }
+        return payload
+    }
+
+    static func decode(_ data: Data, accuracyAuthorization: String, maxAgeSeconds: Double?, now: Date = Date()) -> [String: Any]? {
+        guard data.count <= maximumBytes,
+              let raw = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              Set(raw.keys) == ["latitude", "longitude", "altitude", "accuracy", "verticalAccuracy", "speed", "course", "timestampSeconds", "accuracyAuthorization"],
+              let precision = raw["accuracyAuthorization"] as? String, ["full", "reduced"].contains(precision),
+              ["full", "reduced"].contains(accuracyAuthorization),
+              accuracyAuthorization != "reduced" || precision == "reduced" else { return nil }
+        var numbers: [String: Double] = [:]
+        for key in ["latitude", "longitude", "altitude", "accuracy", "verticalAccuracy", "speed", "course", "timestampSeconds"] {
+            guard let number = raw[key] as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID(), number.doubleValue.isFinite else { return nil }
+            numbers[key] = number.doubleValue
+        }
+        guard (-90...90).contains(numbers["latitude"]!), (-180...180).contains(numbers["longitude"]!),
+              numbers["accuracy"]! >= 0 else { return nil }
+        let timestamp = Date(timeIntervalSince1970: numbers["timestampSeconds"]!)
+        let age = now.timeIntervalSince(timestamp)
+        guard age >= 0, age <= maximumAge else { return nil }
+        var payload = raw
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        payload["timestamp"] = formatter.string(from: timestamp)
+        payload["age"] = age
+        payload["isStale"] = age > max(0, min(maximumAge, maxAgeSeconds ?? 0))
+        payload.removeValue(forKey: "timestampSeconds")
+        return payload
+    }
 }
 
 #if canImport(CoreLocation) && os(iOS)
@@ -20,33 +79,77 @@ import CoreLocation
 
 @objc public class ScriptWidgetRuntimeLocation: NSObject, ScriptWidgetRuntimeLocationExports {
     private static var activeRequests = [LocationRequest]()
-    private static let locationCacheKey = "ScriptWidget.LocationCache.v1"
+    private static let locationCacheKey = ScriptWidgetLocationCache.key
 
     private static func defaults() -> UserDefaults {
         return UserDefaults(suiteName: "group.everettjf.scriptwidget") ?? UserDefaults.standard
     }
 
     static func isAvailable() -> Bool {
-        #if IsWidgetTarget
-        return true
-        #else
-        return CLLocationManager.locationServicesEnabled()
-        #endif
+        guard JSContext.current()?.scriptWidgetRunningState?.previewStorage == nil else { return false }
+        let enabled = CLLocationManager.locationServicesEnabled()
+        if !enabled { clearCache() }
+        return enabled
     }
 
     static func authorizationStatus() -> String {
-        #if IsWidgetTarget
-        if cachedLocationPayload(maxAgeSeconds: nil) != nil {
-            return "authorizedWhenInUse"
-        }
-        return "notDetermined"
-        #else
-        guard CLLocationManager.locationServicesEnabled() else {
-            return "disabled"
-        }
+        if JSContext.current()?.scriptWidgetRunningState?.previewStorage != nil { return "unavailable" }
+        guard let state = JSContext.current()?.scriptWidgetRunningState,
+              state.isCurrentExecution,
+              ScriptWidgetLocationPolicy.packageAllows(state.package) else { return "undeclared" }
+        refreshAuthorizationState()
+        guard CLLocationManager.locationServicesEnabled() else { return "disabled" }
+        return statusString(for: CLLocationManager().authorizationStatus)
+    }
+
+    static func isAuthorizedForWidgetUpdates() -> Bool {
+        guard let state = JSContext.current()?.scriptWidgetRunningState,
+              state.isCurrentExecution,
+              state.previewStorage == nil,
+              ScriptWidgetLocationPolicy.packageAllows(state.package) else { return false }
         let manager = CLLocationManager()
-        return statusString(for: manager.authorizationStatus)
+        return ScriptWidgetLocationPolicy.canRead(servicesEnabled: CLLocationManager.locationServicesEnabled(), status: statusString(for: manager.authorizationStatus), widget: true, widgetAuthorized: manager.isAuthorizedForWidgetUpdates)
+    }
+
+    private static var isWidget: Bool {
+        #if IsWidgetTarget
+        return true
+        #else
+        return false
         #endif
+    }
+
+    private static func permittedState(_ reject: JSValue) -> ScriptWidgetRunningState? {
+        guard let state = JSContext.current()?.scriptWidgetRunningState, state.isCurrentExecution else { return nil }
+        guard !state.isLiveActivityPresentation else {
+            reject.call(withArguments:["[live_activity_unavailable] Live Activity presentations cannot request location updates; update their state from the app"])
+            return nil
+        }
+        guard state.previewStorage == nil else {
+            reject.call(withArguments: ["[permission_denied] Install this widget to use location data"])
+            return nil
+        }
+        guard ScriptWidgetLocationPolicy.packageAllows(state.package) else {
+            reject.call(withArguments: ["[permission_denied] Declare location in widget.json"])
+            return nil
+        }
+        guard state.executionSession.registerDataQuery() else {
+            reject.call(withArguments: ["[query_limit] System data query limit exceeded"])
+            return nil
+        }
+        return state
+    }
+
+    static func clearCache() {
+        defaults().removeObject(forKey: locationCacheKey)
+        _ = defaults().synchronize()
+    }
+
+    /// Also called by the app's permission UI when returning from Settings.
+    static func refreshAuthorizationState() {
+        let manager = CLLocationManager()
+        let allowed = ScriptWidgetLocationPolicy.canRead(servicesEnabled: CLLocationManager.locationServicesEnabled(), status: statusString(for: manager.authorizationStatus), widget: isWidget, widgetAuthorized: manager.isAuthorizedForWidgetUpdates)
+        _ = ScriptWidgetLocationCache.read(defaults: defaults(), allowed: allowed, accuracyAuthorization: accuracyAuthorizationString(manager), maxAgeSeconds: nil)
     }
 
     static func requestAuthorization() -> ScriptWidgetRuntimePromise {
@@ -55,11 +158,18 @@ import CoreLocation
 
     static func requestAuthorization(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise {
         return ScriptWidgetRuntimePromise { resolve, reject in
+            guard let state = permittedState(reject) else { return }
+            refreshAuthorizationState()
+            if state.isTimelineProjection {
+                let manager = CLLocationManager()
+                resolve.call(withArguments: [ScriptWidgetLocationPolicy.canRead(servicesEnabled: CLLocationManager.locationServicesEnabled(), status: statusString(for: manager.authorizationStatus), widget: isWidget, widgetAuthorized: manager.isAuthorizedForWidgetUpdates)])
+                return
+            }
             #if IsWidgetTarget
-            resolve.call(withArguments: [cachedLocationPayload(maxAgeSeconds: nil) != nil])
+            resolve.call(withArguments: [isAuthorizedForWidgetUpdates()])
             #else
             guard CLLocationManager.locationServicesEnabled() else {
-                reject.call(withArguments: ["Location services are disabled on this device"])
+                reject.call(withArguments: ["[unavailable] Location services are disabled on this device"])
                 return
             }
 
@@ -79,17 +189,21 @@ import CoreLocation
             }
 
             let timeoutSeconds = timeoutSeconds(from: options, defaultSeconds: 10)
-            let request = LocationRequest(
-                mode: .authorization,
-                timeoutSeconds: timeoutSeconds,
-                accuracyMode: .reduced,
-                purposeKey: nil,
-                maxAgeSeconds: 0,
-                resolve: resolve,
-                reject: reject
-            )
-            activeRequests.append(request)
-            request.start()
+            DispatchQueue.main.async {
+                guard state.isCurrentExecution else { return }
+                let request = LocationRequest(
+                    state: state,
+                    mode: .authorization,
+                    timeoutSeconds: timeoutSeconds,
+                    accuracyMode: .reduced,
+                    purposeKey: nil,
+                    maxAgeSeconds: 0,
+                    resolve: resolve,
+                    reject: reject
+                )
+                activeRequests.append(request)
+                request.start()
+            }
             #endif
         }
     }
@@ -100,16 +214,28 @@ import CoreLocation
 
     static func current(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise {
         return ScriptWidgetRuntimePromise { resolve, reject in
+            guard let state = permittedState(reject) else { return }
+            refreshAuthorizationState()
+            if state.isTimelineProjection {
+                if let cached = cachedLocationPayload(maxAgeSeconds: maxAgeSeconds(from: options, defaultSeconds: 0)) {
+                    resolve.call(withArguments: [cached])
+                } else { reject.call(withArguments: ["[timeline_read_only] No authorized Location snapshot is available"]) }
+                return
+            }
             #if IsWidgetTarget
+            guard isAuthorizedForWidgetUpdates() else {
+                reject.call(withArguments: ["[widget_not_authorized] Allow location for widgets in Settings"])
+                return
+            }
             let cachedMaxAgeSeconds = maxAgeSeconds(from: options, defaultSeconds: 0)
             if let cached = cachedLocationPayload(maxAgeSeconds: cachedMaxAgeSeconds) {
                 resolve.call(withArguments: [cached])
             } else {
-                reject.call(withArguments: ["Location data unavailable. Open the main app to refresh location."])
+                reject.call(withArguments: ["[no_data] Location data unavailable. Open the main app to refresh location."])
             }
             #else
             guard CLLocationManager.locationServicesEnabled() else {
-                reject.call(withArguments: ["Location services are disabled on this device"])
+                reject.call(withArguments: ["[unavailable] Location services are disabled on this device"])
                 return
             }
 
@@ -131,17 +257,21 @@ import CoreLocation
             let timeoutSeconds = timeoutSeconds(from: options, defaultSeconds: 10)
             let maxAgeSeconds = maxAgeSeconds(from: options, defaultSeconds: 0)
             let settings = accuracySettings(from: options)
-            let request = LocationRequest(
-                mode: .location,
-                timeoutSeconds: timeoutSeconds,
-                accuracyMode: settings.mode,
-                purposeKey: settings.purposeKey,
-                maxAgeSeconds: maxAgeSeconds,
-                resolve: resolve,
-                reject: reject
-            )
-            activeRequests.append(request)
-            request.start()
+            DispatchQueue.main.async {
+                guard state.isCurrentExecution else { return }
+                let request = LocationRequest(
+                    state: state,
+                    mode: .location,
+                    timeoutSeconds: timeoutSeconds,
+                    accuracyMode: settings.mode,
+                    purposeKey: settings.purposeKey,
+                    maxAgeSeconds: maxAgeSeconds,
+                    resolve: resolve,
+                    reject: reject
+                )
+                activeRequests.append(request)
+                request.start()
+            }
             #endif
         }
     }
@@ -185,22 +315,22 @@ import CoreLocation
 
     private static func timeoutSeconds(from options: [String: Any]?, defaultSeconds: Double) -> Double {
         guard let options = options else { return defaultSeconds }
-        if let timeoutMs = options["timeoutMs"] as? Double, timeoutMs > 0 {
-            return timeoutMs / 1000
+        if let timeoutMs = options["timeoutMs"] as? Double, timeoutMs.isFinite, timeoutMs > 0 {
+            return min(30, timeoutMs / 1000)
         }
-        if let timeoutSeconds = options["timeout"] as? Double, timeoutSeconds > 0 {
-            return timeoutSeconds
+        if let timeoutSeconds = options["timeout"] as? Double, timeoutSeconds.isFinite, timeoutSeconds > 0 {
+            return min(30, timeoutSeconds)
         }
         return defaultSeconds
     }
 
     private static func maxAgeSeconds(from options: [String: Any]?, defaultSeconds: Double) -> Double {
         guard let options = options else { return defaultSeconds }
-        if let maxAgeMs = options["maxAgeMs"] as? Double, maxAgeMs > 0 {
-            return maxAgeMs / 1000
+        if let maxAgeMs = options["maxAgeMs"] as? Double, maxAgeMs.isFinite, maxAgeMs > 0 {
+            return min(ScriptWidgetLocationCache.maximumAge, maxAgeMs / 1000)
         }
-        if let maxAgeSeconds = options["maxAge"] as? Double, maxAgeSeconds > 0 {
-            return maxAgeSeconds
+        if let maxAgeSeconds = options["maxAge"] as? Double, maxAgeSeconds.isFinite, maxAgeSeconds > 0 {
+            return min(ScriptWidgetLocationCache.maximumAge, maxAgeSeconds)
         }
         return defaultSeconds
     }
@@ -214,7 +344,9 @@ import CoreLocation
         guard let options = options else { return (.reduced, nil) }
         let modeString = (options["accuracy"] as? String)?.lowercased() ?? "reduced"
         let mode: AccuracyMode = modeString == "full" ? .full : .reduced
-        let purposeKey = options["purposeKey"] as? String
+        let rawKey = options["purposeKey"] as? String
+        let declared = Bundle.main.object(forInfoDictionaryKey: "NSLocationTemporaryUsageDescriptionDictionary") as? [String: Any] ?? [:]
+        let purposeKey = rawKey.flatMap { $0.utf8.count <= 128 && declared[$0] is String ? $0 : nil }
         return (mode, purposeKey)
     }
 
@@ -224,6 +356,7 @@ import CoreLocation
     }
 
     private final class LocationRequest: NSObject, CLLocationManagerDelegate {
+        private let state: ScriptWidgetRunningState
         private let mode: RequestMode
         private let timeoutSeconds: Double
         private let accuracyMode: AccuracyMode
@@ -234,8 +367,10 @@ import CoreLocation
         private let manager: CLLocationManager
         private var finished = false
         private var timeoutWorkItem: DispatchWorkItem?
+        private var cancellationTimer: DispatchSourceTimer?
 
-        init(mode: RequestMode, timeoutSeconds: Double, accuracyMode: AccuracyMode = .reduced, purposeKey: String?, maxAgeSeconds: Double = 0, resolve: JSValue, reject: JSValue) {
+        init(state: ScriptWidgetRunningState, mode: RequestMode, timeoutSeconds: Double, accuracyMode: AccuracyMode = .reduced, purposeKey: String?, maxAgeSeconds: Double = 0, resolve: JSValue, reject: JSValue) {
+            self.state = state
             self.mode = mode
             self.timeoutSeconds = timeoutSeconds
             self.accuracyMode = accuracyMode
@@ -255,18 +390,89 @@ import CoreLocation
         }
 
         func start() {
-            DispatchQueue.main.async {
-                if self.mode == .location, self.tryResolveCachedLocation() {
+            guard self.validateExecution() else { return }
+            let timer = DispatchSource.makeTimerSource(queue: .main)
+            timer.schedule(deadline: .now(), repeating: .milliseconds(100))
+            timer.setEventHandler { [weak self] in
+                guard let self, !self.state.isCurrentExecution else { return }
+                _ = self.validateExecution()
+            }
+            self.cancellationTimer = timer
+            timer.resume()
+            if self.mode == .location, self.tryResolveCachedLocation() {
+                return
+            }
+            self.scheduleTimeout()
+            switch self.mode {
+            case .authorization:
+                self.manager.requestWhenInUseAuthorization()
+            case .location:
+                self.requestLocation()
+            }
+        }
+
+        @discardableResult
+        private func validateExecution() -> Bool {
+            guard !finished else { return false }
+            guard state.isCurrentExecution else {
+                finished = true
+                cancelTimeout()
+                manager.stopUpdatingLocation()
+                ScriptWidgetRuntimeLocation.finish(request: self)
+                return false
+            }
+            guard ScriptWidgetLocationPolicy.packageAllows(state.package) else {
+                fail("[permission_denied] Declare location in widget.json")
+                return false
+            }
+            return true
+        }
+
+        private func authorizedToRead() -> Bool {
+            // Delegate authorization is safe to inspect on the main run loop.
+            // Recheck service availability off-main immediately before JS delivery.
+            [CLAuthorizationStatus.authorizedAlways, .authorizedWhenInUse].contains(manager.authorizationStatus)
+        }
+
+        private func deliverFailure(_ message: String) {
+            let state = state
+            let reject = reject
+            DispatchQueue.global(qos: .userInitiated).async {
+                guard state.isCurrentExecution else { return }
+                reject.call(withArguments: [message])
+            }
+        }
+
+        private func deliverSuccess(_ value: Any) {
+            let state = state
+            let resolve = resolve
+            let reject = reject
+            DispatchQueue.global(qos: .userInitiated).async {
+                guard state.isCurrentExecution else { return }
+                guard ScriptWidgetLocationPolicy.packageAllows(state.package) else {
+                    reject.call(withArguments: ["[permission_denied] Declare location in widget.json"])
                     return
                 }
-                self.scheduleTimeout()
-                switch self.mode {
-                case .authorization:
-                    self.manager.requestWhenInUseAuthorization()
-                case .location:
-                    self.requestLocation()
+                if let payload = value as? [String: Any] {
+                    let manager = CLLocationManager()
+                    guard ScriptWidgetLocationPolicy.canRead(servicesEnabled: CLLocationManager.locationServicesEnabled(), status: ScriptWidgetRuntimeLocation.statusString(for: manager.authorizationStatus), widget: false, widgetAuthorized: false),
+                          ScriptWidgetRuntimeLocation.accuracyAuthorizationString(manager) != "reduced" || payload["accuracyAuthorization"] as? String == "reduced" else {
+                        ScriptWidgetRuntimeLocation.clearCache()
+                        reject.call(withArguments: ["[permission_denied] Location access or precision changed"])
+                        return
+                    }
                 }
+                resolve.call(withArguments: [value])
             }
+        }
+
+        private func fail(_ message: String) {
+            guard !finished else { return }
+            finished = true
+            cancelTimeout()
+            manager.stopUpdatingLocation()
+            if state.isCurrentExecution { deliverFailure(message) }
+            ScriptWidgetRuntimeLocation.finish(request: self)
         }
 
         func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
@@ -278,55 +484,71 @@ import CoreLocation
         }
 
         func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-            guard !finished else { return }
+            guard validateExecution() else { return }
+            guard authorizedToRead() else {
+                ScriptWidgetRuntimeLocation.clearCache()
+                fail("[permission_denied] Location access changed")
+                return
+            }
+            guard let location = locations.last, location.horizontalAccuracy >= 0,
+                  CLLocationCoordinate2DIsValid(location.coordinate),
+                  Date().timeIntervalSince(location.timestamp) >= 0,
+                  Date().timeIntervalSince(location.timestamp) <= ScriptWidgetLocationCache.maximumAge else {
+                fail("[no_data] No valid location fix is available")
+                return
+            }
             finished = true
             cancelTimeout()
             manager.stopUpdatingLocation()
-
-            guard let location = locations.last else {
-                reject.call(withArguments: ["Unable to read current location"])
-                ScriptWidgetRuntimeLocation.finish(request: self)
-                return
-            }
 
             let payload = payload(for: location, isStale: false)
             ScriptWidgetRuntimeLocation.cacheLocation(
                 location,
                 accuracyAuthorization: ScriptWidgetRuntimeLocation.accuracyAuthorizationString(manager)
             )
-            resolve.call(withArguments: [payload])
+            if authorizedToRead(), state.isCurrentExecution,
+               ScriptWidgetLocationPolicy.packageAllows(state.package) {
+                deliverSuccess(payload)
+            } else {
+                ScriptWidgetRuntimeLocation.clearCache()
+                if state.isCurrentExecution { deliverFailure("[permission_denied] Location access changed") }
+            }
             ScriptWidgetRuntimeLocation.finish(request: self)
         }
 
         func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-            guard !finished else { return }
-            finished = true
-            cancelTimeout()
-            manager.stopUpdatingLocation()
-            reject.call(withArguments: [error.localizedDescription])
-            ScriptWidgetRuntimeLocation.finish(request: self)
+            guard validateExecution() else { return }
+            if !authorizedToRead() { ScriptWidgetRuntimeLocation.clearCache() }
+            fail("[location_error] Unable to obtain a location fix")
         }
 
         private func handleAuthorizationChange(_ status: CLAuthorizationStatus) {
+            guard validateExecution() else { return }
+            if !authorizedToRead() {
+                ScriptWidgetRuntimeLocation.clearCache()
+                if mode == .location {
+                    fail("[permission_denied] Location access changed")
+                    return
+                }
+            }
             guard mode == .authorization else { return }
-            guard !finished else { return }
             switch status {
             case .authorizedAlways, .authorizedWhenInUse:
                 finished = true
                 cancelTimeout()
-                resolve.call(withArguments: [true])
+                deliverSuccess(true)
                 ScriptWidgetRuntimeLocation.finish(request: self)
             case .denied, .restricted:
                 finished = true
                 cancelTimeout()
-                resolve.call(withArguments: [false])
+                deliverSuccess(false)
                 ScriptWidgetRuntimeLocation.finish(request: self)
             case .notDetermined:
                 break
             @unknown default:
                 finished = true
                 cancelTimeout()
-                resolve.call(withArguments: [false])
+                deliverSuccess(false)
                 ScriptWidgetRuntimeLocation.finish(request: self)
             }
         }
@@ -335,17 +557,27 @@ import CoreLocation
             guard timeoutSeconds > 0 else { return }
             let workItem = DispatchWorkItem { [weak self] in
                 guard let self = self else { return }
-                guard !self.finished else { return }
+                guard self.validateExecution() else { return }
+                guard self.mode == .authorization || self.authorizedToRead() else {
+                    ScriptWidgetRuntimeLocation.clearCache()
+                    self.fail("[permission_denied] Location access changed")
+                    return
+                }
                 self.finished = true
+                self.cancelTimeout()
                 self.manager.stopUpdatingLocation()
                 switch self.mode {
                 case .authorization:
-                    self.resolve.call(withArguments: [false])
+                    self.deliverSuccess(false)
                 case .location:
-                    if let cached = self.manager.location {
-                        self.resolve.call(withArguments: [self.payload(for: cached, isStale: true)])
+                    if self.manager.accuracyAuthorization == .fullAccuracy,
+                       let cached = self.manager.location, cached.horizontalAccuracy >= 0,
+                       CLLocationCoordinate2DIsValid(cached.coordinate),
+                       Date().timeIntervalSince(cached.timestamp) >= 0,
+                       Date().timeIntervalSince(cached.timestamp) <= ScriptWidgetLocationCache.maximumAge {
+                        self.deliverSuccess(self.payload(for: cached, isStale: true))
                     } else {
-                        self.reject.call(withArguments: ["Location request timed out"])
+                        self.deliverFailure("Location request timed out")
                     }
                 }
                 ScriptWidgetRuntimeLocation.finish(request: self)
@@ -357,6 +589,8 @@ import CoreLocation
         private func cancelTimeout() {
             timeoutWorkItem?.cancel()
             timeoutWorkItem = nil
+            cancellationTimer?.cancel()
+            cancellationTimer = nil
         }
 
         private func requestLocation() {
@@ -384,20 +618,24 @@ import CoreLocation
         }
 
         private func beginLocationUpdates() {
+            guard validateExecution(), authorizedToRead() else { return }
             manager.requestLocation()
             manager.startUpdatingLocation()
         }
 
         private func tryResolveCachedLocation() -> Bool {
-            guard maxAgeSeconds > 0 else { return false }
+            guard validateExecution(), authorizedToRead(), maxAgeSeconds > 0,
+                  manager.accuracyAuthorization == .fullAccuracy else { return false }
             if #available(iOS 14.0, *), accuracyMode == .full, manager.accuracyAuthorization == .reducedAccuracy {
                 return false
             }
             guard let location = manager.location else { return false }
-            let ageSeconds = max(0, Date().timeIntervalSince(location.timestamp))
-            guard ageSeconds <= maxAgeSeconds else { return false }
+            let ageSeconds = Date().timeIntervalSince(location.timestamp)
+            guard CLLocationCoordinate2DIsValid(location.coordinate), location.horizontalAccuracy >= 0,
+                  ageSeconds >= 0, ageSeconds <= ScriptWidgetLocationCache.maximumAge, ageSeconds <= maxAgeSeconds else { return false }
             finished = true
-            resolve.call(withArguments: [payload(for: location, isStale: false)])
+            cancelTimeout()
+            deliverSuccess(payload(for: location, isStale: false))
             ScriptWidgetRuntimeLocation.finish(request: self)
             return true
         }
@@ -427,6 +665,17 @@ import CoreLocation
     }
 
     static func cacheLocation(_ location: CLLocation, accuracyAuthorization: String) {
+        if Thread.isMainThread {
+            DispatchQueue.global(qos: .utility).async {
+                cacheLocation(location, accuracyAuthorization: accuracyAuthorization)
+            }
+            return
+        }
+        let manager = CLLocationManager()
+        guard ScriptWidgetLocationPolicy.canRead(servicesEnabled: CLLocationManager.locationServicesEnabled(), status: statusString(for: manager.authorizationStatus), widget: isWidget, widgetAuthorized: manager.isAuthorizedForWidgetUpdates) else {
+            clearCache()
+            return
+        }
         let payload: [String: Any] = [
             "latitude": location.coordinate.latitude,
             "longitude": location.coordinate.longitude,
@@ -441,42 +690,29 @@ import CoreLocation
 
         do {
             let data = try JSONSerialization.data(withJSONObject: payload, options: [])
+            guard ScriptWidgetLocationCache.decode(data, accuracyAuthorization: accuracyAuthorizationString(manager), maxAgeSeconds: nil) != nil else { return }
             defaults().set(data, forKey: locationCacheKey)
-        } catch {
-            print("location cache error: \(error)")
-        }
+            _ = defaults().synchronize()
+        } catch { /* Cache failure must not log location values. */ }
     }
 
     private static func cachedLocationPayload(maxAgeSeconds: Double?) -> [String: Any]? {
-        guard let data = defaults().data(forKey: locationCacheKey) else {
+        let manager = CLLocationManager()
+        let allowed = ScriptWidgetLocationPolicy.canRead(servicesEnabled: CLLocationManager.locationServicesEnabled(), status: statusString(for: manager.authorizationStatus), widget: isWidget, widgetAuthorized: manager.isAuthorizedForWidgetUpdates)
+        let payload = ScriptWidgetLocationCache.read(defaults: defaults(), allowed: allowed, accuracyAuthorization: accuracyAuthorizationString(manager), maxAgeSeconds: maxAgeSeconds)
+        // Recheck immediately before returning cached private data.
+        guard ScriptWidgetLocationPolicy.canRead(servicesEnabled: CLLocationManager.locationServicesEnabled(), status: statusString(for: manager.authorizationStatus), widget: isWidget, widgetAuthorized: manager.isAuthorizedForWidgetUpdates) else {
+            clearCache()
             return nil
         }
-        guard let raw = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
-            return nil
-        }
-        guard let timestampSeconds = raw["timestampSeconds"] as? Double else {
-            return nil
-        }
-
-        let timestamp = Date(timeIntervalSince1970: timestampSeconds)
-        let age = max(0, Date().timeIntervalSince(timestamp))
-        let isStale: Bool
-        if let maxAgeSeconds = maxAgeSeconds, maxAgeSeconds > 0 {
-            isStale = age > maxAgeSeconds
-        } else {
-            isStale = age > 0
-        }
-
-        var payload = raw
-        payload["timestamp"] = isoString(timestamp)
-        payload["age"] = age
-        payload["isStale"] = isStale
-        payload.removeValue(forKey: "timestampSeconds")
         return payload
     }
+
 }
 #else
 @objc public class ScriptWidgetRuntimeLocation: NSObject, ScriptWidgetRuntimeLocationExports {
+    static func isAuthorizedForWidgetUpdates() -> Bool { false }
+
     static func isAvailable() -> Bool {
         return false
     }
@@ -503,7 +739,11 @@ import CoreLocation
 
     private static func rejectedPromise(_ message: String) -> ScriptWidgetRuntimePromise {
         return ScriptWidgetRuntimePromise { _, reject in
-            reject.call(withArguments: [message])
+            if JSContext.current()?.scriptWidgetRunningState?.isLiveActivityPresentation == true {
+                reject.call(withArguments:["[live_activity_unavailable] Live Activity presentations cannot request location updates; update their state from the app"])
+            } else if JSContext.current()?.scriptWidgetRunningState?.previewStorage != nil {
+                reject.call(withArguments: ["[permission_denied] Install this widget to use location data"])
+            } else { reject.call(withArguments: [message]) }
         }
     }
 }

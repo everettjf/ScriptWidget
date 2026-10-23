@@ -120,8 +120,10 @@ enum PromptBuilder {
            an async `$main` function.
         5. Date/time: the global `moment` library is available. Plain JS
            `Date` also works.
-        6. Persistent data: `$storage.set(key, value)` and
-           `$storage.get(key)`.
+        6. Persistent data: `$storage.setString(key, value)` and
+           `$storage.getString(key)` for strings; `$storage.setJSON(key, object)`
+           and `$storage.getJSON(key)` for objects. Check write success.
+           Do not invent `$storage.set` or `$storage.get`.
         7. Only use tags, props, and APIs that appear in the REFERENCE
            section below. Do not invent new ones.
         8. When calling `fetch`, always wrap it in try/catch so the
@@ -147,7 +149,83 @@ enum PromptBuilder {
             $device.isdarkmode().
         14. Preserve the requested labels and values. Do not invent
             meeting locations, extra events, or live data. For fixed
-            demo data do not call network, location or Health APIs.
+            demo data do not call network, location, Health, Calendar or Reminders APIs.
+        15. Calendar needs the calendar package permission and system approval
+            in ScriptWidget Settings. Preview mocks do not grant access.
+            Native Settings source selection also limits calendar metadata,
+            events and cached snapshots. Obtain permitted IDs with calendars();
+            scripts cannot enlarge this selection. Show setup for no sources.
+            Photos requires photos permission and explicit photo/album selection in
+            native Settings, empty by default. $photos.items({limit:4}) returns
+            metadata-stripped JPEG data URLs in items[].image; render with <image url>.
+            Support authorized and limited status. Up to four thumbnails per call,
+            64 candidates, maxAgeSeconds up to 86400. Cloud-only photos must be
+            downloaded in Photos first; show unavailableCount and setup states.
+            Future entries and Live Activity presentations need a prepared snapshot.
+            Do not use a Web sample as evidence of native access or seed fake photos.
+            Connected account profiles use await $services.status("github") and
+            await $services.profile("github"), services + network permissions and
+            api.github.com. The installed widget owner must be allowed in native
+            Service Accounts. Tokens never belong in scripts, parameters, mocks
+            or AI context. Preserve null private counts; do not turn errors into
+            zero data. Only GitHub connected-service profiles are supported. Service reads
+            cannot run in future entries or Live Activity presentations.
+            Music app playback uses $music.isAvailable(), authorizationStatus()
+            and await $music.current(), with music permission and native Settings
+            approval. This is a read-only iOS Music app snapshot, unavailable on
+            macOS and unrelated to other audio players. State can remain playing
+            while track details are withheld. Preserve nullable metadata/seconds,
+            show permission/unavailable states and never infer subscription.
+            No playback/queue changes, library scans or live future-entry reads.
+            Runtime 1.4 supports backgroundMaterial="thin" (ultraThin/thin/regular/
+            thick/ultraThick/none) using public SwiftUI material inside the widget,
+            at most four material backgrounds per tree. Supply a readable background
+            color for Reduce Transparency. Accented/vibrant modes omit local material.
+            This is not Home Screen wallpaper blur or a switch for system Liquid Glass.
+            rotation3d is static depth and falls back with Reduce Motion. Do not
+            promise device-motion parallax, continuous widget animation or system
+            wallpaper control. Web CSS material is an approximation.
+            GIF input/canvas/frame/decoded-pixel limits apply. Mac and Reduce Motion
+            use a bounded static first frame. Active previews use public SwiftUI timing;
+            snapshots/inactive scenes stay static. Signed clockCustom intervals are
+            half-turn durations; no private clock modifier is used. A mock is not proof of native
+            continuous animation. Prefer small original assets; no decoder SDK is needed.
+            Reminders needs the reminders package permission and system approval.
+            Use lists() for permitted IDs; items() is read-only with listIDs,
+            start/end (up to 31 days), limit (up to 50) and completed Boolean.
+            Pending items use due dates (undated items excluded); completed items
+            use completion dates. create/update/setCompleted require remindersWrite,
+            a declared native user action and a saved stable requestID UUID.
+            Always await writes. Reuse the same requestID after uncertain delivery;
+            outcome_unknown requires user inspection, never a blind new create.
+            Do not request remindersWrite for display-only widgets. Web Studio
+            simulates actions and persists only preview items/receipts.
+            Health read permissions are private: authorizationStatus returns
+            notDisclosed, and completing consent review is not proof of access.
+            Empty Health results may mean no records or data not shared.
+            API 1.4 sleepSummary reads at most 7 elapsed days/256 segments;
+            activitySummary reads one Gregorian local day with nullable goals
+            and kcal or move-time minutes; workouts reads at most 31 days/50
+            wholly contained items with nullable energy/distance. Sleep uses
+            interval unions with awake/rem/deep/core/unspecified precedence,
+            not Apple Health source ranking. Never persist Health readings or
+            query/prompt from future entries or Live Activity presentations.
+            Health Overview supports overview/sleep/activity/workouts parameters;
+            Web Studio supplies editable simulated aggregates, not native access.
+        16. Location needs the location package permission and approval in the
+            main app. Widget access is separate: use isAuthorizedForWidgetUpdates
+            when explaining widget setup, never infer permission from cached data.
+            Catch current() failures and show a useful setup or unavailable state.
+            Show age/isStale when displaying a cached position; do not invent a fix.
+        17. Scheduled widgets use timeline-date/timeline-slot from $getenv, not
+            a replaced Date global. Future entries are read-only: do not save
+            records, prompt for access or fetch live data while projecting them.
+            Buttons run separate current actions. Use saved display snapshots
+            and label their age; do not imply future personal measurements exist.
+        18. $file.exists(path) checks regular files inside the current package,
+            including binary images. It cannot read outside the package or
+            download iCloud content, and does not validate image bytes.
+            Give a useful missing-resource state instead of inventing a photo.
         """
         let reference = reference.combined
         return rules + "\n\n" + reference

@@ -1,7 +1,12 @@
 {
-  "description": "Daily step count as a ring — pulls from HealthKit.",
+  "description": "Read-only Apple Health steps, active energy or latest heart rate, with saved goals and honest empty states.",
   "category": "health",
-  "tags": ["health","steps","healthkit"],
+  "tags": [
+    "health",
+    "steps",
+    "energy",
+    "heart"
+  ],
   "difficulty": "medium",
   "icon": "figure.walk",
   "featured": true

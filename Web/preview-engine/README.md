@@ -14,3 +14,7 @@ npm run coverage  # regenerate docs/browser-preview-coverage.md
 
 No dependencies. The Babel bundle and support scripts are read from
 `Shared/ScriptWidgetRuntime/Widget/Resource/support.bundle`.
+
+Connected-service fixtures support GitHub profile reads through editable `apis`
+entries. Unknown providers reject with `service_operation`. Fixtures contain no
+credentials and cannot bypass manifest permissions, declared hosts or budgets.
