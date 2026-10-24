@@ -13,6 +13,8 @@ The CLI requires macOS 26 or later. Releases contain separate arm64 and x86_64 p
 
 Download the [authoring Skill](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.1.1/scriptwidget-author-0.1.1.zip), unzip it, and install the `scriptwidget-author` folder using your agent's Skill installation instructions. A matching copy ships with the CLI; `doctor` reports its local path. This is an external Coding Agent Skill, not the App's `.swskill` format. Do not automatically grant tools or system permissions because a Skill suggests them.
 
+For copy-to-folder Claude Code installation, browser preview and iPhone import, see the [Agent quick start](agent-quickstart.md).
+
 ## Check, preview and export
 
 ```sh
