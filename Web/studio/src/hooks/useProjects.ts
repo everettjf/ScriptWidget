@@ -6,6 +6,7 @@ import type { PackageFiles } from "../../../preview-engine/src/types.js";
 export type SaveState = "idle" | "editing" | "saved" | "unavailable";
 
 export interface ProjectsModel {
+  ready: boolean;
   projects: Project[];
   project: Project | null;
   path: string;
@@ -26,6 +27,7 @@ const byRecent = (a: Project, b: Project) => b.updatedAt - a.updatedAt;
 /// Projects stored in this browser and the one being edited. Edits are saved
 /// 400 ms after the last change and when the page is hidden.
 export function useProjects(): ProjectsModel {
+  const [ready, setReady] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [project, setProject] = useState<Project | null>(null);
   const [path, setPath] = useState("main.jsx");
@@ -88,6 +90,7 @@ export function useProjects(): ProjectsModel {
       setProjects(list);
       const lastID = preferences.read<string | null>("project", null);
       openProject(list.find((item) => item.id === lastID) ?? list[0]!);
+      setReady(true);
       if (!storage.persistent) setSaveState("unavailable");
     })();
     return () => { cancelled = true; };
@@ -189,5 +192,5 @@ export function useProjects(): ProjectsModel {
 
   const setFixtures = useCallback((fixtures: string) => edit((current) => ({ ...current, fixtures })), [edit]);
 
-  return { projects, project, path, saveState, openProject, addProject, removeProject, openFile: setPath, updateFiles, updateProjectFiles, rename, setFixtures };
+  return { ready, projects, project, path, saveState, openProject, addProject, removeProject, openFile: setPath, updateFiles, updateProjectFiles, rename, setFixtures };
 }

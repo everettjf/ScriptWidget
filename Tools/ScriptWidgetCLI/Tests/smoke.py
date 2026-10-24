@@ -32,6 +32,26 @@ class NativeCLITests(unittest.TestCase):
         report=json.loads(result.stdout)
         self.assertEqual(report['reportVersion'],1)
         return report
+    def test_preview_link_has_validated_snapshot_and_no_script_execution(self):
+        self.source('throw new Error("preview must not execute locally");')
+        report=self.run_cli('preview','--no-open')
+        self.assertFalse(report['browserLaunchRequested'])
+        self.assertEqual(report['checks']['execute'],'notRun')
+        self.assertEqual(report['checks']['render'],'notRun')
+        self.assertEqual(report['backend'],'web-handoff')
+        prefix='https://xnu.app/scriptwidget/studio/#sw-preview=v1.'
+        self.assertTrue(report['previewURL'].startswith(prefix))
+        payload=report['previewURL'][len(prefix):]
+        import io
+        with zipfile.ZipFile(io.BytesIO(base64.urlsafe_b64decode(payload+'='*((4-len(payload)%4)%4)))) as archive:
+            self.assertEqual(archive.read('main.jsx').decode(),(self.package/'main.jsx').read_text())
+        self.source('$render(<text>wrong</vstack>);')
+        self.assertNotIn('previewURL',self.run_cli('preview','--no-open',code=1))
+    def test_preview_link_limit_is_explicit_and_other_commands_reject_no_open(self):
+        (self.package/'random.bin').write_bytes(os.urandom(46000))
+        report=self.run_cli('preview','--no-open',code=1)
+        self.assertEqual(report['diagnostics'][0]['code'],'preview.link_limit')
+        self.run_cli('check','--no-open',code=2)
     def test_static_check_and_archive_do_not_execute(self):
         self.source('throw new Error("must not execute in check or pack");')
         report=self.run_cli('check')

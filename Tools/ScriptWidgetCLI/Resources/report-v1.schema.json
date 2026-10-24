@@ -8,7 +8,7 @@
     "command": {"type": "string"},
     "status": {"enum": ["passed", "failed", "error", "cancelled"]},
     "tool": {"type": "object", "required": ["version"], "properties": {"version": {"type": "string"}}},
-    "backend": {"enum": ["static", "mac-native", "web"]},
+    "backend": {"enum": ["static", "mac-native", "web", "web-handoff"]},
     "sourceHash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "fixturesHash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "diagnostics": {"type": "array", "items": {"type": "object"}},

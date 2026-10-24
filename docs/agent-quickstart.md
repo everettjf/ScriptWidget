@@ -15,7 +15,7 @@ The Skill was previously named `scriptwidget-author`. If you installed that vers
 
 The resulting file must be `~/.claude/skills/scriptwidget-creator/SKILL.md`. If that folder already exists, review/back up your local modifications before replacing it. For a project-only installation, use `.claude/skills/scriptwidget-creator/` instead. Claude Code documents these locations in its [official Skill guide](https://code.claude.com/docs/en/skills).
 
-Without Homebrew, download the [Skill ZIP](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.1.2/scriptwidget-creator-0.1.2.zip), unzip it, and copy the entire `scriptwidget-creator` folder to the same location. Browser preview does not require the Mac CLI; native checks do.
+Without Homebrew, download the [Skill ZIP](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.2.0/scriptwidget-creator-0.2.0.zip), unzip it, and copy the entire `scriptwidget-creator` folder to the same location. Browser preview does not require the Mac CLI; native checks do.
 
 In Claude Code, invoke:
 
@@ -27,14 +27,19 @@ The folder structure follows the documented discovery contract. This release has
 
 ## Preview in Web Studio
 
-1. Ask the Agent to export a `.swt` package (on Mac: `scriptwidget pack ./MyWidget --output ./artifacts/MyWidget.swt --format json`).
-2. Open [Web Studio](https://xnu.app/scriptwidget/studio/).
-3. Drag the `.swt` onto the page, or choose **Validate → Open .swt package**. For a single-file draft, **Validate** also accepts pasted JSX.
-4. Inspect the preview and mock data. Download the current validation report when the Agent needs the browser diagnostics.
+With CLI 0.2.0 or later, ask your Agent to run:
 
-The current public Studio does not accept code/package payloads in a preview URL, and native CLI 0.1.2 has no `preview`/`open` browser command. Opening the homepage alone does not transfer the generated widget. A future one-click preview needs an explicit package handoff; do not invent a working deep link or upload user code without permission.
+```sh
+scriptwidget preview ./MyWidget --format json
+```
 
-Mac native preview remains available through `scriptwidget render`; see the [CLI guide](mac-cli.md). Browser rendering is approximate and uses mock data.
+The CLI validates the package and compiles its JS/JSX without executing it, then opens your default browser directly in [Web Studio](https://xnu.app/scriptwidget/studio/) with the generated widget loaded. Helpers, manifest and binary resources travel together. The browser adds a new project, preserves existing projects, and clears the package fragment before import. It does not duplicate the import on reload. Invalid links show an error and preserve your work.
+
+No upload server or model service is needed: the ZIP travels in a URL fragment, which is not part of the HTTP request. The link itself contains the complete package; keep private code, resources and credentials out of shared links, logs or chat. The CLI supports up to 45,000 compressed archive bytes (60,000 base64url characters) to keep browser-launch URLs bounded. Larger packages fail explicitly; reduce assets, use [native render](mac-cli.md), or export a `.swt` for explicit import. Resources are never silently removed.
+
+`--no-open` returns `previewURL` without launching a browser, for agents in environments without a graphical browser. A successful report uses backend `web-handoff`; execute/render stay `notRun` because it only certifies compilation and package handoff, not browser rendering. An Agent with browser tools should inspect the loaded page, Problems, and preview before claiming it rendered correctly.
+
+The browser uses its sample mocks; native CLI fixture files are not automatically embedded. Use the Studio mock editor for browser scenarios. For a draft without the Mac CLI, **Validate** still supports pasted JSX or manual `.swt` import.
 
 ## Import on iPhone/iPad
 
@@ -50,4 +55,4 @@ No App Store update is needed for this existing import workflow.
 
 The existing development-only [Node preview tool](browser-preview-engine.md) supports `--device` and `--pair-code`, using the App's manually started local [Web Studio server](web-studio.md). This is separate from the native Homebrew CLI. It requires the same trusted network, the App screen in the foreground, and an initial `.swt` import. It syncs text files into an existing editable package; binary resources are skipped, and revision conflicts must remain visible.
 
-A future native `device` workflow should discover/pair with explicit user action, preview the target package and changes, transfer resources within existing limits, preserve revision checks and require confirmation before overwriting. Pairing credentials must stay local and out of Skills/logs/share links. Public Studio preview links and complete first-time device installation remain follow-up work, not shipped capabilities.
+A future native `device` workflow should discover/pair with explicit user action, preview the target package and changes, transfer resources within existing limits, preserve revision checks and require confirmation before overwriting. Pairing credentials must stay local and out of Skills/logs/share links. Complete first-time paired device installation remains follow-up work; public Studio preview links are shipped in CLI 0.2.0.
