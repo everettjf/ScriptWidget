@@ -7,6 +7,7 @@ export type SaveState = "idle" | "editing" | "saved" | "unavailable";
 
 export interface ProjectsModel {
   ready: boolean;
+  createdStarter: boolean;
   projects: Project[];
   project: Project | null;
   path: string;
@@ -28,6 +29,7 @@ const byRecent = (a: Project, b: Project) => b.updatedAt - a.updatedAt;
 /// 400 ms after the last change and when the page is hidden.
 export function useProjects(): ProjectsModel {
   const [ready, setReady] = useState(false);
+  const [createdStarter, setCreatedStarter] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
   const [project, setProject] = useState<Project | null>(null);
   const [path, setPath] = useState("main.jsx");
@@ -84,6 +86,7 @@ export function useProjects(): ProjectsModel {
         const starter = createProject("My First Widget");
         await storage.save(starter);
         list = [starter];
+        if (!cancelled) setCreatedStarter(true);
       }
       if (cancelled) return;
       drafts.current = new Map(list.map((item) => [item.id, item]));
@@ -192,5 +195,5 @@ export function useProjects(): ProjectsModel {
 
   const setFixtures = useCallback((fixtures: string) => edit((current) => ({ ...current, fixtures })), [edit]);
 
-  return { ready, projects, project, path, saveState, openProject, addProject, removeProject, openFile: setPath, updateFiles, updateProjectFiles, rename, setFixtures };
+  return { ready, createdStarter, projects, project, path, saveState, openProject, addProject, removeProject, openFile: setPath, updateFiles, updateProjectFiles, rename, setFixtures };
 }

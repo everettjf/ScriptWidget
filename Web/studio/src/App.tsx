@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { exportPackage, importPackage, newProjectFiles } from "../../preview-engine/src/package/index.js";
 import type { WidgetSize } from "../../preview-engine/src/types.js";
@@ -69,6 +70,8 @@ export function App() {
   const [settings, setSettings] = useState(() => initialSettings(colorScheme));
   const [tab, setTab] = useState<DetailTab>("problems");
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [templateQuery, setTemplateQuery] = useState("");
+  const [starterDismissed, setStarterDismissed] = useState(false);
   const [validationOpen, setValidationOpen] = useState(false);
   const [newFileOpen, setNewFileOpen] = useState(false);
   const [wallpaperProject, setWallpaperProject] = useState<string | null>(null);
@@ -171,12 +174,26 @@ export function App() {
       <TopBar
         projectName={project.name} projectID={project.id} onRename={model.rename}
         onNew={() => void model.addProject(createProject(`Widget ${model.projects.length + 1}`))}
-        onTemplates={() => setTemplatesOpen(true)}
+        onTemplates={() => { setTemplateQuery(""); setTemplatesOpen(true); }}
         onImport={() => importInput.current?.click()}
         onExport={() => { const result = exportCurrent(); if (result) downloadBytes(result.bytes, result.fileName); }}
         onInstall={() => void install()}
         onValidate={() => setValidationOpen(true)}
       />
+      {model.createdStarter && !initialPreviewFragment && !starterDismissed && model.projects.length === 1 && project.name === "My First Widget" && (
+        <section id="starter-guide" aria-labelledby="starter-heading" className="flex flex-wrap items-center gap-3 border-b bg-sky-50 px-4 py-3 text-slate-900">
+          <div className="min-w-48 flex-1">
+            <h1 id="starter-heading" className="text-sm font-semibold">Start with something you can see.</h1>
+            <p className="text-xs text-slate-600">Preview a built-in example, then create your own copy. Your draft stays here.</p>
+          </div>
+          <div className="flex flex-wrap gap-2" role="group" aria-label="Starter examples">
+            {["Habit Heatmap", "Countdown", "Reading Goal"].map((name) => (
+              <Button key={name} variant="outline" size="sm" onClick={() => { setTemplateQuery(name); setTemplatesOpen(true); }}>{name}</Button>
+            ))}
+            <Button variant="ghost" size="sm" onClick={() => setStarterDismissed(true)}>Keep editing</Button>
+          </div>
+        </section>
+      )}
       <main className="grid min-h-0 flex-1 grid-cols-[220px_minmax(0,1fr)_minmax(360px,440px)] divide-x max-[1100px]:grid-cols-[200px_minmax(0,1fr)] max-[720px]:grid-cols-1 max-[720px]:divide-x-0">
         <Sidebar
           projects={model.projects} project={project} path={path} entry={report.manifest?.entry}
@@ -210,9 +227,10 @@ export function App() {
         onCreate={source => void model.addProject(createProject("Pasted Widget", { ...newProjectFiles("Pasted Widget"), "main.jsx": source }))}
         onReport={() => void validationReport(project, effective, preview).then(value => downloadBytes(new TextEncoder().encode(JSON.stringify(value, null, 2)), "validation-report.json")).catch(error => toast.error((error as Error).message))}
       />
-      <TemplatesDialog open={templatesOpen} onOpenChange={setTemplatesOpen}
+      <TemplatesDialog initialQuery={templateQuery} open={templatesOpen} onOpenChange={setTemplatesOpen}
         onChoose={(template: Template) => {
           setTemplatesOpen(false);
+          setStarterDismissed(true);
           void model.addProject(projectFromTemplate(template)).then(() => toast.success(`Created a copy of ${template.name}`, { description: "It's saved in this browser. Export a .swt to keep it elsewhere." }));
         }} />
       <NewFileDialog open={newFileOpen} onOpenChange={setNewFileOpen} files={project.files}

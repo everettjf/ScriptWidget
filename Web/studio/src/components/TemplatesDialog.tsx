@@ -135,11 +135,14 @@ function TemplateDetail({ template, onBack, onCopy }: { template: Template; onBa
   );
 }
 
-export function TemplatesDialog({ open, onOpenChange, onChoose }: { open: boolean; onOpenChange(open: boolean): void; onChoose(template: Template): void }) {
+export function TemplatesDialog({ open, onOpenChange, onChoose, initialQuery = "" }: { initialQuery?: string; open: boolean; onOpenChange(open: boolean): void; onChoose(template: Template): void }) {
   const [templates, setTemplates] = useState<Template[] | null>(null);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("all");
   const [selected, setSelected] = useState<Template | null>(null);
+  useEffect(() => {
+    if (open) { setQuery(initialQuery); setCategory("all"); }
+  }, [open, initialQuery]);
   useEffect(() => {
     if (open && !templates) loadTemplates().then(setTemplates, () => { catalog = null; setTemplates([]); });
     if (!open) setSelected(null);
