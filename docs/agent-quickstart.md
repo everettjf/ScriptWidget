@@ -8,17 +8,17 @@ Install the Mac CLI, then copy its entire bundled Skill folder (including refere
 brew install everettjf/tap/scriptwidget-cli
 mkdir -p ~/.claude/skills
 # First installation: stop rather than overwrite an existing personal Skill.
-test ! -e ~/.claude/skills/scriptwidget-author && cp -R "$(brew --prefix scriptwidget-cli)/libexec/ScriptWidgetCLI.app/Contents/Resources/scriptwidget-author" ~/.claude/skills/
+test ! -e ~/.claude/skills/scriptwidget-creator && cp -R "$(brew --prefix scriptwidget-cli)/libexec/ScriptWidgetCLI.app/Contents/Resources/scriptwidget-creator" ~/.claude/skills/
 ```
 
-The resulting file must be `~/.claude/skills/scriptwidget-author/SKILL.md`. If that folder already exists, review/back up your local modifications before replacing it. For a project-only installation, use `.claude/skills/scriptwidget-author/` instead. Claude Code documents these locations in its [official Skill guide](https://code.claude.com/docs/en/skills).
+The resulting file must be `~/.claude/skills/scriptwidget-creator/SKILL.md`. If that folder already exists, review/back up your local modifications before replacing it. For a project-only installation, use `.claude/skills/scriptwidget-creator/` instead. Claude Code documents these locations in its [official Skill guide](https://code.claude.com/docs/en/skills).
 
-Without Homebrew, download the [Skill ZIP](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.1.1/scriptwidget-author-0.1.1.zip), unzip it, and copy the entire `scriptwidget-author` folder to the same location. Browser preview does not require the Mac CLI; native checks do.
+Without Homebrew, download the [Skill ZIP](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.1.2/scriptwidget-creator-0.1.2.zip), unzip it, and copy the entire `scriptwidget-creator` folder to the same location. Browser preview does not require the Mac CLI; native checks do.
 
 In Claude Code, invoke:
 
 ```text
-/scriptwidget-author Create a medium reading habit widget. Use clearly labeled demo data for preview, validate it, show me the result, and export a .swt package.
+/scriptwidget-creator Create a medium reading habit widget. Use clearly labeled demo data for preview, validate it, show me the result, and export a .swt package.
 ```
 
 The folder structure follows the documented discovery contract. This release has validated folder copying and Skill contents; it does not claim end-to-end discovery testing in every Claude Code version or managed configuration.
@@ -30,7 +30,7 @@ The folder structure follows the documented discovery contract. This release has
 3. Drag the `.swt` onto the page, or choose **Validate → Open .swt package**. For a single-file draft, **Validate** also accepts pasted JSX.
 4. Inspect the preview and mock data. Download the current validation report when the Agent needs the browser diagnostics.
 
-The current public Studio does not accept code/package payloads in a preview URL, and native CLI 0.1.1 has no `preview`/`open` browser command. Opening the homepage alone does not transfer the generated widget. A future one-click preview needs an explicit package handoff; do not invent a working deep link or upload user code without permission.
+The current public Studio does not accept code/package payloads in a preview URL, and native CLI 0.1.2 has no `preview`/`open` browser command. Opening the homepage alone does not transfer the generated widget. A future one-click preview needs an explicit package handoff; do not invent a working deep link or upload user code without permission.
 
 Mac native preview remains available through `scriptwidget render`; see the [CLI guide](mac-cli.md). Browser rendering is approximate and uses mock data.
 

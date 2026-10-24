@@ -21,7 +21,7 @@ Website: <https://xnu.app/scriptwidget/>
 
 ## Create with your Coding Agent
 
-Use your own model with the [official authoring Skill](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.1.1/scriptwidget-author-0.1.1.zip). The standalone Mac CLI validates packages and produces native SwiftUI previews; it does not require the App, Node, Chrome or an inference server.
+Use your own model with the [official authoring Skill](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.1.2/scriptwidget-creator-0.1.2.zip). The standalone Mac CLI validates packages and produces native SwiftUI previews; it does not require the App, Node, Chrome or an inference server.
 
 ```sh
 brew install everettjf/tap/scriptwidget-cli

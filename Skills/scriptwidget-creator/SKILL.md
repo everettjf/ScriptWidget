@@ -1,5 +1,5 @@
 ---
-name: scriptwidget-author
+name: scriptwidget-creator
 description: Create or edit ScriptWidget JavaScript/JSX widget packages, validate them with the ScriptWidget CLI, and inspect native preview images. Use for ScriptWidget widgets and package fixes; not for React web apps or other widget frameworks.
 ---
 

@@ -4,7 +4,7 @@ import CoreGraphics
 import Security
 
 private let usage = """
-ScriptWidget native validation CLI 0.1.1 (macOS 26+)
+ScriptWidget native validation CLI 0.1.2 (macOS 26+)
 Usage:
   scriptwidget --version [--format json]
   scriptwidget doctor [--format json]
@@ -95,12 +95,12 @@ struct Controller {
         if options.command == "--version" { report["version"]=cliVersion; return (report,0) }
         guard FileManager.default.isExecutableFile(atPath:worker.path) else { throw CLIError(code:"tool.worker_missing",message:"Native worker missing. Reinstall scriptwidget-cli.",exitCode:2) }
         try validateWorkerSignature()
-        let skillDirectory=Bundle.main.bundleURL.appendingPathComponent("Contents/Resources/scriptwidget-author")
+        let skillDirectory=Bundle.main.bundleURL.appendingPathComponent("Contents/Resources/scriptwidget-creator")
         let referenceHash=sourceHash(try snapshot(skillDirectory))
         if options.command == "doctor" {
             report["system"]=ProcessInfo.processInfo.operatingSystemVersionString
             report["workerPath"]=worker.path
-            report["skillPath"]=Bundle.main.bundleURL.appendingPathComponent("Contents/Resources/scriptwidget-author").path
+            report["skillPath"]=Bundle.main.bundleURL.appendingPathComponent("Contents/Resources/scriptwidget-creator").path
             report["nativeRenderRequirement"]="A logged-in macOS graphical session is required for SwiftUI screenshots."
             report["signature"]="valid"
             report["workerSandbox"]=true

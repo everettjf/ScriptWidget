@@ -31,7 +31,7 @@ export function ValidationDialog({ open, onOpenChange, onCreate, onImport, onRep
         <div className="grid gap-2 border-t pt-3 text-sm">
           <p>Use your own Coding Agent with the official Skill and Mac CLI:</p>
           <code className="overflow-x-auto rounded bg-muted p-2 text-xs">brew install everettjf/tap/scriptwidget-cli</code>
-          <a className="underline" href="https://github.com/everettjf/scriptwidget/releases/download/cli-v0.1.1/scriptwidget-author-0.1.1.zip">Download the ScriptWidget authoring Skill</a>
+          <a className="underline" href="https://github.com/everettjf/scriptwidget/releases/download/cli-v0.1.2/scriptwidget-creator-0.1.2.zip">Download the ScriptWidget authoring Skill</a>
         </div>
       </DialogContent>
     </Dialog>

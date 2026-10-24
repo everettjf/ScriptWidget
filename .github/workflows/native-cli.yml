@@ -1,10 +1,10 @@
 name: Native CLI
 on:
   pull_request:
-    paths: ['Tools/ScriptWidgetCLI/**', 'Skills/scriptwidget-author/**', 'Shared/ScriptWidgetRuntime/**', '.github/workflows/native-cli.yml']
+    paths: ['Tools/ScriptWidgetCLI/**', 'Skills/scriptwidget-creator/**', 'Shared/ScriptWidgetRuntime/**', '.github/workflows/native-cli.yml']
   push:
     branches: [main]
-    paths: ['Tools/ScriptWidgetCLI/**', 'Skills/scriptwidget-author/**', 'Shared/ScriptWidgetRuntime/**', '.github/workflows/native-cli.yml']
+    paths: ['Tools/ScriptWidgetCLI/**', 'Skills/scriptwidget-creator/**', 'Shared/ScriptWidgetRuntime/**', '.github/workflows/native-cli.yml']
   workflow_dispatch:
 permissions:
   contents: read

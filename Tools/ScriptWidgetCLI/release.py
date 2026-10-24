@@ -10,7 +10,7 @@ import subprocess
 import zipfile
 
 ROOT=Path(__file__).resolve().parents[2]
-VERSION='0.1.1'
+VERSION='0.1.2'
 IDENTITY='Developer ID Application: Feng Zhu (YPV49M8592)'
 
 def run(*arguments,**kwargs):
@@ -86,9 +86,9 @@ def main():
         run('codesign','--verify','--strict','--deep',extracted/'ScriptWidgetCLI.app')
         if args.notarize:run('xcrun','stapler','validate',extracted/'ScriptWidgetCLI.app')
         assets.append(dict(file=archive.name,sha256=hashlib.sha256(archive.read_bytes()).hexdigest(),architecture=arch))
-    skill=out/f'scriptwidget-author-{VERSION}.zip'
+    skill=out/f'scriptwidget-creator-{VERSION}.zip'
     with zipfile.ZipFile(skill,'w',compression=zipfile.ZIP_DEFLATED) as archive:
-        for source in sorted((ROOT/'Skills/scriptwidget-author').rglob('*')):
+        for source in sorted((ROOT/'Skills/scriptwidget-creator').rglob('*')):
             if source.is_file():archive.write(source,source.relative_to(ROOT/'Skills').as_posix())
     assets.append(dict(file=skill.name,sha256=hashlib.sha256(skill.read_bytes()).hexdigest()))
     (out/'release-manifest.json').write_text(json.dumps(dict(version=VERSION,commit=commit,notarized=args.notarize,assets=assets),indent=2)+'\n')
