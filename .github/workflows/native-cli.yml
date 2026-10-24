@@ -1,0 +1,28 @@
+name: Native CLI
+on:
+  pull_request:
+    paths: ['Tools/ScriptWidgetCLI/**', 'Skills/scriptwidget-author/**', 'Shared/ScriptWidgetRuntime/**', '.github/workflows/native-cli.yml']
+  push:
+    branches: [main]
+    paths: ['Tools/ScriptWidgetCLI/**', 'Skills/scriptwidget-author/**', 'Shared/ScriptWidgetRuntime/**', '.github/workflows/native-cli.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-cli:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: {node-version: 24}
+      - run: brew install xcodegen
+      - run: node Tools/ScriptWidgetCLI/prepare-resources.mjs
+      - run: xcodegen generate --spec Tools/ScriptWidgetCLI/project.yml
+      - name: Build independently of the App Store application
+        run: >-
+          xcodebuild -quiet -project Tools/ScriptWidgetCLI/ScriptWidgetCLI.xcodeproj
+          -scheme ScriptWidgetCLI -configuration Release
+          -derivedDataPath /tmp/scriptwidget-cli-ci
+          CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= build
+      - name: Validate native execution, reports and sandbox isolation
+        run: python3 Tools/ScriptWidgetCLI/Tests/smoke.py /tmp/scriptwidget-cli-ci/Build/Products/Release/ScriptWidgetCLI.app/Contents/MacOS/scriptwidget

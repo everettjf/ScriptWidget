@@ -1,0 +1,3 @@
+interface:
+  display_name: "ScriptWidget Author"
+  short_description: "Create and validate native ScriptWidget widgets"

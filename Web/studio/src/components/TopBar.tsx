@@ -12,9 +12,10 @@ interface TopBarProps {
   onImport(): void;
   onExport(): void;
   onInstall(): void;
+  onValidate(): void;
 }
 
-export function TopBar({ projectName, projectID, onRename, onNew, onTemplates, onImport, onExport, onInstall }: TopBarProps) {
+export function TopBar({ projectName, projectID, onRename, onNew, onTemplates, onImport, onExport, onInstall, onValidate }: TopBarProps) {
   const [name, setName] = useState(projectName);
   // Show the stored name again when another project opens.
   useEffect(() => setName(projectName), [projectID, projectName]);
@@ -36,6 +37,7 @@ export function TopBar({ projectName, projectID, onRename, onNew, onTemplates, o
         />
       </label>
       <nav className="flex flex-wrap gap-1.5" aria-label="Project actions">
+        <Button id="open-validation" variant="outline" size="sm" onClick={onValidate}>Validate</Button>
         <Button id="new-project" variant="outline" size="sm" onClick={onNew}><Plus />New</Button>
         <Button id="open-templates" variant="outline" size="sm" onClick={onTemplates}><LayoutGrid />Gallery</Button>
         <Button id="import-package" variant="outline" size="sm" onClick={onImport}><Upload />Import</Button>

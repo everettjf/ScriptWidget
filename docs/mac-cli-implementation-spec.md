@@ -1,6 +1,6 @@
 # Mac 原生校验 CLI：开发规格与 Homebrew 分发方案
 
-日期：2026-10-23。状态：开发前规格，尚未实现 CLI、创建 tap、签名、公证或发布。本文中的新命令均为拟定接口，不是当前可安装的软件。已存在的 Node CLI / MCP 见[总体方案](agent-widget-validation-plan.md)。
+日期：2026-10-23。状态：实现规格；CLI、Skill、Web 入口已经实现，正在完成发布验收。安装和当前限制以[用户文档](mac-cli.md)为准，本文保留设计决策与开发任务。已存在的 Node CLI / MCP 见[总体方案](agent-widget-validation-plan.md)。
 
 ## 1. 已确定的产品决策
 
@@ -237,4 +237,8 @@ D0 未过之前不开始大规模 host 重构或分发自动化。各任务使�
 
 本仓库研究分支核对确认：Mac project 当前各相关配置的 deployment target 为 26.0；runtime 的 compiler 通过 ScriptManager 读取 support.bundle，RunningState/多个 API 仍可能引用共享容器/服务；Mac App 有模板批量预览入口，但不是对外 CLI；原生测试已有 NSHostingView/ImageRenderer 截图路径。这些支持代码复用，同时解释了为何必须先完成 D0 与 host 隔离。
 
-本次只提交设计文档，没有创建 Homebrew 仓库、签名证书或产品代码。接下来的开发入口明确为 D0，产品决策、命令、报告、分发与验收按本规格执行；不可行的底层机制必须以探针结果说明并修正规格。
+实现进度与发布验收以用户文档和对应 release 记录为准。D0 已验证独立 native 执行/PNG 及 App Sandbox 外部文件读写拒绝；现有 App 无需更新。
+
+## 首版实现边界补充
+
+Native 0.1 以明确的 api/fetch/storage fixtures 支持常见离线预览；未实现的数据源插件与其他 fixture 段明确失败。系统查询的完整原生参数语义尚未覆盖，带参数的 mock API 调用产生警告，不作为真实查询成功的证明。worker 采用 768 MiB RSS 采样终止预算，它不是严格的内核内存隔离。版本/环境错误的报告采用最小 schema，只有取得源输入后才提供内容指纹；render 成功与组件失败报告落盘，启动/总体 deadline 故障始终在 stdout 返回结构化错误。

@@ -438,6 +438,9 @@ enum ScriptWidgetPrecompiler {
 
 
 class ScriptWidgetRuntime {
+    /// Native validation hosts may replace system-data APIs before user code runs.
+    /// Never exposed to JavaScript; normal apps and extensions leave this nil.
+    var validationHostInstaller: ((JSContext) -> Void)?
     
     private let runtimeContext = JSContext()!
     private let publisherLane = ScriptWidgetPublisherLane()
@@ -542,6 +545,7 @@ class ScriptWidgetRuntime {
             let environment = environments
             let getenv: @convention(block) (String) -> String = { key in environment[key] ?? "" }
             runtimeContext["$getenv"] = unsafeBitCast(getenv, to: JSValue.self)
+            validationHostInstaller?(runtimeContext)
         }
     }
     

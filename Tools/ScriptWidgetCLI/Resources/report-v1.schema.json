@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ScriptWidget CLI report v1",
+  "type": "object",
+  "required": ["reportVersion", "command", "status", "tool", "diagnostics"],
+  "properties": {
+    "reportVersion": {"const": 1},
+    "command": {"type": "string"},
+    "status": {"enum": ["passed", "failed", "error", "cancelled"]},
+    "tool": {"type": "object", "required": ["version"], "properties": {"version": {"type": "string"}}},
+    "backend": {"enum": ["static", "mac-native", "web"]},
+    "sourceHash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "fixturesHash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "diagnostics": {"type": "array", "items": {"type": "object"}},
+    "checks": {"type": "object", "additionalProperties": {"enum": ["passed", "failed", "notRun"]}},
+    "artifacts": {"type": "array", "items": {"type": "object", "required": ["path", "sha256", "bytes"]}}
+  }
+}

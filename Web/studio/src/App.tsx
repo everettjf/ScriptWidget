@@ -1,7 +1,9 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { exportPackage, importPackage } from "../../preview-engine/src/package/index.js";
+import { exportPackage, importPackage, newProjectFiles } from "../../preview-engine/src/package/index.js";
 import type { WidgetSize } from "../../preview-engine/src/types.js";
+import { ValidationDialog } from "@/components/ValidationDialog";
+import { previewIsCurrent, validationReport } from "@/validationReport.ts";
 import { EditorPane } from "@/components/EditorPane";
 import { InstallDialog } from "@/components/InstallDialog";
 import { NewFileDialog } from "@/components/NewFileDialog";
@@ -41,6 +43,7 @@ export function App() {
   const [settings, setSettings] = useState(() => initialSettings(colorScheme));
   const [tab, setTab] = useState<DetailTab>("problems");
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [validationOpen, setValidationOpen] = useState(false);
   const [newFileOpen, setNewFileOpen] = useState(false);
   const [wallpaperProject, setWallpaperProject] = useState<string | null>(null);
   const [installedFile, setInstalledFile] = useState<string | null>(null);
@@ -146,6 +149,7 @@ export function App() {
         onImport={() => importInput.current?.click()}
         onExport={() => { const result = exportCurrent(); if (result) downloadBytes(result.bytes, result.fileName); }}
         onInstall={() => void install()}
+        onValidate={() => setValidationOpen(true)}
       />
       <main className="grid min-h-0 flex-1 grid-cols-[220px_minmax(0,1fr)_minmax(360px,440px)] divide-x max-[1100px]:grid-cols-[200px_minmax(0,1fr)] max-[720px]:grid-cols-1 max-[720px]:divide-x-0">
         <Sidebar
@@ -174,6 +178,12 @@ export function App() {
           fixtures={project.fixtures} onFixtures={model.setFixtures} tab={tab} onTab={setTab}
         />
       </main>
+      <ValidationDialog open={validationOpen} onOpenChange={setValidationOpen}
+        ready={previewIsCurrent(project, effective, preview)}
+        onImport={() => importInput.current?.click()}
+        onCreate={source => void model.addProject(createProject("Pasted Widget", { ...newProjectFiles("Pasted Widget"), "main.jsx": source }))}
+        onReport={() => void validationReport(project, effective, preview).then(value => downloadBytes(new TextEncoder().encode(JSON.stringify(value, null, 2)), "validation-report.json")).catch(error => toast.error((error as Error).message))}
+      />
       <TemplatesDialog open={templatesOpen} onOpenChange={setTemplatesOpen}
         onChoose={(template: Template) => {
           setTemplatesOpen(false);

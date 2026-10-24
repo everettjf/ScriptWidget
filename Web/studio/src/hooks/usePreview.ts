@@ -18,6 +18,7 @@ export interface PreviewSettings {
 }
 
 export interface Message {
+  code?: string;
   severity: Severity;
   text: string;
   detail?: string;
@@ -30,6 +31,7 @@ export type PreviewOutput =
   | { kind: "error"; errorKind: string; message: string };
 
 export interface PreviewState {
+  input?: { files: Project["files"]; fixtures: string; settings: PreviewSettings };
   output: PreviewOutput;
   problems: Message[];
   logs: Message[];
@@ -55,12 +57,17 @@ export function usePreview(project: Project | null, settings: PreviewSettings): 
   useEffect(() => {
     if (!ready || !files) return;
     const current = ++generation.current;
+    const input = { files, fixtures: fixtures ?? "", settings: { profile, family, appearance, renderingMode, parameter, timelineDate, reduceTransparency, reduceMotion } };
     const timer = setTimeout(async () => {
       const started = performance.now();
       const report = packageReport({ files });
-      const problems: Message[] = report.issues.map((issue) => ({ severity: issue.severity, text: issue.message }));
+      const problems: Message[] = report.issues.map((issue) => ({ code: issue.code, severity: issue.severity, text: issue.message }));
       let fixtureData: unknown = {};
-      try { fixtureData = parseMocks(fixtures || "{}"); } catch (error) { problems.push({ severity: "warning", text: `Fixtures are not valid JSON: ${(error as Error).message}` }); }
+      try { fixtureData = parseMocks(fixtures || "{}"); } catch (error) {
+        const message = `Fixtures are not valid JSON: ${(error as Error).message}`;
+        setState({ input, output: { kind: "error", errorKind: "invalidFixture", message }, problems: [...problems, { severity: "error", text: message }], logs: [] });
+        return;
+      }
       let timelineEnvironment: Record<string, string> = {};
       try { timelineEnvironment = timelinePreview(report.manifest, timelineDate).environments; }
       catch (error) { problems.push({ severity: "error", text: `Timeline: ${(error as Error).message}` }); }
@@ -74,17 +81,18 @@ export function usePreview(project: Project | null, settings: PreviewSettings): 
       });
       if (current !== generation.current) return;
       const logs: Message[] = result.logs.map((log) => ({ severity: log.level === "error" ? "error" : "info", text: log.message }));
-      for (const item of result.diagnostics) problems.push({ severity: item.severity, text: item.message });
+      for (const item of result.diagnostics) problems.push({ code: item.code, severity: item.severity, text: item.message });
       if (result.error || result.tree === null) {
         const error = result.error ?? { kind: "internalError", message: "The runtime returned no tree." };
-        problems.unshift({ severity: "error", text: `The widget failed to run (${error.kind}).`, detail: error.message });
-        setState({ output: { kind: "error", errorKind: error.kind, message: error.message }, problems, logs });
+        problems.unshift({ code: error.kind, severity: "error", text: `The widget failed to run (${error.kind}).`, detail: error.message });
+        setState({ input, output: { kind: "error", errorKind: error.kind, message: error.message }, problems, logs });
         return;
       }
       const rendered = await renderWidget(result.tree, { family, profile, appearance, renderingMode, reduceTransparency, reduceMotion, resources: resourceURLs(files) });
       if (current !== generation.current) return;
-      for (const item of rendered.diagnostics) problems.push({ severity: item.severity, text: item.message });
+      for (const item of rendered.diagnostics) problems.push({ code: item.code, severity: item.severity, text: item.message });
       setState({
+        input,
         output: { kind: "widget", element: rendered.element, width: rendered.size.width, height: rendered.size.height, milliseconds: Math.round(performance.now() - started) },
         problems, logs,
       });

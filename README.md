@@ -19,6 +19,19 @@ Website: <https://xnu.app/scriptwidget/>
 
 > ✨ *Build iPhone, iPad, and Mac widgets in ScriptWidget Studio—without writing Swift.*
 
+## Create with your Coding Agent
+
+Use your own model with the [official authoring Skill](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.1.0/scriptwidget-author-0.1.0.zip). The standalone Mac CLI validates packages and produces native SwiftUI previews; it does not require the App, Node, Chrome or an inference server.
+
+```sh
+brew install everettjf/tap/scriptwidget-cli
+scriptwidget check ./MyWidget --format json
+scriptwidget render ./MyWidget --output ./artifacts --format json
+```
+
+[CLI installation and limits](docs/mac-cli.md) · [Web validation and preview](https://xnu.app/scriptwidget/studio/)
+
+
 ---
 
 ## 🎯 What is ScriptWidget?
