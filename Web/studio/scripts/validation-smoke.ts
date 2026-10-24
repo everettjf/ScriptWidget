@@ -1,0 +1,31 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { launchChrome,serveDirectory } from '../../preview-engine/scripts/lib/chrome.mjs';
+const dist=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../dist');
+const server=await serveDirectory(dist);
+const chrome=await launchChrome({width:1450,height:1000,scale:1});
+try{
+ const page=await chrome.newPage();await page.goto(process.env.SCRIPTWIDGET_STUDIO_URL || server.origin+'/index.html');
+ await page.waitFor("!!document.querySelector('.sw-widget')",20000);
+ const before=await page.evaluate<number>("document.querySelectorAll('#project-list li').length");
+ await page.evaluate("document.getElementById('open-validation').click()");
+ await page.waitFor("!!document.getElementById('validation-source')");
+ await page.waitFor("getComputedStyle(document.querySelector('[data-slot=dialog-content]')).opacity==='1'");
+ if(process.argv[2])fs.writeFileSync(process.argv[2],await page.screenshot());
+ await page.evaluate("document.getElementById('validation-source').focus()");
+ await page.call('Input.insertText',{text:'$render(<text font="title">Agent validation smoke</text>);'});
+ await page.evaluate("document.getElementById('validate-pasted-code').click()");
+ await page.waitFor("document.querySelector('.sw-widget')?.textContent.includes('Agent validation smoke')",20000);
+ const after=await page.evaluate<number>("document.querySelectorAll('#project-list li').length");
+ if(after!==before+1)throw Error('Pasted validation must preserve the original project');
+ await page.evaluate("document.getElementById('open-validation').click()");
+ await page.waitFor("!document.getElementById('download-validation-report').disabled");
+ await page.evaluate(`window.__downloads=[]; const original=URL.createObjectURL; URL.createObjectURL=function(blob){window.__downloads.push(blob);return original.call(URL,blob);}; document.getElementById('download-validation-report').click();`);
+ await page.waitFor("window.__downloads.length===1");
+ const report=await page.evaluate<{backend:string;status:string;checks:{native:string};sourceHash:string}>("window.__downloads[0].text().then(JSON.parse)");
+ if(report.backend!=='web'||report.status!=='passed'||report.checks.native!=='notRun'||!/^[a-f0-9]{64}$/.test(report.sourceHash))throw Error('Incorrect web validation authority/result');
+ console.log('Validation UI: paste creates a copy, preview renders, report matches current source and identifies browser-only checks.');
+ const errors=page.consoleMessages.filter(line=>line.startsWith('exception')||line.startsWith('error'));
+ if(errors.length)throw Error(errors.join('\n'));
+}finally{await chrome.close();server.close();}

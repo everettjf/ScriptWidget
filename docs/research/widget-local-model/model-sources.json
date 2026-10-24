@@ -1,0 +1,235 @@
+{
+  "checkedOn": "2026-10-23",
+  "kind": "Upstream metadata only; no model inference or training performed",
+  "models": [
+    {
+      "id": "Qwen/Qwen3.5-2B",
+      "revision": "15852e8c16360a2fea060d615a32b45270f8a8fc",
+      "license": "apache-2.0",
+      "parameters": 2274069824,
+      "architecture": [
+        "Qwen3_5ForConditionalGeneration"
+      ],
+      "context": 262144,
+      "modelCard": "https://huggingface.co/Qwen/Qwen3.5-2B/blob/15852e8c16360a2fea060d615a32b45270f8a8fc/README.md",
+      "config": "https://huggingface.co/Qwen/Qwen3.5-2B/resolve/15852e8c16360a2fea060d615a32b45270f8a8fc/config.json",
+      "metadata": "https://huggingface.co/api/models/Qwen/Qwen3.5-2B/revision/15852e8c16360a2fea060d615a32b45270f8a8fc"
+    },
+    {
+      "id": "Qwen/Qwen3.5-4B",
+      "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+      "license": "apache-2.0",
+      "parameters": 4659865088,
+      "architecture": [
+        "Qwen3_5ForConditionalGeneration"
+      ],
+      "context": 262144,
+      "modelCard": "https://huggingface.co/Qwen/Qwen3.5-4B/blob/851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a/README.md",
+      "config": "https://huggingface.co/Qwen/Qwen3.5-4B/resolve/851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a/config.json",
+      "metadata": "https://huggingface.co/api/models/Qwen/Qwen3.5-4B/revision/851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a"
+    },
+    {
+      "id": "Qwen/Qwen3-4B-Instruct-2507",
+      "revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+      "license": "apache-2.0",
+      "parameters": 4022468096,
+      "architecture": [
+        "Qwen3ForCausalLM"
+      ],
+      "context": 262144,
+      "modelCard": "https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507/blob/cdbee75f17c01a7cc42f958dc650907174af0554/README.md",
+      "config": "https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507/resolve/cdbee75f17c01a7cc42f958dc650907174af0554/config.json",
+      "metadata": "https://huggingface.co/api/models/Qwen/Qwen3-4B-Instruct-2507/revision/cdbee75f17c01a7cc42f958dc650907174af0554"
+    },
+    {
+      "id": "Qwen/Qwen2.5-Coder-1.5B-Instruct",
+      "revision": "2e1fd397ee46e1388853d2af2c993145b0f1098a",
+      "license": "apache-2.0",
+      "parameters": 1543714304,
+      "architecture": [
+        "Qwen2ForCausalLM"
+      ],
+      "context": 32768,
+      "modelCard": "https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct/blob/2e1fd397ee46e1388853d2af2c993145b0f1098a/README.md",
+      "config": "https://huggingface.co/Qwen/Qwen2.5-Coder-1.5B-Instruct/resolve/2e1fd397ee46e1388853d2af2c993145b0f1098a/config.json",
+      "metadata": "https://huggingface.co/api/models/Qwen/Qwen2.5-Coder-1.5B-Instruct/revision/2e1fd397ee46e1388853d2af2c993145b0f1098a"
+    },
+    {
+      "id": "Qwen/Qwen2.5-Coder-3B-Instruct",
+      "revision": "488639f1ff808d1d3d0ba301aef8c11461451ec5",
+      "license": "other",
+      "parameters": 3085938688,
+      "architecture": [
+        "Qwen2ForCausalLM"
+      ],
+      "context": 32768,
+      "modelCard": "https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct/blob/488639f1ff808d1d3d0ba301aef8c11461451ec5/README.md",
+      "config": "https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct/resolve/488639f1ff808d1d3d0ba301aef8c11461451ec5/config.json",
+      "licenseDetails": {
+        "license": "other",
+        "license_name": "qwen-research",
+        "license_link": "https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct/blob/main/LICENSE"
+      },
+      "licenseFile": "https://huggingface.co/Qwen/Qwen2.5-Coder-3B-Instruct/resolve/488639f1ff808d1d3d0ba301aef8c11461451ec5/LICENSE",
+      "metadata": "https://huggingface.co/api/models/Qwen/Qwen2.5-Coder-3B-Instruct/revision/488639f1ff808d1d3d0ba301aef8c11461451ec5"
+    },
+    {
+      "id": "Qwen/Qwen2.5-Coder-7B-Instruct",
+      "revision": "c03e6d358207e414f1eca0bb1891e29f1db0e242",
+      "license": "apache-2.0",
+      "parameters": 7615616512,
+      "architecture": [
+        "Qwen2ForCausalLM"
+      ],
+      "context": 32768,
+      "modelCard": "https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct/blob/c03e6d358207e414f1eca0bb1891e29f1db0e242/README.md",
+      "config": "https://huggingface.co/Qwen/Qwen2.5-Coder-7B-Instruct/resolve/c03e6d358207e414f1eca0bb1891e29f1db0e242/config.json",
+      "metadata": "https://huggingface.co/api/models/Qwen/Qwen2.5-Coder-7B-Instruct/revision/c03e6d358207e414f1eca0bb1891e29f1db0e242"
+    },
+    {
+      "id": "HuggingFaceTB/SmolLM3-3B",
+      "revision": "a07cc9a04f16550a088caea529712d1d335b0ac1",
+      "license": "apache-2.0",
+      "parameters": 3075098624,
+      "architecture": [
+        "SmolLM3ForCausalLM"
+      ],
+      "context": 65536,
+      "modelCard": "https://huggingface.co/HuggingFaceTB/SmolLM3-3B/blob/a07cc9a04f16550a088caea529712d1d335b0ac1/README.md",
+      "config": "https://huggingface.co/HuggingFaceTB/SmolLM3-3B/resolve/a07cc9a04f16550a088caea529712d1d335b0ac1/config.json",
+      "metadata": "https://huggingface.co/api/models/HuggingFaceTB/SmolLM3-3B/revision/a07cc9a04f16550a088caea529712d1d335b0ac1"
+    },
+    {
+      "id": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "revision": "b2cff646eb4bb1d68355c01b18ae02e7cf42d120",
+      "license": "apache-2.0",
+      "parameters": 30532122624,
+      "architecture": [
+        "Qwen3MoeForCausalLM"
+      ],
+      "context": 262144,
+      "modelCard": "https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct/blob/b2cff646eb4bb1d68355c01b18ae02e7cf42d120/README.md",
+      "config": "https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct/resolve/b2cff646eb4bb1d68355c01b18ae02e7cf42d120/config.json",
+      "metadata": "https://huggingface.co/api/models/Qwen/Qwen3-Coder-30B-A3B-Instruct/revision/b2cff646eb4bb1d68355c01b18ae02e7cf42d120"
+    },
+    {
+      "id": "google/gemma-4-E2B-it",
+      "revision": "3e22461f65e89153144f8adb70e3b8c2cc9845a7",
+      "license": "apache-2.0",
+      "parameters": 5123178051,
+      "architecture": [
+        "Gemma4ForConditionalGeneration"
+      ],
+      "context": 131072,
+      "modelCard": "https://huggingface.co/google/gemma-4-E2B-it/blob/3e22461f65e89153144f8adb70e3b8c2cc9845a7/README.md",
+      "config": "https://huggingface.co/google/gemma-4-E2B-it/resolve/3e22461f65e89153144f8adb70e3b8c2cc9845a7/config.json",
+      "metadata": "https://huggingface.co/api/models/google/gemma-4-E2B-it/revision/3e22461f65e89153144f8adb70e3b8c2cc9845a7"
+    },
+    {
+      "id": "Qwen/Qwen3.5-0.8B",
+      "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+      "license": "apache-2.0",
+      "parameters": 873438784,
+      "architecture": [
+        "Qwen3_5ForConditionalGeneration"
+      ],
+      "context": 262144,
+      "modelCard": "https://huggingface.co/Qwen/Qwen3.5-0.8B/blob/2fc06364715b967f1860aea9cf38778875588b17/README.md",
+      "config": "https://huggingface.co/Qwen/Qwen3.5-0.8B/resolve/2fc06364715b967f1860aea9cf38778875588b17/config.json",
+      "metadata": "https://huggingface.co/api/models/Qwen/Qwen3.5-0.8B/revision/2fc06364715b967f1860aea9cf38778875588b17"
+    }
+  ],
+  "runtimes": [
+    {
+      "repository": "mlc-ai/web-llm",
+      "revision": "c42c36670cfc426c75e53ee297443882f1ae8d84",
+      "path": "src/config.ts",
+      "source": "https://raw.githubusercontent.com/mlc-ai/web-llm/c42c36670cfc426c75e53ee297443882f1ae8d84/src/config.ts",
+      "selectedPrebuiltRecords": [
+        {
+          "modelId": "Qwen3.5-2B-q4f16_1-MLC",
+          "upstreamVramRequiredMB": 2245.44,
+          "contextWindowSize": 4096,
+          "maxHistorySize": 1
+        },
+        {
+          "modelId": "Qwen3.5-4B-q4f16_1-MLC",
+          "upstreamVramRequiredMB": 3867.82,
+          "contextWindowSize": 4096,
+          "maxHistorySize": 1
+        },
+        {
+          "modelId": "Qwen2.5-Coder-1.5B-Instruct-q4f16_1-MLC",
+          "upstreamVramRequiredMB": 1629.75,
+          "contextWindowSize": 4096
+        }
+      ],
+      "measurements": "Configuration estimates from upstream, not ScriptWidget device measurements"
+    },
+    {
+      "repository": "mlc-ai/web-llm",
+      "revision": "c42c36670cfc426c75e53ee297443882f1ae8d84",
+      "path": "README.md",
+      "source": "https://raw.githubusercontent.com/mlc-ai/web-llm/c42c36670cfc426c75e53ee297443882f1ae8d84/README.md",
+      "observedLines": []
+    },
+    {
+      "repository": "ml-explore/mlx-swift-lm",
+      "revision": "991266ad300f47a3b9f21e62ff5bdb679215e758",
+      "path": "Libraries/MLXLLM/Models/Qwen35.swift",
+      "source": "https://raw.githubusercontent.com/ml-explore/mlx-swift-lm/991266ad300f47a3b9f21e62ff5bdb679215e758/Libraries/MLXLLM/Models/Qwen35.swift",
+      "observedLines": [
+        "//  Port of https://github.com/ml-explore/mlx-lm/blob/main/mlx_lm/models/qwen3_5.py",
+        "extension Qwen35TextModel: LoRAModel {",
+        "public var loraLayers: [Module] {",
+        "extension Qwen35Model: LoRAModel {",
+        "public var loraLayers: [Module] {"
+      ]
+    },
+    {
+      "repository": "ml-explore/mlx-swift-lm",
+      "revision": "991266ad300f47a3b9f21e62ff5bdb679215e758",
+      "path": "README.md",
+      "source": "https://raw.githubusercontent.com/ml-explore/mlx-swift-lm/991266ad300f47a3b9f21e62ff5bdb679215e758/README.md",
+      "observedLines": [
+        "- Low-rank (LoRA) and full model fine-tuning with support for quantized models."
+      ]
+    },
+    {
+      "repository": "ml-explore/mlx-swift-lm",
+      "revision": "991266ad300f47a3b9f21e62ff5bdb679215e758",
+      "path": "Package.swift",
+      "source": "https://raw.githubusercontent.com/ml-explore/mlx-swift-lm/991266ad300f47a3b9f21e62ff5bdb679215e758/Package.swift",
+      "observedLines": [
+        ".macOS(.v14),",
+        ".iOS(.v17),"
+      ]
+    },
+    {
+      "repository": "ml-explore/mlx-lm",
+      "revision": "59995f131cf2b48950a67d2eb36d76b2a554b989",
+      "path": "README.md",
+      "source": "https://raw.githubusercontent.com/ml-explore/mlx-lm/59995f131cf2b48950a67d2eb36d76b2a554b989/README.md",
+      "observedLines": [
+        "MLX LM is a Python package for generating text and fine-tuning large language",
+        "models on Apple silicon with MLX.",
+        "fine-tuning](https://github.com/ml-explore/mlx-lm/blob/main/mlx_lm/LORA.md)",
+        "* Distributed inference and fine-tuning with `mx.distributed`"
+      ]
+    },
+    {
+      "repository": "ggml-org/llama.cpp",
+      "revision": "0ae0e1976670fac25f4e0ed864df30021accc764",
+      "path": "README.md",
+      "source": "https://raw.githubusercontent.com/ggml-org/llama.cpp/0ae0e1976670fac25f4e0ed864df30021accc764/README.md",
+      "observedLines": [
+        "llama cli -hf ggml-org/Qwen3.5-0.8B-GGUF",
+        "llama serve -hf ggml-org/Qwen3.5-0.8B-GGUF",
+        "- Apple silicon is a first-class citizen - optimized via ARM NEON, Accelerate and Metal frameworks",
+        "| [Metal](docs/build.md#metal-build) | Apple Silicon |"
+      ]
+    }
+  ],
+  "repositoryBaselineCommit": "4dd8ac853c2f0c39c2eaa0e7fca5c0abc9cb0d76",
+  "parameterCountMeaning": "Hugging Face safetensors.total; includes all modules counted by the repository, not measured deployment memory"
+}

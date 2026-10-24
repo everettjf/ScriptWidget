@@ -1,0 +1,88 @@
+name: ScriptWidgetCLI
+options:
+  bundleIdPrefix: com.everettjf.scriptwidget.cli
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+packages:
+  SwiftyJSON:
+    url: https://github.com/SwiftyJSON/SwiftyJSON.git
+    revision: af76cf3ef710b6ca5f8c05f3a31307d44a3c5828
+  ZipArchive:
+    url: https://github.com/ZipArchive/ZipArchive.git
+    revision: 1d2c7b604c74b9eef0b99bfc83f07f4c29216e13
+targets:
+  ScriptWidgetValidationWorker:
+    type: application
+    platform: macOS
+    sources:
+      - path: Worker
+      - path: Shared
+      - path: Resources
+        buildPhase: resources
+      - path: ../../Shared/ScriptWidgetRuntime/Common
+      - path: ../../Shared/ScriptWidgetRuntime/Widget
+        excludes: [Resource]
+      - path: ../../Shared/ScriptWidgetRuntime/Plugin
+      - path: ../../macOS/ScriptWidgetMacWidget/AppIntents/AppConfigFrequency.swift
+      - path: ../../macOS/ScriptWidgetMacWidget/AppIntents/ScriptWidgetAppIntent.swift
+      - path: ../../Shared/ScriptWidgetRuntime/Widget/Resource/support.bundle
+        buildPhase: resources
+    dependencies:
+      - package: SwiftyJSON
+      - package: ZipArchive
+      - sdk: WidgetKit.framework
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.everettjf.scriptwidget.cli.worker
+        PRODUCT_NAME: ScriptWidgetValidationWorker
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_LSUIElement: YES
+        INFOPLIST_KEY_LSBackgroundOnly: YES
+        ENABLE_APP_SANDBOX: YES
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_ENTITLEMENTS: Worker.entitlements
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "Developer ID Application"
+        DEVELOPMENT_TEAM: YPV49M8592
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) SCRIPTWIDGET_CLI"
+        MARKETING_VERSION: "0.1.1"
+        CURRENT_PROJECT_VERSION: "1"
+        INFOPLIST_KEY_ScriptWidgetBuildCommit: "$(CLI_BUILD_COMMIT)"
+        CLI_BUILD_COMMIT: development
+  ScriptWidgetCLI:
+    type: application
+    platform: macOS
+    sources:
+      - path: Controller
+      - path: Shared
+      - path: Resources/report-v1.schema.json
+        buildPhase: resources
+      - path: ../../Skills/scriptwidget-author
+        buildPhase: resources
+        type: folder
+    dependencies:
+      - target: ScriptWidgetValidationWorker
+        embed: true
+        codeSign: true
+        copy:
+          destination: wrapper
+          subpath: Contents/Helpers
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.everettjf.scriptwidget.cli
+        PRODUCT_NAME: ScriptWidgetCLI
+        EXECUTABLE_NAME: scriptwidget
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_LSBackgroundOnly: YES
+        ENABLE_HARDENED_RUNTIME: YES
+        ENABLE_APP_SANDBOX: NO
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: "Developer ID Application"
+        DEVELOPMENT_TEAM: YPV49M8592
+        MARKETING_VERSION: "0.1.1"
+        CURRENT_PROJECT_VERSION: "1"
+        INFOPLIST_KEY_ScriptWidgetBuildCommit: "$(CLI_BUILD_COMMIT)"
+        CLI_BUILD_COMMIT: development

@@ -17,6 +17,9 @@ typealias ScriptWidgetPlatformImage = UIImage
 #endif
 
 enum ScriptWidgetImagePipeline {
+    /// Optional native-validation host. A non-nil loader never falls back to networking.
+    static var validationRemoteImageLoader: ((URL) -> ScriptWidgetPlatformImage?)?
+
     static let maximumInputBytes = 8 * 1_024 * 1_024
     static let maximumPixelCount = 16_000_000
     static let defaultMaximumPixelSize = 1_024
@@ -60,6 +63,7 @@ enum ScriptWidgetImagePipeline {
         timeout: TimeInterval = 2.5,
         fetch: ((URL, TimeInterval) -> Data?)? = nil
     ) -> ScriptWidgetPlatformImage? {
+        if let loader = validationRemoteImageLoader { return loader(url) }
         guard ScriptWidgetFetchPolicy.validationError(for: url) == nil else { return nil }
         let cacheKey = "remote|\(url.absoluteString)"
         if let cached = cache.object(forKey: "\(cacheKey)|\(defaultMaximumPixelSize)" as NSString) {

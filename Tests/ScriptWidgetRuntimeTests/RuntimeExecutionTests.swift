@@ -53,6 +53,24 @@ private enum WeatherTemplateFixtures {
 
 final class RuntimeExecutionTests: XCTestCase {
 
+    func testValidationHostReplacesSystemAPIsBeforeEntryAndImportedCode() throws {
+        let package = makeTempPackage()
+        defer { try? FileManager.default.removeItem(at: package.path) }
+        try "function fixtureLocale() { return $system.locale(); }".write(to: package.path.appendingPathComponent("helper.jsx"), atomically: true, encoding: .utf8)
+        let runtime = ScriptWidgetRuntime(package: package, environments: ["widget-size": "medium"])
+        runtime.validationHostInstaller = { context in
+            context.evaluateScript("$system = Object.freeze({locale: function () { return 'validation-fixture'; }});")
+        }
+        let result = runtime.executeJSXSyncForWidget("$import('helper.jsx'); $render(<text>{fixtureLocale()}</text>);")
+        XCTAssertNil(result.1)
+        XCTAssertEqual(collectText(try XCTUnwrap(result.0)), "validation-fixture")
+        let normal = ScriptWidgetRuntime(package: package, environments: ["widget-size": "medium"])
+        XCTAssertNil(normal.validationHostInstaller)
+        let other = normal.executeJSXSyncForWidget("$render(<text>{typeof $system.locale}</text>);")
+        XCTAssertEqual(collectText(try XCTUnwrap(other.0)), "function")
+    }
+
+
     private func snapshot(_ element: ScriptWidgetRuntimeElement) -> String {
         let props = element.getProps().map { key, value in
             "\(String(describing: key))=\(String(describing: value))"
