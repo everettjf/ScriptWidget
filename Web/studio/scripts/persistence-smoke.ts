@@ -167,6 +167,9 @@ async function abortedDeletionKeepsProjectAndAllowsRetry(active: boolean, fallba
     if (active) await edit(page, second);
     await page.evaluate("window.__holdDeleteFailure=false;for(const resume of window.__failureCallbacks.splice(0))resume()");
     await page.waitFor("document.body.textContent.includes('Project could not be deleted')");
+    // The injected abort can finish before Radix's closing animation. Wait
+    // for that dialog to unmount before opening the retry confirmation.
+    await page.waitFor("!document.querySelector('[role=alertdialog]')");
     assert.equal(await page.evaluate("document.querySelectorAll('#project-list li').length"), 2, 'an aborted deletion must retain its project');
     const savedProjects = await page.evaluate<Array<{id:string}>>(stored);
     assert.ok(savedProjects.some(item=>item.id===originalID));

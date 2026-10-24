@@ -34,7 +34,7 @@ final class VisualLayoutEditorTests: XCTestCase {
             if (try? await evaluate(web, expression)) as? Bool == true { return }
             try await Task.sleep(nanoseconds: 100_000_000)
         }
-        let diagnostic = (try? await evaluate(web, "JSON.stringify({ready:document.readyState,url:location.protocol,errors:window.__editorErrors,assets:[...document.scripts].map(script=>script.src.split('/').pop()),handlers:Object.keys(window.__nativeHandlers||{})})")) as? String ?? "unavailable"
+        let diagnostic = (try? await evaluate(web, "JSON.stringify({ready:document.readyState,url:location.protocol,focused:document.hasFocus(),activeElement:document.activeElement?.className,content:document.querySelector('.cm-content')?.textContent,errors:window.__editorErrors,assets:[...document.scripts].map(script=>script.src.split('/').pop()),handlers:Object.keys(window.__nativeHandlers||{})})")) as? String ?? "unavailable"
         XCTFail("Timed out waiting for native editor condition: \(expression); \(diagnostic)")
         throw NSError(domain: "VisualLayoutEditorTests", code: 1)
     }
@@ -355,10 +355,27 @@ final class VisualLayoutEditorTests: XCTestCase {
         var current = original
         for index in 0..<4 {
             let marker = "Pending edit across workspace layout \(index)"
-            let manual = "$render(<text>\(marker)</text>);"
-            _ = try await evaluate(current, "document.querySelector('.cm-content').focus();document.execCommand('selectAll');document.execCommand('insertText',false,\(try json(manual)));void 0;")
-            // Confirm real input was accepted before testing the layout handoff.
+            let fileURL = model.package.path.appendingPathComponent("main.jsx")
+            let before = try await nativeSnapshot(current, documentID: fileURL.standardizedFileURL.path)
+            let inserted = "// \(marker)\n"
+            let manual = (before.content as NSString).replacingCharacters(
+                in: NSRange(location: before.selection.lowerBound, length: before.selection.count), with: inserted)
+            let message = try json(["handlerName": StudioProtocol.editorInsert, "data": [
+                "documentID": try XCTUnwrap(before.documentID), "sessionID": try XCTUnwrap(before.sessionID),
+                "payload": ["content": inserted]
+            ]])
+            // Exercise a real CodeMirror input transaction through the existing
+            // insert command, without depending on WindowServer keyboard focus.
+            // Hold edit/autosave delivery so only the closing host's final
+            // snapshot can preserve this pending edit across the replacement.
+            _ = try await evaluate(current, """
+            const bridge=window.WKWebViewJavascriptBridge,fetch=bridge._fetchQueue.bind(bridge);
+            bridge._fetchQueue=()=>JSON.stringify(JSON.parse(fetch()).filter(message=>!['document.changed','document.save'].includes(message.handlerName)));
+            bridge._handleMessageFromiOS(\(try json(message)));void 0;
+            """)
             try await wait(current, "document.querySelector('.cm-content')?.textContent.includes(\(try json(marker)))===true")
+            XCTAssertEqual(try String(contentsOf: fileURL, encoding: .utf8), before.content,
+                           "The edit must still be pending when SwiftUI replaces the host")
             layout.vertical.toggle()
             let switchDeadline = Date().addingTimeInterval(15)
             while (editor() == nil || editor() === current) && Date() < switchDeadline {
