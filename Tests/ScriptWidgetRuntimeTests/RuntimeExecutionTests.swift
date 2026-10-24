@@ -27,8 +27,8 @@ import AppKit
 
 // These functional tests exercise native snapshots and persistence, not cold
 // Babel startup on a shared CI simulator. Prepare real compiler output without
-// executing widget code or extending either production deadline. Cold-start
-// performance and execution/compilation limits have separate coverage.
+// executing widget code or extending either production deadline. Cached-runtime
+// performance and execution/compilation limits retain separate coverage.
 private func prepareFunctionalTranspile(_ source: String, wrapMain: Bool = true) throws {
     let input = wrapMain ? ScriptWidgetCompiler.wrappedSource(source) : source
     let key = ScriptWidgetTranspileCache.key(for: input, babelFingerprint: ScriptWidgetCompiler.fingerprint)
