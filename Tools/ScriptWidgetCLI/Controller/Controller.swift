@@ -4,7 +4,7 @@ import CoreGraphics
 import Security
 
 private let usage = """
-ScriptWidget native validation CLI 0.1.0 (macOS 26+)
+ScriptWidget native validation CLI 0.1.1 (macOS 26+)
 Usage:
   scriptwidget --version [--format json]
   scriptwidget doctor [--format json]
@@ -91,7 +91,7 @@ struct Controller {
     }
     static var worker:URL { Bundle.main.bundleURL.appendingPathComponent("Contents/Helpers/ScriptWidgetValidationWorker.app/Contents/MacOS/ScriptWidgetValidationWorker") }
     private static func run(_ options:Options) throws -> ([String:Any],Int32) {
-        var report:[String:Any]=["reportVersion":1,"command":options.command,"status":"passed","tool":["version":cliVersion],"backend":"static","diagnostics":[]]
+        var report:[String:Any]=["reportVersion":1,"command":options.command,"status":"passed","tool":["version":cliVersion,"buildCommit":Bundle.main.object(forInfoDictionaryKey:"ScriptWidgetBuildCommit") as? String ?? "development"],"backend":"static","diagnostics":[]]
         if options.command == "--version" { report["version"]=cliVersion; return (report,0) }
         guard FileManager.default.isExecutableFile(atPath:worker.path) else { throw CLIError(code:"tool.worker_missing",message:"Native worker missing. Reinstall scriptwidget-cli.",exitCode:2) }
         try validateWorkerSignature()

@@ -76,7 +76,7 @@ ScriptWidget 名称、Logo、截图与 App Store 商店宣传素材不包含在 
 
 ## 使用你自己的 Coding Agent 创作
 
-安装[官方创作 Skill](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.1.0/scriptwidget-author-0.1.0.zip)，沿用自己的 Agent 和模型。独立 Mac CLI 提供包校验与原生 SwiftUI 截图，不需要先安装 App、Node、Chrome 或推理服务器。
+安装[官方创作 Skill](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.1.1/scriptwidget-author-0.1.1.zip)，沿用自己的 Agent 和模型。独立 Mac CLI 提供包校验与原生 SwiftUI 截图，不需要先安装 App、Node、Chrome 或推理服务器。
 
 ```sh
 brew install everettjf/tap/scriptwidget-cli

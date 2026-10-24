@@ -3,13 +3,14 @@
 import argparse
 import hashlib
 import json
+import plistlib
 from pathlib import Path
 import shutil
 import subprocess
 import zipfile
 
 ROOT=Path(__file__).resolve().parents[2]
-VERSION='0.1.0'
+VERSION='0.1.1'
 IDENTITY='Developer ID Application: Feng Zhu (YPV49M8592)'
 
 def run(*arguments,**kwargs):
@@ -39,6 +40,11 @@ def main():
         app=stage/'ScriptWidgetCLI.app'
         run('ditto',product,app)
         worker=app/'Contents/Helpers/ScriptWidgetValidationWorker.app'
+        for bundle in [app,worker]:
+            info=bundle/'Contents/Info.plist'
+            with info.open('rb') as stream: metadata=plistlib.load(stream)
+            metadata['ScriptWidgetBuildCommit']=commit
+            with info.open('wb') as stream: plistlib.dump(metadata,stream)
         for executable in [app/'Contents/MacOS/scriptwidget',worker/'Contents/MacOS/ScriptWidgetValidationWorker']:
             thin=executable.with_suffix('.thin')
             run('lipo',executable,'-thin',arch,'-output',thin)
@@ -55,6 +61,9 @@ def main():
         run('codesign','--force','--options','runtime','--timestamp','--sign',IDENTITY,app)
         run('codesign','--verify','--strict','--deep',app)
         binary=app/'Contents/MacOS/scriptwidget'
+        identity=json.loads(subprocess.check_output([str(binary),'--version','--format','json'],text=True))
+        if identity.get('tool',{}).get('buildCommit')!=commit or identity.get('version')!=VERSION:
+            raise SystemExit('Release binary identity does not match its source commit/version.')
         with (out/f'tests-{arch}.log').open('w') as log:
             run('python3',ROOT/'Tools/ScriptWidgetCLI/Tests/smoke.py',binary,stdout=log,stderr=subprocess.STDOUT)
         shutil.copyfile(ROOT/'LICENSE',stage/'LICENSE')

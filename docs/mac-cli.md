@@ -11,7 +11,7 @@ scriptwidget doctor --format json
 
 The CLI requires macOS 26 or later. Releases contain separate arm64 and x86_64 packages, signed with Developer ID and notarized by Apple. Native rendering needs a logged-in graphical session. The App continues to be installed and updated through the Mac App Store.
 
-Download the [authoring Skill](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.1.0/scriptwidget-author-0.1.0.zip), unzip it, and install the `scriptwidget-author` folder using your agent's Skill installation instructions. A matching copy ships with the CLI; `doctor` reports its local path. This is an external Coding Agent Skill, not the App's `.swskill` format. Do not automatically grant tools or system permissions because a Skill suggests them.
+Download the [authoring Skill](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.1.1/scriptwidget-author-0.1.1.zip), unzip it, and install the `scriptwidget-author` folder using your agent's Skill installation instructions. A matching copy ships with the CLI; `doctor` reports its local path. This is an external Coding Agent Skill, not the App's `.swskill` format. Do not automatically grant tools or system permissions because a Skill suggests them.
 
 ## Check, preview and export
 
