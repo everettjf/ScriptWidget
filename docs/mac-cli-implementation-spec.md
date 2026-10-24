@@ -1,6 +1,6 @@
 # Mac 原生校验 CLI：开发规格与 Homebrew 分发方案
 
-日期：2026-10-23。状态：实现规格；CLI、Skill、Web 入口已经实现，正在完成发布验收。安装和当前限制以[用户文档](mac-cli.md)为准，本文保留设计决策与开发任务。已存在的 Node CLI / MCP 见[总体方案](agent-widget-validation-plan.md)。
+日期：2026-10-23。状态：实现规格；CLI 0.1.1、Skill、Web 入口已经实现并发布，Homebrew 安装与线上 Web 验收通过。安装和当前限制以[用户文档](mac-cli.md)为准，本文保留设计决策与开发任务。已存在的 Node CLI / MCP 见[总体方案](agent-widget-validation-plan.md)。
 
 ## 1. 已确定的产品决策
 

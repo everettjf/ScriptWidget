@@ -1,6 +1,6 @@
 # 用现有 Coding Agent 生成 Widget：Skill、校验与预览方案
 
-日期：2026-10-23。状态：产品方案与交付范围；原生 CLI、外部 Skill 与 Web 校验入口已进入实现和发布验收。实际安装与限制见[Mac CLI 使用文档](mac-cli.md)。
+日期：2026-10-23。状态：产品方案与交付范围；原生 CLI 0.1.1、外部 Skill 与 Web 校验入口已发布；Homebrew 安装及线上 Web 验收通过。实际安装与限制见[Mac CLI 使用文档](mac-cli.md)。
 
 ## 建议：把校验与预览作为主线
 

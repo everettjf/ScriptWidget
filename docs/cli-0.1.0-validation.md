@@ -1,4 +1,4 @@
-# CLI 0.1.0 validation evidence
+# CLI 0.1 release validation evidence
 
 The external Agent workflow uses an independently distributed macOS CLI and Web Studio. No App Store update is required. This change adds two default-disabled validation host seams to shared native sources; application and extension behavior remains unchanged.
 
@@ -22,4 +22,21 @@ Apple Silicon is the physical host; Intel execution is checked with Rosetta, not
 
 Before/after Web Studio screenshots: [before](images/agent-validation-before.png), [validation dialog](images/agent-validation-web.png).
 
-Publication receipts and installation verification are recorded after signed release publication.
+## Publication receipts
+
+- CLI release: https://github.com/everettjf/scriptwidget/releases/tag/cli-v0.1.1
+- Signed source: ed7bce13316d1516b2cee4935bb348671a33b56d
+- Homebrew tap: 1a9773f, final formula uses ditto to preserve signed resource layout.
+- arm64 and x86_64: 14 tests each passed; notarized Accepted; nested and outer ticket validation passed after archive extraction.
+- Homebrew fresh install, upgrade, uninstall/reinstall, doctor and formula tests passed. Installed 0.1.1: all 14 smoke tests passed; codesign, spctl Notarized Developer ID and stapler validation passed.
+- Homebrew tests verify installed resources/signature and controller path denial. Native execution is tested separately outside Homebrew's additional test sandbox, which prevents App Sandbox worker activation.
+- Public Skill 0.1.1: downloaded, SHA-256 verified, extracted and quick-validated.
+- Agent acceptance: current compiler syntax diagnostic → repair → native light/dark PNGs visually inspected → .swt export. Run by this agent using the shipped Skill references; discovery in every third-party Agent client is not claimed.
+- Native CLI CI: https://github.com/everettjf/scriptwidget/actions/runs/40065637969
+
+- Browser CI passed on Linux and Windows: https://github.com/everettjf/scriptwidget/actions/runs/40065637964
+- A Firefox navigation timeout in one earlier Windows job passed on retry: https://github.com/everettjf/scriptwidget/actions/runs/40065070583
+- Production deployment succeeded: https://github.com/everettjf/scriptwidget/actions/runs/40066097024
+- Production browser acceptance passed at https://xnu.app/scriptwidget/studio/: Validate entry, paste to a separate project, preview execution and current browser-only report download.
+- Full App-platform remote CI was still running at publication: https://github.com/everettjf/scriptwidget/actions/runs/40065637972 . Local macOS/iOS suite results are documented above; this remote run is not claimed as passed.
+
