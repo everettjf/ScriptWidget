@@ -46,4 +46,6 @@ If the run fails, inspect the saved report before retrying. The shell command pr
 
 The [local widget model and fine-tuning proposal](local-widget-model-plan.md) defines candidate Hugging Face models, Mac-only offline deployment, dataset separation and proposed release gates. The primary candidate is Qwen3.5-4B on Apple Silicon; Qwen3.5-2B is a low-memory comparison. Web and iOS model integration are outside this plan. It is a research plan; no local-model quality or performance results have been measured yet.
 
-The [external-agent validation proposal](agent-widget-validation-plan.md) prioritizes a distributable authoring Skill, the existing CLI/MCP preview tools and browser-side validation, with an optional native Mac validation bridge. This workflow uses the developer's own agent and does not require a hosted inference service.
+The [external-agent validation proposal](agent-widget-validation-plan.md) prioritizes an authoring Skill, a standalone native Mac CLI distributed through Homebrew, and browser-side preview. The existing Node CLI/MCP remain Web-engine tools; they are not native Mac validation. This workflow uses the developer's own agent and does not require a hosted inference service.
+
+The [Mac CLI implementation specification](mac-cli-implementation-spec.md) freezes the proposed commands, report contract, sandboxed worker architecture, Homebrew/Developer ID release path and implementation acceptance tasks. It is a design document; the new CLI has not been implemented or released.

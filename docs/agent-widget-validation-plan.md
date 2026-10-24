@@ -4,7 +4,7 @@
 
 ## 建议：把校验与预览作为主线
 
-面向已经使用 Coding Agent 的开发者，建议优先交付 **官方生成 Skill + CLI/MCP 校验工具 + Web 预览**。模型由用户自己的 Agent 提供，我们负责把 ScriptWidget 的语法、API、包格式和反馈闭环做好。Mac 原生校验作为准确性增强，接入已有 Mac App，不先另做一个独立应用。
+面向已经使用 Coding Agent 的开发者，交付 **官方生成 Skill + Homebrew 分发的 Mac 原生 CLI + Web 预览**。模型由用户自己的 Agent 提供，我们负责把 ScriptWidget 的语法、API、包格式和反馈闭环做好。CLI 独立运行，Mac App 继续 Mac App Store 分发。原生 CLI 的[开发规格](mac-cli-implementation-spec.md)已细化命令、报告、源码复用、签名分发和逐项任务；下一步从最小原生执行/截图探针开始开发。
 
 这一方案可覆盖开发者的核心路径：描述需求 → Agent 创建组件包 → 调用校验与渲染 → 查看诊断和图片 → 修改 → 用户预览并安装。它不保证任意模型都能一次生成正确组件，但可以让失败具体、可复现、可修复。
 
@@ -17,10 +17,10 @@
 | 能力 | 已有实现 | 待完成的产品化 |
 | --- | --- | --- |
 | Web 预览与 mock | [Web Studio](web-studio-browser.md)支持编辑、导入、运行、Problems、可编辑 mock 和导出 | 提供直接进入“粘贴/打开组件 → 校验与预览”的入口，以及可复制/下载给 Agent 的报告 |
-| 本地 CLI | [scriptwidget-preview.mjs](../Web/preview-engine/bin/scriptwidget-preview.mjs)输出 PNG、JSON 诊断，支持尺寸、macos profile、浅深色和 watch | 独立安装包、文档、稳定的报告契约和清楚的依赖提示；当前需要仓库中的运行时资源及 Chrome/Chromium |
+| 现有 Web 引擎 CLI | [scriptwidget-preview.mjs](../Web/preview-engine/bin/scriptwidget-preview.mjs)输出 PNG、JSON 诊断，支持尺寸、macos profile、浅深色和 watch | 当前需要仓库资源和 Chrome/Chromium；新 Homebrew CLI 使用原生 runtime，不把这个工具重命名后冒充原生 |
 | MCP | [scriptwidget-mcp.mjs](../Web/preview-engine/bin/scriptwidget-mcp.mjs)提供 `render_widget_preview`、`validate_widget_package`、`export_widget_package` | 核对目标 Agent 客户端兼容性、标准安装入口、精简工具说明；MCP 为可选便利层，CLI 已足以启动闭环 |
 | 包校验 | [Package 2.0](package-format.md)与 JS manifest 校验器 | 区分 manifest、脚本执行、渲染与系统能力的结果，不以一个 `valid` 表示所有检查通过 |
-| 原生执行 | [AgentRuntimeBridge](../Shared/ScriptWidgetRuntime/AI/AgentRuntimeBridge.swift)及原生测试/预览基础 | 尚未提供可对外分发、可校验完整包并返回原生 PNG 的 Mac CLI/API；现有桥接以 JSX 为中心，不能直接称为完整包校验服务 |
+| 原生执行 | [AgentRuntimeBridge](../Shared/ScriptWidgetRuntime/AI/AgentRuntimeBridge.swift)及原生测试/预览基础 | 新增独立 Mac CLI 与受限 worker，复用 runtime/SwiftUI，补完整包与 mock host；目前并未实现 |
 | 外部 Agent Skill | 有语法文档、模板及 App 内 Skills 1.0 | 还缺官方、可分发的外部 Coding Agent 创作 Skill，以及与校验工具版本匹配的参考资料 |
 
 当前 npm 包的 `private: true`，CLI 又通过仓库相对路径读取 Babel/运行时资源，不能现在就承诺用户能执行某个公开 `npx` 命令。需先完成资源打包、干净环境安装与许可核对。
@@ -30,12 +30,12 @@
 | 入口 | 谁使用 | 输出与边界 |
 | --- | --- | --- |
 | Web 页面 | 用户查看，或没有本地工具时手动往返 | 快速编译、mock 执行、近似布局图和诊断；浏览器内处理用户输入，无需上传执行服务器 |
-| CLI / 可选 MCP | 用户的 Coding Agent | 自动检查包、执行、截图和读取 JSON；这是自动修复循环的主要入口，不依赖 Agent 控制网页 |
-| 已有 Mac App + 本地桥接 | 需要更接近正式结果的 Mac 用户 | 使用原生 JavaScriptCore / SwiftUI 检查与截图；仍不能替代真实 WidgetKit、系统授权、交互或 iPhone 的最终验收 |
+| Homebrew Mac CLI / 已有可选 MCP | 用户的 Coding Agent | 新 CLI 原生检查、截图和 JSON 是主要入口；现有 MCP 返回 Web 引擎结果，必须标明 backend |
+| 已有 Mac App | 用户编辑、管理和安装组件 | App 继续 Mac App Store；与 CLI 复用源码，不要求 App 为命令行开启服务；实际 WidgetKit/授权/交互仍单独验收 |
 
-建议先交付 Web + CLI/Skill，再增强 Mac 原生桥接。只提供网页也能让用户手动复制代码与报错，但 Agent 的自动循环较脆弱；只提供 Mac 则限制其他系统上的 Agent 使用现有 Web 预览引擎。工具可以跨平台，不代表要重新开展 Web 本地模型或 iOS 模型研发。
+先做 Mac 原生 CLI 的最小可行探针，通过后完成 CLI/Skill 与 Homebrew 分发；Web 复用现有引擎提供辅助入口。只提供网页也能让用户手动复制代码与报错，但自动循环优先使用 CLI。其他系统仍可使用现有 Web 预览，不为本轮新增跨平台 native CLI、Web 模型或 iOS 模型研发。
 
-Web 页面继续静态托管，校验和预览在浏览器的受控 Worker 中运行。需要网站静态文件托管，但不需要模型服务器、GPU、账号后端或把用户代码上传到我们的执行服务。本地 CLI 也直接在用户机器运行；MCP 是本地进程，不是一个必须租云主机的服务。
+Web 页面继续静态托管，校验和预览在浏览器的受控 Worker 中运行。需要网站静态文件托管，但不需要模型服务器、GPU、账号后端或把用户代码上传到我们的执行服务。Mac CLI 直接在用户机器运行，不依赖 Node/Chrome 或 App；现有 MCP 是本地进程，不是一个必须租云主机的服务。
 
 ## 3. Skill 应该交付什么
 
@@ -59,7 +59,7 @@ Web 页面继续静态托管，校验和预览在浏览器的受控 Worker 中�
 | 包与静态检查 | manifest、入口/引用文件、权限声明、域名、资源路径、编译错误、可定位的标签/属性问题 | 没有运行的分支全部正确 |
 | mock 执行 | 成功/异常/超时、日志、元素树、选定 fixtures 与参数 | 系统权限可用、接口数据真实、账号已经连接 |
 | Web 渲染 | PNG、尺寸、外观、已知近似/不支持项、引擎版本与代码指纹 | 像素级原生一致、交互一定可用 |
-| Mac 原生检查（可选） | 原生执行、SwiftUI 截图、平台与系统版本、所用 mock 和未执行项 | iPhone WidgetKit、真实授权或系统调度也已通过 |
+| Mac CLI 原生检查 | 原生执行、SwiftUI 截图、平台与系统版本、所用 mock 和未执行项 | iPhone WidgetKit、真实授权或系统调度也已通过 |
 | 人工验收 | 是否满足需求、视觉与交互是否可接受 | 靠编译成功自动证明所有需求都满足 |
 
 Web 的图标、字体、Charts、材质和系统行为有已知差异，必须沿用[覆盖表](browser-preview-coverage.md)提示，不能因渲染成功而全部标为 supported。尺寸/profile 选择为 macos 也只是 Web 引擎使用 Mac 参数，并非原生渲染。
@@ -93,7 +93,7 @@ node Web/preview-engine/bin/scriptwidget-preview.mjs MyWidget \
 
 Web 和本地自动检查默认使用固定、可编辑 mock，不触发登录、真实健康/定位授权、真实网络调用或现有用户存储写入。测试成功/空数据/拒绝权限等场景，区分示例数据和真实结果。源码、mock 和敏感日志不默认发送到我们服务器。
 
-Mac 原生桥接复用 App 的运行时与安全校验，临时工作目录与用户项目分开，加载完整包前验证路径、manifest、资源预算。默认仅允许 loopback 且显式配对，或使用更窄的本地 IPC；不为网页远程调用开放任意来源，不绕过 App Sandbox。CLI 用受控输入请求验证，不给模型任意文件读写或 shell 执行能力。
+Mac CLI 复用原生 runtime 与校验，controller 和受限 native worker 通过本地管道通信；临时工作目录与用户项目分开，不需要 loopback 服务或 App 配对。加载完整包前验证路径、manifest、资源预算，保持 App Sandbox 与 mock host 边界。详见开发规格，不在此另设一种桥接架构。
 
 Mac 首期只做执行与原生截图，不把“自动申请系统权限”“真机账号验收”“持续运行交互模拟”混进校验工具。是否允许联网、真实数据和持久化修改是另一个明确授权的操作。
 
@@ -101,11 +101,11 @@ Mac 首期只做执行与原生截图，不把“自动申请系统权限”“�
 
 | 阶段 | 交付 | 验收标准 |
 | --- | --- | --- |
-| P1：可供 Agent 使用 | 官方外部 Skill；可独立安装的现有 CLI；版本化诊断；可选 MCP 安装文档 | 干净机器无需 clone 全仓库可使用；明确 Node/Chromium 依赖；用真实 Agent 完成一次生成→报错→修复→截图循环 |
-| P2：用户可直接预览 | 复用 Web Studio 增加简明校验入口、报告导出、mock 场景和分层状态 | 合法/非法包、语法错误、资源缺失、超时、空数据与拒绝权限有明确反馈；可看浅深色图；检查过程中用户代码不发往执行服务器 |
-| P3：Mac 原生增强 | 现有 App 的受控本地验证入口，CLI/MCP 可选请求原生执行与 PNG | 原生截图和报告对应相同 sourceHash/fixtures；取消、重复运行、隔离、资源释放与无 App 时的提示通过 |
+| P1：Mac 原生 CLI | 开发规格 D0–D4：隔离 worker、完整包检查、native mock 执行、原生截图、JSON 报告和导出 | 未安装 App、Node、Chrome 仍可用；正常/失败/取消/超时结果明确，源包和用户 App 数据无变化 |
+| P2：Skill 与 Homebrew | 开发规格 D5a、D6 中的 Skill、安装文档、Release 与 tap | 真实 Coding Agent 完成生成→报错→修复→截图；全新环境 brew 安装、升级、卸载及签名公证验收 |
+| P3：Web 辅助入口 | D5b 中的现有 Web Studio 简明校验入口、报告导出、mock 场景和分层状态 | 用户本地打开包看浅深色图、复制报告；backend 为 web，不把近似结果标为原生 |
 
-每一阶段都可独立交付，不要求 P3 完成才让开发者用 Skill + CLI。首轮不做新模型训练、GPU 托管、付费额度系统、第二个 Mac App、IDE 插件或跨端自动安装。
+详细任务依赖以[Mac CLI 开发规格](mac-cli-implementation-spec.md#9-开发任务依赖与验收)为准；Web 整理不阻塞已达标的 CLI 发布。首轮不做新模型训练、GPU 托管、付费额度系统、第二个用户 Mac App、App 本地服务、IDE 插件或跨端自动安装。
 
 成功标准不是“新增多少工具”，而是：独立 Agent 依据 Skill 能使用正确语法；拿到具体失败后能修复；用户能看到最新结果；Web 的近似检查与 Mac 原生检查不会混淆。用合法包、坏 manifest、错误 JSX、未知/近似能力、死循环和不同 mock 的固定样例验收，保留证据再宣布可用。
 
