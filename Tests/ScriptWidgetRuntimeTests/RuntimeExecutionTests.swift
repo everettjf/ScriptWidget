@@ -25,6 +25,19 @@ import AppKit
 #endif
 @testable import ScriptWidget
 
+// These functional tests exercise native snapshots and persistence, not cold
+// Babel startup on a shared CI simulator. Prepare real compiler output without
+// executing widget code or extending either production deadline. Cold-start
+// performance and execution/compilation limits have separate coverage.
+private func prepareFunctionalTranspile(_ source: String, wrapMain: Bool = true) throws {
+    let input = wrapMain ? ScriptWidgetCompiler.wrappedSource(source) : source
+    let key = ScriptWidgetTranspileCache.key(for: input, babelFingerprint: ScriptWidgetCompiler.fingerprint)
+    guard ScriptWidgetTranspileCache.get(key) == nil else { return }
+    let babel = try XCTUnwrap(ScriptManager.readBundleFile(bundle: "support", fileName: "core.js"))
+    let output = try ScriptWidgetCompiler.compile(input, babelContent: babel).get()
+    ScriptWidgetTranspileCache.set(key, output)
+}
+
 private enum WeatherTemplateFixtures {
     static let now = 1767269700000.0
     static let parameter = #"{"city":"London","latitude":51.5,"longitude":-0.12,"useLocation":false,"unit":"c"}"#
@@ -2339,6 +2352,8 @@ final class NativeSnapshotExecutionTests: XCTestCase {
         XCTAssertTrue(ScriptWidgetPackageFiles.write(Data([1, 2, 3]), root: package.path, relative: "image/frozen.png"))
         XCTAssertTrue(package.writeMainFile(content: "$import('lib/helper.js'); $render(<text>{capturedValue + ':' + $file.readJSON('data.json').value}</text>);").0)
         let captured = try capture()
+        try prepareFunctionalTranspile(captured.source)
+        try prepareFunctionalTranspile(try XCTUnwrap(captured.package.readFile(relativePath: "lib/helper.js").0), wrapMain: false)
         XCTAssertTrue(package.writeFile(relativePath: "lib/helper.js", content: "var capturedValue = 'new helper';").0)
         XCTAssertTrue(package.writeFile(relativePath: "data.json", content: #"{"value":"new file"}"#).0)
         XCTAssertTrue(ScriptWidgetPackageFiles.write(Data([9]), root: package.path, relative: "image/frozen.png"))
@@ -3681,11 +3696,15 @@ extension NativeSnapshotExecutionTests {
         if ($storage.compareAndSetString('count', old, 'stale')) throw new Error('stale write accepted');
         $render(<text>{next + ':' + $storage.getJSON('json').value + ':' + $storage.keys().join(',')}</text>);
         """
-        XCTAssertEqual(try render(source), "1:done:count,json")
-        XCTAssertEqual(try render(source), "2:done:count,json")
-        XCTAssertEqual(try render("$render(<text>{String($storage.clear()) + ':' + $storage.getString('count')}</text>);", projection: true), "false:2")
-        XCTAssertEqual(try render("$storage.remove('json'); $render(<text>{$storage.keys().join(',')}</text>);"), "count")
-        XCTAssertEqual(try render("$storage.clear(); $render(<text>{String($storage.keys().length)}</text>);"), "0")
+        func execute(_ source: String, projection: Bool = false) throws -> String {
+            try prepareFunctionalTranspile(source)
+            return try render(source, projection: projection)
+        }
+        XCTAssertEqual(try execute(source), "1:done:count,json")
+        XCTAssertEqual(try execute(source), "2:done:count,json")
+        XCTAssertEqual(try execute("$render(<text>{String($storage.clear()) + ':' + $storage.getString('count')}</text>);", projection: true), "false:2")
+        XCTAssertEqual(try execute("$storage.remove('json'); $render(<text>{$storage.keys().join(',')}</text>);"), "count")
+        XCTAssertEqual(try execute("$storage.clear(); $render(<text>{String($storage.keys().length)}</text>);"), "0")
         XCTAssertTrue(try backend.values(in: capture().storageNamespace).isEmpty)
         let prefix = try capture().storageNamespace
         XCTAssertFalse(defaults.dictionaryRepresentation().keys.contains { $0.hasPrefix(prefix) })
@@ -4316,6 +4335,8 @@ final class LibrarySessionExecutionTests: XCTestCase {
         func execute(_ snapshot: ScriptWidgetExecutionSnapshot) throws -> String {
             let captured=try ScriptWidgetExecutionSnapshot(name:snapshot.binding.name,role:snapshot.binding.role,context:snapshot.context,
                 entryOverride:"Date.now=()=>1767269700000;Math.random=()=>0;\n"+snapshot.source)
+            try prepareFunctionalTranspile(captured.source)
+            try prepareFunctionalTranspile(try XCTUnwrap(captured.package.readFile(relativePath:"lib/weather.js").0), wrapMain:false)
             let runtime=ScriptWidgetRuntime(package:captured.package,environments:["widget-size":"medium"],executionSnapshot:captured)
             let configuration=URLSessionConfiguration.ephemeral;configuration.protocolClasses=[NativeIdentityURLProtocol.self]
             runtime.runningState?.fetchManagerForTesting=ScriptWidgetFetchManager(configuration:configuration)
