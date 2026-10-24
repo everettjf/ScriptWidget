@@ -40,3 +40,8 @@ Before/after Web Studio screenshots: [before](images/agent-validation-before.png
 - Production browser acceptance passed at https://xnu.app/scriptwidget/studio/: Validate entry, paste to a separate project, preview execution and current browser-only report download.
 - Full App-platform remote CI was still running at publication: https://github.com/everettjf/scriptwidget/actions/runs/40065637972 . Local macOS/iOS suite results are documented above; this remote run is not claimed as passed.
 
+## Follow-up: Creator naming and App CI
+
+CLI 0.1.2 bundles the renamed `scriptwidget-creator` Skill. Both architecture archives passed the 14 smoke tests, release identity checks, Developer ID signing, notarization and extracted ticket verification. The installable Skill is `scriptwidget-creator-0.1.2.zip` in [CLI 0.1.2](https://github.com/everettjf/scriptwidget/releases/tag/cli-v0.1.2).
+
+The previously pending [full App CI](https://github.com/everettjf/scriptwidget/actions/runs/40065637972) finished with a macOS editor test timeout: `VisualLayoutEditorTests/testWorkspaceLayoutSwitchPreservesPendingEdits` (698 passed, 1 failed, 33 skipped). The same test also timed out on the pre-change main run [40000963848](https://github.com/everettjf/scriptwidget/actions/runs/40000963848). This existing editor/CI issue remains open; no full remote App-gate success or subsequent iOS CI execution is claimed. It is separate from the successful native CLI, Web and local runtime checks above, and is not fixed as part of the Skill rename.

@@ -11,6 +11,8 @@ mkdir -p ~/.claude/skills
 test ! -e ~/.claude/skills/scriptwidget-creator && cp -R "$(brew --prefix scriptwidget-cli)/libexec/ScriptWidgetCLI.app/Contents/Resources/scriptwidget-creator" ~/.claude/skills/
 ```
 
+The Skill was previously named `scriptwidget-author`. If you installed that version, back up any custom edits and remove its old personal/project folder after installing `scriptwidget-creator`, so Claude Code does not discover both copies.
+
 The resulting file must be `~/.claude/skills/scriptwidget-creator/SKILL.md`. If that folder already exists, review/back up your local modifications before replacing it. For a project-only installation, use `.claude/skills/scriptwidget-creator/` instead. Claude Code documents these locations in its [official Skill guide](https://code.claude.com/docs/en/skills).
 
 Without Homebrew, download the [Skill ZIP](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.1.2/scriptwidget-creator-0.1.2.zip), unzip it, and copy the entire `scriptwidget-creator` folder to the same location. Browser preview does not require the Mac CLI; native checks do.
