@@ -1,10 +1,11 @@
 import Foundation
+import AppKit
 import Darwin
 import CoreGraphics
 import Security
 
 private let usage = """
-ScriptWidget native validation CLI 0.1.2 (macOS 26+)
+ScriptWidget native validation CLI 0.2.0 (macOS 26+)
 Usage:
   scriptwidget --version [--format json]
   scriptwidget doctor [--format json]
@@ -12,6 +13,7 @@ Usage:
   scriptwidget render <package-dir> --output <directory> [--family small|medium|large]
     [--appearance light|dark|both] [--fixtures file.json] [--param text] [--scale 1|2]
     [--timeout 1..120] [--format json] [--fail-on-warning]
+  scriptwidget preview <package-dir> [--no-open] [--format json] [--fail-on-warning]
   scriptwidget pack <package-dir> --output <file.swt> [--format json]
 Native previews use isolated mock data. No app, account, Node or Chrome required.
 """
@@ -20,6 +22,7 @@ private struct Options {
     var command:String
     var input:String?
     var values:[String:String]=[:]
+    var noOpen=false
     var strict=false
     var json=false
     init(_ arguments:[String]) throws {
@@ -29,6 +32,7 @@ private struct Options {
         let allowed:Set<String>=["--format","--output","--family","--appearance","--fixtures","--param","--scale","--timeout"]
         while !rest.isEmpty {
             let token=rest.removeFirst()
+            if token == "--no-open" { noOpen=true; continue }
             if token == "--fail-on-warning" { strict=true; continue }
             if token.hasPrefix("--") {
                 guard allowed.contains(token), !rest.isEmpty, values[token] == nil else { throw CLIError(code:"usage",message:"Unknown, duplicate or incomplete option: \(token)",exitCode:2) }
@@ -36,10 +40,11 @@ private struct Options {
             } else if input == nil { input=token } else { throw CLIError(code:"usage",message:"Only one package directory is accepted.",exitCode:2) }
         }
         if let format=values["--format"] { guard ["json","text"].contains(format) else { throw CLIError(code:"usage",message:"Format must be json or text.",exitCode:2) }; json=format == "json" }
-        guard ["--version","doctor","check","render","pack"].contains(command) else { throw CLIError(code:"usage",message:usage,exitCode:2) }
+        guard ["--version","doctor","check","render","pack","preview"].contains(command) else { throw CLIError(code:"usage",message:usage,exitCode:2) }
         let common:Set<String>=["--format","--timeout"]
         let permitted=command == "render" ? allowed : common.union(command == "pack" ? ["--output"]:[])
-        guard Set(values.keys).isSubset(of:permitted), !strict || ["check","render"].contains(command) else { throw CLIError(code:"usage",message:"Option not supported by this command.",exitCode:2) }
+        guard !noOpen || command == "preview" else {throw CLIError(code:"usage",message:"--no-open requires preview.",exitCode:2)}
+        guard Set(values.keys).isSubset(of:permitted), !strict || ["check","render","preview"].contains(command) else { throw CLIError(code:"usage",message:"Option not supported by this command.",exitCode:2) }
         guard (command == "--version" || command == "doctor") ? input == nil:input != nil else { throw CLIError(code:"usage",message:"Expected one package directory for this command.",exitCode:2) }
         guard (values["--param"] ?? "").utf8.count <= 16384, ["small","medium","large"].contains(values["--family"] ?? "medium"), ["light","dark","both"].contains(values["--appearance"] ?? "both"), ["1","2"].contains(values["--scale"] ?? "2"), let timeout=Double(values["--timeout"] ?? "60"), (1...120).contains(timeout) else { throw CLIError(code:"usage",message:"Invalid family, appearance, scale or timeout.",exitCode:2) }
     }
@@ -79,6 +84,7 @@ struct Controller {
                 print("ScriptWidget \(options.command): \(report["status"] ?? "unknown")")
                 if let diagnostics=report["diagnostics"] as? [[String:Any]] { for issue in diagnostics { print("\(issue["severity"] ?? "error") [\(issue["code"] ?? "")] \(issue["message"] ?? "")") } }
                 if let output=report["reportPath"] { print("Report: \(output)") }
+                if let url=report["previewURL"] { print("Preview: \(url)") }
                 if let skill=report["skillPath"] { print("Skill: \(skill)") }
             }
             exit(code)
@@ -112,6 +118,29 @@ struct Controller {
         let source=URL(fileURLWithPath:options.input!).standardizedFileURL
         let files=try snapshot(source)
         report["sourceHash"]=sourceHash(files)
+        if options.command == "preview" {
+            let request=ValidationRequest(command:"pack",files:files)
+            let response=try execute(request,deadline:Date().addingTimeInterval(Double(options.values["--timeout"] ?? "60")!))
+            let diagnostics=response["diagnostics"] as? [[String:Any]] ?? []
+            report["diagnostics"]=diagnostics
+            report["backend"]="web-handoff"
+            let ok=response["ok"] as? Bool == true
+            report["checks"]=["package":ok ? "passed":(response["phase"] as? String == "package" ? "failed":"passed"),"compile":ok ? "passed":(response["phase"] as? String == "compile" ? "failed":"notRun"),"execute":"notRun","render":"notRun","export":ok ? "passed":"notRun"]
+            guard ok else { report["status"]="failed"; return (report,1) }
+            if options.strict && diagnostics.contains(where:{$0["severity"] as? String == "warning"}) {report["status"]="failed"; return (report,1)}
+            guard let encoded=response["archive"] as? String, let archive=Data(base64Encoded:encoded) else {throw CLIError(code:"tool.worker_protocol",message:"Worker did not return a valid preview package.",exitCode:3)}
+            let payload=archive.base64EncodedString().replacingOccurrences(of:"+",with:"-").replacingOccurrences(of:"/",with:"_").replacingOccurrences(of:"=",with:"")
+            guard payload.count <= 60000 else {throw CLIError(code:"preview.link_limit",message:"Preview links support up to 45,000 compressed package bytes. Reduce large resources or export a .swt for manual import.",exitCode:1)}
+            let url=URL(string:"https://xnu.app/scriptwidget/studio/#sw-preview=v1."+payload)!
+            if options.noOpen { report["previewURL"]=url.absoluteString }
+            report["browserLaunchRequested"]=false
+            report["limitations"]=["Browser preview uses mock data and is not native validation.","The link contains your package; do not share it if the code or resources are private."]
+            if !options.noOpen {
+                guard NSWorkspace.shared.open(url) else {report["status"]="error"; report["diagnostics"]=diagnostics+[["severity":"error","code":"preview.browser","message":"Unable to open the default browser. Use preview --no-open to request a private link."]]; return (report,2)}
+                report["browserLaunchRequested"]=true
+            }
+            return (report,0)
+        }
         let fixtureData:Data
         if let filename=options.values["--fixtures"] {
             let url=URL(fileURLWithPath:filename)

@@ -12,6 +12,19 @@
 
 </div>
 
+## 用你的 Agent 创作 — scriptwidget-creator
+
+**在 Claude Code 描述组件，让 Agent 生成、校验，并直接打开 Web Studio 查看效果。** 沿用自己的 Agent 和模型，安装[官方 Skill](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.2.0/scriptwidget-creator-0.2.0.zip)到 `~/.claude/skills/scriptwidget-creator/`，使用 `/scriptwidget-creator` 调用。
+
+```sh
+brew install everettjf/tap/scriptwidget-cli
+scriptwidget preview ./MyWidget
+```
+
+生成后自动打开并加载，不需要手动导入。组件通过 URL 片段传递，不需要上传服务器；加载成新项目并清除地址栏中的包数据。链接容量为压缩包 45 KB，大包可使用原生预览或 `.swt` 导入。链接包含代码与资源，私有组件不要分享链接。
+
+[完整安装与使用说明](docs/agent-quickstart.md) · [Creator 专页](https://xnu.app/scriptwidget/creator/) · [CLI 文档](docs/mac-cli.md)
+
 ![ScriptWidget 模板画廊](Resource/WidgetDemoScreenshots/_contact-sheet-1.jpg)
 
 ScriptWidget 是一个 MIT 开源的 Widget 创作平台。你不需要学习 Swift：在 Mac Studio、iPhone 或 iPad 上编辑 `main.jsx`，运行时会把声明式 JSX 映射为原生 SwiftUI/WidgetKit 界面。
@@ -72,16 +85,3 @@ ScriptWidget 仓库中的源代码使用 [MIT License](LICENSE) 发布。
 ScriptWidget 名称、Logo、截图与 App Store 商店宣传素材不包含在 MIT 许可范围内；这些品牌及宣传资产的权利归各自权利人所有。
 
 [Discord](https://discord.gg/eGzEaP6TzR)
-
-
-## 使用你自己的 Coding Agent 创作
-
-安装[官方创作 Skill](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.1.2/scriptwidget-creator-0.1.2.zip)，沿用自己的 Agent 和模型。独立 Mac CLI 提供包校验与原生 SwiftUI 截图，不需要先安装 App、Node、Chrome 或推理服务器。
-
-```sh
-brew install everettjf/tap/scriptwidget-cli
-scriptwidget check ./MyWidget --format json
-scriptwidget render ./MyWidget --output ./artifacts --format json
-```
-
-[CLI 安装与限制](docs/mac-cli.md) · [Web 校验与预览](https://xnu.app/scriptwidget/studio/)

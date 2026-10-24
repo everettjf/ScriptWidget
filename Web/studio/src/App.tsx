@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { exportPackage, importPackage, newProjectFiles } from "../../preview-engine/src/package/index.js";
 import type { WidgetSize } from "../../preview-engine/src/types.js";
@@ -21,6 +21,9 @@ import { downloadBytes } from "@/lib/download.ts";
 import { createProject, packageReport, previewFamilies, projectFromTemplate, type Template } from "@/project.ts";
 import { preferences } from "@/store.ts";
 
+import { consumePreviewFragment, importPreviewFragment } from '@/previewHandoff.ts';
+
+const initialPreviewFragment = consumePreviewFragment(window.location, window.history);
 const maximumImageBytes = 8 * 1024 * 1024;
 
 function initialSettings(colorScheme: "light" | "dark"): PreviewSettings {
@@ -40,6 +43,29 @@ export function App() {
   const colorScheme = useColorScheme();
   const model = useProjects();
   const { project, path } = model;
+  const previewLinkConsumed = useRef(false);
+  const previewImportQueue = useRef(Promise.resolve());
+  useEffect(() => {
+    if (!model.ready) return;
+    const enqueue = (fragment: string | null) => {
+      if (!fragment) return;
+      previewImportQueue.current = previewImportQueue.current.then(async () => {
+        try {
+          const result = await importPreviewFragment(fragment);
+          await model.addProject(createProject(result.manifest.name, result.files));
+          toast.success(`Loaded ${result.manifest.name} from your Agent`, { description: 'Saved as a separate project. Browser preview uses mock data.' });
+        } catch (error) { toast.error('Could not load the preview link', { description: error instanceof Error ? error.message : 'Invalid widget package.' }); }
+      });
+    };
+    if (!previewLinkConsumed.current) {
+      previewLinkConsumed.current = true;
+      enqueue(initialPreviewFragment);
+    }
+    const onHashChange = () => enqueue(consumePreviewFragment(window.location, window.history));
+    onHashChange();
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, [model.ready, model.addProject]);
   const [settings, setSettings] = useState(() => initialSettings(colorScheme));
   const [tab, setTab] = useState<DetailTab>("problems");
   const [templatesOpen, setTemplatesOpen] = useState(false);

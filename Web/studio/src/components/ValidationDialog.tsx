@@ -29,9 +29,10 @@ export function ValidationDialog({ open, onOpenChange, onCreate, onImport, onRep
         </div>
         <p className="text-xs text-muted-foreground">Pasting creates a new project and preserves your current files. Include widget.json and resources when checking a complete package. Reports contain diagnostics and mock results; review them before sharing with your agent.</p>
         <div className="grid gap-2 border-t pt-3 text-sm">
-          <p>Use your own Coding Agent with the official Skill and Mac CLI:</p>
+          <p>Create with your Agent using scriptwidget-creator:</p>
           <code className="overflow-x-auto rounded bg-muted p-2 text-xs">brew install everettjf/tap/scriptwidget-cli</code>
-          <a className="underline" href="https://github.com/everettjf/scriptwidget/releases/download/cli-v0.1.2/scriptwidget-creator-0.1.2.zip">Download the ScriptWidget authoring Skill</a>
+          <code className="overflow-x-auto rounded bg-muted p-2 text-xs">scriptwidget preview ./MyWidget</code>
+          <a className="underline" href="https://github.com/everettjf/scriptwidget/releases/download/cli-v0.2.0/scriptwidget-creator-0.2.0.zip">Download scriptwidget-creator</a>
         </div>
       </DialogContent>
     </Dialog>

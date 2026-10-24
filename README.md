@@ -19,17 +19,27 @@ Website: <https://xnu.app/scriptwidget/>
 
 > ✨ *Build iPhone, iPad, and Mac widgets in ScriptWidget Studio—without writing Swift.*
 
-## Create with your Coding Agent
+## Create with your Agent — scriptwidget-creator
 
-Use your own model with the [official authoring Skill](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.1.2/scriptwidget-creator-0.1.2.zip). The standalone Mac CLI validates packages and produces native SwiftUI previews; it does not require the App, Node, Chrome or an inference server.
+**Describe a widget in Claude Code. Generate it, validate it, and open it directly in Web Studio.** Use your own Agent and model with the [scriptwidget-creator Skill](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.2.0/scriptwidget-creator-0.2.0.zip).
 
 ```sh
 brew install everettjf/tap/scriptwidget-cli
-scriptwidget check ./MyWidget --format json
-scriptwidget render ./MyWidget --output ./artifacts --format json
+mkdir -p ~/.claude/skills
+# First installation; preserve any existing customized Skill.
+test ! -e ~/.claude/skills/scriptwidget-creator && cp -R "$(brew --prefix scriptwidget-cli)/libexec/ScriptWidgetCLI.app/Contents/Resources/scriptwidget-creator" ~/.claude/skills/
 ```
 
-[CLI installation and limits](docs/mac-cli.md) · [Web validation and preview](https://xnu.app/scriptwidget/studio/)
+In Claude Code: `/scriptwidget-creator Create a reading habit widget and show it in Web Studio`.
+
+```sh
+scriptwidget preview ./MyWidget # opens Web Studio and loads your widget automatically
+scriptwidget render ./MyWidget --output ./artifacts --format json # native macOS verification
+```
+
+Preview links carry the validated package in a URL fragment and load a separate project; no upload server or model hosting is required. Links support up to 45 KB of compressed package data. Keep links private when code/resources are private. Larger packages can use native previews or explicit `.swt` import. Import `.swt` on iPhone through the existing App; adding a Home Screen widget is a separate user action.
+
+[Install the Skill and get started](docs/agent-quickstart.md) · [Creator website](https://xnu.app/scriptwidget/creator/) · [CLI details](docs/mac-cli.md)
 
 
 ---

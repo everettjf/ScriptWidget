@@ -11,7 +11,7 @@ scriptwidget doctor --format json
 
 The CLI requires macOS 26 or later. Releases contain separate arm64 and x86_64 packages, signed with Developer ID and notarized by Apple. Native rendering needs a logged-in graphical session. The App continues to be installed and updated through the Mac App Store.
 
-Download the [authoring Skill](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.1.2/scriptwidget-creator-0.1.2.zip), unzip it, and install the `scriptwidget-creator` folder using your agent's Skill installation instructions. A matching copy ships with the CLI; `doctor` reports its local path. This is an external Coding Agent Skill, not the App's `.swskill` format. Do not automatically grant tools or system permissions because a Skill suggests them.
+Download the [authoring Skill](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.2.0/scriptwidget-creator-0.2.0.zip), unzip it, and install the `scriptwidget-creator` folder using your agent's Skill installation instructions. A matching copy ships with the CLI; `doctor` reports its local path. This is an external Coding Agent Skill, not the App's `.swskill` format. Do not automatically grant tools or system permissions because a Skill suggests them.
 
 For copy-to-folder Claude Code installation, browser preview and iPhone import, see the [Agent quick start](agent-quickstart.md).
 
@@ -19,11 +19,14 @@ For copy-to-folder Claude Code installation, browser preview and iPhone import, 
 
 ```sh
 scriptwidget check ./MyWidget --format json
+scriptwidget preview ./MyWidget --format json
 scriptwidget render ./MyWidget --family medium --appearance both --output ./artifacts --format json
 scriptwidget pack ./MyWidget --output ./artifacts/MyWidget.swt --format json
 ```
 
-Start from [Package 2.0](package-format.md). `check` validates the manifest and compiles package JS/JSX without executing user scripts. `render` performs those checks, executes with offline mock data, and writes a fresh run directory containing light/dark PNGs and `report.json`. `pack` exports a `.swt` from the validated snapshot without executing scripts. Open the archive with the existing ScriptWidget App to import it.
+Start from [Package 2.0](package-format.md). `preview` validates/compiles and opens Web Studio with the widget loaded automatically as a new project. Its report marks browser execute/render as `notRun`; `--no-open` returns the private preview URL without launching. Links carry up to 45,000 compressed package bytes in the URL fragment. The browser removes the fragment before importing; larger packages fail explicitly without dropping resources. Do not share links containing private code or resources. Native fixtures/settings are not transferred.
+
+`check` validates the manifest and compiles package JS/JSX without executing user scripts. `render` performs those checks, executes with offline mock data, and writes a fresh run directory containing light/dark PNGs and `report.json`. `pack` exports a `.swt` from the validated snapshot without executing scripts. Open the archive with the existing ScriptWidget App to import it.
 
 All output must be outside the package. Archives are never overwritten. Preview families are small, medium and large; appearance is light, dark or both. Use `--fixtures file.json` for supported mock overrides, `--param text`, `--scale 1|2`, and `--fail-on-warning` when warnings should fail the check. `--timeout` bounds the whole command without increasing the runtime's own budgets. `--help` lists the options.
 
