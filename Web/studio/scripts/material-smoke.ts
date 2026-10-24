@@ -7,6 +7,19 @@ import { launchChrome, serveDirectory, clickReady } from "../../preview-engine/s
 const dist=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"../dist");
 const server=await serveDirectory(dist),chrome=await launchChrome({width:1440,height:1060,scale:1});
 const page=await chrome.newPage();
+async function savedSource() {
+  await page.waitFor("document.getElementById('save-state').textContent==='Saved in this browser'");
+  // CodeMirror virtualizes offscreen lines: .cm-content.textContent is not
+  // the document. Compare the actual persisted source across preview changes.
+  return page.evaluate<string>(`(async()=>{
+    const db=await new Promise((resolve,reject)=>{const request=indexedDB.open('scriptwidget-studio',1);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error)});
+    try {
+      const id=JSON.parse(localStorage.getItem('scriptwidget-studio.project'));
+      const project=await new Promise((resolve,reject)=>{const request=db.transaction('projects').objectStore('projects').get(id);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error)});
+      return project.files[document.getElementById('current-file').textContent];
+    } finally {db.close()}
+  })()`);
+}
 try {
   await page.call("Emulation.setEmulatedMedia",{features:[{name:"prefers-color-scheme",value:"light"},{name:"prefers-reduced-motion",value:"no-preference"},{name:"prefers-reduced-transparency",value:"no-preference"}]});
   await page.goto(`${server.origin}/index.html`); await page.waitFor("!!document.querySelector('.sw-widget')",20000);
@@ -30,13 +43,15 @@ try {
   await page.waitFor("!!document.querySelector('.sw-widget [data-sw-material=thin]')",20000);
   assert.equal(await page.evaluate("document.querySelector('.sw-widget [data-sw-material]').style.backdropFilter.includes('blur')"),true);
   assert.equal(await page.evaluate("[...document.querySelectorAll('.sw-widget [style]')].some(e=>e.style.transform.includes('rotate3d'))"),true);
-  const code=await page.evaluate<string>("document.querySelector('.cm-content').textContent");
+  const code=await savedSource();
+  assert.equal(typeof code,"string");
+  assert.ok(code.includes('backgroundMaterial="thin"'));
   await click("document.getElementById('reduce-transparency')");
   await page.waitFor("!!document.querySelector('.sw-widget [data-sw-material-fallback=solid]')",20000);
   assert.equal(await page.evaluate("document.querySelector('.sw-widget [data-sw-material]').style.backdropFilter"),"");
   await click("document.getElementById('reduce-motion')");
   await page.waitFor("![...document.querySelectorAll('.sw-widget [style]')].some(e=>e.style.transform.includes('rotate3d'))",20000);
-  assert.equal(await page.evaluate("document.querySelector('.cm-content').textContent"),code);
+  assert.equal(await savedSource(),code);
   if(process.env.SCRIPTWIDGET_MATERIAL_REDUCED)fs.writeFileSync(process.env.SCRIPTWIDGET_MATERIAL_REDUCED,await page.screenshot());
   await click("document.getElementById('reduce-transparency')");await click("document.getElementById('reduce-motion')");
   await page.waitFor("!!document.querySelector('.sw-widget [data-sw-material]:not([data-sw-material-fallback])')",20000);
