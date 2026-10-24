@@ -13,6 +13,7 @@ node Scripts/validate-doc-links.mjs
 (cd Web/preview-engine && npm test)
 (cd Web/studio && npm test && npm run build)
 if node -e 'import("./Web/preview-engine/scripts/lib/chrome.mjs").then((m) => process.exit(m.findChrome() ? 0 : 1))'; then
+  node Web/studio/scripts/onboarding-smoke.ts
   node Web/studio/scripts/smoke.ts
   node Web/studio/scripts/validation-smoke.ts
   node Web/studio/scripts/preview-handoff-smoke.ts

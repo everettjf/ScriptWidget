@@ -1,0 +1,67 @@
+import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { launchChrome, serveDirectory, clickReady } from "../../preview-engine/scripts/lib/chrome.mjs";
+
+const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+const assembled = fs.mkdtempSync(path.join(os.tmpdir(), "scriptwidget-onboarding-"));
+fs.cpSync(path.join(repository, "site"), assembled, { recursive: true });
+fs.cpSync(path.join(repository, "Web/studio/dist"), path.join(assembled, "studio"), { recursive: true });
+const server = await serveDirectory(assembled);
+const chrome = await launchChrome({ width: 1440, height: 1000, scale: 1 });
+try {
+  const page = await chrome.newPage();
+  await page.call("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "light" }, { name: "prefers-reduced-motion", value: "reduce" }] });
+  await page.goto(`${server.origin}/`);
+  await page.waitFor("[...document.querySelectorAll('.widget-showcase img')].every(i=>i.complete&&i.naturalWidth>0)");
+  assert.equal(await page.evaluate("document.querySelectorAll('.hero .actions a').length"), 2);
+  assert.equal(await page.evaluate("document.querySelectorAll('.widget-showcase img').length"), 3);
+  assert.equal(await page.evaluate("new URL(document.querySelector('.hero .actions a:last-child').href).pathname"), "/studio/");
+  const output = process.env.SCRIPTWIDGET_ONBOARDING_SCREENSHOTS;
+  if (output) { fs.mkdirSync(output, { recursive: true }); fs.writeFileSync(path.join(output, "home-desktop.png"), await page.screenshot()); }
+  await page.call("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
+  assert.equal(await page.evaluate("document.documentElement.scrollWidth<=innerWidth"), true);
+  if (output) fs.writeFileSync(path.join(output, "home-mobile.png"), await page.screenshot());
+  await page.goto(`${server.origin}/creator/`);
+  assert.equal(await page.evaluate("document.documentElement.scrollWidth<=innerWidth"), true);
+  // Deterministic clipboard success/denial, including exact multiline payload.
+  await page.evaluate("window.copied=[]; Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>window.copied.push(text)}})");
+  for (const id of ["install-command", "creator-prompt"]) {
+    await clickReady(page, `document.querySelector('[data-copy="${id}"]')`);
+    await page.waitFor(`document.querySelector('[data-copy="${id}"]').closest('.copy-block').nextElementSibling.textContent.startsWith('Copied.')`);
+    assert.equal(await page.evaluate("window.copied.at(-1)"), await page.evaluate(`document.getElementById('${id}').textContent`));
+  }
+  assert.equal(await page.evaluate("window.copied[0].includes('\\nmkdir -p ~/.claude/skills\\n')"), true);
+  await page.evaluate("Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw Error('denied')}}})");
+  await clickReady(page, "document.querySelector('[data-copy=creator-prompt]')");
+  await page.waitFor("document.querySelector('[data-copy=creator-prompt]').closest('.copy-block').nextElementSibling.textContent.startsWith('Could not copy.')");
+  if (output) fs.writeFileSync(path.join(output, "creator-mobile.png"), await page.screenshot());
+  await page.call("Emulation.setDeviceMetricsOverride", { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
+  await page.goto(`${server.origin}/studio/`);
+  await page.waitFor("!!document.querySelector('#starter-guide') && !!document.querySelector('.sw-widget')", 20000);
+  if (output) fs.writeFileSync(path.join(output, "studio-starter.png"), await page.screenshot());
+  for (const name of ["Habit Heatmap", "Countdown", "Reading Goal"]) {
+    await clickReady(page, `[...document.querySelectorAll('#starter-guide button')].find(b=>b.textContent===${JSON.stringify(name)})`);
+    await page.waitFor(`document.getElementById('template-search')?.value===${JSON.stringify(name)} && document.querySelectorAll('.template-card').length>0`);
+    assert.equal(await page.evaluate(`[...document.querySelectorAll('.template-card')].some(c=>c.textContent.includes(${JSON.stringify(name)}))`), true);
+    if (name !== "Reading Goal") {
+      await clickReady(page, "document.querySelector('[role=dialog] button[data-slot=dialog-close]')");
+      await page.waitFor("!document.querySelector('[role=dialog]')");
+    }
+  }
+  await clickReady(page, "document.querySelector('.template-card')");
+  await page.waitFor("!!document.getElementById('template-copy')");
+  await clickReady(page, "document.getElementById('template-copy')");
+  await page.waitFor("!document.querySelector('[role=dialog]') && document.querySelector('.sw-widget')?.textContent.includes('7 of 12 books')", 20000);
+  assert.equal(await page.evaluate("!!document.querySelector('#starter-guide')"), false);
+  assert.equal(await page.evaluate("document.querySelectorAll('#project-list li').length"), 2);
+  await page.goto(`${server.origin}/studio/`);
+  await page.waitFor("document.querySelector('.sw-widget')?.textContent.includes('7 of 12 books')", 20000);
+  assert.equal(await page.evaluate("!!document.querySelector('#starter-guide')"), false);
+  // The generic Gallery entry must not retain the starter shortcut's filter.
+  await clickReady(page, "document.getElementById('open-templates')");
+  await page.waitFor("document.getElementById('template-search')?.value==='' && document.querySelectorAll('.template-card').length>3");
+  console.log("Website onboarding: home/mobile, exact clipboard payload + denial, all three starter shortcuts, draft preservation, reload and Gallery reset passed.");
+} finally { await chrome.close(); server.close(); fs.rmSync(assembled, { recursive: true, force: true }); }
