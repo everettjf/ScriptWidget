@@ -132,11 +132,11 @@ struct Controller {
             let payload=archive.base64EncodedString().replacingOccurrences(of:"+",with:"-").replacingOccurrences(of:"/",with:"_").replacingOccurrences(of:"=",with:"")
             guard payload.count <= 60000 else {throw CLIError(code:"preview.link_limit",message:"Preview links support up to 45,000 compressed package bytes. Reduce large resources or export a .swt for manual import.",exitCode:1)}
             let url=URL(string:"https://xnu.app/scriptwidget/studio/#sw-preview=v1."+payload)!
-            report["previewURL"]=url.absoluteString
+            if options.noOpen { report["previewURL"]=url.absoluteString }
             report["browserLaunchRequested"]=false
             report["limitations"]=["Browser preview uses mock data and is not native validation.","The link contains your package; do not share it if the code or resources are private."]
             if !options.noOpen {
-                guard NSWorkspace.shared.open(url) else {report["status"]="error"; report["diagnostics"]=diagnostics+[["severity":"error","code":"preview.browser","message":"Unable to open the default browser. Open previewURL manually."]]; return (report,2)}
+                guard NSWorkspace.shared.open(url) else {report["status"]="error"; report["diagnostics"]=diagnostics+[["severity":"error","code":"preview.browser","message":"Unable to open the default browser. Use preview --no-open to request a private link."]]; return (report,2)}
                 report["browserLaunchRequested"]=true
             }
             return (report,0)

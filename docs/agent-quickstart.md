@@ -37,7 +37,7 @@ The CLI validates the package and compiles its JS/JSX without executing it, then
 
 No upload server or model service is needed: the ZIP travels in a URL fragment, which is not part of the HTTP request. The link itself contains the complete package; keep private code, resources and credentials out of shared links, logs or chat. The CLI supports up to 45,000 compressed archive bytes (60,000 base64url characters) to keep browser-launch URLs bounded. Larger packages fail explicitly; reduce assets, use [native render](mac-cli.md), or export a `.swt` for explicit import. Resources are never silently removed.
 
-`--no-open` returns `previewURL` without launching a browser, for agents in environments without a graphical browser. A successful report uses backend `web-handoff`; execute/render stay `notRun` because it only certifies compilation and package handoff, not browser rendering. An Agent with browser tools should inspect the loaded page, Problems, and preview before claiming it rendered correctly.
+The default open command does not print the package-bearing URL into reports/logs. `--no-open` explicitly returns private `previewURL` without launching a browser, for agents in environments without a graphical browser. A successful report uses backend `web-handoff`; execute/render stay `notRun` because it only certifies compilation and package handoff, not browser rendering. An Agent with browser tools should inspect the loaded page, Problems, and preview before claiming it rendered correctly.
 
 The browser uses its sample mocks; native CLI fixture files are not automatically embedded. Use the Studio mock editor for browser scenarios. For a draft without the Mac CLI, **Validate** still supports pasted JSX or manual `.swt` import.
 
